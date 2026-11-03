@@ -260,7 +260,7 @@ static void declar_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
     v_table[id_var].fnid = find_var(fname);
     v_table[id_var].dims       = AR_2D;
     v_table[id_var].size       = atoi(v_table[id_x].name);
-    v_table[id_var].siz2 = atoi(v_table[id_y].name);
+    v_table[id_var].cols = atoi(v_table[id_y].name);
 
     int type = type_tmp;
 

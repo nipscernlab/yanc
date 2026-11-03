@@ -613,7 +613,7 @@ void shapecheck_expr(expr_node *n)
             if (n->op == DIRAC_ROLE_MAT) {
                 if (v_table[id].dims != AR_2D) fatal(MSG_ERR_NOT_A_MATRIX, n->line, name);
                 n->rows = v_table[id].size;
-                n->cols = v_table[id].siz2;
+                n->cols = v_table[id].cols;
             } else {
                 if (v_table[id].dims != AR_1D) fatal(MSG_ERR_NOT_A_VECTOR, n->line, name);
                 n->rows = (n->op == DIRAC_ROLE_KET) ? v_table[id].size : 1;
@@ -789,8 +789,8 @@ static expr_node *part_bin(int op, expr_node *l, expr_node *r, const expr_node *
 static expr_node *part_leaf(const expr_node *l, int imag)
 {
     int id = l->id, part = imag ? get_img_id(id) : id, k = part_k++;
-    part_id[k] = part; part_type[k] = v_table[part].type; part_isar[k] = v_table[part].dims; part_siz2[k] = v_table[part].siz2;
-    v_table[part].type = TY_FLOAT; v_table[part].dims = v_table[id].dims; v_table[part].siz2 = v_table[id].siz2;
+    part_id[k] = part; part_type[k] = v_table[part].type; part_isar[k] = v_table[part].dims; part_siz2[k] = v_table[part].cols;
+    v_table[part].type = TY_FLOAT; v_table[part].dims = v_table[id].dims; v_table[part].cols = v_table[id].cols;
     v_table[id].used = 1;
     if (l->left ) l->left ->emitted = 0;
     if (l->right) l->right->emitted = 0;
@@ -826,7 +826,7 @@ static expr comp_partwise_emit(expr_node *n, int from, int to)
         ast_emit_expr(part_tree(n, imag));
         for (int k = part_k - 1; k >= 0; k--)
         {
-            v_table[part_id[k]].type = part_type[k]; v_table[part_id[k]].dims = part_isar[k]; v_table[part_id[k]].siz2 = part_siz2[k];
+            v_table[part_id[k]].type = part_type[k]; v_table[part_id[k]].dims = part_isar[k]; v_table[part_id[k]].cols = part_siz2[k];
         }
         for (int k = 0; k < part_n; k++) free(part_made[k]);
     }
@@ -1182,7 +1182,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                 typecheck_expr(n->left);
                 typecheck_expr(n->right);
                 if (n->left->type == TY_INT && n->right->type == TY_INT)
-                    return arr_1d2exp_const(n->id, atoi(v_table[n->left ->id].name) * v_table[n->id].siz2
+                    return arr_1d2exp_const(n->id, atoi(v_table[n->left ->id].name) * v_table[n->id].cols
                                                  + atoi(v_table[n->right->id].name), 2);
             }
             // a matrix element whose column index is computed: row * row length +
@@ -1195,7 +1195,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                 typecheck_expr(n->right);
                 if (n->left->type == TY_INT && n->right->type == TY_INT)
                 {
-                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
+                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].cols);
                     expr_node *s = expr_lit(TY_INT, exec_inum(b));
                     expr_node *m = expr_binop(OP_MUL, n->left, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->right);
@@ -1279,12 +1279,12 @@ static expr ast_emit_expr_impl(expr_node *n)
                     if (n->left->kind == EXPR_ARRAY_INDEX && v_table[n->left->id].type == TY_COMP)
                     {
                         int id = n->left->id, part = (n->op == OP_STD_IMAG) ? get_img_id(id) : id;
-                        int t0 = v_table[part].type, a0 = v_table[part].dims, s0 = v_table[part].siz2;
-                        v_table[part].type = TY_FLOAT; v_table[part].dims = v_table[id].dims; v_table[part].siz2 = v_table[id].siz2;
+                        int t0 = v_table[part].type, a0 = v_table[part].dims, s0 = v_table[part].cols;
+                        v_table[part].type = TY_FLOAT; v_table[part].dims = v_table[id].dims; v_table[part].cols = v_table[id].cols;
                         n->left->id = part;
                         expr a = ast_emit_expr(n->left);
                         n->left->id = id;
-                        v_table[part].type = t0; v_table[part].dims = a0; v_table[part].siz2 = s0;
+                        v_table[part].type = t0; v_table[part].dims = a0; v_table[part].cols = s0;
                         v_table[id].used = 1;
                         return a;
                     }
@@ -1675,7 +1675,7 @@ static void dirac_check_target(int dst, expr_node *r, int line)
         rows = v_table[dst].size;
         fits = (dim_fits(r->rows, rows) && r->cols == 1) || (r->rows == 1 && dim_fits(r->cols, rows));
     } else if (v_table[dst].dims == AR_2D) {
-        rows = v_table[dst].size; cols = v_table[dst].siz2;
+        rows = v_table[dst].size; cols = v_table[dst].cols;
         fits = dim_fits(r->rows, rows) && dim_fits(r->cols, cols);
     } else fits = 0;
 
@@ -1925,7 +1925,7 @@ void stmt_emit(stmt_node *n)
                 typecheck_expr(n->rhs);
                 int rt = n->rhs->type;
                 if (n->idx->type == TY_INT && n->idx2->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
-                    int k = atoi(v_table[n->idx->id].name) * v_table[n->id].siz2 + atoi(v_table[n->idx2->id].name);
+                    int k = atoi(v_table[n->idx->id].name) * v_table[n->id].cols + atoi(v_table[n->idx2->id].name);
                     ass_array_const(n->id, k, 2, ast_emit_expr(n->rhs));
                     break;
                 }
@@ -1941,7 +1941,7 @@ void stmt_emit(stmt_node *n)
                 if (!is_expr_leaf(n->idx2) && v_table[n->id].dims == AR_2D
                     && n->idx->type == TY_INT && n->idx2->type == TY_INT)
                 {
-                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].siz2);
+                    char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].cols);
                     expr_node *s = expr_lit(TY_INT, exec_inum(b));
                     expr_node *m = expr_binop(OP_MUL, n->idx, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->idx2);

@@ -203,7 +203,7 @@ static expr_node *elem_of(expr_node *ref, dl_pos r, dl_pos c)
     if (ref->dl) {                                   // a block of __dirac_tmp
         ix.k = ((dl_tmpref *)ref->dl)->off;
         cols = ref->cols;
-    } else cols = v_table[arr].siz2;
+    } else cols = v_table[arr].cols;
 
     if      (ref->op == DIRAC_ROLE_KET) ix_add(&ix, r, 1);
     else if (ref->op == DIRAC_ROLE_BRA) ix_add(&ix, c, 1);
@@ -975,7 +975,7 @@ static int dl_eye(int dst, expr_node *r, int line)
     else return 0;
 
     enter(line);
-    int R = v_table[dst].size, C = v_table[dst].siz2, t = v_table[dst].type;
+    int R = v_table[dst].size, C = v_table[dst].cols, t = v_table[dst].type;
     ctx_type = t;
     n_loops = 0; n_hoist_pre = 0;
     if (t > 2) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
@@ -1019,7 +1019,7 @@ void dirac_loops(int dst, expr_node *r, int line)
     if (r->type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
 
     int rows, cols;
-    if (v_table[dst].dims == AR_2D) {rows = v_table[dst].size; cols = v_table[dst].siz2;}
+    if (v_table[dst].dims == AR_2D) {rows = v_table[dst].size; cols = v_table[dst].cols;}
     else if (r->rows == 1 && r->cols != 1) {rows = 1; cols = v_table[dst].size;}   // a bra into a vector
     else {rows = v_table[dst].size; cols = 1;}
 

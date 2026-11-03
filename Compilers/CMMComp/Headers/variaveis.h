@@ -22,7 +22,7 @@ typedef struct symbol {
     int  dims;        // AR_NONE, AR_1D or AR_2D (types.h): a scalar, a vector, a matrix
     int  is_const;        // whether the variable is a constant
     int  size;        // array size (when it is an array)
-    int  siz2;        // size of the j dimension (when it is a matrix)
+    int  cols;        // size of the j dimension (when it is a matrix)
     int  wave;        // #WAVE: kept for the waveform even if never read
 } symbol;
 
