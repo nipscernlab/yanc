@@ -1517,41 +1517,38 @@ stmt_node *stmt_list_top(void)
 // compound control-flow constructors -----------------------------------------
 // ----------------------------------------------------------------------------
 
-stmt_node *stmt_if(int label, expr_node *cond, stmt_node *then_body, stmt_node *else_body)
+// Each is made when its header is parsed (saltos.c); the bodies, the
+// do-while's condition and the switch's case count are filled in later, when
+// the parser reaches them, and start empty (snode_new zeroes the node)
+
+stmt_node *stmt_if(int label, expr_node *cond)
 {
     stmt_node *n = snode_new(STMT_IF);
-    n->id        = label;
-    n->cond      = cond;
-    n->then_body = then_body;
-    n->else_body = else_body;
+    n->id   = label;
+    n->cond = cond;
     return n;
 }
 
-stmt_node *stmt_while(int label, expr_node *cond, stmt_node *body)
+stmt_node *stmt_while(int label, expr_node *cond)
 {
     stmt_node *n = snode_new(STMT_WHILE);
     n->id   = label;
     n->cond = cond;
-    n->body = body;
     return n;
 }
 
-stmt_node *stmt_do(int label, expr_node *cond, stmt_node *body)
+stmt_node *stmt_do(int label)
 {
     stmt_node *n = snode_new(STMT_DO);
-    n->id   = label;
-    n->cond = cond;
-    n->body = body;
+    n->id = label;
     return n;
 }
 
-stmt_node *stmt_switch(int swit_id, int case_max, expr_node *cond, stmt_node *body)
+stmt_node *stmt_switch(int swit_id, expr_node *cond)
 {
     stmt_node *n = snode_new(STMT_SWITCH);
     n->id   = swit_id;
-    n->id2  = case_max;
     n->cond = cond;
-    n->body = body;
     return n;
 }
 

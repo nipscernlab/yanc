@@ -369,13 +369,13 @@ stmt_node *stmt_dire_toaqui(void);
 stmt_node *stmt_block     (void);
 void       stmt_block_push(stmt_node *blk, stmt_node *kid);
 
-// Compound control-flow constructors (cond/body trees are owned).
-stmt_node *stmt_if          (int label, struct expr_node *cond,
-                             stmt_node *then_body, stmt_node *else_body);
-stmt_node *stmt_while       (int label, struct expr_node *cond, stmt_node *body);
-stmt_node *stmt_do          (int label, struct expr_node *cond, stmt_node *body);
-stmt_node *stmt_switch      (int swit_id, int case_max,
-                             struct expr_node *cond, stmt_node *body);
+// Compound control-flow constructors (cond/body trees are owned). The bodies,
+// the do-while's condition and the switch's case count start empty: the
+// parser fills them in when it reaches them (saltos.c).
+stmt_node *stmt_if          (int label, struct expr_node *cond);
+stmt_node *stmt_while       (int label, struct expr_node *cond);
+stmt_node *stmt_do          (int label);
+stmt_node *stmt_switch      (int swit_id, struct expr_node *cond);
 stmt_node *stmt_case_label  (int swit_id, int case_idx, int val_id, int val_type);
 stmt_node *stmt_default_label(int swit_id, int case_idx);
 stmt_node *stmt_switch_break(int swit_id);
