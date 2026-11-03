@@ -111,7 +111,7 @@ static expr_node **args_frame_pop(int *n_out)
 void par_check(expr e, int k)
 {
     int t_cal = e.type;                  // type of the argument (1, 2 or 3)
-    int t_fun = v_table[fun_id].ptyp[k]; // type of the parameter in the function
+    int t_fun = v_table[fun_id].param_types[k]; // type of the parameter in the function
     int index = k+1;                     // position of the parameter, for the messages
 
     char ld [10]; if (acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
@@ -344,8 +344,8 @@ int declar_par(int type, int id)
 
     // store the data type of every parameter, in order
     symbol *f = &v_table[fun_parse];
-    f->ptyp = xrealloc(f->ptyp, (size_t)(f->n_params+1) * sizeof(int));
-    f->ptyp[f->n_params++] = type;
+    f->param_types = xrealloc(f->param_types, (size_t)(f->n_params+1) * sizeof(int));
+    f->param_types[f->n_params++] = type;
 
     if (func_nparams == func_params_cap)
     {
