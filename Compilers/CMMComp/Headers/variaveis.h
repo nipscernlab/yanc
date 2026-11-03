@@ -16,7 +16,7 @@ typedef struct symbol {
                       // the pointer while the table grows
     int  type;        // a TY_* code of types.h: TY_NONE until declared, a value type, or a function's
     int  used;        // whether the ID has already been used
-    int  npar;        // if the ID is a function, how many parameters it has
+    int  n_params;        // if the ID is a function, how many parameters it has
     int *ptyp;        // and the type of each one (TY_INT, TY_FLOAT or TY_COMP), npar entries
     int  owner;        // ID of the function the variable belongs to
     int  dims;        // AR_NONE, AR_1D or AR_2D (types.h): a scalar, a vector, a matrix

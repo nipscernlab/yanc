@@ -344,8 +344,8 @@ int declar_par(int type, int id)
 
     // store the data type of every parameter, in order
     symbol *f = &v_table[fun_parse];
-    f->ptyp = xrealloc(f->ptyp, (size_t)(f->npar+1) * sizeof(int));
-    f->ptyp[f->npar++] = type;
+    f->ptyp = xrealloc(f->ptyp, (size_t)(f->n_params+1) * sizeof(int));
+    f->ptyp[f->n_params++] = type;
 
     if (func_nparams == func_params_cap)
     {
@@ -646,7 +646,7 @@ stmt_node *vcall(int id)
 
     int n; expr_node **a = args_frame_pop(&n);
 
-    if (n != v_table[id].npar)
+    if (n != v_table[id].n_params)
     {
         fatal(MSG_ERR_PARAM_COUNT, line_num+1, rem_fname(v_table[id].name));
     }
@@ -673,7 +673,7 @@ expr_node *fcall(int id)
 
     int n; expr_node **a = args_frame_pop(&n);
 
-    if (n != v_table[id].npar)
+    if (n != v_table[id].n_params)
     {
         fatal(MSG_ERR_PARAM_LIST_DIFF, line_num+1, v_table[id].name);
     }
