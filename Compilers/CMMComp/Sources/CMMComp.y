@@ -552,7 +552,7 @@ terminal : INUM                               {$$ = expr_lit(TY_INT, inum_word($
          // the most negative one, whose magnitude does not fit, is -max - 1
          | NINUM                              {$$ = expr_unop(OP_NEG, expr_lit(TY_INT, $1));}
          | NIMIN                              {$$ = expr_binop(OP_SUB, expr_unop(OP_NEG, expr_lit(TY_INT, $1)),
-                                                               expr_lit(TY_INT, exec_inum("1")));}
+                                                               expr_lit(TY_INT, lex_inum("1")));}
          | FNUM                               {$$ = expr_lit(TY_FLOAT, $1);}
          | CNUM                               {$$ = expr_lit(TY_CCONST, $1);}
          // variables

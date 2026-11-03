@@ -50,22 +50,22 @@ void  directive_wave (int id);                // #WAVE name: the variable stays 
 
 // used in the lexer to pick up variables and constants -----------------------
 
-int exec_id  (char *text);               // an ID was found
+int lex_id  (char *text);               // an ID was found
 int cnum_join(const char *re, int sub, int imid); // re +/- an imaginary literal: the comp literal
 int cnum_is_imag(int id);                // a comp literal whose real part is zero
 char *neg_text(int id);                  // "-" and the text of literal id (the block is the caller's)
 int cnum_imag_fnum(int id, int neg);     // the imaginary part of a comp literal, as a float literal
-int find_id  (const char *text);         // the ID as exec_id would resolve it, without creating it (-1 if none)
-int exec_inum(char *text);               // an int constant was found
+int find_id  (const char *text);         // the ID as lex_id would resolve it, without creating it (-1 if none)
+int lex_inum(char *text);               // an int constant was found
 int inum_kind(const char *text);         // 0 INUM, 1 NINUM (a negative bit pattern), 2 NIMIN (the most negative), 3 DIMIN (its magnitude in decimal)
-int exec_inum_neg(char *text);           // the magnitude of a NINUM / NIMIN / DIMIN
+int lex_inum_neg(char *text);           // the magnitude of a NINUM / NIMIN / DIMIN
 void inum_overflow(void);                // a decimal int past the word: the message, and stop
 int inum_word(int id);                   // an int literal used as a value: it must fit the word
 int arr_size(int id);                    // an array size: a warning if an int index cannot reach its end
 int inum_min_id(void);                   // 2^(NUBITS-1), for a NIMIN in a brace list and for a DIMIN
-int exec_fnum(char *text);               // a float constant was found
-extern int fnum_quiet;                   // 1: exec_fnum says nothing of an approximation (a constant the compiler made)
-int exec_cnum(char *text);               // a comp constant was found
+int lex_fnum(char *text);               // a float constant was found
+extern int fnum_quiet;                   // 1: lex_fnum says nothing of an approximation (a constant the compiler made)
+int lex_cnum(char *text);               // a comp constant was found
 char *fnum_text (const char *in);       // a float literal as the .asm writes it (the block is the caller's)
 void cnum_split(const char *txt, char **re, char **im); // a comp literal's two parts (the blocks are the caller's)
 

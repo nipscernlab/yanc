@@ -52,8 +52,8 @@ void get_cmp_cst(expr e, expr *er, expr *ei)
 
     cnum_split(v_table[e.id].name, &re, &im);   // the text, not a host float: no digit lost
 
-    *er = num2exp(exec_fnum(re), 2);   // typed constants: real(5-7i) can be a built-in's argument
-    *ei = num2exp(exec_fnum(im), 2);
+    *er = num2exp(lex_fnum(re), 2);   // typed constants: real(5-7i) can be a built-in's argument
+    *ei = num2exp(lex_fnum(im), 2);
     free(re); free(im);
 }
 

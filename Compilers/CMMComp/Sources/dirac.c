@@ -262,7 +262,7 @@ static expr_node *scalar_of(expr_node *n)
         long k = atol(v_table[n->id].name);
         if (k < mant_pow2()) {
             char b[32]; snprintf(b, sizeof b, "%ld.0", k);
-            return expr_lit(TY_FLOAT, exec_fnum(b));
+            return expr_lit(TY_FLOAT, lex_fnum(b));
         }
     }
 
@@ -281,7 +281,7 @@ static expr_node *scalar_of(expr_node *n)
 
 static expr_node *zero_of(int t)
 {
-    return t == 2 ? expr_lit(TY_FLOAT, exec_fnum("0.0")) : expr_lit(TY_INT, exec_inum("0"));
+    return t == 2 ? expr_lit(TY_FLOAT, lex_fnum("0.0")) : expr_lit(TY_INT, lex_inum("0"));
 }
 
 static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top);
@@ -979,7 +979,7 @@ static int dl_eye(int dst, expr_node *r, int line)
     ctx_type = t;
     n_loops = 0; n_hoist_pre = 0;
     if (t > 2) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
-    expr_node *val = c ? scalar_of(c) : expr_lit(t, t == 2 ? exec_fnum("1.0") : exec_inum("1"));
+    expr_node *val = c ? scalar_of(c) : expr_lit(t, t == 2 ? lex_fnum("1.0") : lex_inum("1"));
     for (int j = 0; j < n_hoist_pre; j++) emit_hoist(*hoist_pre[j], hoist_pre_v[j]);
 
     dl_dst d = {0, dst, 0, 0, t, C};

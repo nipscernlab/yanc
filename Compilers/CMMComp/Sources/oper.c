@@ -29,7 +29,7 @@ static int int_flit_id(expr e)
     long n; char end[8];
     if (sscanf(v_table[e.id].name, "%ld%7s", &n, end) != 1 || labs(n) >= mant_pow2()) return 0;
     char t[32]; snprintf(t, sizeof t, "%ld.0", n);
-    return exec_fnum(t);
+    return lex_fnum(t);
 }
 
 // an int literal a float or a comp meets is taken as that float literal, so the
@@ -63,7 +63,7 @@ expr oper_neg(expr e)
 
     // a float or comp literal needs no instruction: its negation is another
     // literal (-2.5 is loaded as such, x - (3+4i) adds -3-4i). Not an int one: the
-    // compiler holds int literals non-negative (exec_inum, exec_pow's exponent
+    // compiler holds int literals non-negative (lex_inum, exec_pow's exponent
     // loop). Not when a float part is zero either: "-0.0" encodes as +0, and
     // F_NEG_M 0.0 gives -0 (TODO.md item 4)
     if (e.type == TY_FLOAT && e.id != 0 && v_table[e.id].is_const)
@@ -72,7 +72,7 @@ expr oper_neg(expr e)
         if (atof(nm) != 0.0)
         {
             char *txt = nm[0] == '-' ? xstrdup(nm + 1) : xasprintf("-%s", nm);
-            int id = exec_fnum(txt);
+            int id = lex_fnum(txt);
             free(txt);
             return num2exp(id, 2);
         }
@@ -86,7 +86,7 @@ expr oper_neg(expr e)
         {   // each part's sign flipped on the text, as for a float above
             char *txt = xasprintf("%s%s%s%si", re[0] == '-' ? "" : "-", re + (re[0] == '-'),
                                                im[0] == '-' ? "+" : "-", im + (im[0] == '-'));
-            id = exec_cnum(txt);
+            id = lex_cnum(txt);
             free(txt);
         }
         free(re); free(im);
@@ -636,7 +636,7 @@ expr oper_sub(expr e1, expr e2)
         char *txt = xasprintf("%s%s%s%si",
                  zr ? "" : (re[0] == '-' ? "" : "-"), zr ? "0.0" : re + (re[0] == '-'),
                  zi ? "+" : (im[0] == '-' ? "+" : "-"), zi ? "0.0" : im + (im[0] == '-'));
-        int id = exec_cnum(txt);
+        int id = lex_cnum(txt);
         free(txt); free(re); free(im);
         return oper_add(e1, num2exp(id, 5));
     }
@@ -1047,7 +1047,7 @@ expr oper_mult(expr e1, expr e2)
         if (atof(v_table[er.id].name) == 0.0 && atof(c) != 0.0)
         {
             char *nt = c[0] == '-' ? xstrdup(c + 1) : xasprintf("-%s", c);
-            int nid = exec_fnum(nt);                                   // -c
+            int nid = lex_fnum(nt);                                   // -c
             free(nt);
             if (e1.id != 0)                                            // in memory: 4 words
             {
@@ -1628,7 +1628,7 @@ expr oper_div(expr e1, expr e2)
         {
             char t[40]; snprintf(t, sizeof t, "%.9g", r);
             if (!strpbrk(t, ".eE")) strcat(t, ".0");
-            fnum_quiet = 1; int rid = exec_fnum(t); fnum_quiet = 0;   // the user did not write it
+            fnum_quiet = 1; int rid = lex_fnum(t); fnum_quiet = 0;   // the user did not write it
             int ex; if (fabs(frexp(c, &ex)) == 0.5) return oper_mult(e1, num2exp(rid, 2));
 
             int acc0 = acc_ok;
@@ -2496,8 +2496,8 @@ typedef struct {
 
 static const char *cmp_flit(const char *t)
 {
-    char *b = xstrdup(t);                    // exec_fnum may edit its text
-    int id = exec_fnum(b);
+    char *b = xstrdup(t);                    // lex_fnum may edit its text
+    int id = lex_fnum(b);
     free(b);
     return v_table[id].name;
 }

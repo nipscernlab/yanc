@@ -364,7 +364,7 @@ static expr_node *for_bottom_test(stmt_node *n, stmt_node *init)
     }
     if (!holds || k2 < 0 || k2 > max) return NULL;           // a literal has no negative form
     char buf[32]; snprintf(buf, sizeof buf, "%lld", k2);
-    return expr_binop(op2, expr_lit(TY_INT, exec_inum(buf)), expr_var(TY_INT, var->id));
+    return expr_binop(op2, expr_lit(TY_INT, lex_inum(buf)), expr_var(TY_INT, var->id));
 }
 
 // an int literal other than 0: a loop condition that is always true (while (1))
@@ -1012,10 +1012,10 @@ static expr ast_emit_expr_impl(expr_node *n)
                     if (cval == -(m / 2)) return oper_neg(num2exp(inum_min_id(), 1));
                     if (cval >= 0) {
                         snprintf(buf, sizeof buf, "%lld", cval);
-                        return num2exp(exec_inum(buf), 1);
+                        return num2exp(lex_inum(buf), 1);
                     }
                     snprintf(buf, sizeof buf, "%lld", -cval);
-                    return oper_neg(num2exp(exec_inum(buf), 1));
+                    return oper_neg(num2exp(lex_inum(buf), 1));
                 }
             }
 
@@ -1196,7 +1196,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                 if (n->left->type == TY_INT && n->right->type == TY_INT)
                 {
                     char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].cols);
-                    expr_node *s = expr_lit(TY_INT, exec_inum(b));
+                    expr_node *s = expr_lit(TY_INT, lex_inum(b));
                     expr_node *m = expr_binop(OP_MUL, n->left, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->right);
                     char *key = NULL;
@@ -1942,7 +1942,7 @@ void stmt_emit(stmt_node *n)
                     && n->idx->type == TY_INT && n->idx2->type == TY_INT)
                 {
                     char b[16]; snprintf(b, sizeof b, "%d", v_table[n->id].cols);
-                    expr_node *s = expr_lit(TY_INT, exec_inum(b));
+                    expr_node *s = expr_lit(TY_INT, lex_inum(b));
                     expr_node *m = expr_binop(OP_MUL, n->idx, s);
                     expr_node *a = expr_binop(OP_ADD, m, n->idx2);
                     expr e = ast_emit_expr(a);
@@ -2374,7 +2374,7 @@ void stmt_emit(stmt_node *n)
             fun_parse = n->id;
             // emit_fname carries this function's name through the body walk so
             // rem_fname() can strip the "<fn>_" prefix from diagnostics. It is
-            // DISPLAY-ONLY: exec_id() still keys off the (empty-during-walk)
+            // DISPLAY-ONLY: lex_id() still keys off the (empty-during-walk)
             // global fname, so the temp-variable names -- and the assembly -- are
             // unchanged. Globals (no prefix) are unaffected by rem_fname.
             const char *saved_emit_fname = emit_fname;

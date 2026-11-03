@@ -174,7 +174,7 @@ COMEN  "//"[^\n]*
                 while (*p == ' ' || *p == '\t') p++;
                 while (*p && *p != ' ' && *p != '\t' && *p != ')' && n < 63) num[n++] = *p++;
                 num[n] = 0;
-                yylval.ival = exec_inum(num);
+                yylval.ival = lex_inum(num);
                 return KETIN;
              }
 
@@ -234,19 +234,19 @@ COMEN  "//"[^\n]*
                     // `__` starts the compiler's own names in the .asm
                     if (yytext[0] == '_' && yytext[1] == '_')
                         {fatal(MSG_ERR_NAME_UNDERSCORES, line_num+1, yytext);}
-                    yylval.ival = exec_id(yytext);
+                    yylval.ival = lex_id(yytext);
                     return ID;
                 }
              }
 			 
 {INNUM}      {
                 int k = inum_kind(yytext);
-                yylval.ival = (k == 1 || k == 2) ? exec_inum_neg(yytext) : k == 3 ? inum_min_id() : exec_inum(yytext);
+                yylval.ival = (k == 1 || k == 2) ? lex_inum_neg(yytext) : k == 3 ? inum_min_id() : lex_inum(yytext);
                 return k == 0 ? INUM : k == 1 ? NINUM : k == 2 ? NIMIN : DIMIN;
              }
 			 
 {FLNUM}      {
-                yylval.ival = exec_fnum(yytext);
+                yylval.ival = lex_fnum(yytext);
                 return FNUM;
              }
 			 
@@ -255,7 +255,7 @@ COMEN  "//"[^\n]*
                    parser writes a + bi as an expression and joins the two
                    literals (expr_addsub), so that y*3+2i is (y*3) + 2i */
                 char *t = xasprintf("0+%s", yytext);
-                yylval.ival = exec_cnum(t);
+                yylval.ival = lex_cnum(t);
                 free(t);
                 return CNUM;
              }

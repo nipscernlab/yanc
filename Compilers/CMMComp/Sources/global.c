@@ -41,7 +41,7 @@ int  emit_line= 1;    // emit-time: line the AST walker tags onto each instructi
 int  emit_fid = -1;   // emit-time: id of the function whose body the walker is in (-1: none)
 const char *emit_fname = ""; // emit-time: name of the function whose body the AST
                            // walker is in, for rem_fname() in diagnostics only
-                           // (exec_id keeps using the global fname). "" = global
+                           // (lex_id keeps using the global fname). "" = global
 int  num_ins  = 0;    // number of instructions parsed
 int  sim_arr  = 0;    // tells whether the array is simulated or not
 
