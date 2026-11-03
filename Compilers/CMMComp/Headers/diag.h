@@ -8,12 +8,16 @@
 #ifndef CMM_DIAG_H
 #define CMM_DIAG_H
 
-// prints the message on stderr and ends cmmcomp with EXIT_FAILURE
+// prints the message on stderr, runs the hook fatal_hook set (if any), and
+// ends cmmcomp with EXIT_FAILURE
 void fatal(const char *fmt, ...)
 #if defined(__GNUC__)
     __attribute__((noreturn, format(printf, 1, 2)))
 #endif
     ;
+
+// what fatal runs before it ends cmmcomp (NULL: nothing)
+void fatal_hook(void (*fn)(void));
 
 // prints a warning or a note on stdout (where golden_map.txt records it)
 void warn(const char *fmt, ...)

@@ -56,10 +56,13 @@
 #   4. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
 #      malformed program with a clean non-zero exit and the expected diagnostic
-#      -- never a crash, never a silent accept. Error-path coverage the golden
-#      phases don't give. (Runs with the CMM phase; skipped by --cpp-only.)
+#      -- never a crash, never a silent accept, and no output left behind.
+#      Error-path coverage the golden phases don't give. (Runs with the CMM
+#      phase; skipped by --cpp-only.)
 #      The CPP negative phase does the same for cppcomp with
-#      Compilers/CPPComp/NegTests/manifest.txt (skipped by --cmm-only).
+#      Compilers/CPPComp/NegTests/manifest.txt (skipped by --cmm-only), all
+#      but the empty folder: a rejected C++ program still leaves its .asm
+#      (issue #94).
 #
 # Build phase builds the 4 binaries it runs once (cmmcomp, cppcomp, asmcomp, yanc), all
 # phases reuse them.
@@ -1760,6 +1763,10 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         elif ! printf '%s' "$out" | grep -qF "$expect"; then
             echo "FAIL ($name): exit $rc but missing diagnostic '$expect'"
             echo "    got: $(printf '%s' "$out" | head -1)"
+            fail=$((fail+1)); failed_names+=("$name")
+        elif [ -n "$(ls -A "$neg_work/p" 2>/dev/null)" ]; then
+            # a rejected program leaves no .asm or table behind (#94 N)
+            echo "FAIL ($name): rejected, but left $(ls "$neg_work/p" | tr '\n' ' ')in its output folder"
             fail=$((fail+1)); failed_names+=("$name")
         else
             echo "PASS ($name): rejected (exit $rc) -- \"$expect\""

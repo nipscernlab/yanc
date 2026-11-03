@@ -211,6 +211,34 @@ static char *read_src_line(FILE *f)
     return line;
 }
 
+// the files this run writes. An error that stops cmmcomp removes them (#94
+// N): a compilation that failed leaves no .asm or table that a later step,
+// or the user, could take for the result
+#define OUT_MAX 4
+static char  *out_path[OUT_MAX];
+static FILE **out_file[OUT_MAX];
+static int    out_n = 0;
+
+static void out_track(char *path, FILE **f)   // takes the block path
+{
+    out_path[out_n] = path;
+    out_file[out_n] = f;
+    out_n++;
+}
+
+static void out_remove(void)
+{
+    for (int i = 0; i < out_n; i++)
+    {
+        if (*out_file[i]) {fclose(*out_file[i]); *out_file[i] = NULL;}
+        remove(out_path[i]);
+        free(out_path[i]);
+    }
+    out_n = 0;
+}
+
+static FILE *f_src = NULL;            // src_lines.txt, while parse_end writes it
+
 // ----------------------------------------------------------------------------
 // parser start and end functions ---------------------------------------------
 // ----------------------------------------------------------------------------
@@ -224,10 +252,12 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
     yyin = fopen(cmm_src, "r");
     if (yyin  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, cmm_src);
 
+    fatal_hook(out_remove);       // from here on, an error removes what this run wrote
+
     char *asm_file = xasprintf("%s/%s.asm", d_proc, prname); // output .asm file name
     f_asm = fopen(asm_file, "w"); // create the .asm file
     if (f_asm == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, asm_file);
-    free(asm_file);
+    out_track(asm_file, &f_asm);
 
     dir_macro = d_macro; // record the Macro directory
     dir_tmp   = d_tmp  ; // record the Tmp directory
@@ -246,10 +276,10 @@ void parse_init(char *f_name, char *prname, char *d_proc, char *d_macro, char *d
 
     char *path = xasprintf("%s/prog_log.txt", dir_tmp); f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
     if (f_log == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
-    free(path);
+    out_track(path, &f_log);
     path = xasprintf("%s/pc_%s_mem.txt", dir_tmp, prname); f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
     if (f_lin == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
-    free(path);
+    out_track(path, &f_lin);
 
     // Open the top-level stmt_list collector. Every directive, declaration
     // and function reduce appends a stmt_node here; nothing reaches f_asm
@@ -303,8 +333,8 @@ void parse_end(char *prname, char *d_proc)
 
     // close the files --------------------------------------------------------
 
-    fclose(f_asm); // assembly code
-    fclose(f_lin); // assembly translator
+    fclose(f_asm); f_asm = NULL; // assembly code
+    fclose(f_lin); f_lin = NULL; // assembly translator
 
     // check whether macros need to be appended to the .asm file --------------
 
@@ -360,7 +390,7 @@ void parse_end(char *prname, char *d_proc)
     char *src = dir_of(cmm_src);             // the folder of the source: asmcomp reads the user's
     if (src) fprintf(f_log, "srcdir %s\n", src); // files there (array inits, input_N.txt, cade_k.txt)
     fprintf(f_log, "lang C+-\n");            // the source language: the waveform's source track takes its name
-    fclose (f_log);
+    fclose (f_log); f_log = NULL;
 
     // generate the translation file for the cmm code -------------------------
 
@@ -368,9 +398,10 @@ void parse_end(char *prname, char *d_proc)
     // failed when the file was not named after the processor)
     char *path = xasprintf("%s/%s", dir_tmp, "src_lines.txt");
 
-    FILE *output = fopen(path    , "w");
-    if (output == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
-    free(path);
+    f_src = fopen(path, "w");
+    if (f_src == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
+    out_track(path, &f_src);
+    FILE *output = f_src;
     FILE *input  = fopen(cmm_src, "r");
     if (input  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, cmm_src);
 
@@ -390,7 +421,12 @@ void parse_end(char *prname, char *d_proc)
     }
 
     fclose(input );
-    fclose(output);
+    fclose(output); f_src = NULL;
+
+    // compiled: what this run wrote stays
+    fatal_hook(NULL);
+    for (int i = 0; i < out_n; i++) free(out_path[i]);
+    out_n = 0;
 }
 
 // ----------------------------------------------------------------------------

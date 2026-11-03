@@ -314,6 +314,29 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **cmmcomp: a failed compilation leaves no output behind** (#94 N). An
+  error found at the end of the parse, such as a program with no `main`,
+  left the `.asm`, `prog_log.txt` and `pc_<name>_mem.txt` it had written in
+  the output folder, where a later step could take them for the result.
+  Every error that stops cmmcomp now removes the files of that run. The
+  regression's negative phase checks that a rejected program leaves its
+  output folder empty.
+- **cmmcomp: a global named like the start of a function** (#94 A). A
+  global `mainly` read as an array inside `main` was reported as `'y' ain't
+  an array`: the function prefix was taken off without checking the `_`
+  after it, and a name equal to the function's made the loop read past
+  both (deduced from the code). NegTest `name_prefix_global`.
+- **cmmcomp: no undefined shift or overflow in the float masks and the
+  constant folding** (#94 J). `1L << nbmant` was written at 10 places, and
+  the folding of int constants worked in `long`, with its range as
+  `(long)1 << (NBMANT + NBEXPO)`, 31 at the defaults. Where `long` has 32
+  bits, as on 64-bit Windows, that shift and a product or sum of two large
+  constants are undefined, so the same program could fold differently there
+  and on Linux (deduced from the code, not run on Windows). The masks now
+  come from `mant_pow2()` and the folding works in `long long`; on Linux,
+  where `long` has 64 bits, every golden is byte-identical. With `#NBMANT
+  70` the old cmmcomp, built with UBSan, reported `shift exponent 70 is too
+  large` at ast.c:1766; the new one reports nothing.
 - **C±: a program with functions but no `main` is refused.** Any function
   counted as the main question resolved, so such a program compiled; now
   that `main` comes first in the program, the reset fell into the first
