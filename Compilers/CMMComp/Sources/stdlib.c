@@ -1641,22 +1641,12 @@ expr builtin_real(expr e)
     // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // comp const: its real part is a float constant, handed back as a memory
+    // comp in memory (a constant or a variable): its real part is a float constant, handed back as a memory
     // operand -- no load here, so the consumer fuses it (F2I_M, F_ADD, ...)
-    if (e.type == TY_CCONST)
+    if (place_of(e) == PL_CM)
     {
         expr et_r, et_i;
-        get_cmp_cst(e,&et_r,&et_i);
-
-        return et_r;
-    }
-
-    // comp in memory: its real part is the variable's own word (get_cmp_ets),
-    // handed back as a memory operand for the same reason
-    if ((e.type == TY_COMP) && (e.id != 0))
-    {
-        expr et_r, et_i;
-        get_cmp_ets(e,&et_r,&et_i);
+        get_cmp_parts(e,&et_r,&et_i);
 
         return et_r;
     }
@@ -1696,22 +1686,12 @@ expr builtin_imag(expr e)
     // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // comp const: its imag part is a float constant, handed back as a memory
+    // comp in memory (a constant or a variable): its imag part is a float constant, handed back as a memory
     // operand -- no load here, so the consumer fuses it (F2I_M, F_ADD, ...)
-    if (e.type == TY_CCONST)
+    if (place_of(e) == PL_CM)
     {
         expr et_r, et_i;
-        get_cmp_cst(e,&et_r,&et_i);
-
-        return et_i;
-    }
-
-    // comp in memory: its imag part is the variable's _i word (get_cmp_ets),
-    // handed back as a memory operand for the same reason
-    if ((e.type == TY_COMP) && (e.id != 0))
-    {
-        expr et_r, et_i;
-        get_cmp_ets(e,&et_r,&et_i);
+        get_cmp_parts(e,&et_r,&et_i);
 
         return et_i;
     }
@@ -1755,16 +1735,9 @@ expr builtin_mod2(expr e)
     // ------------------------------------------------------------------------
 
     // when it is a constant -------------------------------------------------
-    if (e.type == TY_CCONST)
+    if (place_of(e) == PL_CM)
     {
-        get_cmp_cst(e,&etr,&eti);     // get the et of each float constant
-        emit_sq_sum(etr, eti);   // c²+d² (acc-aware: squares the live half first)
-    }
-
-    // when it is in memory --------------------------------------------------
-    if ((e.type == TY_COMP) && (e.id != 0))
-    {
-        get_cmp_ets(e,&etr,&eti);     // get the et of each variable
+        get_cmp_parts(e,&etr,&eti);     // get the et of each variable
         emit_sq_sum(etr, eti);   // c²+d² (acc-aware: squares the live half first)
     }
 
@@ -2071,20 +2044,11 @@ expr builtin_conj(expr e)
     // result is comp-in-acc: real on the stack, imag in the acc.
     // ------------------------------------------------------------------------
 
-    // comp constant: a - bi
-    if (e.type == TY_CCONST)
+    // comp in memory (a constant or a variable): a - bi
+    if (place_of(e) == PL_CM)
     {
         expr etr, eti;
-        get_cmp_cst(e, &etr, &eti);
-        add_instr("%s %s\n", ld, v_table[etr.id].name);     // acc = real (push pending if any)
-        add_instr("PF_NEG_M %s\n", v_table[eti.id].name);   // push real; acc = -imag  (PF_NEG_M = PSH + F_NEG_M)
-    }
-
-    // comp variable in memory: a - bi
-    if ((e.type == TY_COMP) && (e.id != 0))
-    {
-        expr etr, eti;
-        get_cmp_ets(e, &etr, &eti);
+        get_cmp_parts(e, &etr, &eti);
         add_instr("%s %s\n", ld, v_table[etr.id].name);
         add_instr("PF_NEG_M %s\n", v_table[eti.id].name);
     }

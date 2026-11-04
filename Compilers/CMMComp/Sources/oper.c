@@ -118,19 +118,10 @@ expr oper_neg(expr e)
         add_instr("F_NEG\n");
     }
 
-    // when it is a comp constant
-    if (e.type == TY_CCONST)
+    // when it is a comp in memory (a constant or a variable)
+    if (place_of(e) == PL_CM)
     {
-        get_cmp_cst(e,&etr,&eti);
-
-        add_instr("%s %s\n", fneg, v_table[etr.id].name);
-        add_instr("PF_NEG_M %s\n", v_table[eti.id].name);
-    }
-
-    // when it is a comp variable in memory
-    if ((e.type == TY_COMP) && (e.id != 0))
-    {
-        get_cmp_ets(e,&etr,&eti);
+        get_cmp_parts(e,&etr,&eti);
 
         add_instr("%s %s\n", fneg, v_table[etr.id].name);
         add_instr("PF_NEG_M %s\n", v_table[eti.id].name);
