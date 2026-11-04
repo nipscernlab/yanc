@@ -1309,8 +1309,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     // instruction: e1 in acc, e2 in memory is `rev e2` (a < b == b > a); e2 in
     // acc, e1 in memory is `op e1`. EQU is one unit for int and float.
     char rev [16]; strcpy(rev, type == 0 ? "GRE" : type == 1 ? "LES" : "EQU");
-    char fop [16]; if (type == 2) strcpy(fop , "EQU"); else sprintf(fop , "F_%s", op );
-    char frev[16]; if (type == 2) strcpy(frev, "EQU"); else sprintf(frev, "F_%s", rev);
+    char fop [20]; if (type == 2) strcpy(fop , "EQU"); else snprintf(fop , sizeof fop , "F_%s", op );
+    char frev[20]; if (type == 2) strcpy(frev, "EQU"); else snprintf(frev, sizeof frev, "F_%s", rev);
 
     // int var with int var: the variable is loaded and the literal stays in
     // memory, so a value the acc already holds is not loaded again
