@@ -62,11 +62,22 @@ void declare_var(int id)
     if (pctx.type_tmp == 3) fprintf(ectx.f_log, "%s %s_i 3\n", func, strip_fn_prefix(v_table[id].name));
 }
 
+// an array has 1 element or more, and fewer than 2^31: its size is no value
+// of the word (Tests/cmm_nubits8), but the compiler counts it in an int
+// (#108 A5, A6). Every size is checked here, before it is multiplied
+static void array_size_check(int id_var, long long n)
+{
+    long long max = 2147483647LL;
+    if (n < 1 || n > max)
+        fatal(MSG_ERR_ARRAY_SIZE, pctx.line_num+1, strip_fn_prefix(v_table[id_var].name), n, max);
+}
+
 // Parse-time half of declare_arr_1d: v_table update + log / info messages.
 // Called immediately so subsequent declarations can resolve this var.
 static void declare_arr_1d_parse(int id_var, int id_arg, int id_fname)
 {
     check_name(id_var, 0);
+    array_size_check(id_var, atoll(v_table[id_arg].name));
 
     v_table[id_var].type       = pctx.type_tmp;
     v_table[id_var].used       = 0;
@@ -84,7 +95,11 @@ static void declare_arr_1d_parse(int id_var, int id_arg, int id_fname)
     }
 
     // for comp, mark the imaginary half as a 1D array too
-    if (type == 3) v_table[get_img_id(id_var)].dims = AR_1D;
+    if (type == 3) {   // its size too: a constant index of either half is checked against it
+        int idi = get_img_id(id_var);
+        v_table[idi].dims = AR_1D;
+        v_table[idi].size = v_table[id_var].size;
+    }
 
     if (id_fname != -1)
         warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, strip_fn_prefix(v_table[id_var].name), pctx.line_num+1);
@@ -253,6 +268,8 @@ void declare_arr_1d(int id_var, int id_arg, int id_fname)
 static void declare_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 {
     check_name(id_var, 0);
+    long long rows = atoll(v_table[id_x].name), cols = atoll(v_table[id_y].name);
+    array_size_check(id_var, rows < 1 || cols < 1 ? 0 : rows * cols);
 
     v_table[id_var].type       = pctx.type_tmp;
     v_table[id_var].used       = 0;
@@ -263,7 +280,12 @@ static void declare_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 
     int type = pctx.type_tmp;
 
-    if (type == 3) v_table[get_img_id(id_var)].dims = AR_2D;  // comp imag also 2D
+    if (type == 3) {   // comp imag also 2D, of the same shape
+        int idi = get_img_id(id_var);
+        v_table[idi].dims = AR_2D;
+        v_table[idi].size = v_table[id_var].size;
+        v_table[idi].cols = v_table[id_var].cols;
+    }
 
     if (id_fname != -1)
         warn(MSG_INFO_ARRAY_FILE_INIT, v_table[id_fname].name, strip_fn_prefix(v_table[id_var].name), pctx.line_num+1);

@@ -1182,8 +1182,12 @@ static expr ast_emit_expr_impl(expr_node *n)
                 typecheck_expr(n->left);
                 typecheck_expr(n->right);
                 if (n->left->type == TY_INT && n->right->type == TY_INT)
-                    return arr_1d2exp_const(n->id, atoi(v_table[n->left ->id].name) * v_table[n->id].cols
-                                                 + atoi(v_table[n->right->id].name), 2);
+                {
+                    int r = atoi(v_table[n->left->id].name), c = atoi(v_table[n->right->id].name);
+                    const_index_check(n->id, r, v_table[n->id].size);
+                    const_index_check(n->id, c, v_table[n->id].cols);
+                    return arr_1d2exp_const(n->id, r * v_table[n->id].cols + c, 2);
+                }
             }
             // a matrix element whose column index is computed: row * row length +
             // column is one int expression, the column computed over the pushed
@@ -1925,8 +1929,10 @@ void stmt_emit(stmt_node *n)
                 typecheck_expr(n->rhs);
                 int rt = n->rhs->type;
                 if (n->idx->type == TY_INT && n->idx2->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
-                    int k = atoi(v_table[n->idx->id].name) * v_table[n->id].cols + atoi(v_table[n->idx2->id].name);
-                    assign_array_const(n->id, k, 2, ast_emit_expr(n->rhs));
+                    int r = atoi(v_table[n->idx->id].name), c = atoi(v_table[n->idx2->id].name);
+                    const_index_check(n->id, r, v_table[n->id].size);
+                    const_index_check(n->id, c, v_table[n->id].cols);
+                    assign_array_const(n->id, r * v_table[n->id].cols + c, 2, ast_emit_expr(n->rhs));
                     break;
                 }
             }

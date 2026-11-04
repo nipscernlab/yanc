@@ -114,7 +114,8 @@ float table[64] "table.txt";      // initialised from a file
   initialiser runs once, before `main`, wherever the file declares the
   global, between functions too, and it may call a function defined above
   it.
-- The size of an array is a number (or a `#define` name for one).
+- The size of an array is a number (or a `#define` name for one), at least
+  1; a matrix has fewer than 2^31 elements.
 - An array is initialised between braces, as in C, or from a file:
 
   ```c
@@ -137,7 +138,9 @@ float table[64] "table.txt";      // initialised from a file
   the memory, when the FPGA is configured: a local array keeps, from one call
   of its function to the next, what the function wrote into it (like a C
   `static`; the compiler warns), and a reset does not bring the values back.
-- `v[k]` reads or writes an element; `M[r][c]` an element of a matrix.
+- `v[k]` reads or writes an element; `M[r][c]` an element of a matrix. A
+  constant index past the end is an error (each index of a matrix on its
+  own); a computed one is not checked, as in C.
 - `v[k)` (a closing parenthesis) reads or writes the element at the
   **bit-reversed** index, the addressing an FFT needs (its width set by
   `#FFTSIZ`).

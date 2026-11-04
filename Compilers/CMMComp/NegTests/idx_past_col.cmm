@@ -1,0 +1,7 @@
+// Negative fixture: m[0][5] of a 3x3 matrix is inside its 9 words, but
+// its column is past the end: each index is checked, not their sum (#108 A6).
+int m[3][3];
+void main()
+{
+    m[0][5] = 1;
+}

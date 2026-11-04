@@ -69,3 +69,10 @@ wave_not_var.cmm|#WAVE takes a variable, and 'f' isn't one
 nubits_range.cmm|#NUBITS 64 is out of range
 fftsiz_range.cmm|#FFTSIZ 40 is out of range
 ketin_long_port.cmm|Error on line 8: there's no input port 1
+idx_past_read.cmm|Error on line 7: the index 4 of 'a' is out of range, 0 to 3.
+idx_past_write.cmm|Error on line 6: the index 9 of 'a' is out of range, 0 to 3.
+idx_past_col.cmm|Error on line 6: the index 5 of 'm' is out of range, 0 to 2.
+idx_past_row_comp.cmm|Error on line 7: the index 2 of 'm' is out of range, 0 to 1.
+size_zero.cmm|Error on line 2: the array 'a' has 0 elements
+size_zero_2d.cmm|Error on line 2: the array 'm' has 0 elements
+size_huge.cmm|Error on line 3: the array 'm' has 4294967296 elements

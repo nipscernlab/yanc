@@ -9,6 +9,7 @@
 #include  <stdio.h>
 
 // local includes
+#include "../Headers/array_index.h"
 #include "../Headers/data_assign.h"
 #include "../Headers/convert.h"
 #include "../Headers/global.h"
@@ -283,6 +284,7 @@ void assign_array_const(int id, int k, int dims, expr e)
         fatal(MSG_ERR_NOT_ARRAY, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     if (v_table[id].dims == AR_2D && dims == 1)   // arr_1d_index refuses it on the general path
         fatal(MSG_ERR_ARRAY_2D, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
+    if (dims == 1) const_index_check(id, k, v_table[id].size);   // a matrix's row and column: the walker
 
     if (v_table[id].type == TY_COMP)
     {

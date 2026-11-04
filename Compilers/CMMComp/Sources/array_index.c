@@ -128,6 +128,13 @@ void arr_2d_index(int id, expr e1, expr e2)
 // half (the comp-in-acc layout). The walker routes 1D-forward reads here, and
 // 2D ones whose two indexes are constant (dims 2: k = row * columns + column,
 // the matrix being stored row by row).
+// a constant index must point inside the array: a read or a store past
+// its end would take another variable's word (#108 A6)
+void const_index_check(int id, int k, int n)
+{
+    if (k < 0 || k >= n) fatal(MSG_ERR_INDEX_RANGE, pctx.line_num+1, k, strip_fn_prefix(v_table[id].name), n - 1);
+}
+
 expr arr_1d2exp_const(int id, int k, int dims)
 {
     // the same checks and use mark as arr_1d2exp
@@ -137,6 +144,7 @@ expr arr_1d2exp_const(int id, int k, int dims)
         fatal(MSG_ERR_NOT_ARRAY_HARSH, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     if (v_table[id].dims == AR_2D && dims == 1)
         fatal(MSG_ERR_ARRAY_2D  , pctx.line_num+1, strip_fn_prefix(v_table[id].name));
+    if (dims == 1) const_index_check(id, k, v_table[id].size);   // a matrix's row and column: the walker
     v_table[id].used = 1;
 
     if (acc_live) add_instr("P_LOD_V %s %d\n", v_table[id].name, k);

@@ -1,0 +1,6 @@
+// Negative fixture: a matrix of no row (#108 A6).
+int m[0][3];
+void main()
+{
+    m[0][0] = 1;
+}

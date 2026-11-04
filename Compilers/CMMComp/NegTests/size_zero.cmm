@@ -1,0 +1,6 @@
+// Negative fixture: an array of no element (#108 A6).
+int a[0];
+void main()
+{
+    a[0] = 1;
+}

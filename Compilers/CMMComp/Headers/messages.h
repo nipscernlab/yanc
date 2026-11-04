@@ -152,6 +152,14 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: '%s' não é array não, abensoado!\n", \
       "Error on line %d: '%s' ain't an array, mate!\n")
 
+#define MSG_ERR_INDEX_RANGE \
+    M("Erro na linha %d: o índice %d de '%s' está fora da faixa, de 0 a %d.\n", \
+      "Error on line %d: the index %d of '%s' is out of range, 0 to %d.\n")
+
+#define MSG_ERR_ARRAY_SIZE \
+    M("Erro na linha %d: o array '%s' tem %lld elementos; ele pode ter de 1 a %lld.\n", \
+      "Error on line %d: the array '%s' has %lld elements; it can have 1 to %lld.\n")
+
 #define MSG_ERR_ARRAY_2D \
     M("Erro na linha %d: array '%s' tem duas dimensões!\n", \
       "Error on line %d: array '%s' has two dimensions!\n")
