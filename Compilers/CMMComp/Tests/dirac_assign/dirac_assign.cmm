@@ -6,13 +6,13 @@
 #NUGAIN 128
 
 // Synthetic fixture: exercises the four assignment-form Dirac rules that
-// no Exemplos/ program uses. The declaration-form variants appear in
-// proc_rls. Not a real DSP example.
+// no example program uses. The declaration-form variants appear in
+// proc_rls. Not a real DSP example. Each is computed by the Dirac loops
 //
-//   a # |M|b>      -> exec_Mv
-//   a # c|b>       -> exec_cv
-//   A # |a><b|     -> exec_vvt
-//   a # c|in(p)>   -> exec_cvin
+//   a # |M|b>      matrix by vector       (dirac.c,
+//   a # c|b>       scalar by vector        docs/design/
+//   A # |a><b|     outer product           dirac-expressions.md)
+//   a # c|in(p)>   scalar by input
 
 float A[4][4];
 float B[4][4];
@@ -28,10 +28,10 @@ void main()
 
     while (1)
     {
-        a # |B|a⟩;           // exec_Mv:    a = B * a
-        a # 2.0|b⟩;          // exec_cv:    a = 2.0 * b
-        A # |a⟩⟨b|;          // exec_vvt:   A = a * b^T
-        a # 0.001|in(0)⟩;    // exec_cvin:  a = 0.001 * input(0)
+        a # |B|a⟩;           // a = B * a
+        a # 2.0|b⟩;          // a = 2.0 * b
+        A # |a⟩⟨b|;          // A = a * b^T
+        a # 0.001|in(0)⟩;    // a = 0.001 * input(0)
         out(0, 1);
     }
 }

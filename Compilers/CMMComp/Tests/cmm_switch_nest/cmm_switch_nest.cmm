@@ -8,7 +8,7 @@
 // Nested switch + break-binding coverage. These two constructs used to be
 // impossible: a switch inside a case was a syntax error, and a `break` inside
 // an `if` inside a case jumped out of the enclosing WHILE instead of the
-// switch. The break-target stack (saltos.c) fixes both -- `break` now binds to
+// switch. The break-target stack (control_flow.c) fixes both -- `break` now binds to
 // the innermost enclosing loop OR switch, and a case body is an ordinary
 // statement list, so a switch nests in a case. See cmm_switch for the flat
 // switch coverage; this fixture proves the nesting and the break binding by
