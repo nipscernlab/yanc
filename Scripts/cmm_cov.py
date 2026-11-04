@@ -99,6 +99,48 @@ def table_cells(body, at):
     return rows
 
 
+# a cell is checked before it is counted: a slip in one shows here, not only
+# as wrong assembly or a fatal error once some test reaches the cell
+TPL_C = open(os.path.join(cmm, "Sources", "tpl.c"), encoding="utf-8").read()
+WARNINGS = set(re.findall(r'\{"(MSG_\w+)",', TPL_C))     # tpl_warn's names
+TOKENS = re.compile(r"\$(ar|ai|br|bi|[abLC1-9])?")
+MEMORY = {"a": ("IM", "FM"), "b": ("IM", "FM"),          # where each name exists:
+          "ar": ("CM",), "ai": ("CM",), "br": ("CM",), "bi": ("CM",)}   # an operand in memory
+
+
+def well_formed(fname, body, tname, start, end):
+    """Stops the script on a cell of table tname that tpl.c would expand
+    wrongly: an unknown $ token, a name of an operand where the operand has
+    none (in the acc, or a comp where a scalar is meant), a $n past the words
+    its use passes, or a ?MSG_ that tpl_warn does not know."""
+    uses = [m for m in re.finditer(r"\b%s\b" % tname, body) if not start <= m.start() < end]
+    if len(uses) != 1:
+        sys.exit("cmm_cov: %s is used %d times; the check of its $n expects one use" % (tname, len(uses)))
+    call = body[uses[0].start():body.find(";", uses[0].start())]
+    words = re.search(r"\(const char \*const\[\]\)\{([^}]*)\}", call)
+    n_words = len(words.group(1).split(",")) if words else 0
+    rows = table_cells(TABLE.search(body, start).group(2), 0)
+    for x, r in enumerate(rows):
+        for y, (tpl, _) in enumerate(r):
+            if tpl is None:
+                continue
+            where = "%s:%s[%sx%s]" % (fname, tname, PLACES[x], PLACES[y])
+            for line in tpl.split("\n"):
+                if line.startswith("?"):
+                    if line[1:] not in WARNINGS:
+                        sys.exit("cmm_cov: %s gives %s, which tpl_warn does not know" % (where, line[1:]))
+                    continue
+                for m in TOKENS.finditer(line):
+                    t = m.group(1)
+                    if t is None:
+                        sys.exit("cmm_cov: %s has a $ tpl.c does not expand: %s" % (where, line))
+                    if t in MEMORY and PLACES[x if t[0] == "a" else y] not in MEMORY[t]:
+                        sys.exit("cmm_cov: %s uses $%s, a name its operand (%s) has not"
+                                 % (where, t, PLACES[x if t[0] == "a" else y]))
+                    if t.isdigit() and int(t) > n_words:
+                        sys.exit("cmm_cov: %s uses $%s, its use passes %d words" % (where, t, n_words))
+
+
 sites = []
 slots = 0          # the cov_hit numbers handed out; a NULL cell takes one but is no site
 src = os.path.join(cmm, "Sources")
@@ -145,6 +187,7 @@ for name in sorted(os.listdir(src)):
                                   tpl.replace("\n", "\\n")[:160]))
         slots += PL_N * PL_N
     for tname, (k0, start, end) in sorted(tables.items(), key=lambda kv: -kv[1][1]):
+        well_formed(name, body, tname, start, end)
         use = re.compile(r"\b%s\b(\[(?:[^\[\]]|\[[^\]]*\])*\])?(\[[^\]]*\])?" % tname)
         parts, last = [], 0
         for m in use.finditer(body):

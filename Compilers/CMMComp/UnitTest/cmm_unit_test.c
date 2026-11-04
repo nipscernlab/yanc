@@ -20,6 +20,7 @@
 #include "../Headers/directives.h"
 #include "../Headers/global.h"
 #include "../Headers/symbols.h"
+#include "../Headers/tpl.h"
 #include "../../common/xstr.h"
 
 static int     failed = 0, checked = 0;
@@ -172,6 +173,100 @@ static void test_acc(void)
     after("LOD z\n");
     emit_peephole_reset();
     check_int("a label forgets", acc_holds("z"), 0);
+
+    after("LOD v\n");
+    acc_now("[k]");
+    after("SET_V w 3\n");
+    check_int("a SET_V drops a key", acc_holds("[k]"), 0);
+    after("LOD v\n");
+    after("SET_V w 3\n");
+    check_int("a SET_V keeps a name", acc_holds("v"), 1);
+
+    after("STI w\n");
+    acc_holds_elem("w[k]");
+    check_int("an element after STI", acc_holds("w[k]"), 1);
+    after("LDI w\n");
+    acc_holds_elem("w[j]");
+    check_int("an element after LDI", acc_holds("w[j]"), 1);
+    check_int("which is all the acc holds", acc_holds("w[k]"), 0);
+    after("ADD 1\n");
+    acc_holds_elem("w[i]");
+    check_int("no element after any other instruction", acc_holds("w[i]"), 0);
+
+    after("LOD n0\n");                           // 32 names at most: the oldest goes
+    for (int i = 1; i <= 32; i++) { char *set = xasprintf("SET n%d\n", i); after(set); free(set); }
+    check_int("the 33rd name drops the oldest", acc_holds("n0"), 0);
+    check_int("and keeps the next one", acc_holds("n1"), 1);
+    check_int("and holds the newest", acc_holds("n32"), 1);
+    emit_peephole_reset();
+}
+
+// the instructions template t gives for e1 and e2 (tpl.c, step P10 of #93)
+static char *run_tpl(const char *t, expr e1, expr e2, const char *const *ops)
+{
+    FILE *keep_asm = ectx.f_asm, *keep_lin = ectx.f_lin;
+    ectx.f_asm = tmpfile(); ectx.f_lin = tmpfile();
+    if (!ectx.f_asm || !ectx.f_lin) { printf("FAIL tpl: no temporary file\n"); exit(1); }
+    emit_peephole_reset();
+    emit_tpl_ops(t, e1, e2, ops);
+    long n = ftell(ectx.f_asm);
+    char *out = xmalloc((size_t)n + 1);
+    rewind(ectx.f_asm);
+    out[fread(out, 1, (size_t)n, ectx.f_asm)] = 0;
+    fclose(ectx.f_asm); fclose(ectx.f_lin);
+    ectx.f_asm = keep_asm; ectx.f_lin = keep_lin;
+    return out;
+}
+
+static void check_tpl(const char *what, const char *t, expr e1, expr e2,
+                      const char *const *ops, const char *want)
+{
+    char *got = run_tpl(t, e1, e2, ops);
+    check_str(what, got, want);
+    free(got);
+}
+
+static void test_tpl(void)
+{
+    pctx.fname = ""; ectx.emit_fname = "";
+    char nx[] = "x", ny[] = "y", nf[] = "f", nc[] = "c", nd[] = "d", nk[] = "1+2i";
+    expr x = expr_make(TY_INT, lex_id(nx)), y = expr_make(TY_INT, lex_id(ny));
+    expr f = expr_make(TY_FLOAT, lex_id(nf));
+    expr c = expr_make(TY_COMP, lex_id(nc)), d = expr_make(TY_COMP, lex_id(nd));
+    add_var(nk);
+    expr k = expr_make(TY_CCONST, find_var(nk));
+    expr ia = expr_make(TY_INT, 0), fa = expr_make(TY_FLOAT, 0), ca = expr_make(TY_COMP, 0);
+
+    check_int("place_of int var",    place_of(x),  PL_IM);
+    check_int("place_of int acc",    place_of(ia), PL_IA);
+    check_int("place_of float var",  place_of(f),  PL_FM);
+    check_int("place_of float acc",  place_of(fa), PL_FA);
+    check_int("place_of comp var",   place_of(c),  PL_CM);
+    check_int("place_of comp const", place_of(k),  PL_CM);
+    check_int("place_of comp acc",   place_of(ca), PL_CA);
+
+    int keep = acc_live;
+    acc_live = 0;
+    check_tpl("tpl $a $b, acc free", "$L $a\nADD $b", x, y, NULL, "LOD x\nADD y\n");
+    check_tpl("tpl $C, acc free",    "$C $a\nF_ADD $b", x, f, NULL, "I2F_M x\nF_ADD f\n");
+    acc_live = 1;
+    check_tpl("tpl $L, acc live",    "$L $a\nADD $b", x, y, NULL, "P_LOD x\nADD y\n");
+    check_tpl("tpl $C, acc live",    "$C $a\nF_ADD $b", x, f, NULL, "P_I2F_M x\nF_ADD f\n");
+    acc_live = 0;
+    check_tpl("tpl comp var parts", "$L $ar\nF_ADD $br\nP_LOD $ai\nF_ADD $bi", c, d, NULL,
+              "LOD c\nF_ADD d\nP_LOD c_i\nF_ADD d_i\n");
+    check_tpl("tpl comp const parts", "F_ADD $br\nP_LOD $bi", fa, k, NULL, "F_ADD 1.0\nP_LOD 2.0\n");
+    const char *const words[] = {"W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9"};
+    check_tpl("tpl $1 .. $9", "$1 $2\n$9 $5", ia, ia, words, "W1 W2\nW9 W5\n");
+    check_tpl("tpl NULL emits nothing", NULL, x, y, NULL, "");
+    check_tpl("tpl a ?MSG_ line is no instruction", "?MSG_WARN_IDX1_FLOAT\nADD $b", ia, y, NULL, "ADD y\n");
+    acc_live = keep;
+
+    int stopped = 0;
+    fatal_hook(back_here);
+    if (setjmp(on_fatal) == 0) free(run_tpl("?MSG_NO_SUCH_WARNING", ia, ia, NULL)); else stopped = 1;
+    fatal_hook(NULL);
+    check_int("tpl an unknown ?MSG_ stops", stopped, 1);
 }
 
 int main(void)
@@ -184,6 +279,7 @@ int main(void)
     test_int_to_bin();
     test_lex_id();
     test_acc();
+    test_tpl();
     printf("cmm_unit_test: %d checks, %d failed\n", checked, failed);
     return failed ? 1 : 0;
 }

@@ -20,6 +20,15 @@ tags consumed by Aurora.
   `add_instr`, are sites too (all reached). The script also holds `verified.txt` to the part of its
   rule a script can see: a test listed there has a `golden_sim/` and is
   simulated, or is a processor of a project pass.
+- **The operator tables are checked before a test reaches them** (#108).
+  `Scripts/cmm_cov.py` stops on a cell with a `$` that `tpl.c` does not
+  expand, a name of an operand where the operand has none (`$a` of a value
+  in the acc, `$br` of a scalar), a `$n` past the words its use passes, or
+  a `?MSG_` that `tpl_warn` does not know. The unit test calls `tpl.c`
+  directly (each `$` form, `$L`/`$C` with the acc free and live, the parts
+  of a comp variable and constant, `$1`..`$9`, a warning line) and covers
+  the acc's `SET_V`, its element after `STI`/`LDI` and the limit of 32
+  names (78 checks).
 - **The regression holds the variables the waveform shows.** In every
   simulated C± test (Scripts/wave_map.py --vcd), an int or float variable
   of the waveform changes only in the cycle whose instruction is a `SET` or
