@@ -412,6 +412,9 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **A local is reached only by its own name** (#108 A10). A local `y` of
+  `f` is `f_y` in the `.asm`, and `main` could read and write it as
+  `f_y`; that name is now undeclared, as in C.
 - **A repeated `case` and a second `default` are errors** (#108 A9), as
   in C. The second `case 1:` could never run, and of two defaults the
   second won without a word.

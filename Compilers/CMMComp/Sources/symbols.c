@@ -229,6 +229,14 @@ void check_name(int id, int is_fun)
     free(me);
 }
 
+// a declared local of some function: in the .asm it is <function>_<name>,
+// a name the program does not have (#108 A10)
+static int is_local_row(int id)
+{
+    int t = v_table[id].type, f = v_table[id].owner;
+    return t >= TY_INT && t <= TY_IMAG && f >= 0 && f < v_count && v_table[f].type >= TY_FVOID;
+}
+
 // used when the lexer finds an ID
 int lex_id(char *text)
 {
@@ -239,7 +247,7 @@ int lex_id(char *text)
         fatal(MSG_ERR_NAME_TOO_LONG, pctx.line_num+1, CMM_NAME_MAX);
 
     int id = find_var(text);                                      // first check whether there is a global variable
-    if (id != -1) return id;
+    if (id != -1 && !is_local_row(id)) return id;                 // f_y is no name for f's local y
 
     char *var_name = strcmp(pctx.fname, "") != 0                       // otherwise, prepend the current function name
                    ? xasprintf("%s_%s", pctx.fname, text) : xstrdup(text);
@@ -255,6 +263,7 @@ int lex_id(char *text)
 int find_id(const char *text)
 {
     int k = find_var(text);
+    if (k != -1 && is_local_row(k)) k = -1;                       // as lex_id: f_y is no name
     if (k != -1 || strcmp(pctx.fname, "") == 0) return k;
 
     char *var_name = xasprintf("%s_%s", pctx.fname, text);

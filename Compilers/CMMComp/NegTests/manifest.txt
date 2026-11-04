@@ -81,3 +81,4 @@ char_quote.cmm|Error on line 7: the character ''' is not part of C±.
 char_utf8.cmm|Error on line 6: the character 'é' is not part of C±.
 case_twice.cmm|Error on line 10: case 1 appears twice in this switch.
 default_twice.cmm|Error on line 10: this switch already has a default.
+local_by_asm_name.cmm|Error on line 12: I'd really appreciate it if you declared the variable 'f_y'.
