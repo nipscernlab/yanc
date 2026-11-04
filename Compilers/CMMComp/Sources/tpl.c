@@ -39,27 +39,23 @@ int place_of(expr e)
         case TY_INT:    return mem ? PL_IM : PL_IA;
         case TY_FLOAT:  return mem ? PL_FM : PL_FA;
         case TY_CCONST: return PL_CM;
-        default:        return mem ? PL_CM : PL_CA;   // TY_COMP
+        case TY_COMP:   return mem ? PL_CM : PL_CA;
+        default:        fatal(MSG_ERR_INTERNAL, "place_of", pctx.line_num+1);   // no value: a misrouted operand
     }
 }
 
-// the warnings a template may give, by name: each takes the line only
+// the warnings a template may give, by name: each takes the line only. Not
+// static: M() picks the language when it runs
 static void tpl_warn(const char *name)
 {
-    static const struct { const char *name; int id; } known[] = {
-        {"MSG_WARN_IDX1_FLOAT", 1}, {"MSG_WARN_IDX2_FLOAT", 2}, {"MSG_WARN_IDXS_FLOAT", 3},
-        {"MSG_WARN_IDXS_MESS", 4}, {"MSG_WARN_IDX_COMP_GRAB", 5}, {"MSG_WARN_IDX_COMP_ROUND", 6},
-        {"MSG_WARN_IDX_FLOAT", 7}, {"MSG_WARN_IDX_FLOAT_HEAVY", 8},
+    const struct { const char *name, *msg; } known[] = {
+        {"MSG_WARN_IDX1_FLOAT", MSG_WARN_IDX1_FLOAT}, {"MSG_WARN_IDX2_FLOAT", MSG_WARN_IDX2_FLOAT},
+        {"MSG_WARN_IDXS_FLOAT", MSG_WARN_IDXS_FLOAT}, {"MSG_WARN_IDXS_MESS", MSG_WARN_IDXS_MESS},
+        {"MSG_WARN_IDX_COMP_GRAB", MSG_WARN_IDX_COMP_GRAB},
     };
-    int id = 0;
     for (size_t k = 0; k < sizeof known / sizeof known[0]; k++)
-        if (strcmp(known[k].name, name) == 0) id = known[k].id;
-    const char *msg = id == 1 ? MSG_WARN_IDX1_FLOAT    : id == 2 ? MSG_WARN_IDX2_FLOAT
-                    : id == 3 ? MSG_WARN_IDXS_FLOAT    : id == 4 ? MSG_WARN_IDXS_MESS
-                    : id == 5 ? MSG_WARN_IDX_COMP_GRAB : id == 6 ? MSG_WARN_IDX_COMP_ROUND
-                    : id == 7 ? MSG_WARN_IDX_FLOAT     : id == 8 ? MSG_WARN_IDX_FLOAT_HEAVY : NULL;
-    if (!msg) fatal(MSG_ERR_INTERNAL, name, pctx.line_num+1);   // a template of the compiler's own, not the user's
-    warn(msg, pctx.line_num+1);
+        if (strcmp(known[k].name, name) == 0) {warn(known[k].msg, pctx.line_num+1); return;}
+    fatal(MSG_ERR_INTERNAL, name, pctx.line_num+1);   // a template of the compiler's own, not the user's
 }
 
 // emits template t for the operands e1 and e2 (see above), with the
