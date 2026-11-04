@@ -699,6 +699,12 @@ tags consumed by Aurora.
 - **The shared assembly passes cut lines longer than 4,096 characters**;
   they read lines of any length now (a long `#arrayd`).
 
+### Removed
+- **`Compilers/CMMComp/Tests/PulseSim/`** (#108): a top level of `proc_sim`
+  with a random generator, which no script ran and whose testbench had no
+  expected output. `proc_sim` itself is still simulated against its
+  `golden_sim`.
+
 ## [v9.1] – 2026-10-20
 
 A keyboard and a screen, and text on them as on a PC. `myVGAText` joins
