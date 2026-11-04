@@ -57,6 +57,12 @@ expr builtin_fin(int id)
     return expr_make(TY_FLOAT, 0);
 }
 
+// An operand reaches a built-in from the walker (ast_emit_expr): a variable
+// went through id2exp, which refuses one not declared and an array without
+// its index, and a literal through num2exp. So a built-in checks only what
+// is its own (a comp where it takes none, a port's range), not those two
+// (#108 C3).
+
 // output ex: out(0,x);
 void builtin_out(int id, expr e)
 {
@@ -64,14 +70,8 @@ void builtin_out(int id, expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
     // check whether it is comp
     if (e.type > TY_FLOAT) fatal(MSG_ERR_PICK_COMP_INFO, pctx.line_num+1);
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check port range
     if (atoi(v_table[id].name) >= cfg.nuioou) fatal(MSG_ERR_NO_OUT_PORT, pctx.line_num+1, v_table[id].name);
@@ -151,14 +151,8 @@ void link_sync_emit(void)
 // toma(k, x); -- the word goes as it is (int or float bits): no conversion
 void builtin_toma(expr e, int k)
 {
-    // check whether e was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
     // a comp is two words: the link carries one
     if (e.type > TY_FLOAT) fatal(MSG_ERR_PICK_COMP_INFO, pctx.line_num+1);
-
-    // an array needs its index
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     if (e.id != 0) v_table[e.id].used = 1;
 
@@ -210,14 +204,8 @@ void builtin_fout(int id, expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
     // check whether it is comp
     if (e.type > TY_FLOAT) fatal(MSG_ERR_PICK_COMP_INFO, pctx.line_num+1);
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check port range
     if (atoi(v_table[id].name) >= cfg.nuioou) fatal(MSG_ERR_NO_OUT_PORT, pctx.line_num+1, v_table[id].name);
@@ -273,18 +261,6 @@ expr builtin_sign(expr e1, expr e2)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether et1 was declared
-    if (e1.id != 0 && v_table[e1.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e1.id].name));
-    
-    // check whether et2 was declared
-    if (e2.id != 0 && v_table[e2.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e2.id].name));
-
-    // check whether et1 is a variable
-    if (e1.id != 0 && v_table[e1.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e1.id].name));
-
-    // check whether et2 is a variable
-    if (e2.id != 0 && v_table[e2.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e2.id].name));
 
     // check whether there is a comp
     if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT)) fatal(MSG_ERR_SIGN_COMPLEX, pctx.line_num+1);
@@ -422,12 +398,6 @@ expr builtin_abs(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
@@ -487,12 +457,6 @@ expr builtin_pst(expr e)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
@@ -554,12 +518,6 @@ expr builtin_norm(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
     // check whether it is int
     if (e.type != TY_INT) fatal(MSG_ERR_NORM_NON_INT, pctx.line_num+1);
 
@@ -601,12 +559,6 @@ void builtin_copy(expr e, int id2)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether the source expression was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether the source is a plain variable (not an array)
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether id2 was declared
     if (v_table[id2].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[id2].name));
@@ -650,12 +602,6 @@ expr builtin_sqrt(expr e)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -746,12 +692,6 @@ expr builtin_exp(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
     // a complex argument is now valid -- handled below, after the checks
 
     // ------------------------------------------------------------------------
@@ -831,12 +771,6 @@ expr builtin_log(expr e)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -928,14 +862,6 @@ expr builtin_pow(expr ex, expr ey)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether the operands were declared
-    if (ex.id != 0 && v_table[ex.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[ex.id].name));
-    if (ey.id != 0 && v_table[ey.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[ey.id].name));
-
-    // check whether the operands are plain variables (not arrays)
-    if (ex.id != 0 && v_table[ex.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[ex.id].name));
-    if (ey.id != 0 && v_table[ey.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[ey.id].name));
 
     // a complex base or exponent is not supported
     if (ex.type > TY_FLOAT || ey.type > TY_FLOAT) fatal(MSG_ERR_POW_COMPLEX, pctx.line_num+1);
@@ -1098,12 +1024,6 @@ expr builtin_atan(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
     // a complex argument is now valid -- handled below, after the checks
 
     // ------------------------------------------------------------------------
@@ -1213,12 +1133,6 @@ expr builtin_sin(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
     // a complex argument is now valid -- handled below, after the checks
 
     // ------------------------------------------------------------------------
@@ -1301,12 +1215,6 @@ expr builtin_tan(expr e)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1398,12 +1306,6 @@ expr builtin_cos(expr e)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // a complex argument is now valid -- handled below, after the checks
 
@@ -1498,8 +1400,6 @@ expr builtin_cosh(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, pctx.line_num+1, "cosh");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1551,8 +1451,6 @@ expr builtin_sinh(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, pctx.line_num+1, "sinh");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1604,8 +1502,6 @@ expr builtin_tanh(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, pctx.line_num+1, "tanh");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1667,8 +1563,6 @@ expr builtin_floor(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, pctx.line_num+1, "floor");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1727,8 +1621,6 @@ expr builtin_ceil(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, pctx.line_num+1, "ceil");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1786,8 +1678,6 @@ expr builtin_round(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
     if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, pctx.line_num+1, "round");
 
     if (e.id != 0) v_table[e.id].used = 1;
@@ -1840,12 +1730,6 @@ expr builtin_real(expr e)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < TY_COMP) fatal(MSG_ERR_REAL_ARG_COMP, pctx.line_num+1);
@@ -1902,12 +1786,6 @@ expr builtin_imag(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
     // check whether it is comp
     if (e.type < TY_COMP) fatal(MSG_ERR_IMAG_ARG_COMP, pctx.line_num+1);
 
@@ -1963,12 +1841,6 @@ expr builtin_mod2(expr e)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < TY_COMP) fatal(MSG_ERR_MOD2_ARG_COMP, pctx.line_num+1);
@@ -2028,12 +1900,6 @@ expr builtin_fase(expr e)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
 
     // check whether it is comp
     if (e.type < TY_COMP) fatal(MSG_ERR_FASE_ARG_COMP, pctx.line_num+1);
@@ -2147,18 +2013,6 @@ expr builtin_comp(expr er, expr ei)
     // ------------------------------------------------------------------------
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    // check whether etr was declared
-    if (er.id != 0 && v_table[er.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[er.id].name));
-
-    // check whether eti was declared
-    if (ei.id != 0 && v_table[ei.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[ei.id].name));
-
-    // check whether etr is a variable
-    if (er.id != 0 && v_table[er.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[er.id].name));
-
-    // check whether et is a variable
-    if (ei.id != 0 && v_table[ei.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[ei.id].name));
 
     // check whether it is comp
     if (er.type > TY_FLOAT || ei.type > TY_FLOAT) fatal(MSG_ERR_COMPLEX_OF_COMPLEX, pctx.line_num+1);
@@ -2306,12 +2160,6 @@ expr builtin_conj(expr e)
     // consistency check ------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // check whether et was declared
-    if (e.id != 0 && v_table[e.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
-    // check whether et is a variable
-    if (e.id != 0 && v_table[e.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[e.id].name));
-
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
     // ------------------------------------------------------------------------
@@ -2411,21 +2259,14 @@ void builtin_shift(int ida, expr eb, int idc, int later)
     // check whether ida was declared
     if (v_table[ida].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[ida].name));
 
-    // check whether etb was declared
-    if (eb.id != 0 && v_table[eb.id].type == TY_NONE) fatal(MSG_ERR_DECL_FIRST, pctx.line_num+1, strip_fn_prefix(v_table[eb.id].name));
-
     // check whether idc equals ida
     if (idc != ida) fatal(MSG_ERR_SHIFT_VEC_SELF, pctx.line_num+1);
     
     // check that it is not comp
     if (v_table[ida].type == TY_COMP || eb.type == TY_COMP || eb.type == TY_CCONST) fatal(MSG_ERR_NOT_IMPL_COMPLEX, pctx.line_num+1);
 
-    
     // check whether ida is a vector
     if (v_table[ida].dims != AR_1D) fatal(MSG_ERR_NOT_A_VECTOR, pctx.line_num+1, strip_fn_prefix(v_table[ida].name));
-
-    // check whether etb is a variable
-    if (eb.id != 0 && v_table[eb.id].dims > AR_NONE) fatal(MSG_ERR_WRONG_USE, pctx.line_num+1, strip_fn_prefix(v_table[eb.id].name));
 
     // ------------------------------------------------------------------------
     // update variable status -------------------------------------------------
