@@ -42,9 +42,12 @@
 #      in Compilers/CMMComp/DiracCases/cases.tsv through cmmcomp, and
 #      Scripts/dirac_ref.py and Scripts/rls_ref.py hold the sim goldens of
 #      dirac_shapes and proc_rls to values computed apart from YANC.
-#      Scripts/cmm_cov.sh: no more of cmmcomp's assembly-emitting calls may
+#      Scripts/cmm_cov.sh: no more of cmmcomp's sites that emit assembly
+#      (its calls that write it, and the cells of its operator tables) may
 #      go unreached by the tests, or unchecked against an independent
 #      reference, than Compilers/CMMComp/Tests/cov_baseline.txt allows.
+#      Then Compilers/CMMComp/UnitTest/cmm_unit_test.c calls cmmcomp's
+#      helpers one by one.
 #      Scripts/cov_tests.py --check: the generated tests are what it computes.
 #      Scripts/stack_balance.py: no statement of a test leaves a word on the
 #      data stack.
@@ -57,19 +60,24 @@
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
 #      malformed program with a clean non-zero exit and the expected diagnostic
 #      -- never a crash, never a silent accept, and no output left behind.
-#      Error-path coverage the golden phases don't give. (Runs with the CMM
-#      phase; skipped by --cpp-only.)
+#      Error-path coverage the golden phases don't give. NegTests/nowarn.txt
+#      lists valid programs that must compile without (or with) a warning,
+#      and the float-format phase gives three to asmcomp; a file of
+#      NegTests/ in none of these lists fails, since it would never run.
+#      (Runs with the CMM phase; skipped by --cpp-only.)
 #      The CPP negative phase does the same for cppcomp with
 #      Compilers/CPPComp/NegTests/manifest.txt (skipped by --cmm-only).
 #
-# Build phase builds the 4 binaries it runs once (cmmcomp, cppcomp, asmcomp, yanc), all
-# phases reuse them.
+# Build phase builds the binaries once (cmmcomp, cppcomp, asmcomp, yanc and
+# cmmcomp's unit test), all phases reuse them.
 #
-# Usage (from repo root, in msys2/git-bash on Windows):
+# Usage (from the repo root; on Windows, in msys2/git-bash):
 #   Scripts/regress.sh                check against goldens (exit 0 = pass)
 #   Scripts/regress.sh --update       regenerate goldens (review diff!)
 #   Scripts/regress.sh --update-map   rewrite only the golden_map.txt (review diff!)
-#   Scripts/regress.sh --update-size  ratchet down Compilers/CMMComp/Tests/size_baseline.txt
+#   Scripts/regress.sh --update-size  rewrite Compilers/CMMComp/Tests/size_baseline.txt with
+#                                     today's counts; a count that grew is written
+#                                     too, so the PR must say which and why
 #   Scripts/regress.sh --skip-build   reuse binaries already in .smoke/bin
 #   Scripts/regress.sh --no-sim       skip every simulation step
 #   Scripts/regress.sh --cmm-only     skip the CPP phase
@@ -295,7 +303,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
 
     # Wipe stale binaries first: a silently-failing gcc must NOT leave the
     # previous build in place to fool the regress into testing dead code.
-    rm -f "$CMMCOMP" "$CPPC" "$ASMCOMP" "$YANC"
+    rm -f "$CMMCOMP" "$CPPC" "$ASMCOMP" "$YANC" "$CMM_UNIT"
 
     # Per-binary `set -e` so a build error aborts the script. Without it,
     # a gcc -Werror failure would print to the terminal but the regress
@@ -1767,10 +1775,12 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     echo "==> CMM negative phase (error reporting)"
     neg_dir="$CMM_ROOT/NegTests"
     neg_work="$SCRATCH/work_neg"
+    neg_listed=("manifest.txt" "nowarn.txt")    # every file of NegTests/ must be run (4b2 checks)
     while IFS='|' read -r fixture expect; do
         fixture="${fixture%$'\r'}"; expect="${expect%$'\r'}"   # tolerate CRLF manifest
         case "$fixture" in ''|\#*) continue ;; esac            # skip blanks/comments
         name="neg:${fixture%.cmm}"
+        neg_listed+=("$fixture")
         if [ ! -f "$neg_dir/$fixture" ]; then
             echo "FAIL ($name): fixture missing ($neg_dir/$fixture)"
             fail=$((fail+1)); failed_names+=("$name"); continue
@@ -1805,6 +1815,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fixture="${fixture%$'\r'}"; forbid="${forbid%$'\r'}"
         case "$fixture" in ''|\#*) continue ;; esac
         name="warn:${fixture%.cmm}"
+        neg_listed+=("$fixture")
         want=0; case "$forbid" in +*) want=1; forbid="${forbid#+}" ;; esac
         rm -rf "$neg_work"; mkdir -p "$neg_work"
         cp "$neg_dir/$fixture" "$neg_work/p.cmm"
@@ -1837,6 +1848,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     neg_work="$SCRATCH/work_neg"
     for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short" "fpfmt_wide|is past 32"; do
         fixture="${fe%%|*}"; expect="${fe#*|}"; name="asm:$fixture"
+        neg_listed+=("$fixture.cmm" "$fixture.asm")
         rm -rf "$neg_work"; mkdir -p "$neg_work/p"
         if [ -f "$CMM_ROOT/NegTests/$fixture.asm" ]; then     # written by hand: asmcomp alone
             cp "$CMM_ROOT/NegTests/$fixture.asm" "$neg_work/p/"
@@ -1864,6 +1876,15 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
     done
     rm -rf "$neg_work"
+    # a fixture in none of the lists above would never run
+    for f in "$CMM_ROOT"/NegTests/*; do
+        f=$(basename "$f"); listed=0
+        for l in "${neg_listed[@]}"; do [ "$l" = "$f" ] && { listed=1; break; }; done
+        if [ $listed -eq 0 ]; then
+            echo "FAIL (neg:$f): in NegTests/ but in no list, so it never runs"
+            fail=$((fail+1)); failed_names+=("neg:$f")
+        fi
+    done
 fi
 
 # ---- 4c. CPP negative phase (error reporting) ------------------------------

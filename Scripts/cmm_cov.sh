@@ -3,23 +3,30 @@
 # which ones they check for being right.
 #
 # Every add_instr( / add_sinst( call in Compilers/CMMComp/Sources emits a
-# piece of assembly. Scripts/cmm_cov.py numbers the calls in a copy of the
-# sources; this script builds that copy and compiles every
-# Compilers/CMMComp/Tests/<t>/<t>.cmm that has a golden.asm, checking that
-# the numbered copy still gives the golden (the numbering changes nothing).
-# Then, for each call:
+# piece of assembly, so does every mac_cat( (a float routine of Includes/
+# appended whole) and the fprintf of the Dirac temporaries' #array line,
+# and so does every non-NULL cell of an operator table
+# (the templates of oper.c and array_index.c, which all go out through the
+# one add_instr in tpl.c). These are the sites. Scripts/cmm_cov.py numbers
+# them in a copy of the sources; this script builds that copy and compiles
+# every Compilers/CMMComp/Tests/<t>/<t>.cmm that has a golden.asm, checking
+# that the numbered copy still gives the golden (the numbering changes
+# nothing). Then, for each site:
 #   reached   it runs for some test with a golden.asm: a change to the
 #             assembly it emits shows in the regression, but nothing says
 #             the assembly computes the right thing;
 #   verified  it runs for some test listed in Compilers/CMMComp/Tests/verified.txt:
 #             a test the regression simulates and whose expected output was
 #             computed apart from YANC (a Python reference, values worked out
-#             by hand), not recorded from YANC's own simulation.
+#             by hand), not recorded from YANC's own simulation. The script
+#             holds verified.txt to the part of that rule it can see: each
+#             test listed has a golden_sim and is not in regress.sh's
+#             SIM_SKIP, or is a processor of a project pass of regress.sh.
 #
 #   bash Scripts/cmm_cov.sh           the counts, per file
-#   bash Scripts/cmm_cov.sh --list    and every call not verified, marked
+#   bash Scripts/cmm_cov.sh --list    and every site not verified, marked
 #                                     "unreached" or "reached"
-#   bash Scripts/cmm_cov.sh --check   exit 1 when more calls are unreached or
+#   bash Scripts/cmm_cov.sh --check   exit 1 when more sites are unreached or
 #                                     unverified than Compilers/CMMComp/Tests/cov_baseline.txt
 #                                     allows (Scripts/regress.sh runs this)
 # Needs gcc, bison, flex and python3.
@@ -56,9 +63,9 @@ for d in "$ROOT"/Compilers/CMMComp/Tests/*/; do
 done
 [ $bad -eq 0 ] || exit 1
 
-python3 - "$T" "$MODE" "$ROOT/Compilers/CMMComp/Tests" <<'EOF'
-import collections, os, sys
-T, mode, tests = sys.argv[1], sys.argv[2], sys.argv[3]
+python3 - "$T" "$MODE" "$ROOT/Compilers/CMMComp/Tests" "$ROOT/Scripts/regress.sh" <<'EOF'
+import collections, os, re, sys
+T, mode, tests, regress = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 hits = {}
 for t in os.listdir(T + "/hits"):
     hits[t] = set(int(x) for x in open(T + "/hits/" + t) if x.strip())
@@ -71,17 +78,37 @@ for l in open(tests + "/verified.txt", encoding="utf-8"):
     if name not in hits:
         sys.exit("cmm_cov: verified.txt names '%s', which is not a test with a golden.asm" % name)
     verified.append(name)
+# the part of verified.txt's rule a script can check: simulated against a
+# golden_sim, or a processor of a project pass
+reg = open(regress, encoding="utf-8").read()
+skip_m = re.search(r"^SIM_SKIP=\((.*?)\)", reg, re.S | re.M)
+if not skip_m:
+    sys.exit("cmm_cov: no SIM_SKIP list in regress.sh")
+sim_skip = set(re.findall(r'"([^"]+)"', skip_m.group(1)))
+code = [l for l in re.sub(r"^\w+_SKIP=\(.*?\)", "", reg, flags=re.S | re.M).split("\n")
+        if not l.lstrip().startswith("#")]      # the skip lists and comments are no project pass
+for name in verified:
+    if name in sim_skip:
+        if not any(re.search(r"\b%s\b" % re.escape(name), l) for l in code):
+            sys.exit("cmm_cov: verified.txt names '%s', which regress.sh neither simulates "
+                     "(SIM_SKIP) nor runs in a project pass" % name)
+    else:
+        gs = os.path.join(tests, name, "golden_sim")
+        if not (os.path.isdir(gs) and os.listdir(gs)):
+            sys.exit("cmm_cov: verified.txt names '%s', which has no golden_sim/" % name)
 reached = set().union(*hits.values()) if hits else set()
 checked = set().union(*(hits[t] for t in verified)) if verified else set()
 sites = [l.rstrip("\n").split("\t", 4) for l in open(T + "/Compilers/CMMComp/sites.tsv", encoding="utf-8")]
 unreached = [s for s in sites if int(s[0]) not in reached]
 unverified = [s for s in sites if int(s[0]) not in checked]
-print("cmm_cov: %d tests (%d verified), %d calls emit assembly: %d reached by no test, "
-      "%d not verified" % (len(hits), len(verified), len(sites), len(unreached), len(unverified)))
+cells = sum(1 for s in sites if "[" in s[3])
+print("cmm_cov: %d tests (%d verified), %d sites emit assembly (%d calls, %d table cells): "
+      "%d reached by no test, %d not verified"
+      % (len(hits), len(verified), len(sites), len(sites) - cells, cells, len(unreached), len(unverified)))
 tot = collections.Counter(s[1] for s in sites)
 nr = collections.Counter(s[1] for s in unreached)
 nv = collections.Counter(s[1] for s in unverified)
-print("  %-16s %6s %10s %11s" % ("file", "calls", "unreached", "unverified"))
+print("  %-16s %6s %10s %11s" % ("file", "sites", "unreached", "unverified"))
 for f in sorted(tot, key=lambda f: -nv[f]):
     print("  %-16s %6d %10d %11d" % (f, tot[f], nr[f], nv[f]))
 if mode == "--list":
@@ -98,11 +125,11 @@ if mode == "--check":
     bad = False
     for key, now in (("unreached", len(unreached)), ("unverified", len(unverified))):
         if now > base[key]:
-            print("cmm_cov: %d calls %s, the baseline allows %d: a new emitter needs a test "
+            print("cmm_cov: %d sites %s, the baseline allows %d: a new emitter needs a test "
                   "(bash Scripts/cmm_cov.sh --list)" % (now, key, base[key]))
             bad = True
         elif now < base[key]:
-            print("cmm_cov: %d calls %s, %d fewer than the baseline: lower it in "
+            print("cmm_cov: %d sites %s, %d fewer than the baseline: lower it in "
                   "Compilers/CMMComp/Tests/cov_baseline.txt" % (now, key, base[key] - now))
     sys.exit(1 if bad else 0)
 EOF

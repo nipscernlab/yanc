@@ -7,10 +7,18 @@ verified (Compilers/CMMComp/Tests/verified.txt).
 
 The values are small integers, or floats whose truncation is plain, so the
 expected output does not depend on the float format's rounding. out() writes
-an int, fout() a float truncated to an int.
+an int, fout() a float truncated to an int. The exception is cmm_cov_lib:
+the float routines (sqrt, exp, log, the trigonometric ones...) are not exact
+in the SAPHO float, so their expected values are Python's within a
+tolerance, and their golden_sim is a simulation's, accepted only within it.
 
 usage: python3 Scripts/cov_tests.py [repo-root] --write   write the tests and their golden_sim
-       python3 Scripts/cov_tests.py [repo-root] --check   the golden_sim of each is what it computes
+                                                          (cmm_cov_lib's .cmm only)
+       python3 Scripts/cov_tests.py [repo-root] --check   the golden_sim of each is what it
+                                                          computes (within the tolerance)
+       python3 Scripts/cov_tests.py [repo-root] --record <test> <output_0.txt>
+                                                          a tolerant test's golden_sim from a
+                                                          simulation, if it agrees with Python
 """
 import os
 import sys

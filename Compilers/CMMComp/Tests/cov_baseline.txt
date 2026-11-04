@@ -1,4 +1,5 @@
-# Of cmmcomp's calls that emit assembly (add_instr, add_sinst), how many no
+# Of cmmcomp's sites that emit assembly (the add_instr, add_sinst and
+# mac_cat calls, and the non-NULL cells of the operator tables), how many no
 # test with a golden.asm reaches, and how many no test in verified.txt
 # reaches (Scripts/cmm_cov.sh). Scripts/regress.sh fails when either grows.
 # Lower them as tests are added (issue #69); never raise them to make the
