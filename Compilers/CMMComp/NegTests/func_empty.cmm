@@ -1,0 +1,7 @@
+// An empty function body is an empty block, as the manual says: void f()
+// {} and an empty main compile (#108 A12).
+void f() {}
+void main()
+{
+    f();
+}

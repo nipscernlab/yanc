@@ -412,6 +412,9 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **A function may have an empty body** (#108 A12): `void f() {}` and an
+  empty `main` were a syntax error, though the manual says `{ }` is a
+  statement. A non-void one still needs its `return`.
 - **A local is reached only by its own name** (#108 A10). A local `y` of
   `f` is `f_y` in the `.asm`, and `main` could read and write it as
   `f_y`; that name is now undeclared, as in C.

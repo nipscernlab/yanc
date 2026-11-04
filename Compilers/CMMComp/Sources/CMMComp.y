@@ -254,6 +254,7 @@ IID    : ID                           {declare_var   ($1         );}
 // Function declaration -------------------------------------------------------
 
 funcao : func_intro par_list ')' '{' stmt_list '}' {func_ret($1);} // $1 = func_intro's ID; walker emits everything
+       | func_intro par_list ')' '{'           '}' {func_ret($1);} // an empty body, as the empty block (#108 A12)
 
 // State-setup phase of a function declaration. Pulled into its own named
 // non-terminal so the action is a clean end-action - no mid-rule sitting
