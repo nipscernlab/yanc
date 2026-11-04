@@ -185,7 +185,7 @@ expr arr_1d2exp(int id, expr e, int fft)
 
     // left int/float ---------------------------------------------------------
 
-    if (type < 3)
+    if (type < TY_COMP)
     {
         load_index(e, acc_live, MSG_WARN_IDX_FLOAT_HEAVY);
         add_instr("%s %s\n", ldv, v_table[id].name);
@@ -270,7 +270,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     // an int column index in the acc does not reach here: the walker reads the
     // element through one int expression, row * row length + column (ast.c)
 
-    if (type < 3)
+    if (type < TY_COMP)
     {
         char *op1 = xasprintf("%d", v_table[id].cols);
         emit_tpl_ops(el2r_tpl[place_of(e1)][place_of(e2)], e1, e2, (const char *const[]){op1, v_table[id].name, ldv, ldi, f2i});

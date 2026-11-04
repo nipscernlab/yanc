@@ -387,8 +387,8 @@ sw_body       : /* empty */
               | sw_body default_label
               | sw_body stmt_full
 
-case_label    : CASE INUM ':' {case_test(inum_word($2),1);}
-              | CASE FNUM ':' {case_test($2,2);}
+case_label    : CASE INUM ':' {case_test(inum_word($2),TY_INT);}
+              | CASE FNUM ':' {case_test($2,TY_FLOAT);}
 
 default_label : DEFAULT   ':' {defaut_test();}
 

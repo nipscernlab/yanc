@@ -211,7 +211,7 @@ void check_name(int id, int is_fun)
     if (is_fun) {free(me); return;}
 
     // a comp `z` also owns `z_i`, its imaginary part, and the other way round
-    if (pctx.type_tmp == 3)
+    if (pctx.type_tmp == TY_COMP)
     {
         char *nm = xasprintf("%s_i", as);
         int idi = find_var(nm);

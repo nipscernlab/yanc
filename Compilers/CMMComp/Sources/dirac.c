@@ -205,7 +205,7 @@ static expr_node *elem_of(expr_node *ref, dl_pos r, dl_pos c)
     else {ix_add(&ix, r, cols); ix_add(&ix, c, 1);}
 
     int type = ref->dl ? ctx_type : v_table[arr].type;
-    if (type > 2) die(MSG_ERR_NOT_IMPL_COMPLEX, cur_line);
+    if (type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, cur_line);
     v_table[arr].used = 1;
 
     // the first cell of an array of the program is the array's own name: a
@@ -248,7 +248,7 @@ static expr_node *scalar_of(expr_node *n)
 {
     typecheck_expr(n);
     if (n->type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, cur_line);
-    int conv = (n->type == TY_INT && ctx_type == 2);
+    int conv = (n->type == TY_INT && ctx_type == TY_FLOAT);
 
     if (n->kind == EXPR_LITERAL && !conv) return expr_lit(n->type, n->id);
     if (n->kind == EXPR_VAR     && !conv) {v_table[n->id].used = 1; return expr_var(n->type, n->id);}
@@ -262,10 +262,10 @@ static expr_node *scalar_of(expr_node *n)
 
     // computed before the loops into a variable of the compiler, once
     for (int j = 0; j < n_done; j++)
-        if (done_n[j] == n) return expr_var(conv ? 2 : n->type, done_v[j] & ~(1 << 30));
+        if (done_n[j] == n) return expr_var(conv ? TY_FLOAT : n->type, done_v[j] & ~(1 << 30));
     for (int j = 0; j < n_hoist_pre; j++)
-        if (*hoist_pre[j] == n) return expr_var(conv ? 2 : n->type, hoist_pre_v[j] & ~(1 << 30));
-    int t = conv ? 2 : n->type;
+        if (*hoist_pre[j] == n) return expr_var(conv ? TY_FLOAT : n->type, hoist_pre_v[j] & ~(1 << 30));
+    int t = conv ? TY_FLOAT : n->type;
     int v = scalar_var(t);
     expr_node **slot = xmalloc(sizeof *slot);
     *slot = n;
@@ -304,7 +304,7 @@ static expr_node *build(expr_node *n, dl_pos r, dl_pos c, int top)
             die(MSG_ERR_DIRAC_NOT_YET, cur_line);   // |I| only on its own (dl_eye)
             break;
         case EXPR_DIRAC_IN:
-            return expr_stdlib(ctx_type == 2 ? OP_STD_FIN : OP_STD_IN, n->id, NULL, NULL);
+            return expr_stdlib(ctx_type == TY_FLOAT ? OP_STD_FIN : OP_STD_IN, n->id, NULL, NULL);
         case EXPR_BINOP:
             if (is_num(n)) break;
             return build_op(n->op, n->left, r, c, n->right, r, c);
@@ -709,7 +709,7 @@ static int tmp_block(int words, int line)
         v_table[tmp_id].dims = AR_1D;
         v_table[tmp_id].used = 1;
     }
-    if (ctx_type == 2) tmp_type = 2;
+    if (ctx_type == TY_FLOAT) tmp_type = 2;
     v_table[tmp_id].type = tmp_type;
     int at = tmp_at;
     tmp_at += words;
@@ -1029,7 +1029,7 @@ void dirac_loops_out(int port, expr_node *r, int fout, int line)
 {
     int save = ctx_type;
     if (r->type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, line);
-    ctx_type = (r->type == TY_INT || r->type == TY_FLOAT) ? r->type : (fout ? 2 : 1);
+    ctx_type = (r->type == TY_INT || r->type == TY_FLOAT) ? r->type : (fout ? TY_FLOAT : TY_INT);
     int rows = r->rows, cols = r->cols;
     if (rows == DIRAC_ANY || cols == DIRAC_ANY) die(MSG_ERR_DIRAC_NOT_YET, line);   // |0⟩, |in(p)⟩ alone: no size
     dl_dst d = {fout ? 2 : 1, 0, port, 0, ctx_type, 0};
@@ -1053,7 +1053,7 @@ expr dirac_number(expr_node *n)
     int *save_hv = dup_mem(hoist_pre_v, n_hoist_pre * sizeof *hoist_pre_v);
 
     if (n->type > TY_FLOAT) die(MSG_ERR_NOT_IMPL_COMPLEX, n->line);
-    ctx_type = n->type ? n->type : 1;
+    ctx_type = n->type ? n->type : TY_INT;
     reassoc(n);
     int save_flat = flat_mode, save_dst = cur_dst;
     cur_dst = -1;

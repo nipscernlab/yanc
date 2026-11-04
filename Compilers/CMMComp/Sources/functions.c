@@ -122,21 +122,21 @@ void par_check(expr e, int k)
 
     // original is int and call is int var ------------------------------------
 
-    if ((t_fun == 1) && (t_cal == 1) && (e.id != 0))
+    if ((t_fun == TY_INT) && (t_cal == TY_INT) && (e.id != 0))
     {
         add_instr("%s %s\n", ld, v_table[e.id].name);
     }
 
     // original is int and call is int acc ------------------------------------
 
-    if ((t_fun == 1) && (t_cal == 1) && (e.id == 0))
+    if ((t_fun == TY_INT) && (t_cal == TY_INT) && (e.id == 0))
     {
         // nothing to do
     }
 
     // original is int and call is float var ----------------------------------
 
-    if ((t_fun == 1) && (t_cal == 2) && (e.id != 0))
+    if ((t_fun == TY_INT) && (t_cal == TY_FLOAT) && (e.id != 0))
     {
         warn(MSG_WARN_CONV_F2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -145,7 +145,7 @@ void par_check(expr e, int k)
 
     // original is int and call is float acc ----------------------------------
 
-    if ((t_fun == 1) && (t_cal == 2) && (e.id == 0))
+    if ((t_fun == TY_INT) && (t_cal == TY_FLOAT) && (e.id == 0))
     {
         warn(MSG_WARN_CONV_F2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -154,7 +154,7 @@ void par_check(expr e, int k)
 
     // original is int and call is comp const ---------------------------------
 
-    if ((t_fun == 1) && (t_cal == 5))
+    if ((t_fun == TY_INT) && (t_cal == TY_CCONST))
     {
         warn(MSG_WARN_CONV_C2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -165,7 +165,7 @@ void par_check(expr e, int k)
 
     // original is int and call is comp var -----------------------------------
 
-    if ((t_fun == 1) && (t_cal == 3) && (e.id != 0))
+    if ((t_fun == TY_INT) && (t_cal == TY_COMP) && (e.id != 0))
     {
         warn(MSG_WARN_CONV_C2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -174,7 +174,7 @@ void par_check(expr e, int k)
 
     // original is int and call is comp acc -----------------------------------
 
-    if ((t_fun == 1) && (t_cal == 3) && (e.id == 0))
+    if ((t_fun == TY_INT) && (t_cal == TY_COMP) && (e.id == 0))
     {
         warn(MSG_WARN_CONV_C2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -184,7 +184,7 @@ void par_check(expr e, int k)
 
     // original is float and call is int var ----------------------------------
 
-    if ((t_fun == 2) && (t_cal == 1) && (e.id != 0))
+    if ((t_fun == TY_FLOAT) && (t_cal == TY_INT) && (e.id != 0))
     {
         warn(MSG_WARN_CONV_I2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -193,7 +193,7 @@ void par_check(expr e, int k)
 
     // original is float and call is int acc ----------------------------------
 
-    if ((t_fun == 2) && (t_cal == 1) && (e.id == 0))
+    if ((t_fun == TY_FLOAT) && (t_cal == TY_INT) && (e.id == 0))
     {
         warn(MSG_WARN_CONV_I2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -202,21 +202,21 @@ void par_check(expr e, int k)
 
     // original is float and call is float var --------------------------------
 
-    if ((t_fun == 2) && (t_cal == 2) && (e.id != 0))
+    if ((t_fun == TY_FLOAT) && (t_cal == TY_FLOAT) && (e.id != 0))
     {
         add_instr("%s %s\n", ld, v_table[e.id].name);
     }
 
     // original is float and call is float acc --------------------------------
 
-    if ((t_fun == 2) && (t_cal == 2) && (e.id == 0))
+    if ((t_fun == TY_FLOAT) && (t_cal == TY_FLOAT) && (e.id == 0))
     {
         // nothing to do
     }
 
     // original is float and call is comp const -------------------------------
 
-    if ((t_fun == 2) && (t_cal == 5))
+    if ((t_fun == TY_FLOAT) && (t_cal == TY_CCONST))
     {
         warn(MSG_WARN_CONV_C2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -227,7 +227,7 @@ void par_check(expr e, int k)
 
     // original is float and call is comp var ---------------------------------
 
-    if ((t_fun == 2) && (t_cal == 3) && (e.id != 0))
+    if ((t_fun == TY_FLOAT) && (t_cal == TY_COMP) && (e.id != 0))
     {
         warn(MSG_WARN_CONV_C2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -236,7 +236,7 @@ void par_check(expr e, int k)
 
     // original is float and call is comp acc ---------------------------------
 
-    if ((t_fun == 2) && (t_cal == 3) && (e.id == 0))
+    if ((t_fun == TY_FLOAT) && (t_cal == TY_COMP) && (e.id == 0))
     {
         warn(MSG_WARN_CONV_C2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -245,7 +245,7 @@ void par_check(expr e, int k)
 
     // original is comp and call is int var -----------------------------------
 
-    if ((t_fun == 3) && (t_cal == 1) && (e.id != 0))
+    if ((t_fun == TY_COMP) && (t_cal == TY_INT) && (e.id != 0))
     {
         warn(MSG_WARN_CONV_I2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -255,7 +255,7 @@ void par_check(expr e, int k)
 
     // original is comp and call is int acc -----------------------------------
 
-    if ((t_fun == 3) && (t_cal == 1) && (e.id == 0))
+    if ((t_fun == TY_COMP) && (t_cal == TY_INT) && (e.id == 0))
     {
         warn(MSG_WARN_CONV_I2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -265,7 +265,7 @@ void par_check(expr e, int k)
 
     // original is comp and call is float var ---------------------------------
 
-    if ((t_fun == 3) && (t_cal == 2) && (e.id != 0))
+    if ((t_fun == TY_COMP) && (t_cal == TY_FLOAT) && (e.id != 0))
     {
         warn(MSG_WARN_CONV_F2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -275,7 +275,7 @@ void par_check(expr e, int k)
 
     // original is comp and call is float acc ---------------------------------
 
-    if ((t_fun == 3) && (t_cal == 2) && (e.id == 0))
+    if ((t_fun == TY_COMP) && (t_cal == TY_FLOAT) && (e.id == 0))
     {
         warn(MSG_WARN_CONV_F2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
 
@@ -284,7 +284,7 @@ void par_check(expr e, int k)
 
     // original is comp and call is comp const --------------------------------
 
-    if ((t_fun == 3) && (t_cal == 5))
+    if ((t_fun == TY_COMP) && (t_cal == TY_CCONST))
     {
         get_cmp_cst(e,&etr,&eti);
 
@@ -294,7 +294,7 @@ void par_check(expr e, int k)
 
     // original is comp and call is comp var ----------------------------------
 
-    if ((t_fun == 3) && (t_cal == 3) && (e.id != 0))
+    if ((t_fun == TY_COMP) && (t_cal == TY_COMP) && (e.id != 0))
     {
         get_cmp_ets(e,&etr,&eti); // gets the extended IDs of the right side in memory
 
@@ -304,7 +304,7 @@ void par_check(expr e, int k)
 
     // original is comp and call is comp acc ----------------------------------
 
-    if ((t_fun == 3) && (t_cal == 3) && (e.id == 0))
+    if ((t_fun == TY_COMP) && (t_cal == TY_COMP) && (e.id == 0))
     {
         // nothing to do
     }
@@ -368,19 +368,19 @@ void declare_ret(expr e, int ret)
     int left_type = v_table[pctx.fun_parse].type;
 
     // int with int var
-    if ((left_type == 7) && (e.type == TY_INT) && (e.id!=0))
+    if ((left_type == TY_FINT) && (e.type == TY_INT) && (e.id!=0))
     {
         add_instr("LOD %s\n", v_table[e.id].name);
     }
 
     // int with int acc
-    if ((left_type == 7) && (e.type == TY_INT) && (e.id==0))
+    if ((left_type == TY_FINT) && (e.type == TY_INT) && (e.id==0))
     {
         // nothing to do
     }
 
     // int with float var
-    if ((left_type == 7) && (e.type == TY_FLOAT) && (e.id!=0))
+    if ((left_type == TY_FINT) && (e.type == TY_FLOAT) && (e.id!=0))
     {
         warn(MSG_WARN_CONV_F2I_RETURN, pctx.line_num+1, v_table[pctx.fun_parse].name);
 
@@ -388,14 +388,14 @@ void declare_ret(expr e, int ret)
     }
 
     // int with float acc
-    if ((left_type == 7) && (e.type == TY_FLOAT) && (e.id==0))
+    if ((left_type == TY_FINT) && (e.type == TY_FLOAT) && (e.id==0))
     {
         warn(MSG_WARN_CONV_F2I_RETURN, pctx.line_num+1, v_table[pctx.fun_parse].name);
         add_instr("F2I\n");
     }
 
     // int with comp const
-    if ((left_type == 7) && (e.type == TY_CCONST))
+    if ((left_type == TY_FINT) && (e.type == TY_CCONST))
     {
         warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
@@ -405,7 +405,7 @@ void declare_ret(expr e, int ret)
     }
 
     // int with comp var
-    if ((left_type == 7) && (e.type == TY_COMP) && (e.id!=0))
+    if ((left_type == TY_FINT) && (e.type == TY_COMP) && (e.id!=0))
     {
         warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
@@ -415,7 +415,7 @@ void declare_ret(expr e, int ret)
     }
 
     // int with comp acc
-    if ((left_type == 7) && (e.type == TY_COMP) && (e.id==0))
+    if ((left_type == TY_FINT) && (e.type == TY_COMP) && (e.id==0))
     {
         warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
 
@@ -424,7 +424,7 @@ void declare_ret(expr e, int ret)
     }
 
     // float with int var
-    if ((left_type == 8) && (e.type == TY_INT) && (e.id!=0))
+    if ((left_type == TY_FFLOAT) && (e.type == TY_INT) && (e.id!=0))
     {
         warn(MSG_WARN_RET_FLOAT_RECV_INT, pctx.line_num+1);
 
@@ -432,7 +432,7 @@ void declare_ret(expr e, int ret)
     }
 
     // float with int acc
-    if ((left_type == 8) && (e.type == TY_INT) && (e.id==0))
+    if ((left_type == TY_FFLOAT) && (e.type == TY_INT) && (e.id==0))
     {
         warn(MSG_WARN_RET_FLOAT_RECV_INT, pctx.line_num+1);
 
@@ -440,19 +440,19 @@ void declare_ret(expr e, int ret)
     }
 
     // float with float var
-    if ((left_type == 8) && (e.type == TY_FLOAT) && (e.id!=0))
+    if ((left_type == TY_FFLOAT) && (e.type == TY_FLOAT) && (e.id!=0))
     {
         add_instr("LOD %s\n", v_table[e.id].name);
     }
 
     // float with float acc
-    if ((left_type == 8) && (e.type == TY_FLOAT) && (e.id==0))
+    if ((left_type == TY_FFLOAT) && (e.type == TY_FLOAT) && (e.id==0))
     {
         // nothing to do
     }
 
     // float with comp const
-    if ((left_type == 8) && (e.type == TY_CCONST))
+    if ((left_type == TY_FFLOAT) && (e.type == TY_CCONST))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
@@ -462,7 +462,7 @@ void declare_ret(expr e, int ret)
     }
 
     // float with comp var
-    if ((left_type == 8) && (e.type == TY_COMP) && (e.id!=0))
+    if ((left_type == TY_FFLOAT) && (e.type == TY_COMP) && (e.id!=0))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
@@ -472,7 +472,7 @@ void declare_ret(expr e, int ret)
     }
 
     // float with comp acc
-    if ((left_type == 8) && (e.type == TY_COMP) && (e.id==0))
+    if ((left_type == TY_FFLOAT) && (e.type == TY_COMP) && (e.id==0))
     {
         warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
 
@@ -480,7 +480,7 @@ void declare_ret(expr e, int ret)
     }
 
     // comp with int var
-    if ((left_type == 9) && (e.type == TY_INT) && (e.id!=0))
+    if ((left_type == TY_FCOMP) && (e.type == TY_INT) && (e.id!=0))
     {
         warn(MSG_WARN_RET_COMP_RECV_INT, pctx.line_num+1);
 
@@ -489,7 +489,7 @@ void declare_ret(expr e, int ret)
     }
 
     // comp with int acc
-    if ((left_type == 9) && (e.type == TY_INT) && (e.id==0))
+    if ((left_type == TY_FCOMP) && (e.type == TY_INT) && (e.id==0))
     {
         warn(MSG_WARN_RET_COMP_RECV_INT, pctx.line_num+1);
 
@@ -498,7 +498,7 @@ void declare_ret(expr e, int ret)
     }
 
     // comp with float var
-    if ((left_type == 9) && (e.type == TY_FLOAT) && (e.id!=0))
+    if ((left_type == TY_FCOMP) && (e.type == TY_FLOAT) && (e.id!=0))
     {
         warn(MSG_WARN_RET_COMP_RECV_FLOAT, pctx.line_num+1);
 
@@ -507,7 +507,7 @@ void declare_ret(expr e, int ret)
     }
 
     // comp with float acc
-    if ((left_type == 9) && (e.type == TY_FLOAT) && (e.id==0))
+    if ((left_type == TY_FCOMP) && (e.type == TY_FLOAT) && (e.id==0))
     {
         warn(MSG_WARN_RET_COMP_RECV_FLOAT, pctx.line_num+1);
 
@@ -515,7 +515,7 @@ void declare_ret(expr e, int ret)
     }
 
     // comp with comp const
-    if ((left_type == 9) && (e.type == TY_CCONST))
+    if ((left_type == TY_FCOMP) && (e.type == TY_CCONST))
     {
         get_cmp_cst(e,&etr,&eti);
 
@@ -524,7 +524,7 @@ void declare_ret(expr e, int ret)
     }
 
     // comp with comp var
-    if ((left_type == 9) && (e.type == TY_COMP) && (e.id!=0))
+    if ((left_type == TY_FCOMP) && (e.type == TY_COMP) && (e.id!=0))
     {
         get_cmp_ets(e,&etr,&eti);
 
@@ -533,7 +533,7 @@ void declare_ret(expr e, int ret)
     }
 
     // comp with comp acc
-    if ((left_type == 9) && (e.type == TY_COMP) && (e.id==0))
+    if ((left_type == TY_FCOMP) && (e.type == TY_COMP) && (e.id==0))
     {
         // nothing to do
     }

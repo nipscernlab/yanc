@@ -543,7 +543,7 @@ void typecheck_expr(expr_node *n)
                 // these accept comp: comp argument -> comp result, real arg -> float
                 case OP_STD_SQRT: case OP_STD_ATAN:
                 case OP_STD_SIN:  case OP_STD_COS:  case OP_STD_TAN:
-                case OP_STD_EXP:  case OP_STD_LOG:               n->type = (lt > 2) ? 3 : 2;  break;
+                case OP_STD_EXP:  case OP_STD_LOG:               n->type = (lt > TY_FLOAT) ? TY_COMP : TY_FLOAT;  break;
                 // real-only (reject comp) -> always float
                 case OP_STD_COSH: case OP_STD_SINH: case OP_STD_TANH:
                 case OP_STD_POW:
@@ -833,7 +833,7 @@ static expr comp_partwise_emit(expr_node *n, int from, int to)
         for (int k = 0; k < part_n; k++) free(part_made[k]);
     }
     acc_live = 1;
-    return expr_make(from == to ? 2 : 3, 0);
+    return expr_make(from == to ? TY_FLOAT : TY_COMP, 0);
 }
 
 // Constant folding. const_eval recursively evaluates a subtree as a
@@ -1011,13 +1011,13 @@ static expr ast_emit_expr_impl(expr_node *n)
                     long long m = 1LL << cfg.nubits, w = ((cval % m) + m) % m;
                     if (w >= m / 2) w -= m;
                     cval = w;
-                    if (cval == -(m / 2)) return oper_neg(num2exp(inum_min_id(), 1));
+                    if (cval == -(m / 2)) return oper_neg(num2exp(inum_min_id(), TY_INT));
                     if (cval >= 0) {
                         snprintf(buf, sizeof buf, "%lld", cval);
-                        return num2exp(lex_inum(buf), 1);
+                        return num2exp(lex_inum(buf), TY_INT);
                     }
                     snprintf(buf, sizeof buf, "%lld", -cval);
-                    return oper_neg(num2exp(lex_inum(buf), 1));
+                    return oper_neg(num2exp(lex_inum(buf), TY_INT));
                 }
             }
 
@@ -1174,7 +1174,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                         for (int b = 0; b < cfg.fftsiz; b++) if (k & (1 << b)) low |= 1 << (cfg.fftsiz - 1 - b);
                         k = (k & ~((1 << cfg.fftsiz) - 1)) | low;
                     }
-                    return arr_1d2exp_const(n->id, k, 1);
+                    return arr_1d2exp_const(n->id, k, AR_1D);
                 }
             }
             // two constant indexes of a matrix: one constant offset, row by row
@@ -1188,7 +1188,7 @@ static expr ast_emit_expr_impl(expr_node *n)
                     int r = atoi(v_table[n->left->id].name), c = atoi(v_table[n->right->id].name);
                     const_index_check(n->id, r, v_table[n->id].size);
                     const_index_check(n->id, c, v_table[n->id].cols);
-                    return arr_1d2exp_const(n->id, r * v_table[n->id].cols + c, 2);
+                    return arr_1d2exp_const(n->id, r * v_table[n->id].cols + c, AR_2D);
                 }
             }
             // a matrix element whose column index is computed: row * row length +
@@ -1259,8 +1259,8 @@ static expr ast_emit_expr_impl(expr_node *n)
                 case OP_STD_FIN:  return builtin_fin(n->id);
                 // inside an expression, an index or an argument (the whole
                 // right-hand side of an assignment is taken by STMT_ASSIGN)
-                case OP_STD_CADE:  return builtin_cade_expr(1, n->id);
-                case OP_STD_FCADE: return builtin_cade_expr(2, n->id);
+                case OP_STD_CADE:  return builtin_cade_expr(TY_INT, n->id);
+                case OP_STD_FCADE: return builtin_cade_expr(TY_FLOAT, n->id);
                 case OP_STD_PST:  { expr a = ast_emit_expr(n->left); return builtin_pst (a); }
                 case OP_STD_ABS:  { expr a = ast_emit_expr(n->left); return builtin_abs (a); }
                 case OP_STD_SIGN: { expr a = ast_emit_expr(n->left); expr b = ast_emit_expr(n->right); return builtin_sign(a, b); }
@@ -1915,9 +1915,9 @@ void stmt_emit(stmt_node *n)
                 typecheck_expr(n->idx);
                 typecheck_expr(n->rhs);
                 int rt = n->rhs->type;
-                if (n->idx->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
+                if (n->idx->type == TY_INT && (rt == at || (at == TY_COMP && rt == TY_CCONST))) {
                     int k = atoi(v_table[n->idx->id].name);
-                    assign_array_const(n->id, k, 1, ast_emit_expr(n->rhs));
+                    assign_array_const(n->id, k, AR_1D, ast_emit_expr(n->rhs));
                     break;
                 }
             }
@@ -1930,11 +1930,11 @@ void stmt_emit(stmt_node *n)
                 typecheck_expr(n->idx2);
                 typecheck_expr(n->rhs);
                 int rt = n->rhs->type;
-                if (n->idx->type == TY_INT && n->idx2->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
+                if (n->idx->type == TY_INT && n->idx2->type == TY_INT && (rt == at || (at == TY_COMP && rt == TY_CCONST))) {
                     int r = atoi(v_table[n->idx->id].name), c = atoi(v_table[n->idx2->id].name);
                     const_index_check(n->id, r, v_table[n->id].size);
                     const_index_check(n->id, c, v_table[n->id].cols);
-                    assign_array_const(n->id, r * v_table[n->id].cols + c, 2, ast_emit_expr(n->rhs));
+                    assign_array_const(n->id, r * v_table[n->id].cols + c, AR_2D, ast_emit_expr(n->rhs));
                     break;
                 }
             }
@@ -2184,7 +2184,7 @@ void stmt_emit(stmt_node *n)
             // take this path for any index
             int int_cases = 1;
             for (int i = 0; int_cases && n->body && i < n->body->kids_n; i++)
-                if (n->body->kids[i]->kind == STMT_CASE_LABEL && n->body->kids[i]->id4 != 1)
+                if (n->body->kids[i]->kind == STMT_CASE_LABEL && n->body->kids[i]->id4 != TY_INT)
                     int_cases = 0;
             if (int_cases)
             {

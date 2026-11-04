@@ -75,7 +75,7 @@ expr oper_neg(expr e)
             char *txt = nm[0] == '-' ? xstrdup(nm + 1) : xasprintf("-%s", nm);
             int id = lex_fnum(txt);
             free(txt);
-            return num2exp(id, 2);
+            return num2exp(id, TY_FLOAT);
         }
     }
     if (e.type == TY_CCONST)
@@ -91,7 +91,7 @@ expr oper_neg(expr e)
             free(txt);
         }
         free(re); free(im);
-        if (id >= 0) return num2exp(id, 5);
+        if (id >= 0) return num2exp(id, TY_CCONST);
     }
 
     // when it is an int variable in memory
@@ -205,7 +205,7 @@ expr oper_sub(expr e1, expr e2)
                  zi ? "+" : (im[0] == '-' ? "+" : "-"), zi ? "0.0" : im + (im[0] == '-'));
         int id = lex_cnum(txt);
         free(txt); free(re); free(im);
-        return oper_add(e1, num2exp(id, 5));
+        return oper_add(e1, num2exp(id, TY_CCONST));
     }
 
     char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
@@ -354,14 +354,14 @@ expr oper_div(expr e1, expr e2)
             char t[40]; snprintf(t, sizeof t, "%.9g", r);
             if (!strpbrk(t, ".eE")) strcat(t, ".0");
             ectx.fnum_quiet = 1; int rid = lex_fnum(t); ectx.fnum_quiet = 0;   // the user did not write it
-            int ex; if (fabs(frexp(c, &ex)) == 0.5) return oper_mult(e1, num2exp(rid, 2));
+            int ex; if (fabs(frexp(c, &ex)) == 0.5) return oper_mult(e1, num2exp(rid, TY_FLOAT));
 
             int acc0 = acc_live;
             add_sinst(0, "#DIVK\n");
             divk_inner = 1; oper_div(e1, e2); divk_inner = 0;
             add_sinst(0, "#MULK\n");
             acc_live = acc0;
-            expr m = oper_mult(e1, num2exp(rid, 2));
+            expr m = oper_mult(e1, num2exp(rid, TY_FLOAT));
             add_sinst(0, "#ENDK\n");
             return m;
         }

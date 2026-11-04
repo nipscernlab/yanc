@@ -44,7 +44,7 @@ void declare_var(int id)
 
     // declare the imaginary part if comp -------------------------------------
 
-    if (pctx.type_tmp > 2)
+    if (pctx.type_tmp > TY_FLOAT)
     {
         int idi              = get_img_id(id);
         v_table[idi].type          = TY_IMAG; // use type 4 for the imaginary part
@@ -59,7 +59,7 @@ void declare_var(int id)
     // save the data in the log file
     fprintf(ectx.f_log, "%s %s %d\n", func, strip_fn_prefix(v_table[id].name), pctx.type_tmp);
     // if comp, save the imaginary part too
-    if (pctx.type_tmp == 3) fprintf(ectx.f_log, "%s %s_i 3\n", func, strip_fn_prefix(v_table[id].name));
+    if (pctx.type_tmp == TY_COMP) fprintf(ectx.f_log, "%s %s_i 3\n", func, strip_fn_prefix(v_table[id].name));
 }
 
 // an array has 1 element or more, and fewer than 2^31: its size is no value
@@ -91,11 +91,11 @@ static void declare_arr_1d_parse(int id_var, int id_arg, int id_fname)
     if (sim_arr == 1)
     {
                        fprintf(ectx.f_log, "%s %s   %d %s\n", func, strip_fn_prefix(v_table[id_var].name), pctx.type_tmp, v_table[id_arg].name);
-        if (type == 3) fprintf(ectx.f_log, "%s %s_i %d %s\n", func, strip_fn_prefix(v_table[id_var].name), pctx.type_tmp, v_table[id_arg].name);
+        if (type == TY_COMP) fprintf(ectx.f_log, "%s %s_i %d %s\n", func, strip_fn_prefix(v_table[id_var].name), pctx.type_tmp, v_table[id_arg].name);
     }
 
     // for comp, mark the imaginary half as a 1D array too
-    if (type == 3) {   // its size too: a constant index of either half is checked against it
+    if (type == TY_COMP) {   // its size too: a constant index of either half is checked against it
         int idi = get_img_id(id_var);
         v_table[idi].dims = AR_1D;
         v_table[idi].size = v_table[id_var].size;
@@ -156,7 +156,7 @@ static void ini_split(const ini_val *v, char **re, char **im)
 static void ini_take(int id_var, int size, int cols)
 {
     int type = v_table[id_var].type;
-    const char *tname = (type == 1) ? "int" : (type == 2) ? "float" : "comp";
+    const char *tname = (type == TY_INT) ? "int" : (type == TY_FLOAT) ? "float" : "comp";
     int maxpos = -1;
     for (int k = 0; k < ini_n; k++)
     {
@@ -183,7 +183,7 @@ static void ini_take(int id_var, int size, int cols)
         int pos = (ini_rows > 0) ? ini_v[k].row * cols + ini_v[k].col : k;
         ini_split(&ini_v[k], &re[pos], &im[pos]);   // a literal and its sign
     }
-    const char *zero = (type == 1) ? "0" : "0.0";
+    const char *zero = (type == TY_INT) ? "0" : "0.0";
     for (int p = 0; p < n; p++) { lr += strlen(re[p] ? re[p] : zero) + 1; li += strlen(im[p] ? im[p] : "0.0") + 1; }
 
     ini_arr *a = xcalloc(1, sizeof(ini_arr));
@@ -215,7 +215,7 @@ static int ini_emit(int id_var, int size)
     while (a && a->id != id_var) a = a->next;
     if (!a) return 0;
     int type = v_table[id_var].type;
-    if (type == 3)
+    if (type == TY_COMP)
     {
         add_sinst(0, "#arrayd %s 3 %d %d%s\n", v_table[id_var].name,             size, a->n, a->re);
         add_sinst(0, "#arrayd %s 4 %d %d%s\n", sym(get_img_id(id_var))->name, size, a->n, a->im);
@@ -231,17 +231,17 @@ void declare_arr_1d_emit(int id_var, int id_arg, int id_fname)
 
     if (ini_emit(id_var, atoi(v_table[id_arg].name))) return;
 
-    if (type == 1)
+    if (type == TY_INT)
     {
         if (id_fname == -1) add_sinst(0, "#array %s 1 %s\n",     v_table[id_var].name, v_table[id_arg].name);
         else                add_sinst(0, "#arrays %s 1 %s %s\n", v_table[id_var].name, v_table[id_arg].name, v_table[id_fname].name);
     }
-    else if (type == 2)
+    else if (type == TY_FLOAT)
     {
         if (id_fname == -1) add_sinst(0, "#array %s 2 %s\n",     v_table[id_var].name, v_table[id_arg].name);
         else                add_sinst(0, "#arrays %s 2 %s %s\n", v_table[id_var].name, v_table[id_arg].name, v_table[id_fname].name);
     }
-    else if (type == 3)
+    else if (type == TY_COMP)
     {
         int idi = get_img_id(id_var);
         if (id_fname == -1)
@@ -280,7 +280,7 @@ static void declare_arr_2d_parse(int id_var, int id_x, int id_y, int id_fname)
 
     int type = pctx.type_tmp;
 
-    if (type == 3) {   // comp imag also 2D, of the same shape
+    if (type == TY_COMP) {   // comp imag also 2D, of the same shape
         int idi = get_img_id(id_var);
         v_table[idi].dims = AR_2D;
         v_table[idi].size = v_table[id_var].size;
@@ -302,17 +302,17 @@ void declare_arr_2d_emit(int id_var, int id_x, int id_y, int id_fname)
 
     if (ini_emit(id_var, size)) return;
 
-    if (type == 1)
+    if (type == TY_INT)
     {
         if (id_fname == -1) add_sinst(0, "#array %s 1 %d\n",     v_table[id_var].name, size);
         else                add_sinst(0, "#arrays %s 1 %d %s\n", v_table[id_var].name, size, v_table[id_fname].name);
     }
-    else if (type == 2)
+    else if (type == TY_FLOAT)
     {
         if (id_fname == -1) add_sinst(0, "#array %s 2 %d\n",     v_table[id_var].name, size);
         else                add_sinst(0, "#arrays %s 2 %d %s\n", v_table[id_var].name, size, v_table[id_fname].name);
     }
-    else if (type == 3)
+    else if (type == TY_COMP)
     {
         int idi = get_img_id(id_var);
         if (id_fname == -1)
