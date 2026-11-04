@@ -55,6 +55,10 @@ echo "============================================================"
 PKG=""; PKG_INSTALL=""
 if   command -v apt-get >/dev/null 2>&1; then PKG=apt;    PKG_INSTALL="sudo apt-get install -y"
 elif command -v dnf     >/dev/null 2>&1; then PKG=dnf;    PKG_INSTALL="sudo dnf install -y"
+elif command -v pacman  >/dev/null 2>&1 && [ -n "${MINGW_PACKAGE_PREFIX:-}" ]; then
+    # MSYS2 (UCRT64, MINGW64, CLANG64...): no sudo, and the native tools carry
+    # the environment's prefix, e.g. mingw-w64-ucrt-x86_64-iverilog (#117)
+    PKG=msys2; PKG_INSTALL="pacman -S --needed --noconfirm"
 elif command -v pacman  >/dev/null 2>&1; then PKG=pacman; PKG_INSTALL="sudo pacman -S --needed --noconfirm"
 elif command -v zypper  >/dev/null 2>&1; then PKG=zypper; PKG_INSTALL="sudo zypper install -y"
 fi
@@ -62,6 +66,14 @@ if [ -n "$PKG" ]; then echo "package manager: $PKG"; else echo "package manager:
 
 # Map a logical tool name to the package providing it, for the detected manager.
 pkg_name() {
+    if [ "$PKG" = msys2 ]; then
+        case "$1" in
+            gcc|iverilog|verilator|python) echo "$MINGW_PACKAGE_PREFIX-$1" ;;
+            make|bison|flex|diffutils)     echo "$1" ;;
+            gtkwave) ;;                    # the nipscernlab build: a zip, docs/install.md
+        esac
+        return
+    fi
     case "$1" in
         gcc)       case "$PKG" in apt) echo build-essential ;; *) echo gcc ;; esac ;;
         make)      case "$PKG" in apt) echo build-essential ;; *) echo make ;; esac ;;
@@ -70,6 +82,8 @@ pkg_name() {
         iverilog)  echo iverilog ;;
         verilator) echo verilator ;;
         gtkwave)   echo gtkwave ;;
+        diffutils) echo diffutils ;;
+        python)    case "$PKG" in apt|dnf|zypper) echo python3 ;; *) echo python ;; esac ;;
     esac
 }
 
@@ -111,24 +125,29 @@ if [ -x "$YANC_BIN/cmmcomp" ] && [ -x "$YANC_BIN/asmcomp" ] && \
 fi
 
 # C++ toolchain sanity (Verilator needs a working libstdc++) ------------------
-# MSYS2's mingw-w64-x86_64-gcc 16.1.0-5 shipped a broken libstdc++ whose
-# std::string move-constructor symbol is missing, so Verilator's verilated.cpp
-# fails to link. Probe it functionally (catches the real defect, not just one
-# version string) and warn loudly if broken. Non-fatal: the Icarus flow is fine.
+# MSYS2's gcc 16 (16.1 and 16.2, MINGW64 and UCRT64) ships a libstdc++ whose
+# std::string move constructor is missing, both from the DLL and from
+# libstdc++.a; it shows at -Os, which Verilator's build uses. With
+# -D_GLIBCXX_ASSERTIONS the compiler instantiates the constructor itself, and
+# the runners pass that to Verilator under MSYS2 (Scripts/env.sh,
+# YANC_VL_CFLAGS; #117). Probe without it, then with it. Non-fatal: the
+# Icarus flow does not need g++.
 check_cxx_toolchain() {
     command -v g++ >/dev/null 2>&1 || return 0
     local t; t="${TMPDIR:-/tmp}/yanc_cxx_probe.$$"; mkdir -p "$t" 2>/dev/null
     printf '#include <string>\nint main(){std::string a="x";std::string b=std::move(a)+"y";return b.size()?0:1;}\n' > "$t/probe.cpp"
-    if ! g++ -Os -o "$t/probe" "$t/probe.cpp" >/dev/null 2>&1; then
-        local ver; ver="$(g++ -dumpfullversion 2>/dev/null || echo '?')"
+    local ver; ver="$(g++ -dumpfullversion 2>/dev/null || echo '?')"
+    if g++ -Os -o "$t/probe" "$t/probe.cpp" >/dev/null 2>&1; then
+        :
+    elif g++ -Os -D_GLIBCXX_ASSERTIONS -o "$t/probe" "$t/probe.cpp" >/dev/null 2>&1; then
+        echo "[g++]       $ver lacks the std::string move constructor at -Os; the runners"
+        echo "            pass -D_GLIBCXX_ASSERTIONS to Verilator, which works around it."
+    else
         echo
         echo "**************************************************************************"
-        echo " WARNING: g++ $ver cannot link std::string move -- the Verilator flow"
-        echo " WILL FAIL. MSYS2's mingw-w64-x86_64-gcc 16.1.0-5 ships a broken"
-        echo " libstdc++. Downgrade to a known-good gcc (15.1.0-5), e.g.:"
-        echo "   pacman -U /var/cache/pacman/pkg/mingw-w64-x86_64-gcc-15.1.0-5-any.pkg.tar.zst \\"
-        echo "             /var/cache/pacman/pkg/mingw-w64-x86_64-gcc-libs-15.1.0-5-any.pkg.tar.zst"
-        echo " Do NOT use gcc 16.1.0-5. (The Icarus flow is unaffected.)"
+        echo " WARNING: g++ $ver cannot link a std::string move, even with"
+        echo " -D_GLIBCXX_ASSERTIONS: the Verilator flow will fail. The Icarus flow is"
+        echo " unaffected. See docs/install.md."
         echo "**************************************************************************"
     fi
     rm -rf "$t" 2>/dev/null
@@ -220,12 +239,17 @@ echo
 echo "--- Simulation tools ----------------------------------------------------"
 want iverilog  iverilog  optional "needed for the Icarus flow: single_proc.sh / multi_proc.sh"   || true
 want verilator verilator optional "needed for the Verilator flow: single_proc.sh --sim verilator" || true
-want gtkwave   gtkwave   optional "needed to view the waveform"                            || true
+want gtkwave   gtkwave   optional "needed to view the waveform (Windows: the nipscernlab build, docs/install.md)" || true
+want cmp       diffutils optional "Scripts/regress.sh compares files with cmp and diff"   || true
+want python3   python    optional "Scripts/regress.sh and its checks are Python"         || true
 
 command -v iverilog  >/dev/null 2>&1 && echo "[icarus]    $(command -v iverilog)"
 command -v verilator >/dev/null 2>&1 && echo "[verilator] $(command -v verilator)"
 if command -v gtkwave >/dev/null 2>&1; then
-    echo "[gtkwave]   $(command -v gtkwave)  (distro build; not the nipscernlab fork)"
+    case "$(uname -s)" in
+        MINGW*|MSYS*|UCRT*|CLANG*) echo "[gtkwave]   $(command -v gtkwave)" ;;
+        *) echo "[gtkwave]   $(command -v gtkwave)  (distro build; not the nipscernlab fork)" ;;
+    esac
 fi
 
 # ---------------------------------------------------------------------------

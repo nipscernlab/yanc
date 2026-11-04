@@ -56,6 +56,13 @@ static int   out_done = 0;
 static void remove_outputs(void)
 {
     if (out_done) return;
+#ifdef _WIN32
+    // an error exits with the .asm and the line map still open, and the C
+    // library closes them only after the atexit handlers: Windows does not
+    // remove an open file, so they stayed (#117). The process is ending, so
+    // every stream but the standard ones can close here
+    _fcloseall();
+#endif
     for (int i = 0; i < 4; i++) if (out_files[i]) remove(out_files[i]);
 }
 

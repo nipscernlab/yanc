@@ -439,6 +439,21 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **cppcomp removes its partial outputs on Windows** (#117). A refused
+  program left its `.asm` and `pc_*_mem.txt`: the error exited with them
+  still open, and Windows does not remove an open file. The cleanup closes
+  every stream first (`_fcloseall`), as cmmcomp's already did.
+- **The Windows setup follows MSYS2 as it is today** (#117). Icarus and
+  Verilator are UCRT64 packages now, so the manual names
+  `mingw-w64-ucrt-x86_64-*` and the UCRT64 terminal, with `diffutils` and
+  Python, which the regression needs. MSYS2's gcc 16 lacks a `std::string`
+  constructor Verilator's build needs; the scripts pass
+  `-D_GLIBCXX_ASSERTIONS` to every Verilator call under MSYS2
+  (`YANC_VL_CFLAGS`, `Scripts/env.sh`) instead of asking for an old gcc, and
+  `setup.sh` probes for it. `single_proc.sh` and `multi_proc.sh` simulate
+  without GTKWave (they write the waveform and say where); the manual says
+  how to put GTKWave on MSYS2's `PATH`. `regress.sh` no longer falls back
+  to `/mingw64/bin/verilator`, and `setup.sh` offers MSYS2's package names.
 - **`#NUBITS` and `#FFTSIZ` out of range are errors** (#108 A2, A3).
   cmmcomp took any value and shifted by it: `#NUBITS 64` compiled
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word

@@ -1409,7 +1409,12 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             # On Windows the PowerShell helper works around bash->make env
             # stripping under MSYS2; elsewhere (Linux) Verilator runs straight
             # from bash -- no env boundary, no hardcoded paths.
+            if [ -z "$VERILATOR" ]; then
+                echo "FAIL ($base): verilator not found (Scripts/setup.sh, docs/install.md)"
+                fail=$((fail+1)); failed_names+=("$base"); continue
+            fi
             if command -v powershell.exe >/dev/null 2>&1 && command -v cygpath >/dev/null 2>&1; then
+                vlflags=(); [ -n "$YANC_VL_CFLAGS" ] && vlflags=(-VlCflags "$YANC_VL_CFLAGS")
                 if ! powershell.exe -ExecutionPolicy Bypass -NoProfile \
                         -File "$CPP_ROOT/Tests/Verilator/run_verilator_step.ps1" \
                         -Prname  "$prname" \
@@ -1421,13 +1426,14 @@ if [ "$CMM_ONLY" -eq 0 ]; then
                         -OutFile "$out" \
                         -Clocks  "$clocks" \
                         -Expected "$exp" \
-                        -VlBin   "$(cygpath -m "$(dirname "${VERILATOR:-/mingw64/bin/verilator}")")" \
+                        -VlBin   "$(cygpath -m "$(dirname "$VERILATOR")")" "${vlflags[@]}" \
                         -WinTmp  "$TMP" >/dev/null 2>&1; then
                     echo "FAIL ($base): verilator"; fail=$((fail+1)); failed_names+=("$base"); continue
                 fi
             else
                 vldir="$tmp/vl"
                 if ! "$VERILATOR" --cc --exe --build --top-module "$prname" --prefix Vtop \
+                        ${YANC_VL_CFLAGS:+-CFLAGS "$YANC_VL_CFLAGS"} \
                         -o "sim_$prname" -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN \
                         -Wno-BLKANDNBLK -Wno-WIDTH -Wno-CASEINCOMPLETE -Wno-IMPLICIT \
                         -Wno-COMBDLY --no-timing --Mdir "$vldir" \

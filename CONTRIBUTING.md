@@ -17,7 +17,7 @@ even if it's just a stripped-down example.
 ## Setting up
 
 See [docs/develop/building.md](docs/develop/building.md) — you'll
-need MSYS2 with `mingw-w64-x86_64-gcc`, `make`, `bison` and `flex`. On a
+need MSYS2 (UCRT64) with `mingw-w64-ucrt-x86_64-gcc`, `make`, `bison` and `flex`. On a
 clean checkout, `make` builds the six tools into `bin/`.
 
 ## Submitting changes
