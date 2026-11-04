@@ -8,6 +8,8 @@
 #include "../Headers/convert.h"
 #include "../Headers/global.h"
 #include "../Headers/symbols.h"
+#include "../Headers/messages.h"
+#include "../Headers/diag.h"
 #include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
@@ -23,7 +25,10 @@
 //   $br $bi  the same of the right one,
 //   $L       LOD, or P_LOD when the acc holds a value to keep (acc_live),
 //   $C       I2F_M, or P_I2F_M the same way,
-//   $1 .. $4 mnemonics the operator passes (emit_tpl_ops: a comparison's).
+//   $1 .. $9 words the emitter passes (emit_tpl_ops): a comparison's
+//            mnemonics, an array's name or its number of columns.
+// A line ?MSG_NAME is no instruction: the warning MSG_NAME, with the line,
+// given where the hand-written branch gave it (tpl_warn below).
 // A NULL template emits nothing (a pair the walker never hands over).
 
 int place_of(expr e)
@@ -43,6 +48,25 @@ static void comp_parts(expr e, expr *re, expr *im)
 {
     if (e.type == TY_CCONST) get_cmp_cst(e, re, im);
     else                     get_cmp_ets(e, re, im);
+}
+
+// the warnings a template may give, by name: each takes the line only
+static void tpl_warn(const char *name)
+{
+    static const struct { const char *name; int id; } known[] = {
+        {"MSG_WARN_IDX1_FLOAT", 1}, {"MSG_WARN_IDX2_FLOAT", 2}, {"MSG_WARN_IDXS_FLOAT", 3},
+        {"MSG_WARN_IDXS_MESS", 4}, {"MSG_WARN_IDX_COMP_GRAB", 5}, {"MSG_WARN_IDX_COMP_ROUND", 6},
+        {"MSG_WARN_IDX_FLOAT", 7}, {"MSG_WARN_IDX_FLOAT_HEAVY", 8},
+    };
+    int id = 0;
+    for (size_t k = 0; k < sizeof known / sizeof known[0]; k++)
+        if (strcmp(known[k].name, name) == 0) id = known[k].id;
+    const char *msg = id == 1 ? MSG_WARN_IDX1_FLOAT    : id == 2 ? MSG_WARN_IDX2_FLOAT
+                    : id == 3 ? MSG_WARN_IDXS_FLOAT    : id == 4 ? MSG_WARN_IDXS_MESS
+                    : id == 5 ? MSG_WARN_IDX_COMP_GRAB : id == 6 ? MSG_WARN_IDX_COMP_ROUND
+                    : id == 7 ? MSG_WARN_IDX_FLOAT     : id == 8 ? MSG_WARN_IDX_FLOAT_HEAVY : NULL;
+    if (!msg) fatal("tpl_warn: no warning %s\n", name);   // a template of the compiler's own, not the user's
+    warn(msg, pctx.line_num+1);
 }
 
 // emits template t for the operands e1 and e2 (see above), with the
@@ -71,13 +95,14 @@ void emit_tpl_ops(const char *t, expr e1, expr e2, const char *const *ops)
                 else if (*r == 'b') {w = v_table[e2.id].name; used = 2;}
                 else if (*r == 'L') {w = acc_live ? "P_LOD"   : "LOD";   used = 2;}
                 else if (*r == 'C') {w = acc_live ? "P_I2F_M" : "I2F_M"; used = 2;}
-                else if (ops && *r >= '1' && *r <= '4') {w = ops[*r - '1']; used = 2;}
+                else if (ops && *r >= '1' && *r <= '9') {w = ops[*r - '1']; used = 2;}
             }
             char *nl = w ? xasprintf("%s%s", line, w) : xasprintf("%s%c", line, t[k]);
             free(line); line = nl;
             k += used;
         }
-        add_instr("%s\n", line);
+        if (line[0] == '?') tpl_warn(line + 1);
+        else                add_instr("%s\n", line);
         free(line);
         t += n + (end ? 1 : 0);
     }
