@@ -83,3 +83,4 @@ case_twice.cmm|Error on line 10: case 1 appears twice in this switch.
 default_twice.cmm|Error on line 10: this switch already has a default.
 local_by_asm_name.cmm|Error on line 12: I'd really appreciate it if you declared the variable 'f_y'.
 func_empty_int.cmm|Error in function g: some path gets to the end without a return
+deep_parens.cmm|Error on line 8: an expression nested too deep for the compiler.

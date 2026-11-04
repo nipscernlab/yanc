@@ -9,10 +9,20 @@
 #include "xstr.h"
 #include "yanc_lang.h"
 
+static void (*on_oom)(void) = NULL;
+
+void xstr_oom_hook(void (*fn)(void))
+{
+    on_oom = fn;
+}
+
 static void out_of_memory(void)
 {
     fprintf(stderr, yanc_lang_en ? "Error: out of memory.\n"
                                  : "Erro: memória insuficiente.\n");
+    void (*fn)(void) = on_oom;
+    on_oom = NULL;                    // the hook may allocate: a second failure ends here
+    if (fn) fn();
     exit(EXIT_FAILURE);
 }
 

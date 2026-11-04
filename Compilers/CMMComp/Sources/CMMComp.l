@@ -52,6 +52,10 @@ static void def_add(const char *name, char *body) {
     g_def[i].active = 0;
 }
 
+/* flex's own error (an input it cannot read) is cmmcomp's: in both languages,
+ * and the outputs of the run removed (#108 A13) */
+#define YY_FATAL_ERROR(msg) ((void)yy_fatal_error, fatal(MSG_ERR_SCANNER, msg))   /* flex's own stays referenced: -Werror */
+
 %}
 
 %option nounput noinput nodefault

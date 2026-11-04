@@ -412,6 +412,11 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **Every way cmmcomp stops goes through its error path** (#108 A13,
+  A14). flex's own error (a folder given as the program) printed English
+  only and left empty outputs; running out of memory left them too; an
+  expression nested past the parser's stack was a "Syntax error". Each is
+  now a message in both languages, and the run's outputs are removed.
 - **A function may have an empty body** (#108 A12): `void f() {}` and an
   empty `main` were a syntax error, though the manual says `{ }` is a
   statement. A non-void one still needs its `return`.

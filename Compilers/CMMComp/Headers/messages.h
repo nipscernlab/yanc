@@ -152,6 +152,14 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: '%s' não é array não, abensoado!\n", \
       "Error on line %d: '%s' ain't an array, mate!\n")
 
+#define MSG_ERR_SCANNER \
+    M("Erro: o leitor do código-fonte parou: %s\n", \
+      "Error: the source scanner stopped: %s\n")
+
+#define MSG_ERR_TOO_DEEP \
+    M("Erro na linha %d: expressão aninhada fundo demais para o compilador. Divida-a em variáveis intermediárias.\n", \
+      "Error on line %d: an expression nested too deep for the compiler. Split it with intermediate variables.\n")
+
 #define MSG_ERR_CASE_TWICE \
     M("Erro na linha %d: case %s aparece duas vezes neste switch.\n", \
       "Error on line %d: case %s appears twice in this switch.\n")

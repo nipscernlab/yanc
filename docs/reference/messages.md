@@ -37,6 +37,8 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: '<name>' is an array. Where's the index, dude?
 - Error on line <n>: '<name>' isn't an array.
 - Error on line <n>: '<name>' ain't an array, mate!
+- Error: the source scanner stopped: <name>
+- Error on line <n>: an expression nested too deep for the compiler. Split it with intermediate variables.
 - Error on line <n>: case <name> appears twice in this switch.
 - Error on line <n>: this switch already has a default.
 - Error on line <n>: the character '<name>' is not part of C±.

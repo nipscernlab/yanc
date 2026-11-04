@@ -149,6 +149,7 @@ void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, char *d_
     if (yyin  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, cmm_src);
 
     fatal_hook(out_remove);       // from here on, an error removes what this run wrote
+    xstr_oom_hook(out_remove);    // and so does running out of memory
 
     char *asm_file = xasprintf("%s/%s.asm", d_proc, cfg.prname); // output .asm file name
     ectx.f_asm = fopen(asm_file, "w"); // create the .asm file
@@ -320,6 +321,7 @@ void parse_end(char *d_proc)
 
     // compiled: what this run wrote stays
     fatal_hook(NULL);
+    xstr_oom_hook(NULL);
     for (int i = 0; i < out_n; i++) free(out_path[i]);
     out_n = 0;
 }

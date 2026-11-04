@@ -61,6 +61,7 @@
 %{
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "../Headers/interrupt.h"         // interrupt handling
 #include "../Headers/oper.h"        // ALU operations
@@ -586,5 +587,6 @@ int main(int argc, char *argv[])
 void yyerror (char const *s)
 {
     if (yychar == DIMIN) inum_overflow();   // 128 at 8 bits, not after a minus
+    if (strcmp(s, "memory exhausted") == 0) fatal(MSG_ERR_TOO_DEEP, pctx.line_num+1);   // bison's stack (#108 A14)
     fatal(MSG_ERR_SYNTAX, pctx.line_num+1);
 }
