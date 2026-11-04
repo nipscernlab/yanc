@@ -67,10 +67,14 @@ cppcomp to whoever maintains it):
       "Error: yo, where's the main() function?\n")
 ```
 
-Call sites then reference `MSG_ERR_NO_MAIN`, not inline `M()` literals:
+Call sites then reference `MSG_ERR_NO_MAIN`, not inline `M()` literals. In
+cmmcomp an error goes through `fatal()`, which also removes what the run
+wrote, and a warning or a note through `warn()` (`Headers/diag.h`); the
+other tools still print with `fprintf`:
 
 ```c
-fprintf(stderr, MSG_ERR_NO_MAIN);
+fatal(MSG_ERR_NO_MAIN);                       // cmmcomp
+fprintf(stderr, MSG_ERR_NO_MAIN);             // asmcomp, cppcomp
 ```
 
 When you add a new diagnostic:

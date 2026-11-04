@@ -8,7 +8,7 @@
 #NUGAIN 128
 
 // Negative fixture: one constant index stored into a 2D array. The
-// constant-index store (SET_V, ass_array_const) must reject it like the
+// constant-index store (SET_V, assign_array_const) must reject it like the
 // general path (arr_1d_index).
 void main()
 {

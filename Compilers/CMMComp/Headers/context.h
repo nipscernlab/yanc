@@ -3,8 +3,9 @@
 // ----------------------------------------------------------------------------
 // What used to be some twenty globals, grouped by who sets them: the target the
 // directives describe, the state of the parse, and the state of the emission.
-// They are global instances for now; the next step passes them by pointer,
-// which is what lets a unit test build a context of its own.
+// They are global instances: a unit test sets their fields before it calls a
+// helper (UnitTest/cmm_unit_test.c). Passing them by pointer was planned
+// with #93 P8 and not done.
 // ----------------------------------------------------------------------------
 
 #ifndef CMM_CONTEXT_H

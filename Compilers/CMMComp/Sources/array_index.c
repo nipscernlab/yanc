@@ -75,7 +75,7 @@ void arr_1d_index(int id, expr e)
 
     load_index(e, 0, MSG_WARN_IDX_FLOAT);
 
-    acc_live = 1; // acc carregado
+    acc_live = 1; // acc loaded
 }
 
 // arr_2d_index: the left operand by row, the right one by column (IM IA FM FA CM CA)
@@ -111,7 +111,7 @@ void arr_2d_index(int id, expr e1, expr e2)
     emit_tpl_ops(idx2_tpl[place_of(e1)][place_of(e2)], e1, e2, (const char *const[]){op1});
     free(op1);
 
-    acc_live = 1; // acc carregado
+    acc_live = 1; // acc loaded
 }
 
 // ----------------------------------------------------------------------------
@@ -236,7 +236,7 @@ static const char *const el2r_tpl[PL_N][PL_N] = {
   /* CA */ {"?MSG_WARN_IDX_COMP_GRAB\nPOP\nF2I\nMLT $1\nADD $b\n$3 $2", "?MSG_WARN_IDX_COMP_GRAB\nSET_P __aux_var\nPOP\nF2I\nMLT $1\nADD __aux_var\n$3 $2", "?MSG_WARN_IDXS_MESS\nPOP\nF2I\nMLT $1\nP_F2I_M $b\nS_ADD\n$3 $2", "?MSG_WARN_IDXS_MESS\nF2I\nSET_P __aux_var\nPOP\nF2I\nMLT $1\nADD __aux_var\n$3 $2", "?MSG_WARN_IDXS_MESS\nPOP\nF2I\nMLT $1\nP_F2I_M $br\nS_ADD\n$3 $2", "?MSG_WARN_IDXS_MESS\nPOP\nF2I\nSET_P __aux_var\nPOP\nF2I\nMLT $1\nADD __aux_var\n$3 $2"},
 };
 
-// transforma array 2D em exp
+// turns a 2D array element into an exp
 expr arr_2d2exp(int id, expr e1, expr e2)
 {
     // consistency checks -----------------------------------------------------

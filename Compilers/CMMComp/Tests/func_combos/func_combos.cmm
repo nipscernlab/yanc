@@ -6,7 +6,7 @@
 #NUGAIN 128
 
 // Function-call ABI coverage. Each user function exercises a distinct
-// declar_par / STMT_FUNC_HEADER configuration:
+// declare_par / STMT_FUNC_HEADER configuration:
 //   - 0 params, void return (noargs_void)
 //   - 0 params, int  return (noargs_int)
 //   - 1 int   param        (one_int)

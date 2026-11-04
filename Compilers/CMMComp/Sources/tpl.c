@@ -59,7 +59,8 @@ static void tpl_warn(const char *name)
 }
 
 // emits template t for the operands e1 and e2 (see above), with the
-// mnemonics ops[0..3] for $1..$4 (NULL: none)
+// words ops[0..8] for $1..$9 (NULL: none; a cell uses only the words its
+// caller passes, which Scripts/cmm_cov.py checks)
 void emit_tpl_ops(const char *t, expr e1, expr e2, const char *const *ops)
 {
     if (!t) return;

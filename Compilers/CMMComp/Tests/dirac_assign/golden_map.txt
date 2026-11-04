@@ -82,7 +82,7 @@ lang C+-
 52 SET __dk0_main
 53 JIZ __Ld5e
 54 JMP __Ld5
-// 31: a # |B|a>;           // exec_Mv:    a = B * a
+// 31: a # |B|a>;           // a = B * a
 55 LOD_V a 0
 56 SET __dhf2_main
 57 LOD -4
@@ -126,7 +126,7 @@ lang C+-
 95 SET __dk4_main
 96 JIZ __Ld8e
 97 JMP __Ld8
-// 32: a # 2.0|b>;          // exec_cv:    a = 2.0 * b
+// 32: a # 2.0|b>;          // a = 2.0 * b
 98 LOD -4
 99 SET __dk0_main
 100 PSH
@@ -138,7 +138,7 @@ lang C+-
 106 SET __dk0_main
 107 JIZ __Ld9e
 108 JMP __Ld9
-// 33: A # |a><b|;          // exec_vvt:   A = a * b^T
+// 33: A # |a><b|;          // A = a * b^T
 109 LOD -16
 110 SET __dd3_main
 111 LOD -4
@@ -165,7 +165,7 @@ lang C+-
 132 SET __dk0_main
 133 JIZ __Ld10e
 134 JMP __Ld10
-// 34: a # 0.001|in(0)>;    // exec_cvin:  a = 0.001 * input(0)
+// 34: a # 0.001|in(0)>;    // a = 0.001 * input(0)
 135 LOD -4
 136 SET __dk0_main
 137 PF_INN 0

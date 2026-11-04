@@ -8,7 +8,7 @@
 // Synthetic fixture: exercises STMT_FUNC_HEADER for functions with 2 and 3
 // parameters. The walker is supposed to emit `SET_P pN ... SET_P p1` for
 // every parameter after the first (last-to-second in declaration order) and
-// `SET p0` for the first - mirroring what the old declar_fst + set_par mid-
+// `SET p0` for the first - mirroring what the parser did before the AST, mid-
 // rules used to emit at parse time. No existing fixture covered this path.
 
 int add(int a, int b)

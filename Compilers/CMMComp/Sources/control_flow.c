@@ -20,8 +20,8 @@
 #include "../Headers/diag.h"
 #include "../../common/xstr.h"
 
-// Monotonic switch id: a unique label namespace per switch (sw_case_<id>_* /
-// switch_end_<id>). Per-switch state -- the running case count -- lives on the
+// Monotonic switch id: a unique label namespace per switch (__sw_body_<id>_*,
+// __sw_disp_<id>_*, __switch_end_<id>, ast.c). Per-switch state -- the running case count -- lives on the
 // switch's stmt_node->id2; break routing lives on the break-target stack
 // below. Nested switches therefore share no mutable global counter.
 static int swit_cnt  = 0;
@@ -339,9 +339,10 @@ stmt_node *exec_continue(void)
 
 void exec_switch(expr_node *cond)
 {
-    // Pre-declare the implicit switch_exp variable so case_test (at parse
-    // time) can record its case_idx referencing it; the walker fills in
-    // its type at emit time once it knows the cond's evaluated type. The variable
+    // Pre-declare the implicit switch_exp variable at parse time, so that its
+    // row of the symbol table comes here (the walker adds it too, ast.c, but
+    // moving the first add could move the table, and the data addresses); the
+    // walker fills in its type once it knows the cond's evaluated type. The variable
     // is shared across all switches, including nested ones, and stays correct:
     // the walker emits all of a switch's compares in a dispatch block before any
     // case body runs, so an inner switch (inside a body) reusing switch_exp can
@@ -387,7 +388,7 @@ stmt_node *end_switch(void)
     sw_pop();
     stmt_node *partial = pending_pop();
     partial->body      = body;
-    // partial->id2 already holds the running case count (case_max) for the
-    // trailing @sw_case_<id>_<max+1> / @switch_end label the walker emits.
+    // partial->id2 already holds the running case count (case_max), which the
+    // walker uses to number the case bodies (__sw_body_<id>_<k>).
     return partial;
 }

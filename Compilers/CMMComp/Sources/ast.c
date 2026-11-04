@@ -22,7 +22,7 @@
 
 // needed by the stmt_node walker
 #include "../Headers/data_assign.h"
-#include "../Headers/data_declar.h"  // declar_arr_*_emit for STMT_DECLAR_* walker
+#include "../Headers/data_declar.h"  // declare_arr_*_emit for STMT_DECLAR_* walker
 #include "../Headers/interrupt.h"
 #include "../Headers/diag.h"
 #include "../Headers/convert.h"      // get_cmp_cst for complex cond loads
@@ -294,7 +294,7 @@ static void expr_free(expr_node *n)
 // expression tree walker (codegen) -------------------------------------------
 // ----------------------------------------------------------------------------
 // Single entry point for expression codegen. Dispatches on n->kind, recurses
-// into children, and calls the existing oper_*/exec_*/arr_*/pplus_*/num2exp/
+// into children, and calls the oper_*/builtin_*/arr_*/pplus_*/num2exp/
 // id2exp/par_check helpers in left-to-right post-order, the order the parser
 // reduces, except where reordering saves instructions (see the binop case).
 //
@@ -482,14 +482,11 @@ static int is_const_value(expr_node *n, double want)
 }
 
 // Typecheck pass: walks bottom-up and annotates n->type on composite nodes
-// whose type the parser leaves at 0 (BINOP / UNOP today; INNER / STDLIB_CALL
-// pending follow-up commits). Leaves (LITERAL / VAR / ARRAY_INDEX / PPLUS /
-// FUNC_CALL) already carry the correct type, so the early-return makes the
-// walk idempotent: a second call over the same subtree is O(1) per node.
-//
-// Codegen does not consume the annotation yet - this commit just stages the
-// data. Subsequent commits cut oper_* / exec_* helpers over to trust
-// n->type, removing the per-helper "compute result type" tail.
+// whose type the parser leaves at 0 (BINOP, UNOP, STDLIB_CALL).
+// Leaves (LITERAL / VAR / ARRAY_INDEX / PPLUS / FUNC_CALL) already carry the
+// correct type, so the early-return makes the walk idempotent: a second call
+// over the same subtree is O(1) per node. Codegen reads the annotation
+// (is_real_exp, cond_expr, the walker's choices of a form).
 void typecheck_expr(expr_node *n)
 {
     if (!n)           return;
@@ -912,13 +909,13 @@ expr ast_emit_expr(expr_node *n)
     if (n && n->emitted) return n->cached;
     // save/restore emit_line so that when this call returns, the caller's
     // emit_line is what it set before recursing. That way an operator like
-    //   exec_add(ast_emit_expr(L), ast_emit_expr(R))
+    //   oper_add(ast_emit_expr(L), ast_emit_expr(R))
     // emits the ADD with the binop's line, not whatever the last sub-walk
     // left behind.
     int saved_emit_line = ectx.emit_line;
     if (n) ectx.emit_line = n->line;
     // line_num drives the warning / MSG_INFO prints inside the emit helpers
-    // (oper_*, exec_*, arr_*, par_check, ...). Keep it in lock-step with the
+    // (oper_*, builtin_*, arr_*, par_check, ...). Keep it in lock-step with the
     // node's source line during the walk so those messages report the right line
     // instead of the lexer's EOF position. The helpers print `line_num + 1` and
     // n->line was captured as `line_num + 1` at parse time, so set n->line - 1 to
@@ -1655,10 +1652,6 @@ stmt_node *stmt_func(int func_id, stmt_node *body)
 // statement walker -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// Shared cond-to-int load used by STMT_IF / STMT_WHILE / STMT_SWITCH walker
-// cases. Mirrors the if_exp / while_expexp / exec_switch parse-time code from
-// the pre-fase-6 control_flow.c. The flag selects between MSG_WARN_COND_* (if /
-// while) and MSG_WARN_CASE_* (switch) for the float / comp warnings.
 // ----------------------------------------------------------------------------
 // Dirac statements -----------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -1759,6 +1752,12 @@ static expr cond_expr(expr_node *c)
     return ast_emit_expr(c);
 }
 
+// a condition or a switch index into the acc as an int word, for the
+// STMT_IF / STMT_WHILE / STMT_SWITCH walker cases. A condition (is_switch 0)
+// is true when it is not zero: a float is tested by its mantissa (AND
+// 2^NBMANT - 1, no conversion) and a comp by its two parts, with no warning.
+// A switch index (is_switch 1) is converted to int, truncating, with the
+// MSG_WARN_CASE_FLOAT or MSG_WARN_CASE_COMP warning
 static void emit_cond_int_load(expr e, int is_switch)
 {
     const char *msg_float = MSG_WARN_CASE_FLOAT;       // a switch index still converts (truncates)
@@ -2338,8 +2337,6 @@ void stmt_emit(stmt_node *n)
             //   - SET_P <p[k]>           (last-to-second param, with imag
             //                             half first when the param is comp)
             //   - SET   <p[0]>           (first param)
-            // Mirrors the pre-AST pattern that declare_fun / declare_fst /
-            // set_par used to do inline at parse time.
             add_sinst(0, "@%s ", v_table[n->id].name);
             for (int i = n->n_params - 1; i >= 1; i--)
             {
@@ -2370,7 +2367,7 @@ void stmt_emit(stmt_node *n)
         case STMT_FUNC: {
             // Full function definition. Resets ret_ok (set by STMT_RETURN
             // walker when a `return` statement fires) and stashes the
-            // current function id into the global fun_parse so declare_ret
+            // current function id into pctx.fun_parse so declare_ret
             // - reached at walker time from STMT_RETURN - can validate the
             // return type against the enclosing function. Then walks the
             // body, validates that a non-void function actually emitted a
@@ -2383,7 +2380,7 @@ void stmt_emit(stmt_node *n)
             // emit_fname carries this function's name through the body walk so
             // strip_fn_prefix() can strip the "<fn>_" prefix from diagnostics. It is
             // DISPLAY-ONLY: lex_id() still keys off the (empty-during-walk)
-            // global fname, so the temp-variable names -- and the assembly -- are
+            // pctx.fname, so the temp-variable names -- and the assembly -- are
             // unchanged. Globals (no prefix) are unaffected by strip_fn_prefix.
             const char *saved_emit_fname = ectx.emit_fname;
             ectx.emit_fname = v_table[n->id].name;

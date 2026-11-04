@@ -66,7 +66,7 @@ expr oper_neg(expr e)
     // literal (-2.5 is loaded as such, x - (3+4i) adds -3-4i). Not an int one: the
     // compiler holds int literals non-negative (lex_inum, builtin_pow's exponent
     // loop). Not when a float part is zero either: "-0.0" encodes as +0, and
-    // F_NEG_M 0.0 gives -0 (TODO.md item 4)
+    // F_NEG_M 0.0 gives -0, which at #FROUND 0 is not 0.0 (docs/floating-point.md)
     if (e.type == TY_FLOAT && e.id != 0 && v_table[e.id].is_const)
     {
         char *nm = v_table[e.id].name;

@@ -11,7 +11,7 @@
 // - a function that is not void may not let a path reach its end, or it
 //   would run into the next function: if/else both returning, while (1)
 //   left by a return, a switch with a default all pass (f, h, s);
-// - a name of 50 characters, the longest (CMM_NAME_MAX), compiles.
+// - a name of 50 characters compiles (the limit, CMM_NAME_MAX, is 1000).
 //
 // Expected: 3 5 4 1 2 10 20 7.
 

@@ -2,7 +2,8 @@
 // gathers functions and variables driven by directives -----------------------
 // ----------------------------------------------------------------------------
 
-// state the cmm compiler keeps from the directives
+// the directives: what each sets (directive_exec writes cfg, context.h) and
+// the walker's emission of them
 
 #ifndef CMM_DIRECTIVES_H
 #define CMM_DIRECTIVES_H

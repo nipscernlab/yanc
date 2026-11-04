@@ -217,7 +217,8 @@ tags consumed by Aurora.
   new one.
 - **cmmcomp's codes have names** (step P6 of #93): the type of a symbol,
   an expression or a tree node is `TY_INT`, `TY_FLOAT`, `TY_COMP`, ... in
-  `types.h` instead of a digit (about 1600 places), the dimensions of a
+  `types.h` instead of a digit (about 1600 places; the 94 left were named in
+  #108 C19), the dimensions of a
   symbol `AR_NONE`, `AR_1D`, `AR_2D`, a directive's code a `dir_code`, and
   `2^NBMANT` comes from `mant_pow2()`. The rest of #92's dead code goes:
   the `-2` line of `src_lines.txt`, two always-true guards, eight

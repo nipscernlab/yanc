@@ -3,7 +3,7 @@
 #NBEXPO 8
 #NUIOIN 1
 #NUIOOU 1
-// Names of 50 characters, the most cmmcomp takes, in every kind of
+// Names of 50 characters (the most it took then; 1000 now), in every kind of
 // declaration: global, local, parameter, function, 1D and 2D array, int,
 // float and comp. asmcomp builds each one's waveform signal from its name
 // (me1_f_<function>_v_<name>_e_), and kept it in a 64-byte row: a 50-letter

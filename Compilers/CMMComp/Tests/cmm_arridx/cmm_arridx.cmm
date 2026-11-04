@@ -6,7 +6,7 @@
 #NUGAIN 128
 
 // Functional fixture for the constant-index array store (ast.c routes
-// arr[const] = <int> to ass_array_const -> SET_V, a direct store with the
+// arr[const] = <int> to assign_array_const -> SET_V, a direct store with the
 // offset baked into the address, no indirect STI). Validated by the SIMULATED
 // READBACK VALUES, not by golden.asm: distinct values are written to distinct
 // constant indices and read back, so a wrong SET_V offset (or base) would make
