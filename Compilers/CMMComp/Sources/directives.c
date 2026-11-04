@@ -51,7 +51,7 @@ long long mant_pow2(void)
 // reads these globals to make decisions before the AST walker runs), then
 // appends a STMT_DIRECTIVE to the open stmt_list so the emit fires from
 // the global walker at `fim`.
-void directive_exec(char *dir, int id, dir_code t)
+void directive_exec(const char *dir, int id, dir_code t)
 {
     int ival = atoi(v_table[id].name);
 

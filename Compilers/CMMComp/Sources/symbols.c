@@ -240,7 +240,7 @@ static int is_local_row(int id)
 }
 
 // used when the lexer finds an ID
-int lex_id(char *text)
+int lex_id(const char *text)
 {
     if (strcmp(text,"i") == 0)
         fatal(MSG_ERR_RESERVED_I, pctx.line_num+1);
@@ -312,7 +312,7 @@ int inum_kind(const char *text)
 
 // the magnitude of a NINUM (2^w - v) as a positive literal; for a NIMIN, the
 // largest int (the grammar writes -max - 1)
-int lex_inum_neg(char *text)
+int lex_inum_neg(const char *text)
 {
     int w = word_bits(); char t[32];
     unsigned long long v = inum_value(text, NULL);
@@ -359,7 +359,7 @@ int arr_size(int id)
 }
 
 // used when the lexer finds an int constant
-int lex_inum(char *text)
+int lex_inum(const char *text)
 {
     // range check ------------------------------------------------------------
     // no negative constants ever reach this function
@@ -424,7 +424,7 @@ void cnum_split(const char *txt, char **re, char **im)
 }
 
 // used when the lexer finds a float constant
-int lex_fnum(char *text)
+int lex_fnum(const char *text)
 {
     char *t = fnum_text(text);
 

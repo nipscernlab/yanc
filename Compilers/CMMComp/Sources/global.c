@@ -140,7 +140,7 @@ static FILE *f_src = NULL;            // src_lines.txt, while parse_end writes i
 // parser start and end functions ---------------------------------------------
 // ----------------------------------------------------------------------------
 
-void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, char *d_array)
+void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, const char *d_array)
 {
     // pick up the arguments --------------------------------------------------
 
@@ -349,7 +349,7 @@ static void put_instr(const char *s)
 }
 
 // adds an instruction to the asm file
-void add_instr(char *inst, ...)
+void add_instr(const char *inst, ...)
 {
     va_list  args;
     va_start(args , inst);
@@ -435,7 +435,7 @@ void add_instr(char *inst, ...)
 // type =  0 -> comment
 // type = -1 -> INTERNAL
 // type = -3 -> END
-void add_sinst(int type, char *inst, ...)
+void add_sinst(int type, const char *inst, ...)
 {
     // Labels, directives and inline comments are control-flow / scaffolding
     // boundaries: a label may be a jump target, so dropping a LOD that
