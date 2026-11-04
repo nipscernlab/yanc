@@ -9,6 +9,17 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **Coverage counts every cell of the operator tables** (#108).
+  `Scripts/cmm_cov.sh` counted each `add_instr` / `add_sinst` call as one
+  site, and since the tables of #93 P10 every cell goes out through the
+  one call in `tpl.c`, so a cell no test reached could not show. Each
+  non-NULL cell of a `NAME[PL_N][PL_N]` table is now a site of its own
+  (237 today, all reached and all verified), held by `cov_baseline.txt`
+  like the calls. The append of each float routine of `Includes/` and
+  the Dirac temporaries' `#array` line, which wrote assembly without
+  `add_instr`, are sites too (all reached). The script also holds `verified.txt` to the part of its
+  rule a script can see: a test listed there has a `golden_sim/` and is
+  simulated, or is a processor of a project pass.
 - **The regression holds the variables the waveform shows.** In every
   simulated C± test (Scripts/wave_map.py --vcd), an int or float variable
   of the waveform changes only in the cycle whose instruction is a `SET` or

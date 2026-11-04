@@ -67,14 +67,17 @@ every combination of the Dirac notation in
 `Compilers/CMMComp/DiracCases/cases.tsv` through cmmcomp, holds the
 simulated outputs of `dirac_shapes` and `proc_rls` to values computed in
 Python (`Scripts/dirac_ref.py`, `Scripts/rls_ref.py`), counts which of
-cmmcomp's calls that emit assembly the tests reach, and which a test with
-an independent reference checks (`Scripts/cmm_cov.sh`; the tests that
+cmmcomp's sites that emit assembly the tests reach, and which a test with
+an independent reference checks (`Scripts/cmm_cov.sh`; a site is a
+call that writes assembly (`add_instr`, `add_sinst`, the append of a float
+routine of `Includes/`), or a cell of an operator table, since every cell
+goes out through the one call in `tpl.c`; the tests that
 count as checked are in `Compilers/CMMComp/Tests/verified.txt`, and
 neither count may grow past `cov_baseline.txt`), and runs `yanc`
-itself. Every change goes through it: the quick form (`--no-sim`) for each
-change, the whole one once for each batch of changes, before its last merge
-(AGENTS.md, "The one command"). `bash Scripts/cmm_cov.sh --list`
-lists every call no test checks. `Scripts/cov_tests.py` writes the generated tests
+itself. Every change goes through it: the quick form (`--no-sim`) once at
+the end of a batch, the whole one before the batch's last merge
+(AGENTS.md, "Work in batches"). `bash Scripts/cmm_cov.sh --list`
+lists every site no test checks. `Scripts/cov_tests.py` writes the generated tests
 and their expected output, computed in Python; `Scripts/stack_balance.py`
 works out the data stack's depth through every test's assembly and fails
 when a statement leaves a word on it. A change to the instruction
