@@ -358,7 +358,8 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
 
     rm -f "$YANC"
     gcc -O2 -Wall -Werror -o "$YANC" "$ROOT/Compilers/Driver/yanc.c" \
-        "$ROOT/Compilers/common/console_utf8.c" "$ROOT/Compilers/common/exe_dir.c" "$ROOT/Compilers/common/yanc_lang.c" $UTF8RES
+        "$ROOT/Compilers/common/console_utf8.c" "$ROOT/Compilers/common/exe_dir.c" "$ROOT/Compilers/common/yanc_lang.c" \
+        "$ROOT/Compilers/common/xstr.c" $UTF8RES
 
     set +e
 fi

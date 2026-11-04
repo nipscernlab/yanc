@@ -412,6 +412,12 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **The shared code of the tools checks every allocation** (#108 A22,
+  A23). `asm_share.c` had 58 `malloc`/`calloc`/`realloc`/`strdup` whose
+  failure crashed asmcomp or cmmcomp; `exe_dir.c` cut a path at 4096
+  characters without a word (a longer `-o` made another folder). They go
+  through `xstr.h`, and a path has any length. The tools build with
+  `-Werror` at every optimisation level, not only the CI's.
 - **A NUL byte in the source is named** (#108 A19), as any other unknown
   character, and the source table reads a line byte by byte, so a NUL no
   longer cuts it and shifts the waveform's source track.

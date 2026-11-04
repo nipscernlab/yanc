@@ -160,8 +160,8 @@ $(BIN)/gen_gtkw$(EXE): $(SCR)/gen_gtkw.c $(EXEDIR) $(COMMON)/xstr.c $(COMMON)/xs
 	$(CC) $(CFLAGS) -o $@ $(SCR)/gen_gtkw.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(COMMON)/xstr.c $(UTF8) $(LDLIBS)
 
 # --- yanc, the driver (runs the tools next to it) ---------------------------
-$(BIN)/yanc$(EXE): Compilers/Driver/yanc.c $(CONSOLE) $(EXEDIR) $(VERSION_H) | $(BIN)
-	$(CC) $(CFLAGS) -o $@ Compilers/Driver/yanc.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(UTF8) $(LDLIBS)
+$(BIN)/yanc$(EXE): Compilers/Driver/yanc.c $(CONSOLE) $(EXEDIR) $(COMMON)/xstr.c $(COMMON)/xstr.h $(VERSION_H) | $(BIN)
+	$(CC) $(CFLAGS) -o $@ Compilers/Driver/yanc.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(COMMON)/xstr.c $(UTF8) $(LDLIBS)
 
 # --- the UTF-8 manifest (Windows) ----------------------------------------------
 Compilers/common/utf8_res.o: Compilers/common/utf8.rc Compilers/common/utf8.manifest
