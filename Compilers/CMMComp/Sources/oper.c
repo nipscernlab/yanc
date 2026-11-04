@@ -151,471 +151,110 @@ expr oper_neg(expr e)
     return expr_make(e.type, 0);
 }
 
+// ----------------------------------------------------------------------------
+// operators as tables (step P10 of #93) ---------------------------------------
+// ----------------------------------------------------------------------------
+// An operand is in one of six places: an int, a float or a comp, in memory or
+// in the accumulator. A comp constant and a comp variable are the same place,
+// a comp in memory: both are a pair of names, the real part and the imaginary
+// one. An operator over two operands is then a table of 6 x 6 templates, one
+// instruction a line, in which
+//   $a $b    the names of the left and the right operand (in memory),
+//   $ar $ai  the real and imaginary parts of the left one (a comp in memory),
+//   $br $bi  the same of the right one,
+//   $L       LOD, or P_LOD when the acc holds a value to keep (acc_live),
+//   $C       I2F_M, or P_I2F_M the same way.
+// A NULL template emits nothing (a pair the walker never hands over).
+
+enum { PL_IM, PL_IA, PL_FM, PL_FA, PL_CM, PL_CA, PL_N };
+
+static int place_of(expr e)
+{
+    int mem = (e.id != 0);
+    switch (e.type) {
+        case TY_INT:    return mem ? PL_IM : PL_IA;
+        case TY_FLOAT:  return mem ? PL_FM : PL_FA;
+        case TY_CCONST: return PL_CM;
+        default:        return mem ? PL_CM : PL_CA;   // TY_COMP
+    }
+}
+
+// the two parts of a comp in memory: of a constant (two float literals) or of
+// a variable (it and its _i), as the hand-written branches got them
+static void comp_parts(expr e, expr *re, expr *im)
+{
+    if (e.type == TY_CCONST) get_cmp_cst(e, re, im);
+    else                     get_cmp_ets(e, re, im);
+}
+
+// emits template t for the operands e1 and e2 (see above)
+static void emit_tpl(const char *t, expr e1, expr e2)
+{
+    if (!t) return;
+    expr ar = {0, 0}, ai = {0, 0}, br = {0, 0}, bi = {0, 0};
+    if (place_of(e1) == PL_CM && (strstr(t, "$ar") || strstr(t, "$ai"))) comp_parts(e1, &ar, &ai);
+    if (place_of(e2) == PL_CM && (strstr(t, "$br") || strstr(t, "$bi"))) comp_parts(e2, &br, &bi);
+    while (*t)
+    {
+        const char *end = strchr(t, '\n');
+        size_t n = end ? (size_t)(end - t) : strlen(t);
+        char *line = xstrdup("");
+        for (size_t k = 0; k < n; )
+        {
+            const char *w = NULL; size_t used = 1;
+            if (t[k] == '$') {
+                const char *r = t + k + 1;
+                if      (strncmp(r, "ar", 2) == 0) {w = v_table[ar.id].name; used = 3;}
+                else if (strncmp(r, "ai", 2) == 0) {w = v_table[ai.id].name; used = 3;}
+                else if (strncmp(r, "br", 2) == 0) {w = v_table[br.id].name; used = 3;}
+                else if (strncmp(r, "bi", 2) == 0) {w = v_table[bi.id].name; used = 3;}
+                else if (*r == 'a') {w = v_table[e1.id].name; used = 2;}
+                else if (*r == 'b') {w = v_table[e2.id].name; used = 2;}
+                else if (*r == 'L') {w = acc_live ? "P_LOD"   : "LOD";   used = 2;}
+                else if (*r == 'C') {w = acc_live ? "P_I2F_M" : "I2F_M"; used = 2;}
+            }
+            char *nl = w ? xasprintf("%s%s", line, w) : xasprintf("%s%c", line, t[k]);
+            free(line); line = nl;
+            k += used;
+        }
+        add_instr("%s\n", line);
+        free(line);
+        t += n + (end ? 1 : 0);
+    }
+}
+
+// the type of a binary operation's result: comp over float over int
+static int result_type(expr e1, expr e2)
+{
+    if (e1.type > TY_FLOAT || e2.type > TY_FLOAT) return TY_COMP;
+    if (e1.type > TY_INT   || e2.type > TY_INT  ) return TY_FLOAT;
+    return TY_INT;
+}
+
+// addition: left operand by row, right by column (IM IA FM FA CM CA)
+static const char *const add_tpl[PL_N][PL_N] = {
+  /* IM */ {"$L $a\nADD $b", "ADD $a", "$C $a\nF_ADD $b", "P_I2F_M $a\nSF_ADD",
+            "$C $a\nF_ADD $br\nP_LOD $bi", "SET __aux_var\nI2F_M $a\nSF_ADD\nP_LOD __aux_var"},
+  /* IA */ {"ADD $b", "S_ADD", "I2F\nF_ADD $b", "SET_P __aux_var\nI2F\nF_ADD __aux_var",
+            "I2F\nF_ADD $br\nP_LOD $bi", "SET_P __aux_var\nSET_P __aux_var1\nI2F\nF_ADD __aux_var1\nP_LOD __aux_var"},
+  /* FM */ {"$C $b\nF_ADD $a", "I2F\nF_ADD $a", "$L $a\nF_ADD $b", "F_ADD $a",
+            "$L $a\nF_ADD $br\nP_LOD $bi", "SET_P __aux_var\nF_ADD $a\nP_LOD __aux_var"},
+  /* FA */ {"P_I2F_M $b\nSF_ADD", "I2F\nSF_ADD", "F_ADD $b", "SF_ADD",
+            "F_ADD $br\nP_LOD $bi", "SET_P __aux_var\nSF_ADD\nP_LOD __aux_var"},
+  /* CM */ {"$C $b\nF_ADD $ar\nP_LOD $ai", "I2F\nF_ADD $ar\nP_LOD $ai", "$L $b\nF_ADD $ar\nP_LOD $ai", "F_ADD $ar\nP_LOD $ai",
+            "$L $ar\nF_ADD $br\nP_LOD $ai\nF_ADD $bi", "SET_P __aux_var\nF_ADD $ar\nP_LOD $ai\nF_ADD __aux_var"},
+  /* CA */ {"SET_P __aux_var\nP_I2F_M $b\nSF_ADD\nP_LOD __aux_var", "SET_P __aux_var\nSET_P __aux_var1\nP_I2F_M __aux_var\nSF_ADD\nP_LOD __aux_var1",
+            "SET_P __aux_var\nF_ADD $b\nP_LOD __aux_var", "SET_P __aux_var\nSET_P __aux_var1\nF_ADD __aux_var\nP_LOD __aux_var1",
+            "SET_P __aux_var\nF_ADD $br\nP_LOD __aux_var\nF_ADD $bi", "SET_P __aux_var\nSET_P __aux_var1\nSET_P __aux_var2\nF_ADD __aux_var1\nP_LOD __aux_var2\nF_ADD __aux_var"},
+};
+
 // adds two numbers
 expr oper_add(expr e1, expr e2)
 {
-    expr etr, eti;
-
     int_lit_float(&e1, &e2);
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // int var with int var
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n" , ld, v_table[e1.id].name);
-        add_instr("ADD %s\n",     v_table[e2.id].name);
-    }
-
-    // int var with int acc
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("ADD %s\n", v_table[e1.id].name);
-    }
-
-    // int var with float var
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n", i2f, v_table[e1.id].name);
-        add_instr("F_ADD %s\n"  , v_table[e2.id].name);
-    }
-
-    // int var with float acc
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("P_I2F_M %s\n", v_table[e1.id].name);
-        add_instr("SF_ADD\n");
-    }
-
-    // int var with comp const
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_CCONST))
-    {
-        get_cmp_cst(e2,&etr,&eti);
-
-        add_instr("%s %s\n" , i2f, v_table[e1.id].name);
-        add_instr("F_ADD %s\n"   , v_table[etr.id].name);
-        add_instr("P_LOD %s\n"   , v_table[eti.id].name);
-    }
-
-    // int var with comp var
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        get_cmp_ets(e2,&etr,&eti);
-
-        add_instr("%s %s\n", i2f, v_table[e1.id].name);
-        add_instr("F_ADD %s\n"  , v_table[etr.id].name);
-        add_instr("P_LOD  %s\n" , v_table[eti.id].name);
-    }
-
-    // int var with comp acc
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id==0))
-    {
-        add_instr("SET __aux_var\n");                 // temporarily save the imaginary part
-        add_instr("I2F_M %s\n", v_table[e1.id].name);  // fetch the int while converting to float
-        add_instr("SF_ADD\n");                      // add acc with stack
-        add_instr("P_LOD __aux_var\n");               // push the result onto the stack while bringing the imag back
-    }
-
-    // int acc with int var
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("ADD %s\n", v_table[e2.id].name);
-    }
-
-    // int acc with int acc
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("S_ADD\n");
-    }
-
-    // int acc with float var
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_table[e2.id].name);
-    }
-
-    // int acc with float acc
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("SET_P __aux_var\n"); // temporarily save the float, pushing the int to the accumulator
-        add_instr("I2F\n");           // converte o int do acumulador pra float
-        add_instr("F_ADD __aux_var\n"); // add with the saved float
-    }
-
-    // int acc with comp const
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_CCONST))
-    {
-        get_cmp_cst(e2,&etr,&eti);
-
-        add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-    }
-
-    // int acc with comp var
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        get_cmp_ets(e2,&etr,&eti);
-
-        add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-    }
-
-    // int acc with comp acc
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id==0))
-    {
-        add_instr("SET_P __aux_var\n" ); // temporarily save the imaginary part, popping the real part
-        add_instr("SET_P __aux_var1\n"); // temporarily save the real part, popping the int
-        add_instr("I2F\n");            // converte o int do acumulador pra float
-        add_instr("F_ADD __aux_var1\n"); // add with the saved real part
-        add_instr("P_LOD __aux_var\n" ); // push the imaginary part back to the accumulator
-    }
-
-    // float var with int var
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n",i2f, v_table[e2.id].name);
-        add_instr("F_ADD %s\n" , v_table[e1.id].name);
-    }
-
-    // float var with int acc
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_table[e1.id].name);
-    }
-
-    // float var with float var
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n", ld, v_table[e1.id].name);
-        add_instr("F_ADD %s\n" , v_table[e2.id].name);
-    }
-
-    // float var with float acc
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("F_ADD %s\n", v_table[e1.id].name);
-    }
-
-    // float var with comp const
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_CCONST))
-    {
-        get_cmp_cst(e2,&etr,&eti);
-
-        add_instr("%s %s\n", ld, v_table[e1.id].name);
-        add_instr("F_ADD %s\n" , v_table[etr.id].name);
-        add_instr("P_LOD %s\n" , v_table[eti.id].name);
-    }
-
-    // float var with comp var
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        get_cmp_ets(e2,&etr,&eti);
-
-        add_instr("%s %s\n", ld, v_table[e1.id].name);
-        add_instr("F_ADD %s\n" , v_table[etr.id].name);
-        add_instr("P_LOD %s\n" , v_table[eti.id].name);
-    }
-
-    // float var with comp acc
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id==0))
-    {
-        add_instr("SET_P __aux_var\n");
-        add_instr("F_ADD %s\n", v_table[e1.id].name);
-        add_instr("P_LOD __aux_var\n");
-    }
-
-    // float acc with int var
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
-        add_instr("SF_ADD\n");
-    }
-
-    // float acc with int acc
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("I2F\n");
-        add_instr("SF_ADD\n");
-    }
-
-    // float acc with float var
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("F_ADD %s\n", v_table[e2.id].name);
-    }
-
-    // float acc with float acc
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("SF_ADD\n");
-    }
-
-    // float acc with comp const
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_CCONST))
-    {
-        get_cmp_cst(e2,&etr,&eti);
-
-        add_instr("F_ADD %s\n" , v_table[etr.id].name);
-        add_instr("P_LOD %s\n" , v_table[eti.id].name);
-    }
-
-    // float acc with comp var
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        get_cmp_ets(e2,&etr,&eti);
-
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-    }
-
-    // float acc with comp acc
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id==0))
-    {
-        add_instr("SET_P __aux_var\n");
-        add_instr("SF_ADD\n");
-        add_instr("P_LOD __aux_var\n");
-    }
-
-    // comp const with int var
-    if ((e1.type==TY_CCONST) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        get_cmp_cst(e1,&etr,&eti);
-
-        add_instr("%s %s\n", i2f, v_table[e2.id].name);
-        add_instr("F_ADD %s\n"  , v_table[etr.id].name);
-        add_instr("P_LOD %s\n"  , v_table[eti.id].name);
-    }
-
-    // comp const with int acc
-    if ((e1.type==TY_CCONST) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        get_cmp_cst(e1,&etr,&eti);
-
-        add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-    }
-
-    // comp const with float var
-    if ((e1.type==TY_CCONST) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        get_cmp_cst(e1,&etr,&eti);
-
-        add_instr("%s %s\n", ld, v_table[e2.id].name);
-        add_instr("F_ADD %s\n" , v_table[etr.id].name);
-        add_instr("P_LOD %s\n" , v_table[eti.id].name);
-    }
-
-    // comp const with float acc
-    if ((e1.type==TY_CCONST) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        get_cmp_cst(e1,&etr,&eti);
-
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-    }
-
-    // comp const with comp const
-    if ((e1.type==TY_CCONST) && (e2.type==TY_CCONST))
-    {
-        expr et1r, et2r;
-        expr et1i, et2i;
-
-        get_cmp_cst(e1,&et1r,&et1i);
-        get_cmp_cst(e2,&et2r,&et2i);
-
-        add_instr("%s %s\n", ld, v_table[et1r.id].name);
-        add_instr("F_ADD %s\n" , v_table[et2r.id].name);
-
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_ADD %s\n" , v_table[et2i.id].name);
-    }
-
-    // comp const with comp var
-    if ((e1.type==TY_CCONST) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        expr et1r, et2r;
-        expr et1i, et2i;
-
-        get_cmp_cst(e1,&et1r,&et1i);
-        get_cmp_ets(e2,&et2r,&et2i);
-
-        add_instr("%s %s\n", ld, v_table[et1r.id].name);
-        add_instr("F_ADD %s\n" , v_table[et2r.id].name);
-
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_ADD %s\n" , v_table[et2i.id].name);
-    }
-
-    // comp const with comp acc
-    if ((e1.type==TY_CCONST) && (e2.type==TY_COMP) && (e2.id==0))
-    {
-        get_cmp_cst(e1,&etr,&eti);
-
-        add_instr("SET_P __aux_var\n");
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_ADD __aux_var\n");
-    }
-
-    // comp var with int var
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        get_cmp_ets(e1,&etr,&eti);
-
-        add_instr("%s  %s\n", i2f, v_table[e2.id].name);
-        add_instr("F_ADD %s\n"    , v_table[etr.id].name);
-        add_instr("P_LOD  %s\n"    , v_table[eti.id].name);
-    }
-
-    // comp var with int acc
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        get_cmp_ets(e1,&etr,&eti);
-
-        add_instr("I2F\n");
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-    }
-
-    // comp var with float var
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        get_cmp_ets(e1,&etr,&eti);
-
-        add_instr("%s %s\n", ld, v_table[e2.id].name);
-        add_instr("F_ADD %s\n" , v_table[etr.id].name);
-        add_instr("P_LOD %s\n" , v_table[eti.id].name);
-    }
-
-    // comp var with float acc
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        get_cmp_ets(e1,&etr,&eti);
-
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-    }
-
-    // comp var with comp const
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_CCONST))
-    {
-        expr et1r, et2r;
-        expr et1i, et2i;
-
-        get_cmp_ets(e1,&et1r,&et1i);
-        get_cmp_cst(e2,&et2r,&et2i);
-
-        add_instr("%s %s\n", ld, v_table[et1r.id].name);
-        add_instr("F_ADD %s\n" , v_table[et2r.id].name);
-
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_ADD %s\n" , v_table[et2i.id].name);
-    }
-
-    // comp var with comp var: the walker computes it part by part (ast.c,
-    // comp_partwise), so it does not reach here
-
-    // comp var with comp acc
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id==0))
-    {
-        get_cmp_ets(e1,&etr,&eti);
-
-        add_instr("SET_P __aux_var\n");
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-        add_instr("F_ADD __aux_var\n");
-    }
-
-    // comp acc with int var
-    if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("SET_P __aux_var\n");
-        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
-        add_instr("SF_ADD\n");
-        add_instr("P_LOD __aux_var\n");
-    }
-
-    // comp acc with int acc
-    if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("SET_P   __aux_var\n" );
-        add_instr("SET_P   __aux_var1\n");
-        add_instr("P_I2F_M __aux_var\n" );
-        add_instr("SF_ADD\n");
-        add_instr("P_LOD   __aux_var1\n");
-    }
-
-    // comp acc with float var
-    if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("SET_P __aux_var\n");
-        add_instr("F_ADD %s\n", v_table[e2.id].name);
-        add_instr("P_LOD __aux_var\n");
-    }
-
-    // comp acc with float acc
-    if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("SET_P __aux_var\n" );
-        add_instr("SET_P __aux_var1\n");
-        add_instr("F_ADD __aux_var\n" );
-        add_instr("P_LOD __aux_var1\n");
-    }
-
-    // comp acc with comp const
-    if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_CCONST))
-    {
-        get_cmp_cst(e2,&etr,&eti);
-
-        add_instr("SET_P __aux_var\n");
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-
-        add_instr("P_LOD __aux_var\n");
-        add_instr("F_ADD %s\n", v_table[eti.id].name);
-    }
-
-    // comp acc with comp var
-    if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        get_cmp_ets(e2,&etr,&eti);
-
-        add_instr("SET_P __aux_var\n");
-        add_instr("F_ADD %s\n", v_table[etr.id].name);
-
-        add_instr("P_LOD __aux_var\n");
-        add_instr("F_ADD %s\n", v_table[eti.id].name);
-    }
-
-    // comp acc with comp acc
-    if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id==0))
-    {
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET_P __aux_var1\n");
-        add_instr("SET_P __aux_var2\n");
-        add_instr("F_ADD __aux_var1\n");
-
-        add_instr("P_LOD __aux_var2\n");
-        add_instr("F_ADD __aux_var \n");
-    }
-
+    emit_tpl(add_tpl[place_of(e1)][place_of(e2)], e1, e2);
     acc_live = 1;
-
-    int type;
-         if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT))
-         type = 3;
-    else if ((e1.type > TY_INT) || (e2.type > TY_INT))
-         type = 2;
-    else type = 1;
-
-    return expr_make(type, 0);
+    return expr_make(result_type(e1, e2), 0);
 }
 
 // subtraction between two numbers
