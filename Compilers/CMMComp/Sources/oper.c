@@ -222,31 +222,10 @@ expr oper_sub(expr e1, expr e2)
         return expr_make(TY_INT, 0);
     }
 
-    // int var with int var
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        return oper_add(e1, oper_neg(e2));
-    }
-
-    // int var with int acc
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        return oper_add(e1, oper_neg(e2));
-    }
+    // an int minus an int is an int plus its negation: sub_tpl has no int cell
+    if ((e1.type==TY_INT) && (e2.type==TY_INT)) return oper_add(e1, oper_neg(e2));
 
     emit_tpl(sub_tpl[place_of(e1)][place_of(e2)], e1, e2);
-
-    // int acc with int var
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        return oper_add(e1, oper_neg(e2));
-    }
-
-    // int acc with int acc
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        return oper_add(e1, oper_neg(e2));
-    }
 
     // comp var with comp var: the walker computes it part by part (ast.c,
     // comp_partwise), so it does not reach here
