@@ -412,6 +412,9 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **A NUL byte in the source is named** (#108 A19), as any other unknown
+  character, and the source table reads a line byte by byte, so a NUL no
+  longer cuts it and shifts the waveform's source track.
 - **An internal error of cmmcomp is a message in both languages** (#108
   A17, A18), naming where it happened. Three were English-only text, and
   the switches of the logic, bitwise and shift operators and of the

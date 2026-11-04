@@ -284,7 +284,7 @@ COMEN  "//"[^\n]*
 [\r\f\v]     ;
  /* any other character is no part of C±: 'a' read as a, without a word (#108 A8) */
 [\xC0-\xF7][\x80-\xBF]* {fatal(MSG_ERR_UNKNOWN_CHAR, pctx.line_num+1, yytext);}
-.            {fatal(MSG_ERR_UNKNOWN_CHAR, pctx.line_num+1, yytext);}
+.            {fatal(MSG_ERR_UNKNOWN_CHAR, pctx.line_num+1, yytext[0] ? yytext : "\\0");}
 
  /* End of a macro body buffer -> clear its active flag and resume the buffer
   * underneath. At the real end of the file (no live macro) stop. */
