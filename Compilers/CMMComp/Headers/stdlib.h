@@ -2,7 +2,7 @@
 // SAPHO standard library -----------------------------------------------------
 // ----------------------------------------------------------------------------
 
-// these routines should be called from the .y (parser)
+// the built-ins (builtin_*): the walker calls them (ast.c, dirac.c, stdlib.c)
 
 #ifndef CMM_STDLIB_H
 #define CMM_STDLIB_H

@@ -22,14 +22,14 @@
 
 int acc_live = 0;   // 0: the acc holds nothing an expression needs (LOD), 1: it does (P_LOD)
 
-// One-instruction window for the SET-then-LOD peephole. Holds the most
-// recent string passed to add_instr so the next call can detect a redundant
-// load. Cleared by every control-flow boundary (labels via add_sinst, capture
-// push/pop, macro start/end) so the drop only fires within a basic block.
+// The last instruction emitted (acc_after keeps it): acc_holds_elem asks
+// whether it was an indexed store or read (STI, ISI, LDI). Cleared by every
+// control-flow boundary (labels via add_sinst, capture push/pop, macro
+// start/end). The redundant load itself is found by acc_names below.
 static char *last_str = NULL;           // NULL: none
 
-// Name of the variable/constant currently sitting in the accumulator, or "" when
-// unknown. A plain LOD/P_LOD/SET of an operand leaves that operand's value in the
+// The names of the variables, constants and keys the accumulator is known to
+// hold, at most ACC_NAMES (when full, the oldest goes). A plain LOD/P_LOD/SET of an operand leaves that operand's value in the
 // acc; every other op clobbers it. add_instr drops a "LOD x" whenever x is among
 // acc_names (the acc holds it), which generalises the old "LOD x after SET x"
 // peephole. Cleared at every basic-block boundary alongside last_str. A SET
@@ -109,7 +109,7 @@ void acc_holds_elem(const char *key)
         acc_only(key);
 }
 
-// What the acc holds now, named by the caller (global.h): the index of an
+// What the acc holds now, named by the caller (acc.h): the index of an
 // indexed store, computed into the acc ("[ii+j]", ast.c), so that a read at
 // the same index inside the right-hand side pushes it with PSH instead of
 // computing it again; the Dirac loops' sums and counters (dirac.c), which they

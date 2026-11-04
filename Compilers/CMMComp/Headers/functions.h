@@ -39,7 +39,7 @@ stmt_node *vcall      (int id);       // void user call: packages args into a ST
 expr_node *fcall      (int id);       // value user call: builds and returns node
 
 // argument-stack frames for nested function calls. args_frame_push() is
-// called from the grammar mid-rule action right after 'ID ('; par_exp /
+// called from exp_list's reductions (CMMComp.y, no mid-rule action); par_exp /
 // par_listexp push each arg's node onto the frame; fcall / vcall drain the
 // frame when ')' is reduced.
 void  args_frame_push(void);

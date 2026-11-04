@@ -48,7 +48,7 @@ long long mant_pow2(void)
 // ----------------------------------------------------------------------------
 
 // Updates parse-time compiler state for the directive (every subsequent rule
-// reads these globals to make decisions before the AST walker runs), then
+// reads these cfg fields to make decisions before the AST walker runs), then
 // appends a STMT_DIRECTIVE to the open stmt_list so the emit fires from
 // the global walker at `fim`.
 void directive_exec(const char *dir, int id, dir_code t)

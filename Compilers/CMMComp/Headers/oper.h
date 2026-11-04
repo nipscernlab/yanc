@@ -1,7 +1,7 @@
 #ifndef CMM_OPER_H
 #define CMM_OPER_H
 
-#include "ast.h"   // expr (for the migrated unary operators)
+#include "ast.h"   // expr
 
 // ----------------------------------------------------------------------------
 // arithmetic operations ------------------------------------------------------

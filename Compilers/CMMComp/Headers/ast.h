@@ -7,7 +7,7 @@
 //   - `expr_node` carries the expression subtrees the parser builds while
 //     reducing `exp`. The bison %union holds `expr_node *` directly. Codegen
 //     is deferred: when a statement-level consumer calls ast_emit_expr(), the
-//     walker traverses the tree and dispatches to the existing oper_*/exec_*/
+//     walker traverses the tree and dispatches to the oper_*/builtin_*/
 //     arr_*/pplus_*/id2exp/num2exp helpers in post-order DFS, the order the
 //     parser reduces, except where reordering saves instructions (the
 //     heavier operand of a commutative op first, an operand the acc holds).
@@ -27,7 +27,7 @@
 // expression result POD -------------------------------------------------------
 // ----------------------------------------------------------------------------
 //
-// Returned by ast_emit_expr() and by the oper_*/exec_*/id2exp/num2exp/arr_*/
+// Returned by ast_emit_expr() and by the oper_*/builtin_*/id2exp/num2exp/arr_*/
 // pplus_* helpers inside the walker. Carries enough to describe where the
 // freshly-emitted value lives so the next emit helper can dispatch.
 //
@@ -225,7 +225,7 @@ void dirac_not_vector(int id);
 void shapecheck_expr(expr_node *n);
 
 // recursively walks an expression tree and emits the corresponding assembly
-// via the existing oper_* / exec_* / arr_* / pplus_* / num2exp / id2exp
+// via the oper_* / builtin_* / arr_* / pplus_* / num2exp / id2exp
 // helpers. Returns the result POD the same way those helpers do. Called by
 // the statement walker (stmt_emit) for every expression a statement holds.
 expr ast_emit_expr(expr_node *n);
@@ -417,7 +417,7 @@ void       stmt_list_open       (void);
 stmt_node *stmt_list_close      (void);
 
 // Read the current top STMT_BLOCK without popping it. Helpers like
-// case_test / switch_break append directly to it.
+// case_test / defaut_test append directly to it.
 stmt_node *stmt_list_top        (void);
 
 // Dirac linear algebra: dst # rhs; with rhs a Dirac expression, and the

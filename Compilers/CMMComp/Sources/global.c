@@ -175,7 +175,7 @@ void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, const ch
     char *path = xasprintf("%s/prog_log.txt", dir_tmp); ectx.f_log = fopen(path,"w"); // log with info for the assembler and gtkwave
     if (ectx.f_log == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
     out_track(path, &ectx.f_log);
-    path = xasprintf("%s/pc_%s_mem.txt", dir_tmp, cfg.prname); ectx.f_lin = fopen(path,"w"); // memory in pc.v that bridges asm to cmm
+    path = xasprintf("%s/pc_%s_mem.txt", dir_tmp, cfg.prname); ectx.f_lin = fopen(path,"w"); // each instruction's source line, for wave_map.py and the waveform
     if (ectx.f_lin == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, path);
     out_track(path, &ectx.f_lin);
 
@@ -379,7 +379,7 @@ void add_instr(const char *inst, ...)
     // ------------------------------------------------------------------------
     // acc_names track the operands currently in the acc: a plain LOD / P_LOD /
     // SET of an operand leaves its value there (SET stores acc to memory and
-    // leaves acc unchanged -- instr_dec.v opcode 4 -> ula_op 0); every other op
+    // leaves acc unchanged; acc.c says which instructions keep it); every other op
     // clobbers it. So a "LOD x" while x is among them is a no-op and is dropped.
     // This subsumes the old "LOD x after SET x" case. Only the plain LOD is
     // dropped -- P_LOD also pushes, so it must always run. acc_names are cleared
