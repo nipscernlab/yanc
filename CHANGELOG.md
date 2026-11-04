@@ -412,6 +412,9 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **Who owns cmmcomp's memory is written down** (#108 A24), in
+  CONTRIBUTING.md: the tables and trees of the run are never freed, on
+  purpose, and every allocation goes through `xstr.h`.
 - **The shared code of the tools checks every allocation** (#108 A22,
   A23). `asm_share.c` had 58 `malloc`/`calloc`/`realloc`/`strdup` whose
   failure crashed asmcomp or cmmcomp; `exe_dir.c` cut a path at 4096
