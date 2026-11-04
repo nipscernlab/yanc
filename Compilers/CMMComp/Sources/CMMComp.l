@@ -169,12 +169,11 @@ COMEN  "//"[^\n]*
 
  /* |in(p)⟩, an input ket, as one token: x | in(0) is a valid bitwise or */
 "|"[ \t]*"in"[ \t]*"("[ \t]*{INNUM}[ \t]*")"[ \t]*"⟩" {
-                char num[64]; int n = 0;
                 const char *p = strchr(yytext, '(') + 1;
                 while (*p == ' ' || *p == '\t') p++;
-                while (*p && *p != ' ' && *p != '\t' && *p != ')' && n < 63) num[n++] = *p++;
-                num[n] = 0;
+                char *num = xasprintf("%.*s", (int)strcspn(p, " \t)"), p);   /* any length: a cut port was another port (#108 A4) */
                 yylval.ival = lex_inum(num);
+                free(num);
                 return KETIN;
              }
 

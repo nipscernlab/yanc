@@ -1,0 +1,9 @@
+#NUIOIN 1
+// Negative fixture: the port of |in(p)⟩ is read whole. It was copied into
+// 64 characters and cut, so port 1 written with 70 leading zeros became
+// port 0 and compiled without a word (#108 A4). Port 1 does not exist here.
+float v[3];
+void main()
+{
+    v # |in(00000000000000000000000000000000000000000000000000000000000000000000001)⟩;
+}

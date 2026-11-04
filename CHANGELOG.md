@@ -412,6 +412,8 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **The port of `|in(p)⟩` is read whole** (#108 A4). It was copied into 64
+  characters and cut: port 1 written with 70 leading zeros became port 0.
 - **The Dirac loops give the same assembly on every host** (#108 A1).
   The use weights that choose a loop's counter stride were a `long`, 32
   bits on 64-bit Windows: at depth 3 a sum of uses wrapped there, and the
