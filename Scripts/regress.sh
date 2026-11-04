@@ -313,9 +313,10 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
 
     # Windows: each tool carries the manifest that makes it work in UTF-8
     # (Compilers/common/utf8.rc, as the Makefile builds it)
-    UTF8RES=""
+    UTF8RES=""; CMM_STACK=""
     case "$(uname -s)" in
         MINGW*|MSYS*|CYGWIN*)
+            CMM_STACK="$(mk_list CMM_STACK)"       # cmmcomp's 16 MB stack, as the Makefile
             UTF8RES="$SCRATCH/utf8_res.o"
             (cd "$ROOT/Compilers/common" && windres -O coff utf8.rc "$UTF8RES") ;;
     esac
@@ -325,7 +326,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     flex CMMComp.l
     gcc -O2 -Wall -Werror $(mk_list CMM_WARN) -o "$CMMCOMP" \
         $(mk_list CMMCOMP_C) lex.yy.c y.tab.c \
-        $(mk_list CMMCOMP_COMMON ../../common/) $UTF8RES -lm
+        $(mk_list CMMCOMP_COMMON ../../common/) $UTF8RES $CMM_STACK -lm
     # cmmcomp's helpers one by one (UnitTest/cmm_unit_test.c): every object of
     # cmmcomp, the parser's main renamed so the test's own runs
     gcc -O2 -Wall -Werror -c -Dmain=cmmcomp_main -o "$BIN_DIR/cmm_ytab.o" y.tab.c \
