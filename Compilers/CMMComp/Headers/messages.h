@@ -152,6 +152,14 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: '%s' não é array não, abensoado!\n", \
       "Error on line %d: '%s' ain't an array, mate!\n")
 
+#define MSG_ERR_CASE_TWICE \
+    M("Erro na linha %d: case %s aparece duas vezes neste switch.\n", \
+      "Error on line %d: case %s appears twice in this switch.\n")
+
+#define MSG_ERR_DEFAULT_TWICE \
+    M("Erro na linha %d: este switch já tem um default.\n", \
+      "Error on line %d: this switch already has a default.\n")
+
 #define MSG_ERR_UNKNOWN_CHAR \
     M("Erro na linha %d: o caractere '%s' não faz parte do C±.\n", \
       "Error on line %d: the character '%s' is not part of C±.\n")

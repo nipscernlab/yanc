@@ -11,3 +11,4 @@ ini_local.cmm|+gets the values between braces only once
 ini_global.cmm|gets the values between braces only once
 dirac_or_index.cmm|Syntax error
 define_300.cmm|declared the variable
+case_nested_same.cmm|appears twice

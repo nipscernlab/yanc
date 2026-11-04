@@ -1,0 +1,12 @@
+#NUIOOU 1
+// Negative fixture: case 1 and case 0x01 are one value; the second body
+// could never run (#108 A9).
+void main()
+{
+    int k = 1;
+    switch (k)
+    {
+        case 1:    out(0, 10); break;
+        case 0x01: out(0, 20); break;
+    }
+}

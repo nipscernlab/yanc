@@ -1,0 +1,14 @@
+#NUIOOU 1
+// A nested switch has cases of its own: the same value in both is no
+// repeat (#108 A9).
+void main()
+{
+    int k = 1;
+    switch (k)
+    {
+        case 1:
+            switch (k) { case 1: out(0, 11); break; default: out(0, 12); }
+            break;
+        default: out(0, 2);
+    }
+}

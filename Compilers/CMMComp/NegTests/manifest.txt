@@ -79,3 +79,5 @@ size_huge.cmm|Error on line 3: the array 'm' has 4294967296 elements
 define_empty.cmm|Error on line 9: I'd really appreciate it if you declared the variable 'x'.
 char_quote.cmm|Error on line 7: the character ''' is not part of C±.
 char_utf8.cmm|Error on line 6: the character 'é' is not part of C±.
+case_twice.cmm|Error on line 10: case 1 appears twice in this switch.
+default_twice.cmm|Error on line 10: this switch already has a default.

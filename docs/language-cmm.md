@@ -181,7 +181,8 @@ division by a literal stays a division.
   with a value (`int k = 0`), `step` an assignment or `k++`; either can be
   empty. One clause each, no commas.
 - `case` takes a constant number. A `case` without `break` falls through to
-  the next, as in C.
+  the next, as in C. As in C, a value appears in one `case` of a `switch`
+  only, and a `switch` has one `default` at most.
 - `break` leaves the innermost loop or `switch`; `continue` goes to the next
   turn of the innermost loop.
 - The empty statement `;` and the empty block `{ }` emit nothing, so a

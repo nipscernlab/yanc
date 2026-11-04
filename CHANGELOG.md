@@ -412,6 +412,9 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **A repeated `case` and a second `default` are errors** (#108 A9), as
+  in C. The second `case 1:` could never run, and of two defaults the
+  second won without a word.
 - **The lexer no longer loses text** (#108 A7, A8, A11). `#define NAME`
   with no body swallowed the next line and shifted every later line
   number; any character C± does not know (`'a'`) was dropped, so `'a'`

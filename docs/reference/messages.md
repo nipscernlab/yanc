@@ -37,6 +37,8 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: '<name>' is an array. Where's the index, dude?
 - Error on line <n>: '<name>' isn't an array.
 - Error on line <n>: '<name>' ain't an array, mate!
+- Error on line <n>: case <name> appears twice in this switch.
+- Error on line <n>: this switch already has a default.
 - Error on line <n>: the character '<name>' is not part of C±.
 - Error on line <n>: the index <n> of '<name>' is out of range, 0 to <n>.
 - Error on line <n>: the array '<name>' has <n> elements; it can have 1 to <n>.
