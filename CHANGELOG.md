@@ -134,6 +134,15 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **Two words that the ISA writes as one are one** (#38). A new pass of
+  cmmcomp, `asm_fuse` (`Compilers/common/asm_share.c`), writes `P_LOD x`
+  followed by a commutative stack operation as its memory form
+  (`P_LOD x; SF_ADD` is `F_ADD x`; also `S_ADD`, `S_MLT`, `S_AND`, `S_ORR`,
+  `S_XOR`, `SF_MLT`) and `PSH; LOD x` as `P_LOD x`. The float sum and
+  product are symmetric in their operands (`SAPHO/ula.v`). 21 instructions
+  out of 6 tests: `cmm_cov_lib` -9, `cmm_cov_ops` -4, `cmm_cov_rest` -4,
+  `cmm_comp_arith` -2, `cmm_clog` -1, `cmm_pplus` -1.
+
 - **The source lists live only in the Makefile.** `Scripts/regress.sh` and
   `Scripts/cmm_cov.sh` build with their own flags but read the lists from
   it (`make -s print-CMMCOMP_C`, `print-CMMCOMP_COMMON`, ...), so a new

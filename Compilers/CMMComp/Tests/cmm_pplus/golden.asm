@@ -128,8 +128,7 @@ LDI a
 ADD 1
 STI a
 ADD -1
-PSH
-LOD main_j
+P_LOD main_j
 PSH
 LDI a
 ADD 1

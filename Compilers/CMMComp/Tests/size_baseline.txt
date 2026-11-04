@@ -13,10 +13,10 @@ cmm_callseq 53
 cmm_catan  341
 cmm_cexp   125
 cmm_cfold  21
-cmm_clog   335
+cmm_clog   334
 cmm_cmpforms 311
 cmm_cnum_expr 109
-cmm_comp_arith 99
+cmm_comp_arith 97
 cmm_comp_cmp 467
 cmm_comp_div 119
 cmm_comp_fase 422
@@ -31,11 +31,11 @@ cmm_cov_acc 470
 cmm_cov_arr1d 2474
 cmm_cov_arr2d_rd 5256
 cmm_cov_arr2d_wr 9047
-cmm_cov_lib 10006
+cmm_cov_lib 9997
 cmm_cov_misc 526
-cmm_cov_ops 14788
+cmm_cov_ops 14784
 cmm_cov_ops2 10157
-cmm_cov_rest 2644
+cmm_cov_rest 2640
 cmm_csincos 184
 cmm_ctan   258
 cmm_ctlforms 131
@@ -73,7 +73,7 @@ cmm_nubits8 93
 cmm_order_switch 87
 cmm_params 327
 cmm_pow    116
-cmm_pplus  248
+cmm_pplus  247
 cmm_reach  21
 cmm_reorder 56
 cmm_return 90
