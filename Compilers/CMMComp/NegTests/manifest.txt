@@ -76,3 +76,6 @@ idx_past_row_comp.cmm|Error on line 7: the index 2 of 'm' is out of range, 0 to 
 size_zero.cmm|Error on line 2: the array 'a' has 0 elements
 size_zero_2d.cmm|Error on line 2: the array 'm' has 0 elements
 size_huge.cmm|Error on line 3: the array 'm' has 4294967296 elements
+define_empty.cmm|Error on line 9: I'd really appreciate it if you declared the variable 'x'.
+char_quote.cmm|Error on line 7: the character ''' is not part of C±.
+char_utf8.cmm|Error on line 6: the character 'é' is not part of C±.

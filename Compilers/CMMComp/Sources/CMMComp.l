@@ -21,10 +21,9 @@ int  conta_linhas(char *texto); // for block comments
  * per-macro `active` flag (set while a macro's body buffer is live) stops a
  * self-referential define from expanding forever. Object-like only --
  * function-like macros, #ifdef and #include are out of scope. */
-#define CMM_MAX_DEFINES 256
-static struct { char *name; char *body; int active; } g_def[CMM_MAX_DEFINES];
-static int  g_ndef = 0;
-static int  g_def_stack[CMM_MAX_DEFINES];   /* indices of the live body buffers */
+static struct def_entry { char *name; char *body; int active; } *g_def = NULL;
+static int  g_ndef = 0, g_def_cap = 0;      /* as many defines as the program has (#108 A11) */
+static int *g_def_stack = NULL;             /* indices of the live body buffers: each define at most once */
 static int  g_def_sp = 0;
 static char *g_def_pending = NULL;          /* name captured before its body */
 
@@ -39,7 +38,11 @@ static void def_add(const char *name, char *body) {
     while (n && (body[n-1]==' '||body[n-1]=='\t'||body[n-1]=='\r')) body[--n] = 0; /* trailing WS/CR */
     int i = def_find(name);
     if (i < 0) {
-        if (g_ndef >= CMM_MAX_DEFINES) return;               /* table full: ignore */
+        if (g_ndef == g_def_cap) {
+            g_def_cap = g_def_cap ? 2 * g_def_cap : 64;
+            g_def       = xrealloc(g_def,       (size_t)g_def_cap * sizeof *g_def);
+            g_def_stack = xrealloc(g_def_stack, (size_t)g_def_cap * sizeof *g_def_stack);
+        }
         i = g_ndef++;
         g_def[i].name = xstrdup(name);
         g_def[i].body = NULL;
@@ -51,7 +54,7 @@ static void def_add(const char *name, char *body) {
 
 %}
 
-%option nounput noinput
+%option nounput noinput nodefault
 
 %x DEFNAME DEFBODY
 
@@ -95,7 +98,9 @@ COMEN  "//"[^\n]*
                           free(g_def_pending); g_def_pending = xstrdup(yytext); BEGIN(DEFBODY); }
 <DEFNAME>\n             { pctx.line_num++; BEGIN(INITIAL); }
 <DEFNAME>.              BEGIN(INITIAL);
-<DEFBODY>[^\n]*         { def_add(g_def_pending, yytext); BEGIN(INITIAL); }
+<DEFBODY>[^\n]+         { def_add(g_def_pending, yytext); BEGIN(INITIAL); }
+ /* no body: the define is empty, and the newline still ends the line (#108 A7) */
+<DEFBODY>\n             { char none[] = ""; def_add(g_def_pending, none); pctx.line_num++; BEGIN(INITIAL); }
 
 "in"          return INN;
 "fin"         return FIN;
@@ -272,7 +277,10 @@ COMEN  "//"[^\n]*
 {BLOCO}      {pctx.line_num += conta_linhas(yytext);}
 {COMEN}      ;
 {WS}         ;
-.            ;
+[\r\f\v]     ;
+ /* any other character is no part of C±: 'a' read as a, without a word (#108 A8) */
+[\xC0-\xF7][\x80-\xBF]* {fatal(MSG_ERR_UNKNOWN_CHAR, pctx.line_num+1, yytext);}
+.            {fatal(MSG_ERR_UNKNOWN_CHAR, pctx.line_num+1, yytext);}
 
  /* End of a macro body buffer -> clear its active flag and resume the buffer
   * underneath. At the real end of the file (no live macro) stop. */
@@ -291,6 +299,6 @@ int yywrap(void) {return 1;}
 int conta_linhas(char *texto)
 {
    int cnt = 0;
-   for(int i=0;i<strlen(texto);i++) if (texto[i] == '\n') cnt++;
+   for (const char *c = texto; *c; c++) if (*c == '\n') cnt++;   /* one pass: strlen each turn was quadratic (#108 A21) */
    return cnt;
 }

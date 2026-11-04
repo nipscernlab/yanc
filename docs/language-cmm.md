@@ -281,12 +281,14 @@ instructions: `sqrt`, `exp`, `log`, `pow`, `sin`, `cos`, `tan`, `atan`,
 ## The preprocessor
 
 `#define NAME text` replaces the name by the text from there on:
-`#define N 64`. It takes no arguments. There is no `#include` and no
-`#if`.
+`#define N 64`; with no text, the name is replaced by nothing. It takes
+no arguments, and a program may have any number of them. There is no
+`#include` and no `#if`.
 
 ## What does not exist
 
-Pointers, `struct`, strings, recursion, dynamic memory, `#include`, several
+Pointers, `struct`, strings and characters (`'a'` is an error),
+recursion, dynamic memory, `#include`, several
 source files, arrays of more than two dimensions, arrays as parameters,
 `goto`, `--`, compound assignment, `?:`, casts. Most of them are in the C++
 YANC accepts, at a cost in instructions; C± keeps the processor small.

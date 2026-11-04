@@ -152,6 +152,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: '%s' não é array não, abensoado!\n", \
       "Error on line %d: '%s' ain't an array, mate!\n")
 
+#define MSG_ERR_UNKNOWN_CHAR \
+    M("Erro na linha %d: o caractere '%s' não faz parte do C±.\n", \
+      "Error on line %d: the character '%s' is not part of C±.\n")
+
 #define MSG_ERR_INDEX_RANGE \
     M("Erro na linha %d: o índice %d de '%s' está fora da faixa, de 0 a %d.\n", \
       "Error on line %d: the index %d of '%s' is out of range, 0 to %d.\n")

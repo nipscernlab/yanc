@@ -412,6 +412,12 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **The lexer no longer loses text** (#108 A7, A8, A11). `#define NAME`
+  with no body swallowed the next line and shifted every later line
+  number; any character C± does not know (`'a'`) was dropped, so `'a'`
+  read the variable `a`; the 257th `#define` on were ignored. An empty
+  define is now empty, an unknown character is an error that names it, and
+  the defines have no limit. A block comment is counted in one pass.
 - **A constant index past the end, and an array of no element, are
   errors** (#108 A5, A6). `int a[4]; a[9] = 1;` wrote another variable's
   word, `int a[0];` compiled, and `int m[65536][65536];` overflowed the
