@@ -1301,7 +1301,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         case 1: strcpy(op, "GRE"); break;
         case 2: strcpy(op, "EQU"); break;
         default:
-            fatal("oper_cmp: invalid type %d at line %d\n", type, pctx.line_num+1);
+            fatal(MSG_ERR_INTERNAL, "oper_cmp", pctx.line_num+1);
     }
 
     // The memory forms compute `X op acc` (ula in1 = memory, in2 = acc), so an
@@ -1489,6 +1489,7 @@ expr oper_logic(expr e1, expr e2, int type)
     {
         case 0: strcpy(op, "LAN"); break;
         case 1: strcpy(op, "LOR" ); break;
+        default: fatal(MSG_ERR_INTERNAL, "oper_logic", pctx.line_num+1);
     }
 
     // a float operand counts by its truth, the word AND 2^NBMANT - 1
@@ -1598,6 +1599,7 @@ expr oper_bitw(expr e1, expr e2, int type)
         case  0: strcpy(op, "AND"); break;
         case  1: strcpy(op, "ORR"); break;
         case  2: strcpy(op, "XOR"); break;
+        default: fatal(MSG_ERR_INTERNAL, "oper_bitw", pctx.line_num+1);
     }
 
     char ld[10]; if (acc_live == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
@@ -1652,6 +1654,7 @@ expr oper_shift(expr e1, expr e2, int type)
         case  0: strcpy(op, "SHL"); break;
         case  1: strcpy(op, "SHR"); break;
         case  2: strcpy(op, "SRS"); break;
+        default: fatal(MSG_ERR_INTERNAL, "oper_shift", pctx.line_num+1);
     }
 
     char ld[10]; if (acc_live == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");

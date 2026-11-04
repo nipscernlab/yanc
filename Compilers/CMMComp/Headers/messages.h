@@ -50,10 +50,6 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: #NUGAIN %d não é potência de dois. norm(x) é x / NUGAIN em hardware: potência de dois vira um deslocamento; qualquer outro valor vira um divisor, o caminho crítico da ALU inteira.\n", \
       "Error on line %d: #NUGAIN %d is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift; anything else becomes a divider, the critical path of the whole ALU.\n")
 
-#define MSG_ERR_NUGAIN_POW2 \
-    M("Erro na linha %d: #NUGAIN %d não é potência de dois. norm(x) é x / NUGAIN em hardware: potência de dois vira um deslocamento; qualquer outro valor vira um divisor, o caminho crítico da ALU inteira.\n", \
-      "Error on line %d: #NUGAIN %d is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift; anything else becomes a divider, the critical path of the whole ALU.\n")
-
 #define MSG_ERR_NUBITS_RANGE \
     M("Erro na linha %d: #NUBITS %d está fora da faixa. A palavra do SAPHO tem de 2 a 32 bits.\n", \
       "Error on line %d: #NUBITS %d is out of range. A SAPHO word has 2 to 32 bits.\n")
@@ -151,6 +147,11 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_ERR_NOT_ARRAY_HARSH \
     M("Erro na linha %d: '%s' não é array não, abensoado!\n", \
       "Error on line %d: '%s' ain't an array, mate!\n")
+
+// a defect of cmmcomp, not of the program: it names the place in the source
+#define MSG_ERR_INTERNAL \
+    M("Erro interno do cmmcomp (%s), na linha %d. Não é culpa do seu programa: avise os mantenedores e mande o programa junto.\n", \
+      "Internal error of cmmcomp (%s), on line %d. Not your program's fault: tell the maintainers and send the program along.\n")
 
 #define MSG_ERR_SCANNER \
     M("Erro: o leitor do código-fonte parou: %s\n", \

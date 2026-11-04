@@ -65,7 +65,7 @@ static void tpl_warn(const char *name)
                     : id == 3 ? MSG_WARN_IDXS_FLOAT    : id == 4 ? MSG_WARN_IDXS_MESS
                     : id == 5 ? MSG_WARN_IDX_COMP_GRAB : id == 6 ? MSG_WARN_IDX_COMP_ROUND
                     : id == 7 ? MSG_WARN_IDX_FLOAT     : id == 8 ? MSG_WARN_IDX_FLOAT_HEAVY : NULL;
-    if (!msg) fatal("tpl_warn: no warning %s\n", name);   // a template of the compiler's own, not the user's
+    if (!msg) fatal(MSG_ERR_INTERNAL, name, pctx.line_num+1);   // a template of the compiler's own, not the user's
     warn(msg, pctx.line_num+1);
 }
 

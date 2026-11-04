@@ -1347,8 +1347,8 @@ static expr ast_emit_expr_impl(expr_node *n)
         case EXPR_DIRAC_IN:
             break;
     }
-    fatal("ast_emit_expr: unhandled kind=%d op=%d at line %d\n",
-          n->kind, n->op, n->line);
+    char *where = xasprintf("ast_emit_expr, kind %d op %d", n->kind, n->op);
+    fatal(MSG_ERR_INTERNAL, where, n->line);
 }
 
 // ----------------------------------------------------------------------------

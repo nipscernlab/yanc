@@ -412,6 +412,11 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **An internal error of cmmcomp is a message in both languages** (#108
+  A17, A18), naming where it happened. Three were English-only text, and
+  the switches of the logic, bitwise and shift operators and of the
+  directives had no `default`, so a bad code left the mnemonic unset.
+  `MSG_ERR_NUGAIN_POW2` was defined twice.
 - **No read of the symbol table races a call that grows it** (#108 A16).
   `v_table[lex_id("__x")].name` let the compiler read `v_table` before
   `lex_id` reallocated it; the 59 such uses read through `sym()`, which

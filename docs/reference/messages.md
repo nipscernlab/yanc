@@ -166,6 +166,7 @@ value. What the common ones mean and how to get past them is in
 
 ### Other
 
+- Internal error of cmmcomp (<name>), on line <n>. Not your program's fault: tell the maintainers and send the program along.
 - Sweet: it compiled! Now you just gotta figure out why it doesn't work.
 
 ## cppcomp (C++)
