@@ -21,6 +21,37 @@
 // array in assignment, e.g. x[i] = y; ----------------------------------------
 // ----------------------------------------------------------------------------
 
+// the index e as an int in the acc, the conversion it needs on the way: an
+// int is loaded, a float converted (F2I, F2I_M) with the warning wfloat, a
+// comp by its real part (POP of a comp in the acc) with
+// MSG_WARN_IDX_COMP_ROUND. push: the P_ forms, the acc holding a value to keep
+static void load_index(expr e, int push, const char *wfloat)
+{
+    const char *ld  = push ? "P_LOD"   : "LOD";
+    const char *f2i = push ? "P_F2I_M" : "F2I_M";
+    if (e.type == TY_INT)
+    {
+        if (e.id != 0) add_instr("%s %s\n", ld, v_table[e.id].name);
+        return;
+    }
+    if (e.type == TY_FLOAT)
+    {
+        warn(wfloat, pctx.line_num+1);
+        if (e.id != 0) add_instr("%s %s\n", f2i, v_table[e.id].name);
+        else           add_instr("F2I\n");
+        return;
+    }
+    warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
+    if (e.type == TY_CCONST)
+    {
+        expr etr, eti;
+        get_cmp_cst(e, &etr, &eti);
+        add_instr("%s %s\n", f2i, v_table[etr.id].name);
+    }
+    else if (e.id == 0) {add_instr("POP\n"); add_instr("F2I\n");}
+    else                add_instr("%s %s\n", f2i, v_table[e.id].name);
+}
+
 // loads the array index into the accumulator (1D array)
 void arr_1d_index(int id, expr e)
 {
@@ -40,69 +71,7 @@ void arr_1d_index(int id, expr e)
     // execute ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    expr etr, eti;
-
-    // when int in memory -------------------------------------------------
-
-    if ((e.type == TY_INT) && (e.id != 0))
-    {
-        add_instr("LOD %s\n", v_table[e.id].name);
-    }
-
-    // when int in acc ----------------------------------------------------
-
-    if ((e.type == TY_INT) && (e.id == 0))
-    {
-        // nothing to do
-    }
-
-    // when float in memory -----------------------------------------
-
-    if ((e.type == TY_FLOAT) && (e.id != 0))
-    {
-        warn(MSG_WARN_IDX_FLOAT, pctx.line_num+1);
-
-        add_instr("F2I_M %s\n", v_table[e.id].name);
-    }
-
-    // when float in acc --------------------------------------------------
-
-    if ((e.type == TY_FLOAT) && (e.id == 0))
-    {
-        warn(MSG_WARN_IDX_FLOAT, pctx.line_num+1);
-
-        add_instr("F2I\n");
-    }
-
-    // when comp const in memory ------------------------------------------
-
-    if (e.type == TY_CCONST)
-    {
-        warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
-
-        get_cmp_cst(e, &etr, &eti);
-
-        add_instr("F2I_M %s\n", v_table[etr.id].name);
-    }
-
-    // when comp in acc ---------------------------------------------------
-
-    if ((e.type == TY_COMP) && (e.id == 0))
-    {
-        warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
-
-        add_instr("POP\n");
-        add_instr("F2I\n");
-    }
-
-    // when comp in memory ------------------------------------------------
-
-    if ((e.type == TY_COMP) && (e.id != 0))
-    {
-        warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
-
-        add_instr("F2I_M %s\n", v_table[e.id].name);
-    }
+    load_index(e, 0, MSG_WARN_IDX_FLOAT);
 
     acc_live = 1; // acc carregado
 }
@@ -745,165 +714,38 @@ expr arr_1d2exp(int id, expr e, int fft)
 
     char ldv[10]; if (fft    == 1) strcpy(ldv,"ILI"    ); else strcpy(ldv,"LDI"  );
     char ldi[10]; if (acc_live == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
-    char f2i[10]; if (acc_live == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
 
     // ------------------------------------------------------------------------
     // write the instructions -------------------------------------------------
     // ------------------------------------------------------------------------
 
-    expr  etr, eti;
     int  type = v_table[id].type;
 
     // left int/float ---------------------------------------------------------
 
     if (type < 3)
     {
-        // int in acc
-        if ((e.type == TY_INT) && (e.id == 0))
-        {
-            add_instr("%s %s\n", ldv, v_table[id].name);
-        }
-
-        // int in memory
-        if ((e.type == TY_INT) && (e.id != 0))
-        {
-            add_instr("%s %s\n", ldi, v_table[e.id].name);
-            add_instr("%s %s\n", ldv, v_table[id].name);
-        }
-
-        // float in acc
-        if ((e.type == TY_FLOAT) && (e.id == 0))
-        {
-            warn(MSG_WARN_IDX_FLOAT_HEAVY, pctx.line_num+1);
-
-            add_instr("F2I\n");
-            add_instr("%s %s\n", ldv, v_table[id].name);
-        }
-
-        // float in memory
-        if ((e.type == TY_FLOAT) && (e.id != 0))
-        {
-            warn(MSG_WARN_IDX_FLOAT_HEAVY, pctx.line_num+1);
-
-            add_instr("%s %s\n", f2i, v_table[e.id].name);
-            add_instr("%s %s\n", ldv, v_table[id].name);
-        }
-
-        // comp const in memory
-        if ((e.type == TY_CCONST) && (e.id != 0))
-        {
-            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
-
-            get_cmp_cst(e, &etr, &eti);
-
-            add_instr("%s %s\n", f2i, v_table[etr.id].name);
-            add_instr("%s %s\n", ldv, v_table[id].name);
-        }
-
-        // comp in acc
-        if ((e.type == TY_COMP) && (e.id == 0))
-        {
-            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
-
-            add_instr("POP\n");
-            add_instr("F2I\n");
-            add_instr("%s %s\n", ldv, v_table[id].name);
-        }
-
-        // comp in memory
-        if ((e.type == TY_COMP) && (e.id != 0))
-        {
-            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
-
-            add_instr("%s %s\n", f2i, v_table[e.id].name);
-            add_instr("%s %s\n", ldv, v_table[id].name);
-        }
+        load_index(e, acc_live, MSG_WARN_IDX_FLOAT_HEAVY);
+        add_instr("%s %s\n", ldv, v_table[id].name);
     }
 
     // left comp --------------------------------------------------------------
 
+    // an int index in memory is loaded twice; any other goes through __aux_var
+    else if ((e.type == TY_INT) && (e.id != 0))
+    {
+        add_instr("%s %s\n"    , ldi, v_table[e.id].name);
+        add_instr("%s %s\n"    , ldv, v_table[id].name);
+        add_instr("P_LOD %s\n" ,      v_table[e.id].name);
+        add_instr("%s %s_i\n"  , ldv, v_table[id].name);
+    }
     else
     {
-        // int in acc
-        if ((e.type == TY_INT) && (e.id == 0))
-        {
-            add_instr("SET   __aux_var\n");
-            add_instr("%s %s\n"  , ldv, v_table[id].name);
-            add_instr("P_LOD __aux_var\n");
-            add_instr("%s %s_i\n", ldv, v_table[id].name);
-        }
-
-        // int in memory
-        if ((e.type == TY_INT) && (e.id != 0))
-        {
-            add_instr("%s %s\n"    , ldi, v_table[e.id].name);
-            add_instr("%s %s\n"    , ldv, v_table[id].name);
-            add_instr("P_LOD %s\n" ,      v_table[e.id].name);
-            add_instr("%s %s_i\n"  , ldv, v_table[id].name);
-        }
-
-        // float in acc
-        if ((e.type == TY_FLOAT) && (e.id == 0))
-        {
-            warn(MSG_WARN_IDX_FLOAT_HEAVY, pctx.line_num+1);
-
-            add_instr("F2I\n");
-            add_instr("SET   __aux_var\n");
-            add_instr("%s %s\n"  , ldv, v_table[id].name);
-            add_instr("P_LOD __aux_var\n");
-            add_instr("%s %s_i\n", ldv, v_table[id].name);
-        }
-
-        // float in memory
-        if ((e.type == TY_FLOAT) && (e.id != 0))
-        {
-            warn(MSG_WARN_IDX_FLOAT_HEAVY, pctx.line_num+1);
-
-            add_instr("%s %s\n"  , f2i, v_table[e.id].name);
-            add_instr("SET   __aux_var\n");
-            add_instr("%s %s\n"  , ldv, v_table[id].name);
-            add_instr("P_LOD __aux_var\n");
-            add_instr("%s %s_i\n", ldv, v_table[id].name);
-        }
-
-        // comp const in memory
-        if ((e.type == TY_CCONST) && (e.id != 0))
-        {
-            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
-
-            get_cmp_cst(e, &etr, &eti);
-
-            add_instr("%s %s\n"  , f2i, v_table[etr.id].name);
-            add_instr("SET __aux_var\n");
-            add_instr("%s %s\n"  , ldv, v_table[id].name);
-            add_instr("P_LOD __aux_var\n");
-            add_instr("%s %s_i\n", ldv, v_table[id].name);
-        }
-
-        // comp in acc
-        if ((e.type == TY_COMP) && (e.id == 0))
-        {
-            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
-
-            add_instr("POP\n");
-            add_instr("F2I\n");
-            add_instr("SET   __aux_var\n");
-            add_instr("%s %s\n"  , ldv, v_table[id].name);
-            add_instr("P_LOD __aux_var\n");
-            add_instr("%s %s_i\n", ldv, v_table[id].name);
-        }
-
-        // comp in memory
-        if ((e.type == TY_COMP) && (e.id != 0))
-        {
-            warn(MSG_WARN_IDX_COMP_ROUND, pctx.line_num+1);
-
-            add_instr("%s %s\n"  , f2i, v_table[e.id].name);
-            add_instr("SET   __aux_var\n");
-            add_instr("%s %s\n"  , ldv, v_table[id].name);
-            add_instr("P_LOD __aux_var\n");
-            add_instr("%s %s_i\n", ldv, v_table[id].name);
-        }
+        load_index(e, acc_live, MSG_WARN_IDX_FLOAT_HEAVY);
+        add_instr("SET   __aux_var\n");
+        add_instr("%s %s\n"  , ldv, v_table[id].name);
+        add_instr("P_LOD __aux_var\n");
+        add_instr("%s %s_i\n", ldv, v_table[id].name);
     }
 
     acc_live     = 1;
