@@ -269,7 +269,7 @@ static const char *const mult_tpl[PL_N][PL_N] = {
   /* IA */ {"MLT $b", "S_MLT", "I2F\nF_MLT $b", "SET_P __aux_var\nI2F\nF_MLT __aux_var", "I2F\nSET __aux_var\nF_MLT $br\nP_LOD __aux_var\nF_MLT $bi", "SET_P __aux_var\nSET_P __aux_var1\nI2F\nSET __aux_var2\nF_MLT __aux_var1\nP_LOD __aux_var\nF_MLT __aux_var2"},
   /* FM */ {"$C $b\nF_MLT $a", "I2F\nF_MLT $a", "$L $a\nF_MLT $b", "F_MLT $a", "$L $a\nF_MLT $br\nP_LOD $a\nF_MLT $bi", "SET_P __aux_var\nF_MLT $a\nP_LOD __aux_var\nF_MLT $a"},
   /* FA */ {"P_I2F_M $b\nSF_MLT", "I2F\nSF_MLT", "F_MLT $b", "SF_MLT", "SET __aux_var\nF_MLT $br\nP_LOD $bi\nF_MLT __aux_var", "SET_P __aux_var\nSET_P __aux_var1\nSET __aux_var2\nF_MLT __aux_var1\nP_LOD __aux_var\nF_MLT __aux_var2"},
-  /* CM */ {"$C $b\nF_MLT $ar\nP_I2F_M $b\nF_MLT $ai", "I2F\nSET __aux_var\nF_MLT $ar\nP_LOD __aux_var\nF_MLT $ai", "$L $b\nF_MLT $ar\nP_LOD $b\nF_MLT $ai", "SET __aux_var\nF_MLT $ar\nP_LOD __aux_var\nF_MLT $ai", NULL, "SET_P __aux_var\nSET __aux_var1\nF_MLT $ar\nP_LOD $ai\nF_MLT __aux_var\nSF_SU2\nP_LOD $ar\nF_MLT __aux_var\nP_LOD $ai\nF_MLT __aux_var1\nSF_ADD"},
+  /* CM */ {"$C $b\nF_MLT $ar\nP_I2F_M $b\nF_MLT $ai", "I2F\nSET __aux_var\nF_MLT $ar\nP_LOD __aux_var\nF_MLT $ai", "$L $b\nF_MLT $ar\nP_LOD $b\nF_MLT $ai", "SET __aux_var\nF_MLT $ar\nP_LOD __aux_var\nF_MLT $ai", "$L $ar\nF_MLT $br\nP_LOD $ai\nF_MLT $bi\nSF_SU2\nP_LOD $ar\nF_MLT $bi\nP_LOD $ai\nF_MLT $br\nSF_ADD", "SET_P __aux_var\nSET __aux_var1\nF_MLT $ar\nP_LOD $ai\nF_MLT __aux_var\nSF_SU2\nP_LOD $ar\nF_MLT __aux_var\nP_LOD $ai\nF_MLT __aux_var1\nSF_ADD"},
   /* CA */ {"SET_P __aux_var\nP_I2F_M $b\nSET __aux_var1\nSF_MLT\nP_LOD __aux_var\nF_MLT __aux_var1", "I2F\nSET_P __aux_var\nSET_P __aux_var1\nF_MLT __aux_var\nP_LOD __aux_var1\nF_MLT __aux_var", "SET_P __aux_var\nF_MLT $b\nP_LOD __aux_var\nF_MLT $b", "SET_P __aux_var\nSET_P __aux_var1\nF_MLT __aux_var\nP_LOD __aux_var1\nF_MLT __aux_var", "SET_P __aux_var\nSET __aux_var1\nF_MLT $br\nP_LOD __aux_var\nF_MLT $bi\nSF_SU2\nP_LOD __aux_var\nF_MLT $br\nP_LOD __aux_var1\nF_MLT $bi\nSF_ADD", "SET_P __aux_var\nSET_P __aux_var1\nSET_P __aux_var2\nSET __aux_var3\nF_MLT __aux_var1\nP_LOD __aux_var\nF_MLT __aux_var2\nSF_SU2\nP_LOD __aux_var1\nF_MLT __aux_var2\nP_LOD __aux_var\nF_MLT __aux_var3\nSF_ADD"},
 };
 // multiplies two numbers
@@ -314,50 +314,11 @@ expr oper_mult(expr e1, expr e2)
         }
     }
 
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-
     emit_tpl(mult_tpl[place_of(e1)][place_of(e2)], e1, e2);
 
-    // comp const with comp const
-    if ((e1.type==TY_CCONST) && (e2.type==TY_CCONST))
-    {
-        expr et1r, et1i; get_cmp_cst(e1,&et1r,&et1i);
-        expr et2r, et2i; get_cmp_cst(e2,&et2r,&et2i);
-
-        add_instr("%s %s\n", ld, v_table[et1r.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
-        add_instr("SF_SU2\n");
-
-        add_instr("P_LOD %s\n" , v_table[et1r.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
-        add_instr("SF_ADD\n");
-    }
-
-    // comp const with a comp var or acc: swapped above, the constant goes right
-
-    // comp var with comp const
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_CCONST))
-    {
-        expr et1r, et1i; get_cmp_ets(e1,&et1r,&et1i);
-        expr et2r, et2i; get_cmp_cst(e2,&et2r,&et2i);
-
-        add_instr("%s %s\n", ld, v_table[et1r.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
-        add_instr("SF_SU2\n");
-
-        add_instr("P_LOD %s\n" , v_table[et1r.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2i.id].name);
-        add_instr("P_LOD %s\n" , v_table[et1i.id].name);
-        add_instr("F_MLT %s\n" , v_table[et2r.id].name);
-        add_instr("SF_ADD\n");
-    }
-
+    // a comp in memory by a comp in memory (a constant by a constant, a
+    // variable by a constant) is the table's [CM][CM]: a constant left of a
+    // variable or the acc was swapped above
     // comp var with comp var: the walker computes it part by part (ast.c,
     // comp_partwise), so it does not reach here
 
