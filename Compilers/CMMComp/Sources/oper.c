@@ -1195,6 +1195,15 @@ expr oper_div(expr e1, expr e2)
     return expr_make(type, 0);
 }
 
+// oper_mod: the left operand by row, the right one by column (IM IA FM FA CM CA)
+static const char *const mod_tpl[PL_N][PL_N] = {
+  /* IM */ {"$L $b\nMOD $a", "MOD $a", NULL, NULL, NULL, NULL},
+  /* IA */ {"P_LOD $b\nS_MOD", "S_MOD", NULL, NULL, NULL, NULL},
+  /* FM */ {NULL, NULL, NULL, NULL, NULL, NULL},
+  /* FA */ {NULL, NULL, NULL, NULL, NULL, NULL},
+  /* CM */ {NULL, NULL, NULL, NULL, NULL, NULL},
+  /* CA */ {NULL, NULL, NULL, NULL, NULL, NULL},
+};
 // division remainder
 expr oper_mod(expr e1, expr e2)
 {
@@ -1202,33 +1211,7 @@ expr oper_mod(expr e1, expr e2)
     if ((e1.type > TY_INT) || (e2.type > TY_INT))
         fatal(MSG_ERR_MOD_NON_INT, pctx.line_num+1);
 
-    char ld[10]; if (acc_live == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
-
-    // int var with int var
-    if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id != 0))
-    {
-        add_instr("%s %s\n" , ld, v_table[e2.id].name);
-        add_instr("MOD %s\n",     v_table[e1.id].name);
-    }
-
-    // int var with int acc
-    if ((e1.type == TY_INT) && (e1.id != 0) && (e2.type == TY_INT) && (e2.id == 0))
-    {
-        add_instr("MOD %s\n", v_table[e1.id].name);
-    }
-
-    // int acc with int var
-    if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id != 0))
-    {
-        add_instr("P_LOD %s\n", v_table[e2.id].name);
-        add_instr("S_MOD\n");
-    }
-
-    // int acc with int acc
-    if ((e1.type == TY_INT) && (e1.id == 0) && (e2.type == TY_INT) && (e2.id == 0))
-    {
-        add_instr("S_MOD\n");
-    }
+    emit_tpl(mod_tpl[place_of(e1)][place_of(e2)], e1, e2);
 
     acc_live = 1;
 
