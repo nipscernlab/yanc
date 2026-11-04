@@ -49,9 +49,10 @@ case "$SIM" in
     *) echo "[multi_proc] --sim must be 'iverilog' or 'verilator' (got '$SIM')"; exit 1 ;;
 esac
 
-# --- Tools: binaries + GTKWave always, plus the chosen simulator ------------
+# --- Tools: the binaries and the chosen simulator; GTKWave only to view -----
 [ -x "$YANC_BIN/cmmcomp" ] || { echo "[multi_proc] binaries missing in $YANC_BIN - run Scripts/setup.sh first."; exit 1; }
-[ -n "$GTKWAVE" ]          || { echo "[multi_proc] gtkwave not found - run Scripts/setup.sh (or install gtkwave)."; exit 1; }
+# without GTKWave the run still simulates and writes the .vcd and .gtkw (#117)
+[ -n "$GTKWAVE" ]          || echo "[multi_proc] gtkwave not found - simulating anyway; the waveform files are written but not opened (Scripts/setup.sh, docs/install.md)."
 if [ "$SIM" = iverilog ]; then
     [ -n "$IVERILOG" ] || { echo "[multi_proc] iverilog not found - run Scripts/setup.sh (or install iverilog)."; exit 1; }
 else
@@ -126,6 +127,7 @@ if [ "$SIM" = iverilog ]; then
 else
     echo "#### Running Verilator (+define+YANC_TRACE, --binary --timing --trace-fst)"
     "$VERILATOR" --binary --timing --trace-fst +define+YANC_TRACE --top-module "$TB" \
+        ${YANC_VL_CFLAGS:+-CFLAGS "$YANC_VL_CFLAGS"} \
         "${VL_WARN[@]}" --Mdir "$VL_DIR" "${HDL_V[@]}" "${PRO_V[@]}" "${TOP_V[@]}"
 
     # Stage the files the run reads with relative paths into the CWD (= TMP_DIR).
@@ -145,8 +147,12 @@ else
 fi
 
 # --- View in GTKWave (layout built by gen_gtkw) -----------------------------
-echo "#### Generating the .gtkw layout (gen_gtkw) and launching GTKWave"
+echo "#### Generating the .gtkw layout (gen_gtkw)${GTKWAVE:+ and launching GTKWave}"
 "$BIN_DIR/gen_gtkw" "$TMP_DIR/${TB}_hdr.vcd" "$TMP_DIR/$TB.gtkw" "$TMP_DIR" "$BIN_DIR/comp2gtkw"
-"$GTKWAVE" --dark --zoom-fit --left-justify "$TMP_DIR/$TB.vcd" -a "$TMP_DIR/$TB.gtkw"
+if [ -n "$GTKWAVE" ]; then
+    "$GTKWAVE" --dark --zoom-fit --left-justify "$TMP_DIR/$TB.vcd" -a "$TMP_DIR/$TB.gtkw"
+else
+    echo "[multi_proc] no gtkwave: the waveform is $TMP_DIR/$TB.vcd, its layout $TMP_DIR/$TB.gtkw"
+fi
 
 cd "$ROOT_DIR"

@@ -35,8 +35,9 @@ the version `yanc`, `cmmcomp`, `cppcomp` and `asmcomp` print with `-V`.
 
 ## Dependencies for building
 
-The build needs `gcc`, `make`, `bison` and `flex`: on Windows from MSYS2
-(`pacman -S mingw-w64-x86_64-gcc make bison flex`), on Linux from the
+The build needs `gcc`, `make`, `bison` and `flex`: on Windows from MSYS2's
+UCRT64 environment (the package list is in
+[Installing YANC](../install.md#to-simulate)), on Linux from the
 distribution (Debian/Ubuntu: `build-essential bison flex`). The simulators
 and GTKWave are the same as for using YANC ([Installing YANC](../install.md#to-simulate)).
 
@@ -157,10 +158,13 @@ Requirements (Windows + [MSYS2](https://www.msys2.org/)):
   ```
   set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
   ```
-* Optional, only needed if you want to simulate the generated Verilog — both
-  are MSYS2 packages, so they install the same way as the build toolchain:
-  * [Icarus Verilog](http://iverilog.icarus.com/) (`iverilog` + `vvp`) — `pacman -S mingw-w64-x86_64-iverilog`, and/or
-  * [Verilator](https://verilator.org/) **5.x** — `pacman -S mingw-w64-x86_64-verilator`. Its `--binary` mode drives the MinGW `g++` and `python3` from your `mingw64` toolchain, so keep `…\mingw64\bin` on `PATH`.
+* Optional, only needed if you want to simulate the generated Verilog. MSYS2
+  ships both only in UCRT64 now (no longer in MINGW64), so the bash scripts
+  of an "MSYS2 UCRT64" terminal are the way to simulate
+  ([Installing YANC](../install.md#to-simulate)); the `.bat` runners still
+  look for them in `mingw64\bin` and have not been moved to UCRT64 yet (#117):
+  * [Icarus Verilog](http://iverilog.icarus.com/) (`iverilog` + `vvp`) — `pacman -S mingw-w64-ucrt-x86_64-iverilog`, and/or
+  * [Verilator](https://verilator.org/) **5.x** — `pacman -S mingw-w64-ucrt-x86_64-verilator`. Its `--binary` mode drives the `g++` and `python3` of the same environment.
   * GTKWave — the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) to view the waveform.
 
 The actual compile commands live in a single top-level **`Makefile`** (the

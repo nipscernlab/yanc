@@ -41,9 +41,10 @@ case "$SIM" in
     *) echo "[single_proc] --sim must be 'iverilog' or 'verilator' (got '$SIM')"; exit 1 ;;
 esac
 
-# --- Tools: binaries + GTKWave always, plus the chosen simulator ------------
+# --- Tools: the binaries and the chosen simulator; GTKWave only to view -----
 [ -x "$YANC_BIN/cmmcomp" ] || { echo "[single_proc] binaries missing in $YANC_BIN - run Scripts/setup.sh first."; exit 1; }
-[ -n "$GTKWAVE" ]          || { echo "[single_proc] gtkwave not found - run Scripts/setup.sh (or install gtkwave)."; exit 1; }
+# without GTKWave the run still simulates and writes the .vcd and .gtkw (#117)
+[ -n "$GTKWAVE" ]          || echo "[single_proc] gtkwave not found - simulating anyway; the waveform files are written but not opened (Scripts/setup.sh, docs/install.md)."
 if [ "$SIM" = iverilog ]; then
     [ -n "$IVERILOG" ] || { echo "[single_proc] iverilog not found - run Scripts/setup.sh (or install iverilog)."; exit 1; }
 else
@@ -108,6 +109,7 @@ else
     # harness; --trace dumps every signal to <proc>_tb.vcd.
     echo "#### Running Verilator (+define+YANC_TRACE, --binary --timing --trace)"
     "$VERILATOR" --binary --timing --trace +define+YANC_TRACE \
+        ${YANC_VL_CFLAGS:+-CFLAGS "$YANC_VL_CFLAGS"} \
         --top-module "${PROC}_tb" \
         -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH \
         -Wno-CASEINCOMPLETE -Wno-IMPLICIT -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP \
@@ -125,8 +127,12 @@ else
 fi
 
 # --- View in GTKWave (layout built by gen_gtkw) -----------------------------
-echo "#### Generating the .gtkw layout (gen_gtkw) and launching GTKWave"
+echo "#### Generating the .gtkw layout (gen_gtkw)${GTKWAVE:+ and launching GTKWave}"
 "$BIN_DIR/gen_gtkw" "$HDR_VCD" "$GTKW_OUT" "$SRC_DIR" "$BIN_DIR/comp2gtkw"
-"$GTKWAVE" --dark --zoom-fit --left-justify "$WAVE_VCD" -a "$GTKW_OUT"
+if [ -n "$GTKWAVE" ]; then
+    "$GTKWAVE" --dark --zoom-fit --left-justify "$WAVE_VCD" -a "$GTKW_OUT"
+else
+    echo "[single_proc] no gtkwave: the waveform is $WAVE_VCD, its layout $GTKW_OUT"
+fi
 
 cd "$ROOT_DIR"

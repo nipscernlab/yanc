@@ -111,10 +111,10 @@ manual: [docs/index.md](docs/index.md).
 ## Develop
 
 The build needs `gcc`, `make`, `bison` and `flex` (on Windows from
-[MSYS2](https://www.msys2.org/), with the `mingw-w64-x86_64-gcc` cross
-toolchain; on Linux from the distribution). `Scripts/setup.bat` /
-`Scripts/setup.sh` check and install what is missing; the details, including
-a broken gcc version to avoid, are in [docs/install.md](docs/install.md).
+[MSYS2](https://www.msys2.org/), in its UCRT64 environment; on Linux from
+the distribution). `Scripts/setup.bat` / `Scripts/setup.sh` check and
+install what is missing; the details, including the workaround for MSYS2's
+gcc 16 with Verilator, are in [docs/install.md](docs/install.md).
 
 ```sh
 make                              # build every tool into bin/

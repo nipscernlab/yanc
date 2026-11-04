@@ -24,7 +24,10 @@ param(
     # where this machine keeps them, Windows form, found by regress.sh
     # (cygpath on its env.sh lookup): no install path is written here
     [Parameter(Mandatory=$true)] [string] $VlBin,
-    [Parameter(Mandatory=$true)] [string] $WinTmp
+    [Parameter(Mandatory=$true)] [string] $WinTmp,
+    # Scripts/env.sh's YANC_VL_CFLAGS: -D_GLIBCXX_ASSERTIONS under MSYS2, so
+    # that Verilator's C++ links with gcc 16's libstdc++ (#117)
+    [string] $VlCflags = ""
 )
 
 # Stop on CMDLET errors (a missing file, a bad path): those are real.
@@ -74,14 +77,16 @@ $vlDir = Join-Path $TmpDir "vl"
 $simExe = Join-Path $vlDir "sim_$Prname.exe"
 
 # 1. Verilator build
-$buildCode = Invoke-Native $Verilator @(
+$vlArgs = @(
     "--cc", "--exe", "--build", "--top-module", $Prname, "--prefix", "Vtop",
     "-o", "sim_$Prname", "-Wno-lint", "-Wno-UNOPTFLAT", "-Wno-MULTIDRIVEN",
     "-Wno-BLKANDNBLK", "-Wno-WIDTH", "-Wno-CASEINCOMPLETE", "-Wno-IMPLICIT",
-    "-Wno-COMBDLY", "--no-timing", "--Mdir", $vlDir,
-    $SimMain, $UprocV,
+    "-Wno-COMBDLY", "--no-timing", "--Mdir", $vlDir)
+if ($VlCflags) { $vlArgs += @("-CFLAGS", $VlCflags) }
+$vlArgs += @($SimMain, $UprocV,
     "$HdlDir/processor.v", "$HdlDir/core.v", "$HdlDir/ula.v",
     "$HdlDir/addr_dec.v", "$HdlDir/instr_dec.v")
+$buildCode = Invoke-Native $Verilator $vlArgs
 
 if ($buildCode -ne 0 -or -not (Test-Path $simExe)) {
     Write-Error "verilator build failed for $Prname (exit $buildCode)"

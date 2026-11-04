@@ -17,6 +17,7 @@
 #   ROOT_DIR  repo root          YANC_BIN  <repo>/bin (the built binaries)
 #   IVERILOG  iverilog           VVP       vvp
 #   VERILATOR verilator          GTKWAVE   gtkwave        FST2VCD  fst2vcd
+#   YANC_VL_CFLAGS   what every Verilator call adds as -CFLAGS (see below)
 # ****************************************************************************
 
 # Resolve repo root from this file's location (works whether sourced or run).
@@ -35,4 +36,16 @@ YANC_BIN="$ROOT_DIR/bin"
 : "${GTKWAVE:=$(command -v gtkwave    2>/dev/null || true)}"
 : "${FST2VCD:=$(command -v fst2vcd    2>/dev/null || true)}"
 
-export ROOT_DIR YANC_BIN IVERILOG VVP VERILATOR GTKWAVE FST2VCD
+# MSYS2's libstdc++ (gcc 16.1 and 16.2, MINGW64 and UCRT64) lacks the
+# std::string move constructor that Verilator's code needs at -Os. With
+# _GLIBCXX_ASSERTIONS libstdc++ drops its extern template for basic_string,
+# so the compiler instantiates the constructor itself (#117). Every Verilator
+# call passes it as -CFLAGS; empty on Linux. A value already set is kept.
+if [ -z "${YANC_VL_CFLAGS+set}" ]; then
+    case "$(uname -s)" in
+        MINGW*|MSYS*|UCRT*|CLANG*) YANC_VL_CFLAGS="-D_GLIBCXX_ASSERTIONS" ;;
+        *)                         YANC_VL_CFLAGS="" ;;
+    esac
+fi
+
+export ROOT_DIR YANC_BIN IVERILOG VVP VERILATOR GTKWAVE FST2VCD YANC_VL_CFLAGS

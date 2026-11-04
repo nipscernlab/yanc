@@ -36,28 +36,49 @@ YANC writes the processor's Verilog and a testbench; running it takes a
 Verilog simulator, and looking at the result a waveform viewer (see
 [Simulation](simulation.md)).
 
-On **Windows**, [MSYS2](https://www.msys2.org/) provides both simulators;
-GTKWave is a separate download:
+On **Windows**, [MSYS2](https://www.msys2.org/) provides both simulators, in
+its **UCRT64** environment (open the "MSYS2 UCRT64" terminal): MSYS2 no longer
+ships Icarus and Verilator for MINGW64. GTKWave is a separate download:
 
 | what | `pacman` package / source | for |
 | --- | --- | --- |
-| Icarus Verilog | `mingw-w64-x86_64-iverilog` | simulating the generated Verilog |
-| Verilator 5.x | `mingw-w64-x86_64-verilator` | faster simulation, for long runs |
+| Icarus Verilog | `mingw-w64-ucrt-x86_64-iverilog` | simulating the generated Verilog |
+| Verilator 5.x | `mingw-w64-ucrt-x86_64-verilator` | faster simulation, for long runs |
 | GTKWave | the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) | looking at the waveform |
 
+To build YANC and run its scripts as well, the whole list:
+
+```sh
+pacman -S --needed make bison flex diffutils \
+  mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-python \
+  mingw-w64-ucrt-x86_64-iverilog mingw-w64-ucrt-x86_64-verilator
+```
+
+`diffutils` (`cmp`, `diff`) and Python are what `Scripts/regress.sh` and its
+checks run; without them the regression fails in ways that look like
+compiler defects.
+
 > **GTKWave: the nipscernlab build** formats YANC's waveform views; the
-> generic GTKWave does not show them the same way.
+> generic GTKWave does not show them the same way. Extract the zip to a
+> folder of your choice. The MSYS2 terminal does not see the Windows `PATH`,
+> so add the folder to MSYS2's, **after** `/ucrt64/bin` (the zip carries its
+> own `libstdc++-6.dll` and `libgcc_s_seh-1.dll`, which MSYS2's tools must not
+> pick up first), for example in a file `/etc/profile.d/gtkwave.sh`:
+> ```sh
+> export PATH="$PATH:/c/<your folder>/gtkwave-nipscern"
+> ```
+> Without GTKWave, `single_proc.sh` and `multi_proc.sh` still simulate and
+> write the waveform and its layout; they only do not open it. The Verilator
+> flow of `multi_proc.sh` needs `fst2vcd`, which comes with GTKWave.
 >
-> ⚠️ **Avoid `mingw-w64-x86_64-gcc` 16.1.0-5.** That MSYS2 package shipped a
-> broken `libstdc++` (the `std::string` move constructor symbol is missing), so
-> Verilator's `verilated.cpp` fails to link and the `--sim verilator` flow dies
-> with `undefined reference to std::__cxx11::basic_string<...>::basic_string(...&&)`.
-> Use **gcc 15.1.0-5** (known good). To downgrade from the pacman cache:
-> ```
-> pacman -U /var/cache/pacman/pkg/mingw-w64-x86_64-gcc-15.1.0-5-any.pkg.tar.zst \
->           /var/cache/pacman/pkg/mingw-w64-x86_64-gcc-libs-15.1.0-5-any.pkg.tar.zst
-> ```
-> The Icarus flow is unaffected.
+> **gcc 16 and Verilator.** MSYS2's gcc 16 (16.1 and 16.2) ships a
+> `libstdc++` without the `std::string` move constructor at `-Os`, which
+> Verilator's build uses: linking fails with `undefined reference to
+> std::__cxx11::basic_string<...>::basic_string(...&&)`. YANC's scripts pass
+> `-D_GLIBCXX_ASSERTIONS` to Verilator under MSYS2 (`YANC_VL_CFLAGS` in
+> `Scripts/env.sh`), with which the compiler builds the constructor itself;
+> no downgrade is needed. `Scripts/setup.sh` checks it. The Icarus flow is
+> unaffected.
 
 On **Linux**, they come from the distribution's package manager:
 
