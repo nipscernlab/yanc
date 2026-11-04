@@ -16,7 +16,7 @@
 expr builtin_in  (int port);          //  data input
 expr builtin_fin (int port);          //  data input (converting to float)
 void builtin_out (int port, expr e);  // data output
-void builtin_fout(int port, expr e);  // data output (converting to float)
+void builtin_fout(int port, expr e);  // data output of a float, truncated to an int (as out, but warns on an int)
 int  link_use(int id, int sync);   // the link number of a toma/cade (id: its INUM); records plain / _sync
 void link_sync_emit(void);             // #LKSYNC k for every link used with a _sync form
 void builtin_toma(expr e, int k);     // toma(k, e): hands e over link k (docs/design/toma-and-cade-links.md)

@@ -27,6 +27,7 @@ cmm_comp_zero 182
 cmm_comp_sqrt 150
 cmm_conj   56
 cmm_continue 67
+cmm_cov_acc 470
 cmm_cov_arr1d 2474
 cmm_cov_arr2d_rd 5256
 cmm_cov_arr2d_wr 9047

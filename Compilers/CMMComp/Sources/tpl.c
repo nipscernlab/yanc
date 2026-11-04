@@ -25,6 +25,7 @@
 //   $br $bi  the same of the right one,
 //   $L       LOD, or P_LOD when the acc holds a value to keep (acc_live),
 //   $C       I2F_M, or P_I2F_M the same way,
+//   $F       F2I_M, or P_F2I_M the same way,
 //   $1 .. $9 words the emitter passes (emit_tpl_ops): a comparison's
 //            mnemonics, an array's name or its number of columns.
 // A line ?MSG_NAME is no instruction: the warning MSG_NAME, with the line,
@@ -38,35 +39,23 @@ int place_of(expr e)
         case TY_INT:    return mem ? PL_IM : PL_IA;
         case TY_FLOAT:  return mem ? PL_FM : PL_FA;
         case TY_CCONST: return PL_CM;
-        default:        return mem ? PL_CM : PL_CA;   // TY_COMP
+        case TY_COMP:   return mem ? PL_CM : PL_CA;
+        default:        fatal(MSG_ERR_INTERNAL, "place_of", pctx.line_num+1);   // no value: a misrouted operand
     }
 }
 
-// the two parts of a comp in memory: of a constant (two float literals) or of
-// a variable (it and its _i), as the hand-written branches got them
-static void comp_parts(expr e, expr *re, expr *im)
-{
-    if (e.type == TY_CCONST) get_cmp_cst(e, re, im);
-    else                     get_cmp_ets(e, re, im);
-}
-
-// the warnings a template may give, by name: each takes the line only
+// the warnings a template may give, by name: each takes the line only. Not
+// static: M() picks the language when it runs
 static void tpl_warn(const char *name)
 {
-    static const struct { const char *name; int id; } known[] = {
-        {"MSG_WARN_IDX1_FLOAT", 1}, {"MSG_WARN_IDX2_FLOAT", 2}, {"MSG_WARN_IDXS_FLOAT", 3},
-        {"MSG_WARN_IDXS_MESS", 4}, {"MSG_WARN_IDX_COMP_GRAB", 5}, {"MSG_WARN_IDX_COMP_ROUND", 6},
-        {"MSG_WARN_IDX_FLOAT", 7}, {"MSG_WARN_IDX_FLOAT_HEAVY", 8},
+    const struct { const char *name, *msg; } known[] = {
+        {"MSG_WARN_IDX1_FLOAT", MSG_WARN_IDX1_FLOAT}, {"MSG_WARN_IDX2_FLOAT", MSG_WARN_IDX2_FLOAT},
+        {"MSG_WARN_IDXS_FLOAT", MSG_WARN_IDXS_FLOAT}, {"MSG_WARN_IDXS_MESS", MSG_WARN_IDXS_MESS},
+        {"MSG_WARN_IDX_COMP_GRAB", MSG_WARN_IDX_COMP_GRAB},
     };
-    int id = 0;
     for (size_t k = 0; k < sizeof known / sizeof known[0]; k++)
-        if (strcmp(known[k].name, name) == 0) id = known[k].id;
-    const char *msg = id == 1 ? MSG_WARN_IDX1_FLOAT    : id == 2 ? MSG_WARN_IDX2_FLOAT
-                    : id == 3 ? MSG_WARN_IDXS_FLOAT    : id == 4 ? MSG_WARN_IDXS_MESS
-                    : id == 5 ? MSG_WARN_IDX_COMP_GRAB : id == 6 ? MSG_WARN_IDX_COMP_ROUND
-                    : id == 7 ? MSG_WARN_IDX_FLOAT     : id == 8 ? MSG_WARN_IDX_FLOAT_HEAVY : NULL;
-    if (!msg) fatal(MSG_ERR_INTERNAL, name, pctx.line_num+1);   // a template of the compiler's own, not the user's
-    warn(msg, pctx.line_num+1);
+        if (strcmp(known[k].name, name) == 0) {warn(known[k].msg, pctx.line_num+1); return;}
+    fatal(MSG_ERR_INTERNAL, name, pctx.line_num+1);   // a template of the compiler's own, not the user's
 }
 
 // emits template t for the operands e1 and e2 (see above), with the
@@ -75,8 +64,8 @@ void emit_tpl_ops(const char *t, expr e1, expr e2, const char *const *ops)
 {
     if (!t) return;
     expr ar = {0, 0}, ai = {0, 0}, br = {0, 0}, bi = {0, 0};
-    if (place_of(e1) == PL_CM && (strstr(t, "$ar") || strstr(t, "$ai"))) comp_parts(e1, &ar, &ai);
-    if (place_of(e2) == PL_CM && (strstr(t, "$br") || strstr(t, "$bi"))) comp_parts(e2, &br, &bi);
+    if (place_of(e1) == PL_CM && (strstr(t, "$ar") || strstr(t, "$ai"))) get_cmp_parts(e1, &ar, &ai);
+    if (place_of(e2) == PL_CM && (strstr(t, "$br") || strstr(t, "$bi"))) get_cmp_parts(e2, &br, &bi);
     while (*t)
     {
         const char *end = strchr(t, '\n');
@@ -95,6 +84,7 @@ void emit_tpl_ops(const char *t, expr e1, expr e2, const char *const *ops)
                 else if (*r == 'b') {w = v_table[e2.id].name; used = 2;}
                 else if (*r == 'L') {w = acc_live ? "P_LOD"   : "LOD";   used = 2;}
                 else if (*r == 'C') {w = acc_live ? "P_I2F_M" : "I2F_M"; used = 2;}
+                else if (*r == 'F') {w = acc_live ? "P_F2I_M" : "F2I_M"; used = 2;}
                 else if (ops && *r >= '1' && *r <= '9') {w = ops[*r - '1']; used = 2;}
             }
             char *nl = w ? xasprintf("%s%s", line, w) : xasprintf("%s%c", line, t[k]);

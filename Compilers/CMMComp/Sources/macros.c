@@ -54,7 +54,7 @@ int flog  = 0; // whether the natural-logarithm macro is needed
 
 // adds a flag for a predefined macro -----------------------------------------
 
-void mac_add(char *name)
+void mac_add(const char *name)
 {
          if (strcmp(name, "fsqrt") == 0) fsqrt = 1; // square root
     else if (strcmp(name, "fatan") == 0) fatan = 1; // arctangent

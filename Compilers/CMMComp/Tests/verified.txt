@@ -21,6 +21,7 @@ cmm_cov_ops2      | Scripts/cov_tests.py: computed in Python, checked by the reg
 cmm_cov_lib       | Scripts/cov_tests.py: Python math/cmath, the float routines within 3 thousandths, checked by the regression
 cmm_cov_rest      | Scripts/cov_tests.py: computed in Python, checked by the regression
 cmm_cov_misc      | Scripts/cov_tests.py: computed in Python, checked by the regression
+cmm_cov_acc       | Scripts/cov_tests.py: computed in Python, checked by the regression
 cmm_main_return   | the values worked out in its header (10, 20, 5)
 link_envia        | project pass LINK: link_recebe puts n*7+3, the sequence regress.sh computes
 link_recebe       | project pass LINK: n*7+3 from link_envia, the sequence regress.sh computes

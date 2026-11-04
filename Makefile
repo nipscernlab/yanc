@@ -82,8 +82,9 @@ CMMCOMP_COMMON := yanc_num.c xstr.c asm_share.c proc_name.c console_utf8.c exe_d
 ASMCOMP_COMMON := yanc_num.c xstr.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
 CPPCOMP_COMMON := xstr.c asm_share.c proc_name.c console_utf8.c exe_dir.c yanc_lang.c
 # cmmcomp's headers declare every function another file uses (each .c includes
-# its own .h, the rest is static): these keep it so under -Werror
-CMM_WARN := -Wmissing-prototypes -Wstrict-prototypes
+# its own .h, the rest is static), and a string literal is never passed where
+# the text may be written (-Wwrite-strings): these keep it so under -Werror
+CMM_WARN := -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings
 
 BINARIES := $(BIN)/yanc$(EXE) $(BIN)/cmmcomp$(EXE) $(BIN)/asmcomp$(EXE) \
             $(BIN)/cppcomp$(EXE) \

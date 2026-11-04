@@ -219,9 +219,9 @@ COMEN  "//"[^\n]*
                 return LOR;
              }
 
-"comp"       {pctx.type_tmp = 3; yylval.ival = 3; return TYPE;}
-"float"      {pctx.type_tmp = 2; yylval.ival = 2; return TYPE;}
-"int"        {pctx.type_tmp = 1; yylval.ival = 1; return TYPE;}
+"comp"       {pctx.type_tmp = TY_COMP; yylval.ival = TY_COMP; return TYPE;}
+"float"      {pctx.type_tmp = TY_FLOAT; yylval.ival = TY_FLOAT; return TYPE;}
+"int"        {pctx.type_tmp = TY_INT; yylval.ival = TY_INT; return TYPE;}
 "void"       {              yylval.ival = 0; return TYPE;}
 			 
 {VARIA}      {

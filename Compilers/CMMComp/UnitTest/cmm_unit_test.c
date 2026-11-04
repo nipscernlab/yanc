@@ -252,6 +252,10 @@ static void test_tpl(void)
     acc_live = 1;
     check_tpl("tpl $L, acc live",    "$L $a\nADD $b", x, y, NULL, "P_LOD x\nADD y\n");
     check_tpl("tpl $C, acc live",    "$C $a\nF_ADD $b", x, f, NULL, "P_I2F_M x\nF_ADD f\n");
+    check_tpl("tpl $F, acc live",    "$F $b", ia, f, NULL, "P_F2I_M f\n");
+    acc_live = 0;
+    check_tpl("tpl $F, acc free",    "$F $b", ia, f, NULL, "F2I_M f\n");
+    acc_live = 1;
     acc_live = 0;
     check_tpl("tpl comp var parts", "$L $ar\nF_ADD $br\nP_LOD $ai\nF_ADD $bi", c, d, NULL,
               "LOD c\nF_ADD d\nP_LOD c_i\nF_ADD d_i\n");

@@ -19,6 +19,6 @@ typedef enum {
     DIR_FROUND, DIR_NUGAIN, DIR_NUBITS, DIR_FFTSIZ
 } dir_code;
 
-void directive_exec (char *dir, int id, dir_code t);
+void directive_exec (const char *dir, int id, dir_code t);
 
 #endif // CMM_DIRECTIVES_H

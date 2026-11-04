@@ -20,6 +20,22 @@ tags consumed by Aurora.
   `add_instr`, are sites too (all reached). The script also holds `verified.txt` to the part of its
   rule a script can see: a test listed there has a `golden_sim/` and is
   simulated, or is a processor of a project pass.
+- **An argument and a returned value are loaded as their type by one
+  table** (#108 C2). `par_check` and `declare_ret` each wrote the 18
+  conversions (int, float or comp, from each of six places) by hand;
+  `load_tpl` in `convert.c` holds them once, and `tpl.c` takes `$F`
+  (`F2I_M`, or `P_F2I_M` over a pending value) for it.
+- **Coverage counts both states of the accumulator** (#108). A table cell
+  whose two operands are in memory loads with `LOD` or `P_LOD` (`I2F_M` or
+  `P_I2F_M`) as the acc is free or holds a pending value; each state is a
+  site of `Scripts/cmm_cov.sh` now. Four were reached in one state only
+  (the int division and remainder, the int/float comparisons in both
+  orders); the generated `Tests/cmm_cov_acc` reaches the other. It also
+  takes the arms of a choice inside an emitter that a branch measure (gcov)
+  found no test taking: a comp by an imaginary constant, `==` with a comp
+  and a shift by a float, each with the acc free and busy, a switch from
+  `case 0`, and a Dirac store that converts a value in memory. Its 55
+  values are computed in Python.
 - **The operator tables are checked before a test reaches them** (#108).
   `Scripts/cmm_cov.py` stops on a cell with a `$` that `tpl.c` does not
   expand, a name of an operand where the operand has none (`$a` of a value
