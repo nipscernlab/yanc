@@ -1,0 +1,79 @@
+## messages
+Info: 42 assembly instructions generated
+Info: 3 variables written and never read removed (3 instructions)
+Info: 3 calls that end a function made jumps
+Heads up: variable 'a' in function 'sq_plus' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Heads up: variable 'a' in function 'deep' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Heads up: variable 'a' in function 'maybe' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 36 instructions and 7 variables were found
+Info: adding stack memory for function calls
+Info: adding data output handling
+Info: ULA resource -> integer adder
+Info: ULA resource -> integer negative operation
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> < operator for int
+Info: stack depths from the program: SDEPTH 3, NDSTAC 2
+Info: using 8% of the Assembly Instruction Set
+Info: using 11% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+global acc 1
+sq a 1
+sq_plus a 1
+deep a 1
+maybe a 1
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 22: acc = 1;
+1 LOD 1
+2 SET acc
+// 23: twice();
+3 CAL twice
+// 24: out(0, acc);
+4 LOD acc
+5 OUT 0
+// 25: out(0, sq_plus(4));
+6 LOD 4
+7 CAL sq_plus
+8 OUT 0
+// 26: out(0, deep(2) + 1);
+9 LOD 2
+10 CAL deep
+11 ADD 1
+12 OUT 0
+// 27: maybe(1);
+13 LOD 1
+14 CAL maybe
+// 28: maybe(-1);
+15 NEG_M 1
+16 CAL maybe
+// 29: out(0, acc);
+17 LOD acc
+18 OUT 0
+// -3: END
+19 JMP fim
+// 13: void add3() { acc = acc + 3; }
+20 LOD acc
+21 ADD 3
+22 SET acc
+23 RET
+// 14: void twice() { add3(); add3(); }
+24 CAL add3
+25 JMP add3
+// 15: int sq(int a) { return a * a; }
+26 SET sq_a
+27 MLT sq_a
+28 RET
+// 16: int sq_plus(int a) { return sq(a + 1); }
+29 ADD 1
+30 JMP sq
+// 17: int deep(int a) { return sq_plus(a); }
+31 JMP sq_plus
+// 18: void maybe(int a) { if (a > 0) add3(); }
+32 LES 0
+33 JIZ __Lif1else
+34 CAL add3
+35 RET

@@ -279,6 +279,10 @@ void parse_end(char *d_proc)
 	int  noarg = asm_callarg(asm_file, pc_file);
 	if  (noarg > 0) ectx.num_ins -= noarg;
 
+	// a call that ends a function is a jump to it (#38)
+	int  tail = asm_tail(asm_file, pc_file);
+	if  (tail > 0) ectx.num_ins -= tail;
+
 	// variables that are never alive at the same time share a data word ------
 
 	asm_share(asm_file);

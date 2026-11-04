@@ -9,6 +9,7 @@ Info: 1 divisions by a constant kept: the float divider is needed anyway
 Info: 7 divisions, 5 words each for DIV/MOD and 4 for F_DIV (21 added)
 Info: 15 variables written and never read removed (15 instructions)
 Info: 17 instructions computing an argument never read removed
+Info: 1 calls that end a function made jumps
 Info: 47 variables share 13 data words (34 saved)
 Heads up: variable 'dummy' in function 'project_h_hat' is never read, so it's out of the program and the waveform (#WAVE dummy, in the function, keeps it).
 Heads up: variable 'dummy' in function 'project_h_cand' is never read, so it's out of the program and the waveform (#WAVE dummy, in the function, keeps it).
@@ -26,7 +27,7 @@ Heads up: variable 'dummy' in function 'update_h' is never read, so it's out of 
 Heads up: variable 'dummy' in function 'fit' is never read, so it's out of the program and the waveform (#WAVE dummy, in the function, keeps it).
 Heads up: variable 'r' in function 'main' is never read, so it's out of the program and the waveform (#WAVE r, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 552 instructions and 273 variables were found
+Info: 551 instructions and 273 variables were found
 Info: adding data input handling
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
@@ -738,87 +739,85 @@ lang C+-
 481 LES 4
 482 JIZ __Lwh23top
 // 311: project_h_hat(0);
-483 CAL project_h_hat
-// 312: }
-484 RET
+483 JMP project_h_hat
 // 320: int ii = 0;
-485 LOD 0
-486 SET fit_ii
+484 LOD 0
+485 SET fit_ii
 // 321: while (ii < 34) { x_hat[ii] = 0.0; ii++; }
-487 LOD fit_ii
-488 P_LOD 0.0
-489 STI x_hat
-490 LOD fit_ii
-491 ADD 1
-492 SET fit_ii
-493 LES 33
-494 JIZ __Lwh29top
+486 LOD fit_ii
+487 P_LOD 0.0
+488 STI x_hat
+489 LOD fit_ii
+490 ADD 1
+491 SET fit_ii
+492 LES 33
+493 JIZ __Lwh29top
 // 322: ii = 0;
-495 LOD 0
-496 SET fit_ii
+494 LOD 0
+495 SET fit_ii
 // 323: while (ii < 7) { h_hat[ii] = 0.0; ii++; }
-497 LOD fit_ii
-498 P_LOD 0.0
-499 STI h_hat
-500 LOD fit_ii
-501 ADD 1
-502 SET fit_ii
-503 LES 6
-504 JIZ __Lwh30top
+496 LOD fit_ii
+497 P_LOD 0.0
+498 STI h_hat
+499 LOD fit_ii
+500 ADD 1
+501 SET fit_ii
+502 LES 6
+503 JIZ __Lwh30top
 // 326: h_hat[2] = 0.5;
-505 LOD 0.5
-506 SET_V h_hat 2
+504 LOD 0.5
+505 SET_V h_hat 2
 // 327: h_hat[3] = 1.0;
-507 LOD 1.0
-508 SET_V h_hat 3
+506 LOD 1.0
+507 SET_V h_hat 3
 // 328: h_hat[4] = 0.5;
-509 LOD 0.5
-510 SET_V h_hat 4
+508 LOD 0.5
+509 SET_V h_hat 4
 // 330: int it = 0;
-511 LOD 0
-512 SET fit_it
+510 LOD 0
+511 SET fit_it
 // 333: fista_x(0);
-513 CAL fista_x
+512 CAL fista_x
 // 334: update_h(0);
-514 CAL update_h
+513 CAL update_h
 // 335: it++;
-515 LOD fit_it
-516 ADD 1
-517 SET fit_it
+514 LOD fit_it
+515 ADD 1
+516 SET fit_it
 // 331: while (it < 40)
-518 LES 39
-519 JIZ __Lwh31top
+517 LES 39
+518 JIZ __Lwh31top
 // 337: }
-520 RET
+519 RET
 // library macros, no source line
-521 SET __sqrt_num
-522 F_ROT
-523 PSH
-524 F_DIV __sqrt_num
+520 SET __sqrt_num
+521 F_ROT
+522 PSH
+523 F_DIV __sqrt_num
+524 NOP
 525 NOP
-526 NOP
-527 F_QUO
-528 SF_ADD
-529 F_MLT 0.5
-530 PSH
-531 F_DIV __sqrt_num
+526 F_QUO
+527 SF_ADD
+528 F_MLT 0.5
+529 PSH
+530 F_DIV __sqrt_num
+531 NOP
 532 NOP
-533 NOP
-534 F_QUO
-535 SF_ADD
-536 F_MLT 0.5
-537 PSH
-538 F_DIV __sqrt_num
+533 F_QUO
+534 SF_ADD
+535 F_MLT 0.5
+536 PSH
+537 F_DIV __sqrt_num
+538 NOP
 539 NOP
-540 NOP
-541 F_QUO
-542 SF_ADD
-543 F_MLT 0.5
-544 PSH
-545 F_DIV __sqrt_num
+540 F_QUO
+541 SF_ADD
+542 F_MLT 0.5
+543 PSH
+544 F_DIV __sqrt_num
+545 NOP
 546 NOP
-547 NOP
-548 F_QUO
-549 SF_ADD
-550 F_MLT 0.5
-551 RET
+547 F_QUO
+548 SF_ADD
+549 F_MLT 0.5
+550 RET

@@ -82,6 +82,7 @@ cmm_stack_balance 30
 cmm_switch 64
 cmm_switch_fall 50
 cmm_switch_nest 44
+cmm_tailcall 36
 cmm_tan    45
 cmm_tiny0  5
 cmm_tiny1  5
@@ -115,8 +116,8 @@ pplus_arr  19
 proc_fft   203
 proc_rls   224
 proc_sim   87
-procBlind  521
-procBlindOpt 521
+procBlind  520
+procBlindOpt 520
 ProcDTW    227
 ResetCheck 20
 sapho_all  904

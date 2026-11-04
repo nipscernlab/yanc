@@ -48,3 +48,4 @@ sapho_min         | the value worked out in its header
 cmm_unread        | the values worked out in its header
 cmm_names_1000    | the values worked out in its header
 dirac_weights     | the values worked out in its header
+cmm_tailcall      | the values worked out in its header
