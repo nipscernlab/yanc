@@ -476,6 +476,15 @@ void emit_sq_sum(expr er, expr ei)
     oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
 }
 
+// oper_div: the left operand by row, the right one by column (IM IA FM FA CM CA)
+static const char *const div_tpl[PL_N][PL_N] = {
+  /* IM */ {"$L $b\nDIV $a", "DIV $a", "$C $a\nP_LOD $b\nSF_DIV", "SET __aux_var\nI2F_M $a\nP_LOD __aux_var\nSF_DIV", NULL, NULL},
+  /* IA */ {"$L $b\nS_DIV", "S_DIV", "I2F\nP_LOD $b\nSF_DIV", "SET_P __aux_soma\nI2F\nP_LOD __aux_soma\nSF_DIV", NULL, NULL},
+  /* FM */ {"$C $b\nF_DIV $a", "I2F\nF_DIV $a", "$L $b\nF_DIV $a", "F_DIV $a", NULL, NULL},
+  /* FA */ {"P_I2F_M $b\nSF_DIV", "I2F\nSF_DIV", "P_LOD $b\nSF_DIV", "SF_DIV", NULL, NULL},
+  /* CM */ {NULL, NULL, NULL, NULL, NULL, NULL},
+  /* CA */ {NULL, NULL, NULL, NULL, NULL, NULL},
+};
 // division between two numbers
 expr oper_div(expr e1, expr e2)
 {
@@ -512,38 +521,7 @@ expr oper_div(expr e1, expr e2)
         }
     }
 
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // int var with int var
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n" , ld, v_table[e2.id].name);
-        add_instr("DIV %s\n",     v_table[e1.id].name);    
-    }
-
-    // int var with int acc
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("DIV %s\n", v_table[e1.id].name);
-    }
-
-    // int var with float var
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n" , i2f, v_table[e1.id].name);
-        add_instr("P_LOD %s\n"   , v_table[e2.id].name);
-        add_instr("SF_DIV\n");
-    }
-
-    // int var with float acc
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("SET   __aux_var\n");
-        add_instr("I2F_M %s\n", v_table[e1.id].name);
-        add_instr("P_LOD __aux_var\n");
-        add_instr("SF_DIV\n");
-    }
+    emit_tpl(div_tpl[place_of(e1)][place_of(e2)], e1, e2);
 
     // int var with comp const
     if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_CCONST))
@@ -608,36 +586,6 @@ expr oper_div(expr e1, expr e2)
         add_instr("P_LOD __aux_var2\n"); // fetch the squared magnitude
         oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
-    }
-
-    // int acc with int var
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n", ld, v_table[e2.id].name);
-        add_instr("S_DIV\n");
-    }
-
-    // int acc with int acc
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("S_DIV\n");
-    }
-
-    // int acc with float var
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("I2F\n");
-        add_instr("P_LOD %s\n", v_table[e2.id].name);
-        add_instr("SF_DIV\n");
-    }
-
-    // int acc with float acc
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("SET_P __aux_soma\n");
-        add_instr("I2F\n");
-        add_instr("P_LOD __aux_soma\n");
-        add_instr("SF_DIV\n");
     }
 
     // int acc with comp const
@@ -715,33 +663,6 @@ expr oper_div(expr e1, expr e2)
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
-    // float var with int var
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n", i2f, v_table[e2.id].name);
-        add_instr("F_DIV %s\n"  , v_table[e1.id].name);
-    }
-
-    // float var with int acc
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("I2F\n");
-        add_instr("F_DIV %s\n", v_table[e1.id].name);
-    }
-
-    // float var with float var
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n" , ld, v_table[e2.id].name);
-        add_instr("F_DIV %s\n"  , v_table[e1.id].name);
-    }
-
-    // float var with float acc
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("F_DIV %s\n", v_table[e1.id].name);
-    }
-
     // float var with comp const
     if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_CCONST))
     {
@@ -801,33 +722,6 @@ expr oper_div(expr e1, expr e2)
         add_instr("P_LOD __aux_var2\n");             // fetch the squared magnitude
         oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));                  // faz a divisao
         oper_neg (expr_make(TY_FLOAT, 0));
-    }
-
-    // float acc with int var
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("P_I2F_M %s\n", v_table[e2.id].name);
-        add_instr("SF_DIV\n");
-    }
-
-    // float acc with int acc
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("I2F\n");
-        add_instr("SF_DIV\n");
-    }
-
-    // float acc with float var
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("P_LOD %s\n", v_table[e2.id].name);
-        add_instr("SF_DIV\n");
-    }
-
-    // float acc with float acc
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("SF_DIV\n");
     }
 
     // float acc with comp const
