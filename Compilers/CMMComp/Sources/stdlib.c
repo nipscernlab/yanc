@@ -7,6 +7,8 @@
 #include <stdlib.h>
 
 // local includes
+#include "../../common/xstr.h"
+#include "../Headers/tpl.h"
 #include "../Headers/convert.h"
 #include "../Headers/oper.h"
 #include "../Headers/stdlib.h"
@@ -55,6 +57,30 @@ expr builtin_fin(int id)
     acc_live = 1;  // marks the acc as now holding a value
 
     return expr_make(TY_FLOAT, 0);
+}
+
+// the real and imaginary parts of a comp argument, as names A and B: those
+// of a comp in memory (a constant or a variable), or, for a comp in the acc
+// (acc = imag, stack = real), the temporaries __<pfx>_a and __<pfx>_b it is
+// stored to. Returns 1 when a pending acc value must be pushed first (a comp
+// in memory leaves the acc as it was); the imaginary name is made first, as
+// the branches this replaces did, so the symbol table keeps its order
+static int comp_ab(expr e, const char *pfx, const char **A, const char **B)
+{
+    if (place_of(e) == PL_CM)
+    {
+        expr etr, eti;
+        get_cmp_parts(e, &etr, &eti);
+        *A = v_table[etr.id].name; *B = v_table[eti.id].name;
+        return acc_live;
+    }
+    char *nb = xasprintf("__%s_b", pfx), *na = xasprintf("__%s_a", pfx);
+    int ib = lex_id(nb), ia = lex_id(na);
+    free(nb); free(na);
+    add_instr("SET_P %s\n", v_table[ib].name);   // imag; POP -> acc = real
+    add_instr("SET   %s\n", v_table[ia].name);   // real
+    *A = v_table[ia].name; *B = v_table[ib].name;
+    return 0;
 }
 
 // An operand reaches a built-in from the walker (ast_emit_expr): a variable
@@ -618,27 +644,8 @@ expr builtin_sqrt(expr e)
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
-        expr etr, eti;                  // real (a) and imag (b) parts
         const char *A, *B;
-        int pre = 0;                    // a pending acc value must be pushed first
-
-        if (e.type == TY_CCONST)                            // comp constant
-        {
-            get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else if (e.id != 0)                         // comp in memory
-        {
-            get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else                                        // comp in acc (acc=imag, stack=real)
-        {
-            int ib = lex_id("__csqrt_b"), ia = lex_id("__csqrt_a");
-            add_instr("SET_P %s\n", v_table[ib].name);  // csqrt_b = imag; POP -> acc = real
-            add_instr("SET   %s\n", v_table[ia].name);  // csqrt_a = real
-            A = v_table[ia].name; B = v_table[ib].name;
-        }
+        int pre = comp_ab(e, "csqrt", &A, &B);
 
         const char *R  = sym(lex_id("__csqrt_r" ))->name;   // |z|
         const char *RE = sym(lex_id("__csqrt_re"))->name;   // result real part
@@ -708,27 +715,8 @@ expr builtin_exp(expr e)
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
-        expr etr, eti;                  // real (a) and imag (b) parts
         const char *A, *B;
-        int pre = 0;                    // a pending acc value must be pushed first
-
-        if (e.type == TY_CCONST)                            // comp constant
-        {
-            get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else if (e.id != 0)                         // comp in memory
-        {
-            get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else                                        // comp in acc (acc=imag, stack=real)
-        {
-            int ib = lex_id("__cexp_b"), ia = lex_id("__cexp_a");
-            add_instr("SET_P %s\n", v_table[ib].name);  // cexp_b = imag; POP -> acc = real
-            add_instr("SET   %s\n", v_table[ia].name);  // cexp_a = real
-            A = v_table[ia].name; B = v_table[ib].name;
-        }
+        int pre = comp_ab(e, "cexp", &A, &B);
 
         const char *EA = sym(lex_id("__cexp_ea"))->name;   // exp(a)
         const char *IM = sym(lex_id("__cexp_im"))->name;   // result imag part
@@ -788,27 +776,8 @@ expr builtin_log(expr e)
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
-        expr etr, eti;                  // real (a) and imag (b) parts
         const char *A, *B;
-        int pre = 0;
-
-        if (e.type == TY_CCONST)                            // comp constant
-        {
-            get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else if (e.id != 0)                         // comp in memory
-        {
-            get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else                                        // comp in acc (acc=imag, stack=real)
-        {
-            int ib = lex_id("__clog_b"), ia = lex_id("__clog_a");
-            add_instr("SET_P %s\n", v_table[ib].name);  // clog_b = imag; POP -> acc = real
-            add_instr("SET   %s\n", v_table[ia].name);  // clog_a = real
-            A = v_table[ia].name; B = v_table[ib].name;
-        }
+        int pre = comp_ab(e, "clog", &A, &B);
 
         const char *RE = sym(lex_id("__clog_re"))->name;   // result real part
         const char *IM = sym(lex_id("__clog_im"))->name;   // result imag part
@@ -1042,27 +1011,8 @@ expr builtin_atan(expr e)
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
-        expr etr, eti;                  // real (a) and imag (b) parts
         const char *A, *B;
-        int pre = 0;
-
-        if (e.type == TY_CCONST)                            // comp constant
-        {
-            get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else if (e.id != 0)                         // comp in memory
-        {
-            get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else                                        // comp in acc (acc=imag, stack=real)
-        {
-            int ib = lex_id("__catan_b"), ia = lex_id("__catan_a");
-            add_instr("SET_P %s\n", v_table[ib].name);  // catan_b = imag; POP -> acc = real
-            add_instr("SET   %s\n", v_table[ia].name);  // catan_a = real
-            A = v_table[ia].name; B = v_table[ib].name;
-        }
+        int pre = comp_ab(e, "catan", &A, &B);
 
         const char *A2  = sym(lex_id("__catan_a2" ))->name;   // a²
         const char *B2  = sym(lex_id("__catan_b2" ))->name;   // b²
@@ -1149,27 +1099,8 @@ expr builtin_sin(expr e)
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
-        expr etr, eti;                  // real (a) and imag (b) parts
         const char *A, *B;
-        int pre = 0;
-
-        if (e.type == TY_CCONST)                            // comp constant
-        {
-            get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else if (e.id != 0)                         // comp in memory
-        {
-            get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else                                        // comp in acc (acc=imag, stack=real)
-        {
-            int ib = lex_id("__csin_b"), ia = lex_id("__csin_a");
-            add_instr("SET_P %s\n", v_table[ib].name);  // csin_b = imag; POP -> acc = real
-            add_instr("SET   %s\n", v_table[ia].name);  // csin_a = real
-            A = v_table[ia].name; B = v_table[ib].name;
-        }
+        int pre = comp_ab(e, "csin", &A, &B);
 
         const char *EB  = sym(lex_id("__csin_eb" ))->name;   // e^b
         const char *EMB = sym(lex_id("__csin_emb"))->name;   // e^-b
@@ -1232,27 +1163,8 @@ expr builtin_tan(expr e)
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
-        expr etr, eti;
         const char *A, *B;
-        int pre = 0;
-
-        if (e.type == TY_CCONST)                            // comp constant
-        {
-            get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else if (e.id != 0)                         // comp in memory
-        {
-            get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else                                        // comp in acc (acc=imag, stack=real)
-        {
-            int ib = lex_id("__ctan_b"), ia = lex_id("__ctan_a");
-            add_instr("SET_P %s\n", v_table[ib].name);  // ctan_b = imag; POP -> acc = real
-            add_instr("SET   %s\n", v_table[ia].name);  // ctan_a = real
-            A = v_table[ia].name; B = v_table[ib].name;
-        }
+        int pre = comp_ab(e, "ctan", &A, &B);
 
         const char *TA  = sym(lex_id("__ctan_ta" ))->name;   // 2a
         const char *TB  = sym(lex_id("__ctan_tb" ))->name;   // 2b
@@ -1323,27 +1235,8 @@ expr builtin_cos(expr e)
     // ------------------------------------------------------------------------
     if (e.type > TY_FLOAT)
     {
-        expr etr, eti;                  // real (a) and imag (b) parts
         const char *A, *B;
-        int pre = 0;
-
-        if (e.type == TY_CCONST)                            // comp constant
-        {
-            get_cmp_cst(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else if (e.id != 0)                         // comp in memory
-        {
-            get_cmp_ets(e, &etr, &eti);
-            A = v_table[etr.id].name; B = v_table[eti.id].name; pre = acc_live;
-        }
-        else                                        // comp in acc (acc=imag, stack=real)
-        {
-            int ib = lex_id("__ccos_b"), ia = lex_id("__ccos_a");
-            add_instr("SET_P %s\n", v_table[ib].name);  // ccos_b = imag; POP -> acc = real
-            add_instr("SET   %s\n", v_table[ia].name);  // ccos_a = real
-            A = v_table[ia].name; B = v_table[ib].name;
-        }
+        int pre = comp_ab(e, "ccos", &A, &B);
 
         const char *EB  = sym(lex_id("__ccos_eb" ))->name;   // e^b
         const char *EMB = sym(lex_id("__ccos_emb"))->name;   // e^-b
