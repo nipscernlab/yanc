@@ -104,7 +104,7 @@ void arr_1d_index(int id, expr e)
         add_instr("F2I_M %s\n", v_table[e.id].name);
     }
 
-    ectx.acc_ok = 1; // acc carregado
+    acc_live = 1; // acc carregado
 }
 
 // loads the array index into the accumulator (2D array)
@@ -688,7 +688,7 @@ void arr_2d_index(int id, expr e1, expr e2)
         add_instr("S_ADD\n");
     }
 
-    ectx.acc_ok = 1; // acc carregado
+    acc_live = 1; // acc carregado
 }
 
 // ----------------------------------------------------------------------------
@@ -716,10 +716,10 @@ expr arr_1d2exp_const(int id, int k, int dims)
         fatal(MSG_ERR_ARRAY_2D  , pctx.line_num+1, strip_fn_prefix(v_table[id].name));
     v_table[id].used = 1;
 
-    if (ectx.acc_ok) add_instr("P_LOD_V %s %d\n", v_table[id].name, k);
+    if (acc_live) add_instr("P_LOD_V %s %d\n", v_table[id].name, k);
     else        add_instr(  "LOD_V %s %d\n", v_table[id].name, k);
     if (v_table[id].type == TY_COMP) add_instr("P_LOD_V %s_i %d\n", v_table[id].name, k);
-    ectx.acc_ok = 1;  // value now in the accumulator
+    acc_live = 1;  // value now in the accumulator
     return expr_make(v_table[id].type, 0);
 }
 
@@ -744,8 +744,8 @@ expr arr_1d2exp(int id, expr e, int fft)
     // prepare the LOD commands ----------------------------------------------
 
     char ldv[10]; if (fft    == 1) strcpy(ldv,"ILI"    ); else strcpy(ldv,"LDI"  );
-    char ldi[10]; if (ectx.acc_ok == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
-    char f2i[10]; if (ectx.acc_ok == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
+    char ldi[10]; if (acc_live == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
+    char f2i[10]; if (acc_live == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
 
     // ------------------------------------------------------------------------
     // write the instructions -------------------------------------------------
@@ -906,7 +906,7 @@ expr arr_1d2exp(int id, expr e, int fft)
         }
     }
 
-    ectx.acc_ok     = 1;
+    acc_live     = 1;
     v_table[id].used = 1;
 
     return expr_make(v_table[id].type, 0);
@@ -932,8 +932,8 @@ expr arr_2d2exp(int id, expr e1, expr e2)
     // prepare the LOD commands -----------------------------------------------
 
     char ldv[10];                  strcpy(ldv,"LDI"    ); // no 2D FFT yet
-    char ldi[10]; if (ectx.acc_ok == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
-    char f2i[10]; if (ectx.acc_ok == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
+    char ldi[10]; if (acc_live == 1) strcpy(ldi,"P_LOD"  ); else strcpy(ldi,"LOD"  );
+    char f2i[10]; if (acc_live == 1) strcpy(f2i,"P_F2I_M"); else strcpy(f2i,"F2I_M");
 
     // ------------------------------------------------------------------------
     // write the instructions -------------------------------------------------
@@ -2280,7 +2280,7 @@ expr arr_2d2exp(int id, expr e1, expr e2)
         }
     }
 
-    ectx.acc_ok     = 1;
+    acc_live     = 1;
     v_table[id].used = 1;
 
     return expr_make(v_table[id].type, 0);

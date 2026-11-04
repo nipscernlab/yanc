@@ -62,10 +62,10 @@ expr pplus2exp(int id, int old)
     // acc goes to the stack first, as everywhere else (P_LOD)
     if (old)
     {
-        add_instr(ectx.acc_ok == 1 ? "P_LOD %s\n" : "LOD %s\n", v_table[id].name);
+        add_instr(acc_live == 1 ? "P_LOD %s\n" : "LOD %s\n", v_table[id].name);
         add_instr("PSH\n");
         e = expr_make(e.type, 0);   // x in the acc
-        ectx.acc_ok = 1;
+        acc_live = 1;
     }
 
     // now turn the 1 into an expr (same data type as x): the name is the
@@ -85,7 +85,7 @@ expr pplus2exp(int id, int old)
     if (old) add_instr("SET_P %s\n", v_table[id].name);
     else     assign_set(id, ret);
 
-    ectx.acc_ok = 1; // cannot free acc, since it is an exp
+    acc_live = 1; // cannot free acc, since it is an exp
 
     return ret;
 }
@@ -99,13 +99,13 @@ expr pplus1d2exp(int id, expr ete, int old)
     // a live operand in the acc (e.g. the left side of `y + x[i]++`) goes to
     // the stack before the index load overwrites it; an index that is itself
     // in the acc had its own subtree do that (as arr_1d2exp's P_LOD does)
-    if (ectx.acc_ok == 1 && ete.id != 0) add_instr("PSH\n");
+    if (acc_live == 1 && ete.id != 0) add_instr("PSH\n");
     // the index goes to the acc and then onto the stack, where STI will take
     // it; PSH leaves the acc as it was, so LDI still sees the index
     arr_1d_index(id, ete);
     add_instr("PSH\n");
     add_instr("LDI %s\n", v_table[id].name);
-    ectx.acc_ok = 1;                                // x[i] in the acc
+    acc_live = 1;                                // x[i] in the acc
     expr e = expr_make(v_table[id].type, 0);
     // a float element whose old value is wanted: keep a copy (the index sits
     // on the stack top for STI, so the stack cannot hold it)
@@ -128,7 +128,7 @@ expr pplus1d2exp(int id, expr ete, int old)
     // the value of `x[i]++` in an expression is the old element
     if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : "ADD -1\n");
 
-    ectx.acc_ok = 1; // cannot free acc, since it is an exp
+    acc_live = 1; // cannot free acc, since it is an exp
 
     return ret;
 }
@@ -140,12 +140,12 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
         fatal(MSG_ERR_INCR_COMPLEX, pctx.line_num+1);
 
     // a live operand in the acc goes to the stack first (see 1-D)
-    if (ectx.acc_ok == 1 && e1.id != 0 && e2.id != 0) add_instr("PSH\n");
+    if (acc_live == 1 && e1.id != 0 && e2.id != 0) add_instr("PSH\n");
     // the linear index goes to the acc and then onto the stack (see 1-D)
     arr_2d_index(id, e1, e2);
     add_instr("PSH\n");
     add_instr("LDI %s\n", v_table[id].name);
-    ectx.acc_ok = 1;                                // x[i][j] in the acc
+    acc_live = 1;                                // x[i][j] in the acc
     expr e = expr_make(v_table[id].type, 0);
     if (old && e.type == TY_FLOAT) add_instr("SET __aux_var\n");   // see 1-D
 
@@ -165,7 +165,7 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
     // the value of `x[i][j]++` in an expression is the old element
     if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : "ADD -1\n");
 
-    ectx.acc_ok = 1; // cannot free acc, since it is an exp
+    acc_live = 1; // cannot free acc, since it is an exp
 
     return ret;
 }
