@@ -122,12 +122,13 @@ tags consumed by Aurora.
   `fprintf(stdout, ...)` and `printf(...)`. Every message keeps its text
   and its stream.
 - **cmmcomp's arithmetic is tables** (step P10 of #93, first part):
-  `+`, `-`, `*`, `/` and `%` were one hand-written branch per pair of
+  `+`, `-`, `*`, `/`, `%` and the comparisons were one hand-written branch per pair of
   operand places (an int, a float or a comp, in memory or in the
   accumulator). Their template branches are 6 x 6 tables of instructions
   now, expanded by one function (`emit_tpl`, oper.c); a comp constant and
   a comp variable share a cell, since both are a pair of names. What is
-  more than a template stays code. oper.c goes from 3103 lines to 1850.
+  more than a template stays code; a comparison passes its mnemonics to
+  the template. oper.c goes from 3103 lines to 1799.
   The tests reach every cell of every table, and the assembly, the
   waveform's tables and the messages are byte-identical.
 - **cmmcomp knows its accumulator in one place** (step P9 of #93):
