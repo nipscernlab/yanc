@@ -1298,26 +1298,10 @@ expr builtin_cosh(expr e)
     if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
     // ------------------------------------------------------------------------
 
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0)) add_instr("%s %s\n", i2f, v_table[e.id].name);
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0)) add_instr("I2F\n");
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0)) add_instr("%s %s\n", ld , v_table[e.id].name);
-
-    // float in acc: already there
+    load_float(e);
 
     acc_live = 1;
 
@@ -1349,26 +1333,10 @@ expr builtin_sinh(expr e)
     if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
     // ------------------------------------------------------------------------
 
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0)) add_instr("%s %s\n", i2f, v_table[e.id].name);
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0)) add_instr("I2F\n");
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0)) add_instr("%s %s\n", ld , v_table[e.id].name);
-
-    // float in acc: already there
+    load_float(e);
 
     acc_live = 1;
 
@@ -1400,26 +1368,10 @@ expr builtin_tanh(expr e)
     if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
     // ------------------------------------------------------------------------
 
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0)) add_instr("%s %s\n", i2f, v_table[e.id].name);
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0)) add_instr("I2F\n");
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0)) add_instr("%s %s\n", ld , v_table[e.id].name);
-
-    // float in acc: already there
+    load_float(e);
 
     acc_live = 1;
 
@@ -1461,26 +1413,10 @@ expr builtin_floor(expr e)
     if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
     // ------------------------------------------------------------------------
 
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0)) add_instr("%s %s\n", i2f, v_table[e.id].name);
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0)) add_instr("I2F\n");
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0)) add_instr("%s %s\n", ld , v_table[e.id].name);
-
-    // float in acc: already there
+    load_float(e);
 
     acc_live = 1;
 
@@ -1519,26 +1455,10 @@ expr builtin_ceil(expr e)
     if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
     // ------------------------------------------------------------------------
 
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0)) add_instr("%s %s\n", i2f, v_table[e.id].name);
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0)) add_instr("I2F\n");
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0)) add_instr("%s %s\n", ld , v_table[e.id].name);
-
-    // float in acc: already there
+    load_float(e);
 
     acc_live = 1;
 
@@ -1576,26 +1496,10 @@ expr builtin_round(expr e)
     if (e.id != 0) v_table[e.id].used = 1;
 
     // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
     // execute -- bring x into the acc as a float (the four operand shapes) ----
     // ------------------------------------------------------------------------
 
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0)) add_instr("%s %s\n", i2f, v_table[e.id].name);
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0)) add_instr("I2F\n");
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0)) add_instr("%s %s\n", ld , v_table[e.id].name);
-
-    // float in acc: already there
+    load_float(e);
 
     acc_live = 1;
 
@@ -1632,10 +1536,6 @@ expr builtin_real(expr e)
     // ------------------------------------------------------------------------
 
     if (e.id != 0) v_table[e.id].used = 1;
-
-    // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
@@ -1677,10 +1577,6 @@ expr builtin_imag(expr e)
     // ------------------------------------------------------------------------
 
     if (e.id != 0) v_table[e.id].used = 1;
-
-    // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
 
     // ------------------------------------------------------------------------
     // execute ----------------------------------------------------------------
