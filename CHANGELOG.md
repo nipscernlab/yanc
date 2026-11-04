@@ -30,8 +30,12 @@ tags consumed by Aurora.
   `P_I2F_M`) as the acc is free or holds a pending value; each state is a
   site of `Scripts/cmm_cov.sh` now. Four were reached in one state only
   (the int division and remainder, the int/float comparisons in both
-  orders); the generated `Tests/cmm_cov_acc` reaches the other, with its 42
-  values computed in Python.
+  orders); the generated `Tests/cmm_cov_acc` reaches the other. It also
+  takes the arms of a choice inside an emitter that a branch measure (gcov)
+  found no test taking: a comp by an imaginary constant, `==` with a comp
+  and a shift by a float, each with the acc free and busy, a switch from
+  `case 0`, and a Dirac store that converts a value in memory. Its 55
+  values are computed in Python.
 - **The operator tables are checked before a test reaches them** (#108).
   `Scripts/cmm_cov.py` stops on a cell with a `$` that `tpl.c` does not
   expand, a name of an operand where the operand has none (`$a` of a value
