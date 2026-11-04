@@ -49,6 +49,18 @@ expr id2exp(int id)
 }
 
 // ++ reduction into expr
+// the constant 1 of type t (int, or float as "1.0": "1" would be assembled
+// as the int 1, whose bits the float adder reads as an unnormalised
+// number), marked a constant as the lexer marks a literal (#108 A20)
+static expr one_of(int t)
+{
+    const char *one = (t == TY_FLOAT) ? "1.0" : "1";
+    if (find_var(one) == -1) add_var(one);
+    int id = find_var(one);
+    v_table[id].is_const = 1;
+    return num2exp(id, t);
+}
+
 expr pplus2exp(int id, int old)
 {
     if (v_table[id].type > TY_FLOAT)
@@ -68,13 +80,8 @@ expr pplus2exp(int id, int old)
         acc_live = 1;
     }
 
-    // now turn the 1 into an expr (same data type as x): the name is the
-    // assembler operand, so a float x needs "1.0" -- "1" would be assembled
-    // as the int 1, whose bits the float adder reads as an unnormalised number
-    char *one = (e.type == TY_FLOAT) ? "1.0" : "1";
-    if (find_var(one) == -1) add_var(one);
-    int  lval = find_var(one);
-    expr e1   = num2exp(lval, e.type);
+    // the 1, of x's type
+    expr e1   = one_of(e.type);
 
     // then perform the addition
     expr ret = oper_add(e, e1);
@@ -111,13 +118,8 @@ expr pplus1d2exp(int id, expr ete, int old)
     // on the stack top for STI, so the stack cannot hold it)
     if (old && e.type == TY_FLOAT) add_instr("SET __aux_var\n");
 
-    // now turn the 1 into an expr (same data type as x): the name is the
-    // assembler operand, so a float x needs "1.0" -- "1" would be assembled
-    // as the int 1, whose bits the float adder reads as an unnormalised number
-    char *one = (e.type == TY_FLOAT) ? "1.0" : "1";
-    if (find_var(one) == -1) add_var(one);
-    int  lval = find_var(one);
-    expr e1   = num2exp(lval, e.type);
+    // the 1, of x's type
+    expr e1   = one_of(e.type);
 
     // then perform the addition
     expr ret = oper_add(e, e1);
@@ -149,12 +151,8 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
     expr e = expr_make(v_table[id].type, 0);
     if (old && e.type == TY_FLOAT) add_instr("SET __aux_var\n");   // see 1-D
 
-    // now turn the 1 into an expr (same data type as x): "1.0" for a float
-    // (see pplus2exp)
-    char *one = (e.type == TY_FLOAT) ? "1.0" : "1";
-    if (find_var(one) == -1) add_var(one);
-    int  lval = find_var(one);
-    expr eone = num2exp(lval, e.type);
+    // the 1, of x's type
+    expr eone = one_of(e.type);
 
     // then perform the addition
     expr ret = oper_add(e, eone);
