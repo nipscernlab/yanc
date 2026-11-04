@@ -163,7 +163,8 @@ expr oper_neg(expr e)
 //   $ar $ai  the real and imaginary parts of the left one (a comp in memory),
 //   $br $bi  the same of the right one,
 //   $L       LOD, or P_LOD when the acc holds a value to keep (acc_live),
-//   $C       I2F_M, or P_I2F_M the same way.
+//   $C       I2F_M, or P_I2F_M the same way,
+//   $1 .. $4 mnemonics the operator passes (emit_tpl_ops: a comparison's).
 // A NULL template emits nothing (a pair the walker never hands over).
 
 enum { PL_IM, PL_IA, PL_FM, PL_FA, PL_CM, PL_CA, PL_N };
@@ -187,8 +188,9 @@ static void comp_parts(expr e, expr *re, expr *im)
     else                     get_cmp_ets(e, re, im);
 }
 
-// emits template t for the operands e1 and e2 (see above)
-static void emit_tpl(const char *t, expr e1, expr e2)
+// emits template t for the operands e1 and e2 (see above), with the
+// mnemonics ops[0..3] for $1..$4 (NULL: none)
+static void emit_tpl_ops(const char *t, expr e1, expr e2, const char *const *ops)
 {
     if (!t) return;
     expr ar = {0, 0}, ai = {0, 0}, br = {0, 0}, bi = {0, 0};
@@ -212,6 +214,7 @@ static void emit_tpl(const char *t, expr e1, expr e2)
                 else if (*r == 'b') {w = v_table[e2.id].name; used = 2;}
                 else if (*r == 'L') {w = acc_live ? "P_LOD"   : "LOD";   used = 2;}
                 else if (*r == 'C') {w = acc_live ? "P_I2F_M" : "I2F_M"; used = 2;}
+                else if (ops && *r >= '1' && *r <= '4') {w = ops[*r - '1']; used = 2;}
             }
             char *nl = w ? xasprintf("%s%s", line, w) : xasprintf("%s%c", line, t[k]);
             free(line); line = nl;
@@ -222,6 +225,8 @@ static void emit_tpl(const char *t, expr e1, expr e2)
         t += n + (end ? 1 : 0);
     }
 }
+
+static void emit_tpl(const char *t, expr e1, expr e2) {emit_tpl_ops(t, e1, e2, NULL);}
 
 // the type of a binary operation's result: comp over float over int
 static int result_type(expr e1, expr e2)
@@ -1344,6 +1349,15 @@ static expr oper_cmp_comp(expr e1, expr e2, int type)
     return expr_make(TY_INT, 0); // int boolean in the accumulator
 }
 
+// oper_cmp: the left operand by row, the right one by column (IM IA FM FA CM CA)
+static const char *const cmp_tpl[PL_N][PL_N] = {
+  /* IM */ {NULL, "$1 $a", "$C $a\n$4 $b", NULL, NULL, NULL},
+  /* IA */ {"$2 $b", "S_$1", "I2F\n$4 $b", "SET_P __aux_var\nI2F\n$4 __aux_var", NULL, NULL},
+  /* FM */ {"$C $b\n$3 $a", "I2F\n$3 $a", NULL, "$3 $a", NULL, NULL},
+  /* FA */ {NULL, NULL, "$4 $b", NULL, NULL, NULL},
+  /* CM */ {NULL, NULL, NULL, NULL, NULL, NULL},
+  /* CA */ {NULL, NULL, NULL, NULL, NULL, NULL},
+};
 // compares greater-than, less-than and equal-to
 // - separar o igual pra economizar clock
 // - review to avoid unnecessary stack use!
@@ -1355,7 +1369,6 @@ expr oper_cmp(expr e1, expr e2, int type)
     int_lit_float(&e1, &e2);
 
     char ld [10]; if (acc_live == 0) strcpy(ld , "LOD" ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
 
     char op[16] = "";  // initialize so an unhandled 'type' produces a deterministic empty mnemonic instead of stack garbage
     switch (type)
@@ -1391,18 +1404,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         }
     }
 
-    // int var with int acc
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("%s %s\n", op, v_table[e1.id].name);
-    }
-
-    // int var with float var
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n", i2f , v_table[e1.id].name);
-        add_instr("%s %s\n", frev, v_table[e2.id].name);
-    }
+    emit_tpl_ops(cmp_tpl[place_of(e1)][place_of(e2)], e1, e2, (const char *const[]){op, rev, fop, frev});
 
     // int var with float acc: the variable is converted over the float, which
     // the stack then holds (an int literal is a float literal by now)
@@ -1410,47 +1412,6 @@ expr oper_cmp(expr e1, expr e2, int type)
     {
         add_instr("P_I2F_M %s\n", v_table[e1.id].name);
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", rev);
-    }
-
-    // int acc with int var
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n", rev, v_table[e2.id].name);
-    }
-
-    // int acc with int acc
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("S_%s\n", op);
-    }
-
-    // int acc with float var
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("I2F\n");
-        add_instr("%s %s\n", frev, v_table[e2.id].name);
-    }
-
-    // int acc with float acc: the float is set aside, the int converted in the acc
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("SET_P __aux_var\n");
-        add_instr("I2F\n");
-        add_instr("%s __aux_var\n", frev);
-    }
-
-    // float var with int var
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n", i2f, v_table[e2.id].name);
-        add_instr("%s %s\n", fop, v_table[e1.id].name);
-    }
-
-    // float var with int acc
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        add_instr("I2F\n");
-        add_instr("%s %s\n", fop, v_table[e1.id].name);
     }
 
     // float var with float var: the variable is loaded, the literal stays in memory
@@ -1468,12 +1429,6 @@ expr oper_cmp(expr e1, expr e2, int type)
         }
     }
 
-    // float var with float acc
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        add_instr("%s %s\n", fop, v_table[e1.id].name);
-    }
-
     // float acc with int var (an int literal is a float literal by now)
     if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_INT) && (e2.id!=0))
     {
@@ -1487,12 +1442,6 @@ expr oper_cmp(expr e1, expr e2, int type)
         add_instr("I2F\n");
         
         if (strcmp(op,"EQU")==0) add_instr("S_EQU\n"); else add_instr("SF_%s\n", op);
-    }
-
-    // float acc with float var
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        add_instr("%s %s\n", frev, v_table[e2.id].name);
     }
 
     // float acc with float acc
