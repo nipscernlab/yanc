@@ -42,14 +42,6 @@ int place_of(expr e)
     }
 }
 
-// the two parts of a comp in memory: of a constant (two float literals) or of
-// a variable (it and its _i), as the hand-written branches got them
-static void comp_parts(expr e, expr *re, expr *im)
-{
-    if (e.type == TY_CCONST) get_cmp_cst(e, re, im);
-    else                     get_cmp_ets(e, re, im);
-}
-
 // the warnings a template may give, by name: each takes the line only
 static void tpl_warn(const char *name)
 {
@@ -75,8 +67,8 @@ void emit_tpl_ops(const char *t, expr e1, expr e2, const char *const *ops)
 {
     if (!t) return;
     expr ar = {0, 0}, ai = {0, 0}, br = {0, 0}, bi = {0, 0};
-    if (place_of(e1) == PL_CM && (strstr(t, "$ar") || strstr(t, "$ai"))) comp_parts(e1, &ar, &ai);
-    if (place_of(e2) == PL_CM && (strstr(t, "$br") || strstr(t, "$bi"))) comp_parts(e2, &br, &bi);
+    if (place_of(e1) == PL_CM && (strstr(t, "$ar") || strstr(t, "$ai"))) get_cmp_parts(e1, &ar, &ai);
+    if (place_of(e2) == PL_CM && (strstr(t, "$br") || strstr(t, "$bi"))) get_cmp_parts(e2, &br, &bi);
     while (*t)
     {
         const char *end = strchr(t, '\n');

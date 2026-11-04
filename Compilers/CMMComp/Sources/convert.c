@@ -57,6 +57,14 @@ void get_cmp_cst(expr e, expr *er, expr *ei)
     free(re); free(im);
 }
 
+// the two parts of a comp in memory, a constant (two float literals) or a
+// variable (it and its _i): one place, so one code path (tpl.c, oper.c)
+void get_cmp_parts(expr e, expr *er, expr *ei)
+{
+    if (e.type == TY_CCONST) get_cmp_cst(e, er, ei);
+    else                     get_cmp_ets(e, er, ei);
+}
+
 // generates the extended float exprs for the real and imag parts
 // of a complex number in memory
 void get_cmp_ets(expr e, expr *er, expr *ei)

@@ -452,45 +452,26 @@ expr oper_div(expr e1, expr e2)
 
     emit_tpl(div_tpl[place_of(e1)][place_of(e2)], e1, e2);
 
-    // int var with comp const
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_CCONST))
+    // int var with comp in memory
+    if ((e1.type==TY_INT) && (e1.id!=0) && (place_of(e2) == PL_CM))
     {
-        get_cmp_cst(e2,&etr,&eti);
+        get_cmp_parts(e2,&etr,&eti);
 
         emit_sq_sum(etr, eti);
         add_instr("SET __aux_var\n");   // save the result
 
-        acc_live = 0;                   // libera acumulador
+        acc_live = 0;                   // acc released
 
         oper_mult(e1, etr);           // multiply int with real part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // divide
 
         oper_mult(e1, eti);           // multiply int with imag part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
-        oper_neg (expr_make(TY_FLOAT, 0));            // nega a parte imaginaria
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // divide
+        oper_neg (expr_make(TY_FLOAT, 0));            // negate the imaginary part
     }
 
-    // int var with comp var
-    if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        get_cmp_ets(e2,&etr,&eti);
-
-        emit_sq_sum(etr, eti);
-        add_instr("SET __aux_var\n");   // save the result
-
-        acc_live = 0;                   // libera acumulador
-
-        oper_mult(e1, etr);           // multiply int with real part
-        add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
-
-        oper_mult(e1, eti);           // multiply int with imag part
-        add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
-        oper_neg (expr_make(TY_FLOAT, 0));            // nega a parte imaginaria
-    }
 
     // int var with comp acc
     if ((e1.type==TY_INT) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id==0))
@@ -498,29 +479,29 @@ expr oper_div(expr e1, expr e2)
         add_instr("SET_P __aux_var \n"); // save the imaginary part
         add_instr("SET   __aux_var1\n"); // save the real part
 
-        add_instr("F_MLT __aux_var1\n"); // parte real ao quadrado
+        add_instr("F_MLT __aux_var1\n"); // real part squared
         add_instr("P_LOD __aux_var \n"); // fetch the imaginary part
-        add_instr("F_MLT __aux_var \n"); // parte imag ao quadrado
-        add_instr("SF_ADD        \n"); // soma os quadrados
+        add_instr("F_MLT __aux_var \n"); // imaginary part squared
+        add_instr("SF_ADD        \n"); // sum of the squares
         add_instr("SET   __aux_var2\n"); // save the squared magnitude
 
         add_instr("I2F_M %s\n", v_table[e1.id].name); 
         add_instr("SET   __aux_var3\n"); // save the float
         add_instr("F_MLT __aux_var1\n");
         add_instr("P_LOD __aux_var2\n"); // fetch the squared magnitude
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // divide
 
         add_instr("P_LOD __aux_var3\n"); // fetch the float
         add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD __aux_var2\n"); // fetch the squared magnitude
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // divide
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
-    // int acc with comp const
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_CCONST))
+    // int acc with comp in memory
+    if ((e1.type==TY_INT) && (e1.id==0) && (place_of(e2) == PL_CM))
     {
-        get_cmp_cst(e2,&etr,&eti);
+        get_cmp_parts(e2,&etr,&eti);
 
         add_instr("I2F\n");
         add_instr("SET __aux_var\n");
@@ -532,38 +513,15 @@ expr oper_div(expr e1, expr e2)
         add_instr("LOD   __aux_var\n");
         oper_mult(expr_make(TY_FLOAT, 0), etr);         // multiply float with real part
         add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // divide
 
         add_instr("P_LOD  __aux_var\n");
         oper_mult(expr_make(TY_FLOAT, 0), eti);         // multiply float with imag part
         add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // divide
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
-    // int acc with comp var
-    if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        get_cmp_ets(e2,&etr,&eti);
-
-        add_instr("I2F\n");
-        add_instr("SET   __aux_var\n");
-        acc_live = 0;
-
-        emit_sq_sum(etr, eti);
-        add_instr("SET   __aux_var1\n");  // save the result
-
-        add_instr("LOD   __aux_var\n" );
-        oper_mult(expr_make(TY_FLOAT, 0), etr);          // multiply float with real part
-        add_instr("P_LOD __aux_var1\n");  // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));       // faz a divisao
-
-        add_instr("P_LOD  __aux_var\n" );
-        oper_mult(expr_make(TY_FLOAT, 0), eti);          // multiply float with imag part
-        add_instr("P_LOD  __aux_var1\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));       // faz a divisao
-        oper_neg (expr_make(TY_FLOAT, 0));
-    }
 
     // int acc with comp acc
     if ((e1.type==TY_INT) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id==0))
@@ -583,19 +541,19 @@ expr oper_div(expr e1, expr e2)
         add_instr("LOD   __aux_var2\n"); // load the float
         add_instr("F_MLT __aux_var1\n");
         add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // divide
 
         add_instr("P_LOD __aux_var2\n"); // fetch the float
         add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // divide
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
-    // float var with comp const
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_CCONST))
+    // float var with comp in memory
+    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (place_of(e2) == PL_CM))
     {
-        get_cmp_cst(e2,&etr,&eti);
+        get_cmp_parts(e2,&etr,&eti);
 
         emit_sq_sum(etr, eti);
         add_instr("SET   __aux_var\n"); // save the result
@@ -603,32 +561,14 @@ expr oper_div(expr e1, expr e2)
 
         oper_mult(e1, etr);           // multiply float with real part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // divide
 
         oper_mult(e1, eti);           // multiply float with imag part
         add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // divide
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
-    // float var with comp var
-    if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        get_cmp_ets(e2,&etr,&eti);
-
-        emit_sq_sum(etr, eti);
-        add_instr("SET   __aux_var\n"); // save the result
-        acc_live = 0;
-
-        oper_mult(e1, etr);           // multiply float with real part
-        add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
-
-        oper_mult(e1, eti);           // multiply float with imag part
-        add_instr("P_LOD __aux_var\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));     // faz a divisao
-        oper_neg (expr_make(TY_FLOAT, 0));
-    }
 
     // float var with comp acc
     if ((e1.type==TY_FLOAT) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id==0))
@@ -644,19 +584,19 @@ expr oper_div(expr e1, expr e2)
         add_instr("LOD %s\n"  , v_table[e1.id].name); // load the float
         add_instr("F_MLT __aux_var1\n");
         add_instr("P_LOD __aux_var2\n");             // fetch the squared magnitude
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));                  // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));                  // divide
 
         add_instr("P_LOD %s\n", v_table[e1.id].name); // load the float
         add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD __aux_var2\n");             // fetch the squared magnitude
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));                  // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));                  // divide
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
-    // float acc with comp const
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_CCONST))
+    // float acc with comp in memory
+    if ((e1.type==TY_FLOAT) && (e1.id==0) && (place_of(e2) == PL_CM))
     {
-        get_cmp_cst(e2,&etr,&eti);
+        get_cmp_parts(e2,&etr,&eti);
 
         add_instr("SET   __aux_var\n");
         acc_live = 0;
@@ -667,37 +607,15 @@ expr oper_div(expr e1, expr e2)
         add_instr("LOD   __aux_var \n");
         oper_mult(expr_make(TY_FLOAT, 0), etr);         // multiply float with real part
         add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // divide
 
         add_instr("P_LOD __aux_var \n");
         oper_mult(expr_make(TY_FLOAT, 0), eti);         // multiply float with imag part
         add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // divide
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
-    // float acc with comp var
-    if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        get_cmp_ets(e2,&etr,&eti);
-
-        add_instr("SET __aux_var\n");
-        acc_live = 0;
-
-        emit_sq_sum(etr, eti);
-        add_instr("SET   __aux_var1\n"); // save the result
-
-        add_instr("LOD   __aux_var\n");
-        oper_mult(expr_make(TY_FLOAT, 0), etr);         // multiply float with real part
-        add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
-
-        add_instr("P_LOD __aux_var\n");
-        oper_mult(expr_make(TY_FLOAT, 0), eti);         // multiply float with imag part
-        add_instr("P_LOD __aux_var1\n"); // fetch the denominator
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
-        oper_neg (expr_make(TY_FLOAT, 0));
-    }
 
     // float acc with comp acc
     if ((e1.type==TY_FLOAT) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id==0))
@@ -716,28 +634,28 @@ expr oper_div(expr e1, expr e2)
         add_instr("LOD   __aux_var2\n"); // load the float
         add_instr("F_MLT __aux_var1\n");
         add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // divide
 
         add_instr("P_LOD __aux_var2\n"); // fetch the float
         add_instr("F_MLT __aux_var \n");
         add_instr("P_LOD __aux_var3\n"); // fetch the squared magnitude
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // faz a divisao
+        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));      // divide
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
-    // comp const with int var
-    if ((e1.type==TY_CCONST) && (e2.type==TY_INT) && (e2.id!=0))
+    // comp in memory with int var
+    if ((place_of(e1) == PL_CM) && (e2.type==TY_INT) && (e2.id!=0))
     {
-        get_cmp_cst(e1,&etr,&eti);
+        get_cmp_parts(e1,&etr,&eti);
 
         oper_div(etr, e2);
         oper_div(eti, e2);
     }
 
-    // comp const with int acc
-    if ((e1.type==TY_CCONST) && (e2.type==TY_INT) && (e2.id==0))
+    // comp in memory with int acc
+    if ((place_of(e1) == PL_CM) && (e2.type==TY_INT) && (e2.id==0))
     {
-        get_cmp_cst(e1,&etr,&eti);
+        get_cmp_parts(e1,&etr,&eti);
 
         add_instr("I2F\n");
         add_instr("SET   __aux_var\n");
@@ -746,19 +664,19 @@ expr oper_div(expr e1, expr e2)
         oper_div(eti, expr_make(TY_FLOAT, 0));
     }
 
-    // comp const with float var
-    if ((e1.type==TY_CCONST) && (e2.type==TY_FLOAT) && (e2.id!=0))
+    // comp in memory with float var
+    if ((place_of(e1) == PL_CM) && (e2.type==TY_FLOAT) && (e2.id!=0))
     {
-        get_cmp_cst(e1,&etr,&eti);
+        get_cmp_parts(e1,&etr,&eti);
 
         oper_div(etr, e2);
         oper_div(eti, e2);
     }
 
-    // comp const with float acc
-    if ((e1.type==TY_CCONST) && (e2.type==TY_FLOAT) && (e2.id==0))
+    // comp in memory with float acc
+    if ((place_of(e1) == PL_CM) && (e2.type==TY_FLOAT) && (e2.id==0))
     {
-        get_cmp_cst(e1,&etr,&eti);
+        get_cmp_parts(e1,&etr,&eti);
 
         add_instr("SET   __aux_var\n");
         oper_div(etr, expr_make(TY_FLOAT, 0));
@@ -766,14 +684,14 @@ expr oper_div(expr e1, expr e2)
         oper_div(eti, expr_make(TY_FLOAT, 0));
     }
 
-    // comp const with comp const
-    if ((e1.type==TY_CCONST) && (e2.type==TY_CCONST))
+    // comp in memory with comp in memory
+    if ((place_of(e1) == PL_CM) && (place_of(e2) == PL_CM))
     {
         expr et1r, et2r;
         expr et1i, et2i;
 
-        get_cmp_cst(e1,&et1r,&et1i);
-        get_cmp_cst(e2,&et2r,&et2i);
+        get_cmp_parts(e1,&et1r,&et1i);
+        get_cmp_parts(e2,&et2r,&et2i);
 
         emit_sq_sum(et2r, et2i);
         add_instr("SET   __aux_var\n");
@@ -792,36 +710,11 @@ expr oper_div(expr e1, expr e2)
         oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
-    // comp const with comp var
-    if ((e1.type==TY_CCONST) && (e2.type==TY_COMP) && (e2.id!=0))
+
+    // comp in memory with comp acc
+    if ((place_of(e1) == PL_CM) && (e2.type==TY_COMP) && (e2.id==0))
     {
-        expr et1r, et2r;
-        expr et1i, et2i;
-
-        get_cmp_cst(e1,&et1r,&et1i);
-        get_cmp_ets(e2,&et2r,&et2i);
-
-        emit_sq_sum(et2r, et2i);
-        add_instr("SET __aux_var\n");
-        acc_live = 0;
-
-        oper_mult(et1r, et2r);
-        oper_mult(et1i, et2i);
-        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var\n");
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-
-        oper_mult(et1i, et2r);
-        oper_mult(et1r, et2i);
-        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var\n");
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-    }
-
-    // comp const with comp acc
-    if ((e1.type==TY_CCONST) && (e2.type==TY_COMP) && (e2.id==0))
-    {
-        get_cmp_cst(e1,&etr,&eti);
+        get_cmp_parts(e1,&etr,&eti);
 
         add_instr("SET_P __aux_var \n");
         add_instr("SET   __aux_var1\n");
@@ -848,128 +741,12 @@ expr oper_div(expr e1, expr e2)
         oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
-    // comp var with int var
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id!=0))
-    {
-        get_cmp_ets(e1,&etr,&eti);
 
-        oper_div(etr, e2);
-        oper_div(eti, e2);
-    }
 
-    // comp var with int acc
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_INT) && (e2.id==0))
-    {
-        get_cmp_ets(e1,&etr,&eti);
 
-        add_instr("I2F\n");
-        add_instr("SET   __aux_var\n");
-        oper_div(etr, expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var\n");
-        oper_div(eti, expr_make(TY_FLOAT, 0));
-    }
 
-    // comp var with float var
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id!=0))
-    {
-        get_cmp_ets(e1,&etr,&eti);
 
-        oper_div(etr, e2);
-        oper_div(eti, e2);
-    }
 
-    // comp var with float acc
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_FLOAT) && (e2.id==0))
-    {
-        get_cmp_ets(e1,&etr,&eti);
-
-        add_instr("SET   __aux_var\n");
-        oper_div(etr, expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var\n");
-        oper_div(eti, expr_make(TY_FLOAT, 0));
-    }
-
-    // comp var with comp const
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_CCONST))
-    {
-        expr et1r, et2r;
-        expr et1i, et2i;
-
-        get_cmp_ets(e1,&et1r,&et1i);
-        get_cmp_cst(e2,&et2r,&et2i);
-
-        emit_sq_sum(et2r, et2i);
-        add_instr("SET   __aux_var\n");
-        acc_live = 0;
-
-        oper_mult(et1r, et2r);
-        oper_mult(et1i, et2i);
-        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var\n");
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-
-        oper_mult(et1i, et2r);
-        oper_mult(et1r, et2i);
-        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var\n");
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-    }
-
-    // comp var with comp var
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        expr et1r, et2r;
-        expr et1i, et2i;
-
-        get_cmp_ets(e1,&et1r,&et1i);
-        get_cmp_ets(e2,&et2r,&et2i);
-
-        emit_sq_sum(et2r, et2i);
-        add_instr("SET   __aux_var\n");
-        acc_live = 0;
-
-        oper_mult(et1r, et2r);
-        oper_mult(et1i, et2i);
-        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var\n");
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-
-        oper_mult(et1i, et2r);
-        oper_mult(et1r, et2i);
-        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var\n");
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-    }
-
-    // comp var with comp acc
-    if ((e1.type==TY_COMP) && (e1.id!=0) && (e2.type==TY_COMP) && (e2.id==0))
-    {
-        get_cmp_ets(e1,&etr,&eti);
-
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET   __aux_var1\n");
-        add_instr("F_MLT __aux_var1\n");
-        add_instr("P_LOD __aux_var \n");
-        add_instr("F_MLT __aux_var \n");
-        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("SET   __aux_var2\n");
-
-        add_instr("LOD   __aux_var1\n");
-        oper_mult(etr, expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var \n");
-        oper_mult(eti, expr_make(TY_FLOAT, 0));
-        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var2\n");
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-
-        add_instr("P_LOD __aux_var1\n");
-        oper_mult(eti, expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var \n");
-        oper_mult(etr, expr_make(TY_FLOAT, 0));
-        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var2\n");
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-    }
 
     // comp acc with int var
     if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_INT) && (e2.id!=0))
@@ -1019,10 +796,10 @@ expr oper_div(expr e1, expr e2)
         oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
     }
 
-    // comp acc with comp const
-    if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_CCONST))
+    // comp acc with comp in memory
+    if ((e1.type==TY_COMP) && (e1.id==0) && (place_of(e2) == PL_CM))
     {
-        get_cmp_cst(e2,&etr,&eti);
+        get_cmp_parts(e2,&etr,&eti);
 
         add_instr("SET_P __aux_var \n");
         add_instr("SET   __aux_var1\n");
@@ -1049,35 +826,6 @@ expr oper_div(expr e1, expr e2)
         oper_neg (expr_make(TY_FLOAT, 0));
     }
 
-    // comp acc with comp var
-    if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id!=0))
-    {
-        get_cmp_ets(e2,&etr,&eti);
-
-        add_instr("SET_P __aux_var \n");
-        add_instr("SET   __aux_var1\n");
-        acc_live = 0;
-
-        emit_sq_sum(etr, eti);
-        add_instr("SET   __aux_var2\n");
-
-        add_instr("LOD   __aux_var1\n");
-        oper_mult(etr, expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var \n");
-        oper_mult(eti, expr_make(TY_FLOAT, 0));
-        oper_add(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var2\n");
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-
-        add_instr("P_LOD __aux_var1\n");
-        oper_mult(eti, expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var \n");
-        oper_mult(etr, expr_make(TY_FLOAT, 0));
-        oper_sub(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        add_instr("P_LOD __aux_var2\n");
-        oper_div(expr_make(TY_FLOAT, 0), expr_make(TY_FLOAT, 0));
-        oper_neg (expr_make(TY_FLOAT, 0));
-    }
 
     // comp acc with comp acc
     if ((e1.type==TY_COMP) && (e1.id==0) && (e2.type==TY_COMP) && (e2.id==0))
