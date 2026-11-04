@@ -23,6 +23,16 @@
 // input and output ----------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+// a real operand as a float in the acc: an int is converted on the way
+// (I2F_M from memory, I2F in the acc), a float in memory is loaded, a float in
+// the acc is there already. P_ forms when the acc holds a value to keep
+static void load_float(expr e)
+{
+    if      (e.type == TY_INT && e.id != 0) add_instr("%s %s\n", acc_live ? "P_I2F_M" : "I2F_M", v_table[e.id].name);
+    else if (e.type == TY_INT)              add_instr("I2F\n");
+    else if (e.id != 0)                     add_instr("%s %s\n", acc_live ? "P_LOD" : "LOD", v_table[e.id].name);
+}
+
 // input ex: int x = in(0);
 expr builtin_in(int id)
 {
@@ -720,43 +730,9 @@ expr builtin_sqrt(expr e)
         return expr_make(TY_COMP, 0);
     }
 
-    // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
-    // execute ----------------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", i2f, v_table[e.id].name);
-        add_instr("CAL __float_sqrt\n");
-    }
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0))
-    {
-        add_instr("I2F\n");
-        add_instr("CAL __float_sqrt\n");
-    }
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("CAL __float_sqrt\n");
-    }
-
-    // float in acc
-    if ((e.type == TY_FLOAT) && (e.id == 0))
-    {
-        add_instr("CAL __float_sqrt\n");
-    }
+    // the operand as a float in the acc, then the operation
+    load_float(e);
+    add_instr("CAL __float_sqrt\n");
 
     acc_live = 1;
 
@@ -840,43 +816,9 @@ expr builtin_exp(expr e)
         return expr_make(TY_COMP, 0);
     }
 
-    // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
-    // execute ----------------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", i2f, v_table[e.id].name);
-        add_instr("CAL __float_exp\n");
-    }
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0))
-    {
-        add_instr("I2F\n");
-        add_instr("CAL __float_exp\n");
-    }
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("CAL __float_exp\n");
-    }
-
-    // float in acc
-    if ((e.type == TY_FLOAT) && (e.id == 0))
-    {
-        add_instr("CAL __float_exp\n");
-    }
+    // the operand as a float in the acc, then the operation
+    load_float(e);
+    add_instr("CAL __float_exp\n");
 
     acc_live = 1;
 
@@ -961,43 +903,9 @@ expr builtin_log(expr e)
         return expr_make(TY_COMP, 0);
     }
 
-    // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"   ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f, "I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
-    // execute ----------------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", i2f, v_table[e.id].name);
-        add_instr("CAL __float_log\n");
-    }
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0))
-    {
-        add_instr("I2F\n");
-        add_instr("CAL __float_log\n");
-    }
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("CAL __float_log\n");
-    }
-
-    // float in acc
-    if ((e.type == TY_FLOAT) && (e.id == 0))
-    {
-        add_instr("CAL __float_log\n");
-    }
+    // the operand as a float in the acc, then the operation
+    load_float(e);
+    add_instr("CAL __float_log\n");
 
     acc_live = 1;
 
@@ -1289,43 +1197,9 @@ expr builtin_atan(expr e)
         return expr_make(TY_COMP, 0);
     }
 
-    // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
-    // execute ----------------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", i2f, v_table[e.id].name);
-        add_instr("CAL __float_atan\n");
-    }
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0))
-    {
-        add_instr("I2F\n");
-        add_instr("CAL __float_atan\n");
-    }
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("CAL __float_atan\n");
-    }
-
-    // float in acc
-    if ((e.type == TY_FLOAT) && (e.id == 0))
-    {
-        add_instr("CAL __float_atan\n");
-    }
+    // the operand as a float in the acc, then the operation
+    load_float(e);
+    add_instr("CAL __float_atan\n");
 
     acc_live = 1;
 
@@ -1412,43 +1286,9 @@ expr builtin_sin(expr e)
         return expr_make(TY_COMP, 0);
     }
 
-    // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
-    // execute ----------------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", i2f, v_table[e.id].name);
-        add_instr("CAL __float_sin\n");
-    }
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0))
-    {
-        add_instr("I2F\n");
-        add_instr("CAL __float_sin\n");
-    }
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("CAL __float_sin\n");
-    }
-
-    // float in acc
-    if ((e.type == TY_FLOAT) && (e.id == 0))
-    {
-        add_instr("CAL __float_sin\n");
-    }
+    // the operand as a float in the acc, then the operation
+    load_float(e);
+    add_instr("CAL __float_sin\n");
 
     acc_live = 1;
 
@@ -1543,43 +1383,9 @@ expr builtin_tan(expr e)
         return expr_make(TY_COMP, 0);
     }
 
-    // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
-    // execute ----------------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", i2f, v_table[e.id].name);
-        add_instr("CAL __float_tan\n");
-    }
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0))
-    {
-        add_instr("I2F\n");
-        add_instr("CAL __float_tan\n");
-    }
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("CAL __float_tan\n");
-    }
-
-    // float in acc
-    if ((e.type == TY_FLOAT) && (e.id == 0))
-    {
-        add_instr("CAL __float_tan\n");
-    }
+    // the operand as a float in the acc, then the operation
+    load_float(e);
+    add_instr("CAL __float_tan\n");
 
     acc_live = 1;
 
@@ -1668,47 +1474,10 @@ expr builtin_cos(expr e)
         return expr_make(TY_COMP, 0);
     }
 
-    // ------------------------------------------------------------------------
-    // prepare local variables ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-
-    // ------------------------------------------------------------------------
-    // execute ----------------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // int in memory
-    if ((e.type == TY_INT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", i2f, v_table[e.id].name);
-        add_instr("F_SU2 1.570796327\n");   // pi/2 - x (F_SU2 X = X - acc, the adder with acc's sign flipped)
-        add_instr("CAL __float_sin\n");
-    }
-
-    // int in acc
-    if ((e.type == TY_INT) && (e.id == 0))
-    {
-        add_instr("I2F\n");
-        add_instr("F_SU2 1.570796327\n");   // pi/2 - x (F_SU2 X = X - acc, the adder with acc's sign flipped)
-        add_instr("CAL __float_sin\n");
-    }
-
-    // float in memory
-    if ((e.type == TY_FLOAT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("F_SU2 1.570796327\n");   // pi/2 - x (F_SU2 X = X - acc, the adder with acc's sign flipped)
-        add_instr("CAL __float_sin\n");
-    }
-
-    // float in acc
-    if ((e.type == TY_FLOAT) && (e.id == 0))
-    {
-        add_instr("F_SU2 1.570796327\n");   // pi/2 - x (F_SU2 X = X - acc, the adder with acc's sign flipped)
-        add_instr("CAL __float_sin\n");
-    }
+    // the operand as a float in the acc, then the operation
+    load_float(e);
+    add_instr("F_SU2 1.570796327\n");   // pi/2 - x (F_SU2 X = X - acc, the adder with acc's sign flipped)
+    add_instr("CAL __float_sin\n");
 
     acc_live = 1;
 
