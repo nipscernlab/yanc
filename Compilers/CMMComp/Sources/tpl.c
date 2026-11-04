@@ -25,6 +25,7 @@
 //   $br $bi  the same of the right one,
 //   $L       LOD, or P_LOD when the acc holds a value to keep (acc_live),
 //   $C       I2F_M, or P_I2F_M the same way,
+//   $F       F2I_M, or P_F2I_M the same way,
 //   $1 .. $9 words the emitter passes (emit_tpl_ops): a comparison's
 //            mnemonics, an array's name or its number of columns.
 // A line ?MSG_NAME is no instruction: the warning MSG_NAME, with the line,
@@ -87,6 +88,7 @@ void emit_tpl_ops(const char *t, expr e1, expr e2, const char *const *ops)
                 else if (*r == 'b') {w = v_table[e2.id].name; used = 2;}
                 else if (*r == 'L') {w = acc_live ? "P_LOD"   : "LOD";   used = 2;}
                 else if (*r == 'C') {w = acc_live ? "P_I2F_M" : "I2F_M"; used = 2;}
+                else if (*r == 'F') {w = acc_live ? "P_F2I_M" : "F2I_M"; used = 2;}
                 else if (ops && *r >= '1' && *r <= '9') {w = ops[*r - '1']; used = 2;}
             }
             char *nl = w ? xasprintf("%s%s", line, w) : xasprintf("%s%c", line, t[k]);

@@ -20,6 +20,11 @@ tags consumed by Aurora.
   `add_instr`, are sites too (all reached). The script also holds `verified.txt` to the part of its
   rule a script can see: a test listed there has a `golden_sim/` and is
   simulated, or is a processor of a project pass.
+- **An argument and a returned value are loaded as their type by one
+  table** (#108 C2). `par_check` and `declare_ret` each wrote the 18
+  conversions (int, float or comp, from each of six places) by hand;
+  `load_tpl` in `convert.c` holds them once, and `tpl.c` takes `$F`
+  (`F2I_M`, or `P_F2I_M` over a pending value) for it.
 - **The operator tables are checked before a test reaches them** (#108).
   `Scripts/cmm_cov.py` stops on a cell with a `$` that `tpl.c` does not
   expand, a name of an operand where the operand has none (`$a` of a value

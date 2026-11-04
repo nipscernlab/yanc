@@ -103,7 +103,7 @@ def table_cells(body, at):
 # as wrong assembly or a fatal error once some test reaches the cell
 TPL_C = open(os.path.join(cmm, "Sources", "tpl.c"), encoding="utf-8").read()
 WARNINGS = set(re.findall(r'\{"(MSG_\w+)",', TPL_C))     # tpl_warn's names
-TOKENS = re.compile(r"\$(ar|ai|br|bi|[abLC1-9])?")
+TOKENS = re.compile(r"\$(ar|ai|br|bi|[abLCF1-9])?")
 MEMORY = {"a": ("IM", "FM"), "b": ("IM", "FM"),          # where each name exists:
           "ar": ("CM",), "ai": ("CM",), "br": ("CM",), "bi": ("CM",)}   # an operand in memory
 

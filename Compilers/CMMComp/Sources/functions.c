@@ -110,204 +110,18 @@ void par_check(expr e, int k)
     int t_fun = v_table[fun_id].param_types[k]; // type of the parameter in the function
     int index = k+1;                     // position of the parameter, for the messages
 
-    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-    char f2i[10]; if (acc_live == 0) strcpy(f2i,"F2I_M"); else strcpy(f2i,"P_F2I_M");
+    // the conversion's warning, then the value as the parameter's type
+    int from = (t_cal == TY_CCONST) ? TY_COMP : t_cal;
+    const char *w = NULL;
+    if      (t_fun == TY_INT   && from == TY_FLOAT) w = MSG_WARN_CONV_F2I_PARAM;
+    else if (t_fun == TY_INT   && from == TY_COMP ) w = MSG_WARN_CONV_C2I_PARAM;
+    else if (t_fun == TY_FLOAT && from == TY_INT  ) w = MSG_WARN_CONV_I2F_PARAM;
+    else if (t_fun == TY_FLOAT && from == TY_COMP ) w = MSG_WARN_CONV_C2F_PARAM;
+    else if (t_fun == TY_COMP  && from == TY_INT  ) w = MSG_WARN_CONV_I2C_PARAM;
+    else if (t_fun == TY_COMP  && from == TY_FLOAT) w = MSG_WARN_CONV_F2C_PARAM;
+    if (w) warn(w, pctx.line_num+1, index, v_table[fun_id].name);
 
-    // ------------------------------------------------------------------------
-    // check every combination ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    expr etr, eti;
-
-    // original is int and call is int var ------------------------------------
-
-    if ((t_fun == TY_INT) && (t_cal == TY_INT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-    }
-
-    // original is int and call is int acc ------------------------------------
-
-    if ((t_fun == TY_INT) && (t_cal == TY_INT) && (e.id == 0))
-    {
-        // nothing to do
-    }
-
-    // original is int and call is float var ----------------------------------
-
-    if ((t_fun == TY_INT) && (t_cal == TY_FLOAT) && (e.id != 0))
-    {
-        warn(MSG_WARN_CONV_F2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("%s %s\n", f2i, v_table[e.id].name);
-    }
-
-    // original is int and call is float acc ----------------------------------
-
-    if ((t_fun == TY_INT) && (t_cal == TY_FLOAT) && (e.id == 0))
-    {
-        warn(MSG_WARN_CONV_F2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("F2I\n");
-    }
-
-    // original is int and call is comp const ---------------------------------
-
-    if ((t_fun == TY_INT) && (t_cal == TY_CCONST))
-    {
-        warn(MSG_WARN_CONV_C2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        get_cmp_cst(e,&etr,&eti);
-
-        add_instr("%s %s\n", f2i, v_table[etr.id].name);
-    }
-
-    // original is int and call is comp var -----------------------------------
-
-    if ((t_fun == TY_INT) && (t_cal == TY_COMP) && (e.id != 0))
-    {
-        warn(MSG_WARN_CONV_C2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("%s %s\n", f2i, v_table[e.id].name);
-    }
-
-    // original is int and call is comp acc -----------------------------------
-
-    if ((t_fun == TY_INT) && (t_cal == TY_COMP) && (e.id == 0))
-    {
-        warn(MSG_WARN_CONV_C2I_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("POP\n");
-        add_instr("F2I\n");
-    }
-
-    // original is float and call is int var ----------------------------------
-
-    if ((t_fun == TY_FLOAT) && (t_cal == TY_INT) && (e.id != 0))
-    {
-        warn(MSG_WARN_CONV_I2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("%s %s\n", i2f, v_table[e.id].name);
-    }
-
-    // original is float and call is int acc ----------------------------------
-
-    if ((t_fun == TY_FLOAT) && (t_cal == TY_INT) && (e.id == 0))
-    {
-        warn(MSG_WARN_CONV_I2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("I2F\n");
-    }
-
-    // original is float and call is float var --------------------------------
-
-    if ((t_fun == TY_FLOAT) && (t_cal == TY_FLOAT) && (e.id != 0))
-    {
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-    }
-
-    // original is float and call is float acc --------------------------------
-
-    if ((t_fun == TY_FLOAT) && (t_cal == TY_FLOAT) && (e.id == 0))
-    {
-        // nothing to do
-    }
-
-    // original is float and call is comp const -------------------------------
-
-    if ((t_fun == TY_FLOAT) && (t_cal == TY_CCONST))
-    {
-        warn(MSG_WARN_CONV_C2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        get_cmp_cst(e,&etr,&eti);
-
-        add_instr("%s %s\n", ld, v_table[etr.id].name);
-    }
-
-    // original is float and call is comp var ---------------------------------
-
-    if ((t_fun == TY_FLOAT) && (t_cal == TY_COMP) && (e.id != 0))
-    {
-        warn(MSG_WARN_CONV_C2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-    }
-
-    // original is float and call is comp acc ---------------------------------
-
-    if ((t_fun == TY_FLOAT) && (t_cal == TY_COMP) && (e.id == 0))
-    {
-        warn(MSG_WARN_CONV_C2F_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("POP\n");
-    }
-
-    // original is comp and call is int var -----------------------------------
-
-    if ((t_fun == TY_COMP) && (t_cal == TY_INT) && (e.id != 0))
-    {
-        warn(MSG_WARN_CONV_I2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("%s %s\n", i2f, v_table[e.id].name);
-        add_instr("P_LOD 0.0\n");
-    }
-
-    // original is comp and call is int acc -----------------------------------
-
-    if ((t_fun == TY_COMP) && (t_cal == TY_INT) && (e.id == 0))
-    {
-        warn(MSG_WARN_CONV_I2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("I2F\n");
-        add_instr("P_LOD 0.0\n");
-    }
-
-    // original is comp and call is float var ---------------------------------
-
-    if ((t_fun == TY_COMP) && (t_cal == TY_FLOAT) && (e.id != 0))
-    {
-        warn(MSG_WARN_CONV_F2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("P_LOD 0.0\n");
-    }
-
-    // original is comp and call is float acc ---------------------------------
-
-    if ((t_fun == TY_COMP) && (t_cal == TY_FLOAT) && (e.id == 0))
-    {
-        warn(MSG_WARN_CONV_F2C_PARAM, pctx.line_num+1, index, v_table[fun_id].name);
-
-        add_instr("P_LOD 0.0\n");
-    }
-
-    // original is comp and call is comp const --------------------------------
-
-    if ((t_fun == TY_COMP) && (t_cal == TY_CCONST))
-    {
-        get_cmp_cst(e,&etr,&eti);
-
-        add_instr("%s %s\n", ld, v_table[etr.id].name);
-        add_instr("P_LOD %s\n",  v_table[eti.id].name);
-    }
-
-    // original is comp and call is comp var ----------------------------------
-
-    if ((t_fun == TY_COMP) && (t_cal == TY_COMP) && (e.id != 0))
-    {
-        get_cmp_ets(e,&etr,&eti); // gets the extended IDs of the right side in memory
-
-        add_instr("%s %s\n" , ld, v_table[etr.id].name);
-        add_instr("P_LOD %s\n",     v_table[eti.id].name);
-    }
-
-    // original is comp and call is comp acc ----------------------------------
-
-    if ((t_fun == TY_COMP) && (t_cal == TY_COMP) && (e.id == 0))
-    {
-        // nothing to do
-    }
+    if (t_fun >= TY_INT && t_fun <= TY_COMP && from >= TY_INT && from <= TY_COMP) load_as(t_fun, e);
 }
 
 // ----------------------------------------------------------------------------
@@ -364,178 +178,26 @@ void declare_ret(expr e, int ret)
     // check every combination ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    expr etr, eti;
     int left_type = v_table[pctx.fun_parse].type;
+    int to   = left_type - TY_FVOID;                       // TY_FINT .. TY_FCOMP -> TY_INT .. TY_COMP
+    int from = (e.type == TY_CCONST) ? TY_COMP : e.type;
 
-    // int with int var
-    if ((left_type == TY_FINT) && (e.type == TY_INT) && (e.id!=0))
+    // the conversion's warning, then the value as the return type, loaded
+    // with the plain forms (LOD, I2F_M, F2I_M): nothing pending in the acc
+    // is kept across a return
+    if      (to == TY_INT   && from == TY_FLOAT) warn(MSG_WARN_CONV_F2I_RETURN, pctx.line_num+1, v_table[pctx.fun_parse].name);
+    else if (to == TY_INT   && from == TY_COMP ) warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
+    else if (to == TY_FLOAT && from == TY_INT  ) warn(MSG_WARN_RET_FLOAT_RECV_INT, pctx.line_num+1);
+    else if (to == TY_FLOAT && from == TY_COMP ) warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
+    else if (to == TY_COMP  && from == TY_INT  ) warn(MSG_WARN_RET_COMP_RECV_INT, pctx.line_num+1);
+    else if (to == TY_COMP  && from == TY_FLOAT) warn(MSG_WARN_RET_COMP_RECV_FLOAT, pctx.line_num+1);
+
+    if (to >= TY_INT && to <= TY_COMP && from >= TY_INT && from <= TY_COMP)
     {
-        add_instr("LOD %s\n", v_table[e.id].name);
-    }
-
-    // int with int acc
-    if ((left_type == TY_FINT) && (e.type == TY_INT) && (e.id==0))
-    {
-        // nothing to do
-    }
-
-    // int with float var
-    if ((left_type == TY_FINT) && (e.type == TY_FLOAT) && (e.id!=0))
-    {
-        warn(MSG_WARN_CONV_F2I_RETURN, pctx.line_num+1, v_table[pctx.fun_parse].name);
-
-        add_instr("F2I_M %s\n", v_table[e.id].name);
-    }
-
-    // int with float acc
-    if ((left_type == TY_FINT) && (e.type == TY_FLOAT) && (e.id==0))
-    {
-        warn(MSG_WARN_CONV_F2I_RETURN, pctx.line_num+1, v_table[pctx.fun_parse].name);
-        add_instr("F2I\n");
-    }
-
-    // int with comp const
-    if ((left_type == TY_FINT) && (e.type == TY_CCONST))
-    {
-        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
-
-        get_cmp_cst(e,&etr,&eti);
-
-        add_instr("F2I_M %s\n", v_table[etr.id].name);
-    }
-
-    // int with comp var
-    if ((left_type == TY_FINT) && (e.type == TY_COMP) && (e.id!=0))
-    {
-        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
-
-        get_cmp_ets(e,&etr,&eti);
-
-        add_instr("F2I_M %s\n", v_table[etr.id].name);
-    }
-
-    // int with comp acc
-    if ((left_type == TY_FINT) && (e.type == TY_COMP) && (e.id==0))
-    {
-        warn(MSG_WARN_ROUND_REAL, pctx.line_num+1);
-
-        add_instr("POP\n");
-        add_instr("F2I\n");
-    }
-
-    // float with int var
-    if ((left_type == TY_FFLOAT) && (e.type == TY_INT) && (e.id!=0))
-    {
-        warn(MSG_WARN_RET_FLOAT_RECV_INT, pctx.line_num+1);
-
-        add_instr("I2F_M %s\n", v_table[e.id].name);
-    }
-
-    // float with int acc
-    if ((left_type == TY_FFLOAT) && (e.type == TY_INT) && (e.id==0))
-    {
-        warn(MSG_WARN_RET_FLOAT_RECV_INT, pctx.line_num+1);
-
-        add_instr("I2F\n");
-    }
-
-    // float with float var
-    if ((left_type == TY_FFLOAT) && (e.type == TY_FLOAT) && (e.id!=0))
-    {
-        add_instr("LOD %s\n", v_table[e.id].name);
-    }
-
-    // float with float acc
-    if ((left_type == TY_FFLOAT) && (e.type == TY_FLOAT) && (e.id==0))
-    {
-        // nothing to do
-    }
-
-    // float with comp const
-    if ((left_type == TY_FFLOAT) && (e.type == TY_CCONST))
-    {
-        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
-
-        get_cmp_cst(e,&etr,&eti);
-
-        add_instr("LOD %s\n", v_table[etr.id].name);
-    }
-
-    // float with comp var
-    if ((left_type == TY_FFLOAT) && (e.type == TY_COMP) && (e.id!=0))
-    {
-        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
-
-        get_cmp_ets(e,&etr,&eti);
-
-        add_instr("LOD %s\n", v_table[etr.id].name);
-    }
-
-    // float with comp acc
-    if ((left_type == TY_FFLOAT) && (e.type == TY_COMP) && (e.id==0))
-    {
-        warn(MSG_WARN_GRAB_REAL_ONLY, pctx.line_num+1);
-
-        add_instr("POP\n");
-    }
-
-    // comp with int var
-    if ((left_type == TY_FCOMP) && (e.type == TY_INT) && (e.id!=0))
-    {
-        warn(MSG_WARN_RET_COMP_RECV_INT, pctx.line_num+1);
-
-        add_instr("I2F_M %s\n", v_table[e.id].name);
-        add_instr("P_LOD 0.0\n");
-    }
-
-    // comp with int acc
-    if ((left_type == TY_FCOMP) && (e.type == TY_INT) && (e.id==0))
-    {
-        warn(MSG_WARN_RET_COMP_RECV_INT, pctx.line_num+1);
-
-        add_instr("I2F\n");
-        add_instr("P_LOD 0.0\n");
-    }
-
-    // comp with float var
-    if ((left_type == TY_FCOMP) && (e.type == TY_FLOAT) && (e.id!=0))
-    {
-        warn(MSG_WARN_RET_COMP_RECV_FLOAT, pctx.line_num+1);
-
-        add_instr("LOD %s\n", v_table[e.id].name);
-        add_instr("P_LOD 0.0\n");
-    }
-
-    // comp with float acc
-    if ((left_type == TY_FCOMP) && (e.type == TY_FLOAT) && (e.id==0))
-    {
-        warn(MSG_WARN_RET_COMP_RECV_FLOAT, pctx.line_num+1);
-
-        add_instr("P_LOD 0.0\n");
-    }
-
-    // comp with comp const
-    if ((left_type == TY_FCOMP) && (e.type == TY_CCONST))
-    {
-        get_cmp_cst(e,&etr,&eti);
-
-        add_instr("LOD %s\n"  , v_table[etr.id].name);
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-    }
-
-    // comp with comp var
-    if ((left_type == TY_FCOMP) && (e.type == TY_COMP) && (e.id!=0))
-    {
-        get_cmp_ets(e,&etr,&eti);
-
-        add_instr("LOD %s\n"  , v_table[etr.id].name);
-        add_instr("P_LOD %s\n", v_table[eti.id].name);
-    }
-
-    // comp with comp acc
-    if ((left_type == TY_FCOMP) && (e.type == TY_COMP) && (e.id==0))
-    {
-        // nothing to do
+        int keep = acc_live;
+        acc_live = 0;
+        load_as(to, e);
+        acc_live = keep;
     }
 
     // ------------------------------------------------------------------------
