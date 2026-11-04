@@ -43,7 +43,6 @@ typedef struct {
     FILE       *f_asm;      // the .asm
     FILE       *f_log;      // prog_log.txt, the project's information for asmcomp and the waveform
     FILE       *f_lin;      // pc_<name>_mem.txt, the source line of each instruction
-    int         acc_ok;     // 0: the acc is empty (LOD), 1: it holds a value (P_LOD)
     int         emit_line;  // line of the AST node the current instruction comes from (add_instr)
     int         emit_fid;   // id of the function whose body the walker is in (-1: none)
     const char *emit_fname; // its name, for strip_fn_prefix in messages ("" outside a function)

@@ -100,10 +100,6 @@ static expr_node **done_n; static int *done_v; static int n_done, cap_done;
 // yet) while code of the number's own runs before it is used
 static int keep_live, keep_v;
 
-// what the accumulator holds right now: a sum of loop variables (key), valid
-// while no instruction has been emitted since (num_ins == acc_mark)
-static char *acc_key = NULL;            // a block of its own (NULL: none)
-static int  acc_mark = -1;
 
 // the lines that went through __dirac_tmp, for the summary
 static int *tmp_lines, *tmp_words, n_tmp_lines, cap_tmp_lines;
@@ -141,8 +137,6 @@ static expr_node *node_new(expr_kind k, int type)
     return n;
 }
 
-static void key_set(const char *k) {free(acc_key); acc_key = xstrdup(k); acc_mark = ectx.num_ins;}
-static int  key_is (const char *k) {return acc_mark == ectx.num_ins && acc_key && strcmp(acc_key, k) == 0;}
 
 // a variable of the compiler, __<stem><n>_<function>: each function has its
 // own, so that a call made inside a statement leaves the caller's alone. The
@@ -528,18 +522,19 @@ static int ix_vars(const dl_ix *ix, char *v[2], long *off)
 }
 
 // puts the index of ix in the accumulator (pushing what is there when
-// acc_ok); returns the constant offset, and in *key the sum it loaded (a
+// acc_live); returns the constant offset, and in *key the sum it loaded (a
 // block the caller frees)
 static long ix_load(const dl_ix *ix, char **key)
 {
     char *v[2]; long off;
     int nt = ix_vars(ix, v, &off);
-    *key = xasprintf("%s%s%s", v[0], nt > 1 ? "+" : "", nt > 1 ? v[1] : "");
-    if (key_is(*key)) {if (ectx.acc_ok) add_instr("PSH\n");}
+    // a sum is a key in brackets: the next SET may change a part of it (acc_now)
+    *key = nt > 1 ? xasprintf("[%s+%s]", v[0], v[1]) : xstrdup(v[0]);
+    if (acc_holds(*key)) {if (acc_live) add_instr("PSH\n");}
     else {
-        if (!key_is(v[0]) || ectx.acc_ok) add_instr("%s %s\n", ectx.acc_ok ? "P_LOD" : "LOD", v[0]);
+        add_instr("%s %s\n", acc_live ? "P_LOD" : "LOD", v[0]);   // add_instr drops a LOD of what the acc holds
         if (nt > 1) add_instr("ADD %s\n", v[1]);
-        key_set(*key);
+        acc_now(*key);
     }
     free(v[0]); free(v[1]);
     return off;
@@ -555,14 +550,14 @@ expr dirac_elem_emit(expr_node *n)
 {
     dl_elem *e = n->dl;
     if (e->ix.nt == 0)
-        add_instr("%s %s %ld\n", ectx.acc_ok ? "P_LOD_V" : "LOD_V", arr_name(e->arr), e->ix.k);
+        add_instr("%s %s %ld\n", acc_live ? "P_LOD_V" : "LOD_V", arr_name(e->arr), e->ix.k);
     else {
         char *key;
         long off = ix_load(&e->ix, &key);
         free(key);
         add_instr("LDI_V %s %ld\n", arr_name(e->arr), off);
     }
-    ectx.acc_ok = 1;
+    acc_live = 1;
     return expr_make(n->type, 0);
 }
 
@@ -570,15 +565,15 @@ expr dirac_elem_emit(expr_node *n)
 static expr in_acc(expr e)
 {
     if (e.id == 0) return e;
-    add_instr("%s %s\n", ectx.acc_ok ? "P_LOD" : "LOD", v_table[e.id].name);
-    ectx.acc_ok = 1;
+    add_instr("%s %s\n", acc_live ? "P_LOD" : "LOD", v_table[e.id].name);
+    acc_live = 1;
     return expr_make(e.type, 0);
 }
 
 static void emit_hoist(expr_node *n, int v)
 {
     int conv = (v >> 30) & 1; v &= ~(1 << 30);
-    ectx.acc_ok = 0;
+    acc_live = 0;
     expr e = ast_emit_expr(n);
     if (conv && e.type == TY_INT && e.id != 0) add_instr("I2F_M %s\n", v_table[e.id].name);
     else {
@@ -586,7 +581,7 @@ static void emit_hoist(expr_node *n, int v)
         if (conv && e.type == TY_INT) add_instr("I2F\n");
     }
     add_instr("SET %s\n", v_table[v].name);
-    ectx.acc_ok = 0;
+    acc_live = 0;
 }
 
 // the walker's value leaves the accumulator for a variable, before the
@@ -596,7 +591,7 @@ static void keep_acc(void)
     if (!keep_live || keep_v) return;
     keep_v = scalar_var(ctx_type);
     add_instr("SET %s\n", v_table[keep_v].name);
-    ectx.acc_ok = 0;
+    acc_live = 0;
 }
 
 // computes the parts before the loops, and records them as computed
@@ -632,9 +627,9 @@ static void loop_open(int lv, int push, char *top, char *end)
     add_instr("%s %ld\n", push ? "P_LOD" : "LOD", -(long)l->step * l->n);
     add_instr("SET %s\n", c);
     add_sinst(0, "@%s ", top);
-    key_set(c);
+    acc_now(c);              // the label forgets the acc, but both ways in end with SET c
     free(c);
-    ectx.acc_ok = 0;
+    acc_live = 0;
 }
 
 // the parts computed at the top of each turn
@@ -675,13 +670,13 @@ expr dirac_sum_emit(expr_node *n)
     char top[32], end[32];
     loop_open(d->lv, 1, top, end);
     loop_hoists(d->lv);
-    ectx.acc_ok = 0;
+    acc_live = 0;
     expr b = in_acc(ast_emit_expr(d->body));
     oper_add(expr_make(t, 0), b);
-    ectx.acc_ok = 1;
+    acc_live = 1;
     loop_close(d->lv, 1, top, end);
     add_instr("POP\n");
-    ectx.acc_ok = 1;
+    acc_live = 1;
     return expr_make(t, 0);
 }
 
@@ -739,13 +734,13 @@ static void store(expr e, const dl_dst *d, long off)
     if (e.id != 0) add_instr("%s %s\n", conv == 1 ? "P_I2F_M" : conv == 2 ? "P_F2I_M" : "P_LOD", v_table[e.id].name);
     else if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
     add_instr("STI_V %s %ld\n", arr_name(d->arr), off);
-    ectx.acc_ok = 0;
+    acc_live = 0;
 }
 
 static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
 {
     if (d->kind == 0 && six->nt == 0) {                // one cell: a plain store
-        ectx.acc_ok = 0;
+        acc_live = 0;
         expr e = ast_emit_expr(el);
         if (d->type == TY_INT && e.type == TY_FLOAT)
             warn(MSG_WARN_INT_RECV_FLOAT, cur_line, strip_fn_prefix(v_table[d->arr].name));
@@ -756,22 +751,22 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
             if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
         }
         add_instr("SET_V %s %ld\n", arr_name(d->arr), six->k + d->base);
-        ectx.acc_ok = 0;
+        acc_live = 0;
     } else if (d->kind == 0) {
         char *key;
-        ectx.acc_ok = 0;
+        acc_live = 0;
         long off = ix_load(six, &key);
-        ectx.acc_ok = 1;                       // the index is the value to keep: the first load pushes it
-        key_set(key);
+        acc_live = 1;                       // the index is the value to keep: the first load pushes it
+        acc_now(key);
         free(key);
         expr e = ast_emit_expr(el);
         store(e, d, off + d->base);
     } else {
-        ectx.acc_ok = 0;
+        acc_live = 0;
         expr e = ast_emit_expr(el);
         if (d->kind == 2) builtin_fout(d->port, e);
         else              builtin_out (d->port, e);
-        ectx.acc_ok = 0;
+        acc_live = 0;
     }
 }
 
@@ -785,7 +780,7 @@ static void emit_nest(const int *tl, int nl, int li, expr_node *el, const dl_dst
     loop_hoists(lv);
     emit_nest(tl, nl, li + 1, el, d, six);
     loop_close(lv, 0, top, end);
-    ectx.acc_ok = 0;
+    acc_live = 0;
 }
 
 static void collect_target_uses(const dl_ix *six, int nl) {use_ix(six, nl);}
@@ -1024,9 +1019,9 @@ void dirac_loops(int dst, expr_node *r, int line)
     else {rows = v_table[dst].size; cols = 1;}
 
     dl_dst d = {0, dst, 0, 0, t, v_table[dst].dims == AR_2D ? cols : 0};
-    ectx.acc_ok = 0;
+    acc_live = 0;
     emit_statement(r, &d, rows, cols, line);
-    ectx.acc_ok = 0;
+    acc_live = 0;
     ctx_type = save;
 }
 
@@ -1038,17 +1033,17 @@ void dirac_loops_out(int port, expr_node *r, int fout, int line)
     int rows = r->rows, cols = r->cols;
     if (rows == DIRAC_ANY || cols == DIRAC_ANY) die(MSG_ERR_DIRAC_NOT_YET, line);   // |0⟩, |in(p)⟩ alone: no size
     dl_dst d = {fout ? 2 : 1, 0, port, 0, ctx_type, 0};
-    ectx.acc_ok = 0;
+    acc_live = 0;
     emit_statement(r, &d, rows, cols, line);
-    ectx.acc_ok = 0;
+    acc_live = 0;
     ctx_type = save;
 }
 
 // a Dirac product that is a number, inside a scalar expression (⟨a|b⟩,
-// ⟨a|M|b⟩): the walker calls this with what the accumulator holds in acc_ok
+// ⟨a|M|b⟩): the walker calls this with what the accumulator holds in acc_live
 expr dirac_number(expr_node *n)
 {
-    int live = ectx.acc_ok;
+    int live = acc_live;
     int save_live = keep_live, save_kv = keep_v;
     keep_live = live; keep_v = 0;
     enter(n->line);
@@ -1072,8 +1067,8 @@ expr dirac_number(expr_node *n)
 
     // the parts computed first: the value the walker holds waits in memory
     emit_pre();
-    if (keep_v) {add_instr("LOD %s\n", v_table[keep_v].name); ectx.acc_ok = 1;}
-    else ectx.acc_ok = live;
+    if (keep_v) {add_instr("LOD %s\n", v_table[keep_v].name); acc_live = 1;}
+    else acc_live = live;
     keep_live = save_live; keep_v = save_kv;
 
     expr e = in_acc(ast_emit_expr(el));

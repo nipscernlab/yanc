@@ -262,7 +262,7 @@ void assign_set(int id, expr e)
         add_instr("SET %s\n"    , v_table[id].name);
     }
 
-    ectx.acc_ok     = 0;  // acc released
+    acc_live     = 0;  // acc released
 }
 
 // array assignment with a COMPILE-TIME-CONSTANT index, e.g. x[3] = y;
@@ -301,13 +301,13 @@ void assign_array_const(int id, int k, int dims, expr e)
             add_instr("POP\n");
             add_instr("SET_V %s %d\n", v_table[id].name, k);
         }
-        ectx.acc_ok = 0;  // acc released
+        acc_live = 0;  // acc released
         return;
     }
 
     if (e.id != 0) add_instr("LOD %s\n", v_table[e.id].name);  // rhs -> acc
     add_instr("SET_V %s %d\n", v_table[id].name, k);
-    ectx.acc_ok = 0;  // acc released
+    acc_live = 0;  // acc released
 }
 
 // array assignment, e.g. x[i] = y;
@@ -613,26 +613,26 @@ void assign_array(int id, expr e, int fft)
         add_instr("%s %s_i\n", set_type, v_table[id].name);
     }
 
-    ectx.acc_ok     = 0;  // acc released
+    acc_live     = 0;  // acc released
 }
 
 // ++ operator assignment
 void assign_pplus(int id)
 {
     pplus2exp(id, 0);
-    ectx.acc_ok = 0; // acc released
+    acc_live = 0; // acc released
 }
 
 // ++ operator assignment on a 1D array
 void assign_aplus(int id, expr e)
 {
     pplus1d2exp(id, e, 0);
-    ectx.acc_ok = 0; // acc released
+    acc_live = 0; // acc released
 }
 
 // ++ operator assignment on a 2D array
 void assign_apl2d(int id, expr e1, expr e2)
 {
     pplus2d2exp(id, e1, e2, 0);
-    ectx.acc_ok = 0; // acc released
+    acc_live = 0; // acc released
 }

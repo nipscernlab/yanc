@@ -110,9 +110,9 @@ void par_check(expr e, int k)
     int t_fun = v_table[fun_id].param_types[k]; // type of the parameter in the function
     int index = k+1;                     // position of the parameter, for the messages
 
-    char ld [10]; if (ectx.acc_ok == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
-    char i2f[10]; if (ectx.acc_ok == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
-    char f2i[10]; if (ectx.acc_ok == 0) strcpy(f2i,"F2I_M"); else strcpy(f2i,"P_F2I_M");
+    char ld [10]; if (acc_live == 0) strcpy(ld ,"LOD"  ); else strcpy(ld ,"P_LOD"  );
+    char i2f[10]; if (acc_live == 0) strcpy(i2f,"I2F_M"); else strcpy(i2f,"P_I2F_M");
+    char f2i[10]; if (acc_live == 0) strcpy(f2i,"F2I_M"); else strcpy(f2i,"P_F2I_M");
 
     // ------------------------------------------------------------------------
     // check every combination ------------------------------------------------
@@ -546,7 +546,7 @@ void declare_ret(expr e, int ret)
 
     add_instr("RET\n");
 
-    ectx.acc_ok = 0; // even with an exp in the acc, release it to start another function
+    acc_live = 0; // even with an exp in the acc, release it to start another function
     pctx.ret_ok = 1; // the return keyword appeared properly in the function
 }
 
@@ -649,7 +649,7 @@ stmt_node *vcall(int id)
 
     v_table[id].used = 1;
 
-    // type=0 for void: walker leaves acc_ok=0 after CAL
+    // type=0 for void: walker leaves acc_live=0 after CAL
     return stmt_void_call(expr_func_call(0, id, a, n));
 }
 
