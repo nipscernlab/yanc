@@ -10,8 +10,11 @@ COMM = {"S_ADD": "ADD", "S_MLT": "MLT", "SF_ADD": "F_ADD", "SF_MLT": "F_MLT",
 
 def load(path):
     out = []   # (label or None, mnemonic, operand, lineno)
+    itr = False   # #ITRAD: the next instruction is the interrupt's entry, as if labelled
     for n, ln in enumerate(open(path, encoding="utf-8", errors="replace"), 1):
         ln = ln.split("//")[0].strip()
+        if ln.startswith("#ITRAD"):
+            itr = True; continue
         if not ln or ln.startswith("#"):
             continue
         lab = None
@@ -20,6 +23,8 @@ def load(path):
             lab, ln = m.group(1), m.group(2).strip()
             if not ln or ln.startswith("#"):
                 out.append((lab, "NOP", "", n)); continue
+        if lab is None and itr: lab = "#ITRAD"
+        itr = False
         p = ln.split(None, 1)
         out.append((lab, p[0], p[1].strip() if len(p) > 1 else "", n))
     return out
@@ -52,7 +57,7 @@ for path in sorted(glob.glob(f"{root}/*/golden.asm")):
             hits["unreachable after JMP/RET"].append(where)
         if op in ("JMP", "JIZ") and arg in labels:
             t = ins[labels[arg]]
-            if t[1] == "JMP": hits[f"{op} to a JMP (thread)"].append(where)
+            if t[1] == "JMP" and t[2] != arg: hits[f"{op} to a JMP (thread)"].append(where)   # not @fim JMP fim
 # words written and never read (per program), ignoring outputs/ports
 for (name, v), c in writes.items():
     if reads[(name, v)] == 0: hits["variable written, never read"].append(f"{name}:{v}")
