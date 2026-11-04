@@ -38,6 +38,11 @@ typedef struct symbol {
 extern symbol *v_table;                  // AoS storage, indexed by ID 0..v_count
 extern int     v_count;                  // how many entries v_table holds
 
+// the row of id. Write sym(lex_id("x"))->name, never v_table[lex_id("x")].name:
+// lex_id may grow the table, and C does not say whether v_table is read before
+// or after the call, so the second form may index the freed block (#108 A16)
+symbol *sym(int id);
+
 // table element manipulation -------------------------------------------------
 
 int    find_var(const char *val);             // searches the table for the ID (-1 if not found)

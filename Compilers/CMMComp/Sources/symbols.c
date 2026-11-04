@@ -31,7 +31,7 @@ static int   v_cap   = 0;  // current capacity of the parallel arrays
 symbol *v_table = NULL;
 
 // The table moves to a bigger block; each name stays where add_var put it, so
-// code that holds a name, `const char *X = v_table[lex_id("...")].name`, and
+// code that holds a name, `const char *X = sym(lex_id("..."))->name`, and
 // then adds a symbol (stdlib.c does it about 50 times) still reads the same
 // name after the move. Nothing keeps a pointer to a row.
 static void var_grow(int needed)
@@ -63,6 +63,8 @@ int find_var(const char *val)
 }
 
 // adds a variable to the table
+symbol *sym(int id) {return &v_table[id];}   // v_table read after the argument (symbols.h)
+
 void add_var(const char *var)
 {
     var_grow(v_count + 1);

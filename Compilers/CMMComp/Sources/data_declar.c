@@ -218,7 +218,7 @@ static int ini_emit(int id_var, int size)
     if (type == 3)
     {
         add_sinst(0, "#arrayd %s 3 %d %d%s\n", v_table[id_var].name,             size, a->n, a->re);
-        add_sinst(0, "#arrayd %s 4 %d %d%s\n", v_table[get_img_id(id_var)].name, size, a->n, a->im);
+        add_sinst(0, "#arrayd %s 4 %d %d%s\n", sym(get_img_id(id_var))->name, size, a->n, a->im);
     }
     else add_sinst(0, "#arrayd %s %d %d %d%s\n", v_table[id_var].name, type, size, a->n, a->re);
     return 1;

@@ -694,9 +694,9 @@ expr builtin_sqrt(expr e)
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *R  = v_table[lex_id("__csqrt_r" )].name;   // |z|
-        const char *RE = v_table[lex_id("__csqrt_re")].name;   // result real part
-        const char *IM = v_table[lex_id("__csqrt_im")].name;   // result imag part
+        const char *R  = sym(lex_id("__csqrt_r" ))->name;   // |z|
+        const char *RE = sym(lex_id("__csqrt_re"))->name;   // result real part
+        const char *IM = sym(lex_id("__csqrt_im"))->name;   // result imag part
 
         // r = |z| = sqrt(a² + b²)
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
@@ -790,8 +790,8 @@ expr builtin_exp(expr e)
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *EA = v_table[lex_id("__cexp_ea")].name;   // exp(a)
-        const char *IM = v_table[lex_id("__cexp_im")].name;   // result imag part
+        const char *EA = sym(lex_id("__cexp_ea"))->name;   // exp(a)
+        const char *IM = sym(lex_id("__cexp_im"))->name;   // result imag part
 
         // ea = exp(a)
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
@@ -876,8 +876,8 @@ expr builtin_log(expr e)
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *RE = v_table[lex_id("__clog_re")].name;   // result real part
-        const char *IM = v_table[lex_id("__clog_im")].name;   // result imag part
+        const char *RE = sym(lex_id("__clog_re"))->name;   // result real part
+        const char *IM = sym(lex_id("__clog_im"))->name;   // result imag part
 
         // re = 1/2 * ln(a² + b²)
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
@@ -974,8 +974,8 @@ expr builtin_pow(expr ex, expr ey)
 
         if (n == 1) return expr_make(TY_FLOAT, 0);                  // x^1 = x
 
-        const char *B = v_table[lex_id("__pow_b")].name;      // running square (x, x², x⁴, ...)
-        const char *R = v_table[lex_id("__pow_r")].name;      // running product (the result)
+        const char *B = sym(lex_id("__pow_b"))->name;      // running square (x, x², x⁴, ...)
+        const char *R = sym(lex_id("__pow_r"))->name;      // running product (the result)
         add_instr("SET %s\n", B);                            // pow_b = base
 
         int started = 0;                                     // has the result been seeded yet?
@@ -1006,8 +1006,8 @@ expr builtin_pow(expr ex, expr ey)
     // on top), spilled with SET_P exactly like builtin_fase / the complex-sqrt
     // branch.
     // ------------------------------------------------------------------------
-    const char *X = v_table[lex_id("__pow_x")].name;          // base     (float)
-    const char *Y = v_table[lex_id("__pow_y")].name;          // exponent (float)
+    const char *X = sym(lex_id("__pow_x"))->name;          // base     (float)
+    const char *Y = sym(lex_id("__pow_y"))->name;          // exponent (float)
 
     if (ey.id == 0)                       // exponent in the acc
     {
@@ -1055,8 +1055,8 @@ expr builtin_pow(expr ex, expr ey)
     // ------------------------------------------------------------------------
     if (ey.type == TY_INT)
     {
-        const char *R = v_table[lex_id("__pow_r")].name;      // running product
-        const char *C = v_table[lex_id("__pow_c")].name;      // counter |y|
+        const char *R = sym(lex_id("__pow_r"))->name;      // running product
+        const char *C = sym(lex_id("__pow_c"))->name;      // counter |y|
         int m = ++pow_lbl;
 
         add_instr("LOD 1.0\n");   add_instr("SET %s\n", R);                          // r = 1
@@ -1144,14 +1144,14 @@ expr builtin_atan(expr e)
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *A2  = v_table[lex_id("__catan_a2" )].name;   // a²
-        const char *B2  = v_table[lex_id("__catan_b2" )].name;   // b²
-        const char *BP  = v_table[lex_id("__catan_bp" )].name;   // b+1
-        const char *BM  = v_table[lex_id("__catan_bm" )].name;   // b-1
-        const char *NUM = v_table[lex_id("__catan_num")].name;   // a²+(b+1)²
-        const char *DEN = v_table[lex_id("__catan_den")].name;   // a²+(b-1)²
-        const char *RE  = v_table[lex_id("__catan_re" )].name;   // result real
-        const char *IM  = v_table[lex_id("__catan_im" )].name;   // result imag
+        const char *A2  = sym(lex_id("__catan_a2" ))->name;   // a²
+        const char *B2  = sym(lex_id("__catan_b2" ))->name;   // b²
+        const char *BP  = sym(lex_id("__catan_bp" ))->name;   // b+1
+        const char *BM  = sym(lex_id("__catan_bm" ))->name;   // b-1
+        const char *NUM = sym(lex_id("__catan_num"))->name;   // a²+(b+1)²
+        const char *DEN = sym(lex_id("__catan_den"))->name;   // a²+(b-1)²
+        const char *RE  = sym(lex_id("__catan_re" ))->name;   // result real
+        const char *IM  = sym(lex_id("__catan_im" ))->name;   // result imag
 
         // a², b²
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
@@ -1257,11 +1257,11 @@ expr builtin_sin(expr e)
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *EB  = v_table[lex_id("__csin_eb" )].name;   // e^b
-        const char *EMB = v_table[lex_id("__csin_emb")].name;   // e^-b
-        const char *CHB = v_table[lex_id("__csin_chb")].name;   // cosh b
-        const char *SHB = v_table[lex_id("__csin_shb")].name;   // sinh b
-        const char *CA  = v_table[lex_id("__csin_ca" )].name;   // cos a
+        const char *EB  = sym(lex_id("__csin_eb" ))->name;   // e^b
+        const char *EMB = sym(lex_id("__csin_emb"))->name;   // e^-b
+        const char *CHB = sym(lex_id("__csin_chb"))->name;   // cosh b
+        const char *SHB = sym(lex_id("__csin_shb"))->name;   // sinh b
+        const char *CA  = sym(lex_id("__csin_ca" ))->name;   // cos a
 
         // e^b (single exponential), e^-b = 1/e^b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", B);  // acc = b (push pending if any)
@@ -1346,15 +1346,15 @@ expr builtin_tan(expr e)
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *TA  = v_table[lex_id("__ctan_ta" )].name;   // 2a
-        const char *TB  = v_table[lex_id("__ctan_tb" )].name;   // 2b
-        const char *S2A = v_table[lex_id("__ctan_s2a")].name;   // sin 2a
-        const char *C2A = v_table[lex_id("__ctan_c2a")].name;   // cos 2a
-        const char *EB  = v_table[lex_id("__ctan_eb" )].name;   // e^(2b)
-        const char *EMB = v_table[lex_id("__ctan_emb")].name;   // e^(-2b)
-        const char *CHB = v_table[lex_id("__ctan_chb")].name;   // cosh 2b
-        const char *SHB = v_table[lex_id("__ctan_shb")].name;   // sinh 2b
-        const char *D   = v_table[lex_id("__ctan_d"  )].name;   // denominator
+        const char *TA  = sym(lex_id("__ctan_ta" ))->name;   // 2a
+        const char *TB  = sym(lex_id("__ctan_tb" ))->name;   // 2b
+        const char *S2A = sym(lex_id("__ctan_s2a"))->name;   // sin 2a
+        const char *C2A = sym(lex_id("__ctan_c2a"))->name;   // cos 2a
+        const char *EB  = sym(lex_id("__ctan_eb" ))->name;   // e^(2b)
+        const char *EMB = sym(lex_id("__ctan_emb"))->name;   // e^(-2b)
+        const char *CHB = sym(lex_id("__ctan_chb"))->name;   // cosh 2b
+        const char *SHB = sym(lex_id("__ctan_shb"))->name;   // sinh 2b
+        const char *D   = sym(lex_id("__ctan_d"  ))->name;   // denominator
 
         // 2a, 2b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", A);  // acc = a (push pending if any)
@@ -1443,11 +1443,11 @@ expr builtin_cos(expr e)
             A = v_table[ia].name; B = v_table[ib].name;
         }
 
-        const char *EB  = v_table[lex_id("__ccos_eb" )].name;   // e^b
-        const char *EMB = v_table[lex_id("__ccos_emb")].name;   // e^-b
-        const char *CHB = v_table[lex_id("__ccos_chb")].name;   // cosh b
-        const char *SHB = v_table[lex_id("__ccos_shb")].name;   // sinh b
-        const char *SA  = v_table[lex_id("__ccos_sa" )].name;   // sin a
+        const char *EB  = sym(lex_id("__ccos_eb" ))->name;   // e^b
+        const char *EMB = sym(lex_id("__ccos_emb"))->name;   // e^-b
+        const char *CHB = sym(lex_id("__ccos_chb"))->name;   // cosh b
+        const char *SHB = sym(lex_id("__ccos_shb"))->name;   // sinh b
+        const char *SA  = sym(lex_id("__ccos_sa" ))->name;   // sin a
 
         // e^b (single exponential), e^-b = 1/e^b
         add_instr("%s %s\n", pre ? "P_LOD" : "LOD", B);  // acc = b (push pending if any)
@@ -1529,8 +1529,8 @@ expr builtin_cosh(expr e)
     acc_live = 1;
 
     // cosh(x) = (exp(x) + exp(-x)) / 2
-    const char *X = v_table[lex_id("__cosh_x")].name;
-    const char *T = v_table[lex_id("__cosh_t")].name;
+    const char *X = sym(lex_id("__cosh_x"))->name;
+    const char *T = sym(lex_id("__cosh_t"))->name;
 
     add_instr("SET %s\n", X);              // stash x
     add_instr("CAL __float_exp\n");          // exp(x)   (x was in acc)
@@ -1582,8 +1582,8 @@ expr builtin_sinh(expr e)
     acc_live = 1;
 
     // sinh(x) = (exp(x) - exp(-x)) / 2
-    const char *X = v_table[lex_id("__sinh_x")].name;
-    const char *T = v_table[lex_id("__sinh_t")].name;
+    const char *X = sym(lex_id("__sinh_x"))->name;
+    const char *T = sym(lex_id("__sinh_t"))->name;
 
     add_instr("SET %s\n", X);              // stash x
     add_instr("CAL __float_exp\n");          // exp(x)
@@ -1635,8 +1635,8 @@ expr builtin_tanh(expr e)
     acc_live = 1;
 
     // tanh(x) = (exp(2x) - 1) / (exp(2x) + 1)   -- one exponential
-    const char *E = v_table[lex_id("__tanh_e")].name;     // exp(2x)
-    const char *N = v_table[lex_id("__tanh_n")].name;     // numerator
+    const char *E = sym(lex_id("__tanh_e"))->name;     // exp(2x)
+    const char *N = sym(lex_id("__tanh_n"))->name;     // numerator
 
     add_instr("F_MLT 2.0\n");              // 2x
     add_instr("CAL __float_exp\n");          // exp(2x)
@@ -1698,8 +1698,8 @@ expr builtin_floor(expr e)
     acc_live = 1;
 
     // floor(x) = trunc(x); if (trunc > x) trunc -= 1  (only for negative non-integers)
-    const char *X = v_table[lex_id("__floor_x")].name;
-    const char *T = v_table[lex_id("__floor_t")].name;
+    const char *X = sym(lex_id("__floor_x"))->name;
+    const char *T = sym(lex_id("__floor_t"))->name;
     int n = ++floor_lbl;
 
     add_instr("SET %s\n", X);              // stash x
@@ -1758,8 +1758,8 @@ expr builtin_ceil(expr e)
     acc_live = 1;
 
     // ceil(x) = trunc(x); if (trunc < x) trunc += 1  (only for positive non-integers)
-    const char *X = v_table[lex_id("__ceil_x")].name;
-    const char *T = v_table[lex_id("__ceil_t")].name;
+    const char *X = sym(lex_id("__ceil_x"))->name;
+    const char *T = sym(lex_id("__ceil_t"))->name;
     int n = ++ceil_lbl;
 
     add_instr("SET %s\n", X);              // stash x
@@ -1817,7 +1817,7 @@ expr builtin_round(expr e)
     acc_live = 1;
 
     // round(x) = trunc(x + copysign(0.5, x))  -> ties away from zero
-    const char *X = v_table[lex_id("__round_x")].name;
+    const char *X = sym(lex_id("__round_x"))->name;
 
     add_instr("SET %s\n", X);              // stash x
     add_instr("LOD 0.5\n");
@@ -2081,7 +2081,7 @@ expr builtin_fase(expr e)
         R = v_table[re].name; M = v_table[im].name;
     }
 
-    const char *t = v_table[lex_id("__fase_t")].name;   // base atan result
+    const char *t = sym(lex_id("__fase_t"))->name;   // base atan result
     int         n = ++fase_lbl;
 
     // F_LES X is true when acc > X, so every "v < 0" test is `LOD 0.0; F_LES v`

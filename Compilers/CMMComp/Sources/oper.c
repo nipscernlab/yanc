@@ -1192,7 +1192,7 @@ static cmp_side cmp_side_of(expr e)
     v_table[e.id].used = 1;
     if (e.type == TY_COMP) {
         d.re = v_table[e.id].name;
-        d.im = v_table[get_img_id(e.id)].name;
+        d.im = sym(get_img_id(e.id))->name;
     } else if (e.type == TY_INT && v_table[e.id].is_const == 1) {  // an int literal: the float literal
         char *t = xasprintf("%s.0", v_table[e.id].name);
         d.re = cmp_flit(t);
@@ -1454,7 +1454,7 @@ expr oper_lin(expr e)
     if ((e.type == TY_COMP) && (e.id != 0))
     {
         add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("ORR %s\n", v_table[get_img_id(e.id)].name);
+        add_instr("ORR %s\n", sym(get_img_id(e.id))->name);
         add_instr("AND %lld\n", mant_pow2() - 1);
         add_instr("LIN\n");
     }

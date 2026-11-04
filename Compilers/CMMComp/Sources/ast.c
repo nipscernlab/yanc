@@ -1788,7 +1788,7 @@ static void emit_cond_int_load(expr e, int is_switch)
     }
     if ((e.type == TY_COMP) && (e.id != 0)) {
         if (is_switch) { warn(msg_comp, pctx.line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
-        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", v_table[get_img_id(e.id)].name); add_instr("AND %lld\n", mask); }
+        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", sym(get_img_id(e.id))->name); add_instr("AND %lld\n", mask); }
     }
     if ((e.type == TY_COMP) && (e.id == 0)) {                    // the imag part in the acc, the real on the stack
         if (is_switch) { warn(msg_comp, pctx.line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
@@ -2343,14 +2343,14 @@ void stmt_emit(stmt_node *n)
             {
                 int pid = n->params[i];
                 if (v_table[pid].type > TY_FLOAT)
-                    add_instr("SET_P %s\n", v_table[get_img_id(pid)].name);
+                    add_instr("SET_P %s\n", sym(get_img_id(pid))->name);
                 add_instr("SET_P %s\n", v_table[pid].name);
             }
             if (n->n_params >= 1)
             {
                 int pid = n->params[0];
                 if (v_table[pid].type > TY_FLOAT)
-                    add_instr("SET_P %s\n", v_table[get_img_id(pid)].name);
+                    add_instr("SET_P %s\n", sym(get_img_id(pid))->name);
                 add_instr("SET %s\n", v_table[pid].name);
             }
             // No reset here: the label is above the parameter SETs, so the body

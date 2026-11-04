@@ -412,6 +412,10 @@ tags consumed by Aurora.
   `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
   has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
   too.
+- **No read of the symbol table races a call that grows it** (#108 A16).
+  `v_table[lex_id("__x")].name` let the compiler read `v_table` before
+  `lex_id` reallocated it; the 59 such uses read through `sym()`, which
+  takes the table after the call.
 - **cmmcomp has a 16 MB stack on Windows** (#108 A15). It walks an
   expression's tree one call a level, and Windows gives 1 MB: a sum of
   20000 terms crashed there.
