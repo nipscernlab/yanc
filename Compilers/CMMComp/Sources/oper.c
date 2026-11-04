@@ -253,14 +253,7 @@ expr oper_sub(expr e1, expr e2)
 
     acc_live = 1;
 
-    int type;
-         if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT))
-         type = 3;
-    else if ((e1.type > TY_INT) || (e2.type > TY_INT))
-         type = 2;
-    else type = 1;
-
-    return expr_make(type, 0);
+    return expr_make(result_type(e1, e2), 0);
 }
 
 // oper_mult: the left operand by row, the right one by column (IM IA FM FA CM CA)
@@ -324,14 +317,7 @@ expr oper_mult(expr e1, expr e2)
 
     acc_live = 1;
 
-    int type;
-         if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT))
-         type = 3;
-    else if ((e1.type > TY_INT) || (e2.type > TY_INT))
-         type = 2;
-    else type = 1;
-
-    return expr_make(type, 0);
+    return expr_make(result_type(e1, e2), 0);
 }
 
 // Emits er² + ei² into the accumulator -- the |comp|² used as the division
@@ -814,14 +800,7 @@ expr oper_div(expr e1, expr e2)
 
     acc_live = 1;
 
-    int type;
-         if ((e1.type > TY_FLOAT) || (e2.type > TY_FLOAT))
-         type = 3;
-    else if ((e1.type > TY_INT) || (e2.type > TY_INT))
-         type = 2;
-    else type = 1;
-
-    return expr_make(type, 0);
+    return expr_make(result_type(e1, e2), 0);
 }
 
 // oper_mod: the left operand by row, the right one by column (IM IA FM FA CM CA)
