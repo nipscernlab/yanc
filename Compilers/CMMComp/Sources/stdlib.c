@@ -434,7 +434,6 @@ expr builtin_abs(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
     
-    char  ld [10]; if (acc_live == 0) strcpy(ld  , "LOD"   ); else strcpy(ld  , "P_LOD"  );
     char  abs[10]; if (acc_live == 0) strcpy( abs, "ABS_M" ); else strcpy( abs, "P_ABS_M");
     char fabs[10]; if (acc_live == 0) strcpy(fabs,"F_ABS_M"); else strcpy(fabs,"PF_ABS_M");
 
@@ -494,7 +493,6 @@ expr builtin_pst(expr e)
     // prepare local variables ------------------------------------------------
     // ------------------------------------------------------------------------
 
-    char  ld [10]; if (acc_live == 0) strcpy( ld , "LOD"   ); else strcpy( ld , "P_LOD"  );
     char  pst[10]; if (acc_live == 0) strcpy( pst, "PST_M" ); else strcpy( pst, "P_PST_M");
     char fpst[10]; if (acc_live == 0) strcpy(fpst,"F_PST_M"); else strcpy(fpst,"PF_PST_M");
 
@@ -1905,11 +1903,7 @@ expr builtin_comp(expr er, expr ei)
         add_instr("P_LOD %s\n", v_table[ei.id].name);
     }
 
-    // float in acc and float in acc
-    if ((er.type == TY_INT) && (er.id == 0) && (ei.type == TY_FLOAT) && (ei.id == 0))
-    {
-        // nothing to do
-    }
+    // float in acc and float in acc: both are where they go
 
     acc_live = 1;
     return expr_make(TY_COMP, 0);
