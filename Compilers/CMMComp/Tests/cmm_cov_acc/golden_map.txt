@@ -1,0 +1,401 @@
+## messages
+Info: 302 assembly instructions generated
+Info: 6 divisions, 5 words each for DIV/MOD and 4 for F_DIV (24 added)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 326 instructions and 14 variables were found
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> integer divider (not recomended for high frequency opperation)
+Info: ULA resource -> integer adder
+Info: adding data output handling
+Info: ULA resource -> modulo computation (not recomended for high frequency opperation)
+Info: ULA resource -> int to float converter
+Info: ULA resource -> > operator for float
+Info: ULA resource -> < operator for float
+Info: ULA resource -> ! operator
+Info: ULA resource -> == operator
+Info: ULA resource -> integer negative operation
+Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: using 13% of the Assembly Instruction Set
+Info: using 27% of the ULA operations
+Sweet: the processor is good to go.
+## variables
+main a 1
+main b 1
+main p 1
+main q 1
+main f 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 16: a = 7; b = 3; p = 17; q = 5; f = 2.5;
+1 LOD 7
+2 SET main_a
+3 LOD 3
+4 SET main_b
+5 LOD 17
+6 SET main_p
+7 LOD 5
+8 SET main_q
+9 LOD 2.5
+10 SET main_f
+// 17: out(0, (a*b) + (p/q));
+11 LOD main_a
+12 MLT main_b
+13 P_LOD main_q
+14 DIV main_p
+15 NOP
+16 NOP
+17 NOP
+18 QUO
+19 S_ADD
+20 OUT 0
+// 18: out(0, (a*b) + (p%q));
+21 LOD main_a
+22 MLT main_b
+23 P_LOD main_q
+24 MOD main_p
+25 NOP
+26 NOP
+27 NOP
+28 REM
+29 S_ADD
+30 OUT 0
+// 19: out(0, (a*b) + (p < f));
+31 LOD main_a
+32 MLT main_b
+33 P_I2F_M main_p
+34 F_GRE main_f
+35 S_ADD
+36 OUT 0
+// 20: out(0, (a*b) + (f < p));
+37 LOD main_a
+38 MLT main_b
+39 P_I2F_M main_p
+40 F_LES main_f
+41 S_ADD
+42 OUT 0
+// 21: out(0, (a*b) + (p > f));
+43 LOD main_a
+44 MLT main_b
+45 P_I2F_M main_p
+46 F_LES main_f
+47 S_ADD
+48 OUT 0
+// 22: out(0, (a*b) + (f > p));
+49 LOD main_a
+50 MLT main_b
+51 P_I2F_M main_p
+52 F_GRE main_f
+53 S_ADD
+54 OUT 0
+// 23: out(0, (a*b) + (p <= f));
+55 LOD main_a
+56 MLT main_b
+57 P_I2F_M main_p
+58 F_LES main_f
+59 LIN
+60 S_ADD
+61 OUT 0
+// 24: out(0, (a*b) + (f <= p));
+62 LOD main_a
+63 MLT main_b
+64 P_I2F_M main_p
+65 F_GRE main_f
+66 LIN
+67 S_ADD
+68 OUT 0
+// 25: out(0, (a*b) + (p >= f));
+69 LOD main_a
+70 MLT main_b
+71 P_I2F_M main_p
+72 F_GRE main_f
+73 LIN
+74 S_ADD
+75 OUT 0
+// 26: out(0, (a*b) + (f >= p));
+76 LOD main_a
+77 MLT main_b
+78 P_I2F_M main_p
+79 F_LES main_f
+80 LIN
+81 S_ADD
+82 OUT 0
+// 27: out(0, (a*b) + (p == f));
+83 LOD main_a
+84 MLT main_b
+85 P_I2F_M main_p
+86 EQU main_f
+87 S_ADD
+88 OUT 0
+// 28: out(0, (a*b) + (f == p));
+89 LOD main_a
+90 MLT main_b
+91 P_I2F_M main_p
+92 EQU main_f
+93 S_ADD
+94 OUT 0
+// 29: out(0, (a*b) + (p != f));
+95 LOD main_a
+96 MLT main_b
+97 P_I2F_M main_p
+98 EQU main_f
+99 LIN
+100 S_ADD
+101 OUT 0
+// 30: out(0, (a*b) + (f != p));
+102 LOD main_a
+103 MLT main_b
+104 P_I2F_M main_p
+105 EQU main_f
+106 LIN
+107 S_ADD
+108 OUT 0
+// 31: a = 7; b = 3; p = -17; q = 5; f = 9.75;
+109 LOD 7
+110 SET main_a
+111 LOD 3
+112 SET main_b
+113 NEG_M 17
+114 SET main_p
+115 LOD 5
+116 SET main_q
+117 LOD 9.75
+118 SET main_f
+// 32: out(0, (a*b) + (p/q));
+119 LOD main_a
+120 MLT main_b
+121 P_LOD main_q
+122 DIV main_p
+123 NOP
+124 NOP
+125 NOP
+126 QUO
+127 S_ADD
+128 OUT 0
+// 33: out(0, (a*b) + (p%q));
+129 LOD main_a
+130 MLT main_b
+131 P_LOD main_q
+132 MOD main_p
+133 NOP
+134 NOP
+135 NOP
+136 REM
+137 S_ADD
+138 OUT 0
+// 34: out(0, (a*b) + (p < f));
+139 LOD main_a
+140 MLT main_b
+141 P_I2F_M main_p
+142 F_GRE main_f
+143 S_ADD
+144 OUT 0
+// 35: out(0, (a*b) + (f < p));
+145 LOD main_a
+146 MLT main_b
+147 P_I2F_M main_p
+148 F_LES main_f
+149 S_ADD
+150 OUT 0
+// 36: out(0, (a*b) + (p > f));
+151 LOD main_a
+152 MLT main_b
+153 P_I2F_M main_p
+154 F_LES main_f
+155 S_ADD
+156 OUT 0
+// 37: out(0, (a*b) + (f > p));
+157 LOD main_a
+158 MLT main_b
+159 P_I2F_M main_p
+160 F_GRE main_f
+161 S_ADD
+162 OUT 0
+// 38: out(0, (a*b) + (p <= f));
+163 LOD main_a
+164 MLT main_b
+165 P_I2F_M main_p
+166 F_LES main_f
+167 LIN
+168 S_ADD
+169 OUT 0
+// 39: out(0, (a*b) + (f <= p));
+170 LOD main_a
+171 MLT main_b
+172 P_I2F_M main_p
+173 F_GRE main_f
+174 LIN
+175 S_ADD
+176 OUT 0
+// 40: out(0, (a*b) + (p >= f));
+177 LOD main_a
+178 MLT main_b
+179 P_I2F_M main_p
+180 F_GRE main_f
+181 LIN
+182 S_ADD
+183 OUT 0
+// 41: out(0, (a*b) + (f >= p));
+184 LOD main_a
+185 MLT main_b
+186 P_I2F_M main_p
+187 F_LES main_f
+188 LIN
+189 S_ADD
+190 OUT 0
+// 42: out(0, (a*b) + (p == f));
+191 LOD main_a
+192 MLT main_b
+193 P_I2F_M main_p
+194 EQU main_f
+195 S_ADD
+196 OUT 0
+// 43: out(0, (a*b) + (f == p));
+197 LOD main_a
+198 MLT main_b
+199 P_I2F_M main_p
+200 EQU main_f
+201 S_ADD
+202 OUT 0
+// 44: out(0, (a*b) + (p != f));
+203 LOD main_a
+204 MLT main_b
+205 P_I2F_M main_p
+206 EQU main_f
+207 LIN
+208 S_ADD
+209 OUT 0
+// 45: out(0, (a*b) + (f != p));
+210 LOD main_a
+211 MLT main_b
+212 P_I2F_M main_p
+213 EQU main_f
+214 LIN
+215 S_ADD
+216 OUT 0
+// 46: a = 4; b = 2; p = 3; q = 2; f = 3.0;
+217 LOD 4
+218 SET main_a
+219 LOD 2
+220 SET main_b
+221 LOD 3
+222 SET main_p
+223 LOD 2
+224 SET main_q
+225 LOD 3.0
+226 SET main_f
+// 47: out(0, (a*b) + (p/q));
+227 LOD main_a
+228 MLT main_b
+229 P_LOD main_q
+230 DIV main_p
+231 NOP
+232 NOP
+233 NOP
+234 QUO
+235 S_ADD
+236 OUT 0
+// 48: out(0, (a*b) + (p%q));
+237 LOD main_a
+238 MLT main_b
+239 P_LOD main_q
+240 MOD main_p
+241 NOP
+242 NOP
+243 NOP
+244 REM
+245 S_ADD
+246 OUT 0
+// 49: out(0, (a*b) + (p < f));
+247 LOD main_a
+248 MLT main_b
+249 P_I2F_M main_p
+250 F_GRE main_f
+251 S_ADD
+252 OUT 0
+// 50: out(0, (a*b) + (f < p));
+253 LOD main_a
+254 MLT main_b
+255 P_I2F_M main_p
+256 F_LES main_f
+257 S_ADD
+258 OUT 0
+// 51: out(0, (a*b) + (p > f));
+259 LOD main_a
+260 MLT main_b
+261 P_I2F_M main_p
+262 F_LES main_f
+263 S_ADD
+264 OUT 0
+// 52: out(0, (a*b) + (f > p));
+265 LOD main_a
+266 MLT main_b
+267 P_I2F_M main_p
+268 F_GRE main_f
+269 S_ADD
+270 OUT 0
+// 53: out(0, (a*b) + (p <= f));
+271 LOD main_a
+272 MLT main_b
+273 P_I2F_M main_p
+274 F_LES main_f
+275 LIN
+276 S_ADD
+277 OUT 0
+// 54: out(0, (a*b) + (f <= p));
+278 LOD main_a
+279 MLT main_b
+280 P_I2F_M main_p
+281 F_GRE main_f
+282 LIN
+283 S_ADD
+284 OUT 0
+// 55: out(0, (a*b) + (p >= f));
+285 LOD main_a
+286 MLT main_b
+287 P_I2F_M main_p
+288 F_GRE main_f
+289 LIN
+290 S_ADD
+291 OUT 0
+// 56: out(0, (a*b) + (f >= p));
+292 LOD main_a
+293 MLT main_b
+294 P_I2F_M main_p
+295 F_LES main_f
+296 LIN
+297 S_ADD
+298 OUT 0
+// 57: out(0, (a*b) + (p == f));
+299 LOD main_a
+300 MLT main_b
+301 P_I2F_M main_p
+302 EQU main_f
+303 S_ADD
+304 OUT 0
+// 58: out(0, (a*b) + (f == p));
+305 LOD main_a
+306 MLT main_b
+307 P_I2F_M main_p
+308 EQU main_f
+309 S_ADD
+310 OUT 0
+// 59: out(0, (a*b) + (p != f));
+311 LOD main_a
+312 MLT main_b
+313 P_I2F_M main_p
+314 EQU main_f
+315 LIN
+316 S_ADD
+317 OUT 0
+// 60: out(0, (a*b) + (f != p));
+318 LOD main_a
+319 MLT main_b
+320 P_I2F_M main_p
+321 EQU main_f
+322 LIN
+323 S_ADD
+324 OUT 0
+// -3: END
+325 JMP fim

@@ -11,7 +11,9 @@ The operator tables (static const char *const NAME[PL_N][PL_N], templates
 expanded by tpl.c) all go out through the one add_instr in tpl.c, so that
 call cannot tell their cells apart. Each non-NULL cell is therefore a site
 of its own: every use NAME[x][y] in the copy becomes
-cov_cell(K0, NAME, x, y), which records K0 + x*PL_N + y and returns the
+cov_cell(K0, NAME, x, y), which records K0 + x*PL_N + y (and the same in the
+block of the acc's state, free or live: a cell whose two operands are in
+memory and whose load depends on that state is a site for each) and returns the
 cell. A use that is not of that form stops the script, so that no table
 escapes the count.
 
@@ -70,6 +72,7 @@ def code_end(line, in_block):
 
 PLACES = ["IM", "IA", "FM", "FA", "CM", "CA"]       # tpl.h: PL_IM .. PL_CA, PL_N
 PL_N = len(PLACES)
+CELL_FREE, CELL_LIVE = PL_N * PL_N, 2 * PL_N * PL_N   # a table's slots: the cell, then by acc state
 TABLE = re.compile(r"static const char \*const (\w+)\[PL_N\]\[PL_N\] = \{(.*?)\n\};", re.S)
 TOKEN = re.compile(r'/\*.*?\*/|"((?:[^"\\]|\\.)*)"|\bNULL\b|[{},]', re.S)
 
@@ -181,11 +184,19 @@ for name in sorted(os.listdir(src)):
         tables[t.group(1)] = (slots, t.start(), t.end())
         for x, r in enumerate(rows):
             for y, (tpl, off) in enumerate(r):
-                if tpl is not None:
-                    sites.append((slots + x * PL_N + y, name, body.count("\n", 0, off) + 1,
-                                  "%s[%sx%s]" % (t.group(1), PLACES[x], PLACES[y]),
-                                  tpl.replace("\n", "\\n")[:160]))
-        slots += PL_N * PL_N
+                if tpl is None:
+                    continue
+                where = "%s[%sx%s]" % (t.group(1), PLACES[x], PLACES[y])
+                line, text = body.count("\n", 0, off) + 1, tpl.replace("\n", "\\n")[:160]
+                if PLACES[x][1] == "M" and PLACES[y][1] == "M" and re.search(r"\$[LCF]", tpl):
+                    # both operands in memory, and a load that depends on the acc: a site
+                    # for each state (an operand in the acc is a pending value itself, so
+                    # such a cell always runs with the acc live)
+                    sites.append((slots + CELL_FREE + x * PL_N + y, name, line, where + " acc free", text))
+                    sites.append((slots + CELL_LIVE + x * PL_N + y, name, line, where + " acc live", text))
+                else:
+                    sites.append((slots + x * PL_N + y, name, line, where, text))
+        slots += 3 * PL_N * PL_N
     for tname, (k0, start, end) in sorted(tables.items(), key=lambda kv: -kv[1][1]):
         well_formed(name, body, tname, start, end)
         use = re.compile(r"\b%s\b(\[(?:[^\[\]]|\[[^\]]*\])*\])?(\[[^\]]*\])?" % tname)
@@ -223,9 +234,13 @@ static void dump(void)
     fclose(f);
 }
 void cov_hit(int k) {if (!registered) {registered = 1; atexit(dump);} seen[k] = 1;}
+extern int acc_live;
 const char *cov_cell(int k0, const char *const (*t)[PL_N], int x, int y)
 {
-    if (t[x][y]) cov_hit(k0 + x * PL_N + y);
+    if (t[x][y]) {
+        cov_hit(k0 + x * PL_N + y);
+        cov_hit(k0 + (acc_live ? 2 : 1) * PL_N * PL_N + x * PL_N + y);
+    }
     return t[x][y];
 }
 ''' % (slots, slots))

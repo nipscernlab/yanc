@@ -71,7 +71,8 @@ cmmcomp's sites that emit assembly the tests reach, and which a test with
 an independent reference checks (`Scripts/cmm_cov.sh`; a site is a
 call that writes assembly (`add_instr`, `add_sinst`, the append of a float
 routine of `Includes/`), or a cell of an operator table, since every cell
-goes out through the one call in `tpl.c`; the tests that
+goes out through the one call in `tpl.c`, and a cell that loads differently
+with the accumulator free or busy counts once for each state; the tests that
 count as checked are in `Compilers/CMMComp/Tests/verified.txt`, and
 neither count may grow past `cov_baseline.txt`), and runs `yanc`
 itself. Every change goes through it: the quick form (`--no-sim`) once at
