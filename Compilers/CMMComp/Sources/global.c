@@ -123,11 +123,12 @@ void acc_holds_elem(const char *key)
         acc_only(key);
 }
 
-// The index of an indexed store, computed into the acc: the walker names it
-// "[ii+j]" so that a read at the same index inside the right-hand side pushes
-// it with PSH instead of computing it again (ast.c). As above, any instruction
-// but a SET forgets the name, and a SET does too
-void acc_holds_index(const char *key)
+// What the acc holds now, named by the caller (global.h): the index of an
+// indexed store, computed into the acc ("[ii+j]", ast.c), so that a read at
+// the same index inside the right-hand side pushes it with PSH instead of
+// computing it again; the Dirac loops' sums and counters (dirac.c), which they
+// know across a label (the counter at the top of a loop)
+void acc_now(const char *key)
 {
     acc_only(key);
 }

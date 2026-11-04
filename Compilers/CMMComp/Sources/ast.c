@@ -1950,7 +1950,7 @@ void stmt_emit(stmt_node *n)
                     arr_1d_index(n->id, e);
                     v_table[n->id].dims = AR_2D;
                     char *key;
-                    if (idx_key(a, &key)) acc_holds_index(key);
+                    if (idx_key(a, &key)) acc_now(key);
                     free(key);
                     free(a); free(m); free(s);
                 }
@@ -1965,7 +1965,7 @@ void stmt_emit(stmt_node *n)
             {
                 arr_1d_index(n->id, ast_emit_expr(n->idx));
                 char *key;
-                if (idx_key(n->idx, &key)) acc_holds_index(key);
+                if (idx_key(n->idx, &key)) acc_now(key);
                 free(key);
             }
             // an int variable as the whole index, which the right-hand side

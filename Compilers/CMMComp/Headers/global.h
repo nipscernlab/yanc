@@ -49,7 +49,10 @@ int  acc_holds(const char *name);
 // after an indexed store, names the acc by the element stored, "v[k]" (ast.c)
 void acc_holds_elem(const char *key);
 
-// names the acc by the index of an indexed store just computed, "[k]" (ast.c)
-void acc_holds_index(const char *key);
+// the acc holds this value now, and nothing else: a variable's name, or a key
+// of a value that is no variable. A key in brackets, "[k]" (an index, ast.c)
+// or "[dk0+dd1]" (a sum of the Dirac loops' variables, dirac.c), goes at the
+// next SET, which may change what it is made of
+void acc_now(const char *key);
 
 #endif // CMM_GLOBAL_H

@@ -100,10 +100,6 @@ static expr_node **done_n; static int *done_v; static int n_done, cap_done;
 // yet) while code of the number's own runs before it is used
 static int keep_live, keep_v;
 
-// what the accumulator holds right now: a sum of loop variables (key), valid
-// while no instruction has been emitted since (num_ins == acc_mark)
-static char *acc_key = NULL;            // a block of its own (NULL: none)
-static int  acc_mark = -1;
 
 // the lines that went through __dirac_tmp, for the summary
 static int *tmp_lines, *tmp_words, n_tmp_lines, cap_tmp_lines;
@@ -141,8 +137,6 @@ static expr_node *node_new(expr_kind k, int type)
     return n;
 }
 
-static void key_set(const char *k) {free(acc_key); acc_key = xstrdup(k); acc_mark = ectx.num_ins;}
-static int  key_is (const char *k) {return acc_mark == ectx.num_ins && acc_key && strcmp(acc_key, k) == 0;}
 
 // a variable of the compiler, __<stem><n>_<function>: each function has its
 // own, so that a call made inside a statement leaves the caller's alone. The
@@ -534,12 +528,13 @@ static long ix_load(const dl_ix *ix, char **key)
 {
     char *v[2]; long off;
     int nt = ix_vars(ix, v, &off);
-    *key = xasprintf("%s%s%s", v[0], nt > 1 ? "+" : "", nt > 1 ? v[1] : "");
-    if (key_is(*key)) {if (ectx.acc_ok) add_instr("PSH\n");}
+    // a sum is a key in brackets: the next SET may change a part of it (acc_now)
+    *key = nt > 1 ? xasprintf("[%s+%s]", v[0], v[1]) : xstrdup(v[0]);
+    if (acc_holds(*key)) {if (ectx.acc_ok) add_instr("PSH\n");}
     else {
-        if (!key_is(v[0]) || ectx.acc_ok) add_instr("%s %s\n", ectx.acc_ok ? "P_LOD" : "LOD", v[0]);
+        add_instr("%s %s\n", ectx.acc_ok ? "P_LOD" : "LOD", v[0]);   // add_instr drops a LOD of what the acc holds
         if (nt > 1) add_instr("ADD %s\n", v[1]);
-        key_set(*key);
+        acc_now(*key);
     }
     free(v[0]); free(v[1]);
     return off;
@@ -632,7 +627,7 @@ static void loop_open(int lv, int push, char *top, char *end)
     add_instr("%s %ld\n", push ? "P_LOD" : "LOD", -(long)l->step * l->n);
     add_instr("SET %s\n", c);
     add_sinst(0, "@%s ", top);
-    key_set(c);
+    acc_now(c);              // the label forgets the acc, but both ways in end with SET c
     free(c);
     ectx.acc_ok = 0;
 }
@@ -762,7 +757,7 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
         ectx.acc_ok = 0;
         long off = ix_load(six, &key);
         ectx.acc_ok = 1;                       // the index is the value to keep: the first load pushes it
-        key_set(key);
+        acc_now(key);
         free(key);
         expr e = ast_emit_expr(el);
         store(e, d, off + d->base);
