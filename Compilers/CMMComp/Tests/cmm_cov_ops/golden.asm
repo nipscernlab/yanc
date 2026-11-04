@@ -6298,8 +6298,7 @@ F_MLT -1.0
 SF_SU2
 P_LOD main_ca
 F_MLT -1.0
-P_LOD main_ca_i
-SF_ADD
+F_ADD main_ca_i
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -6712,8 +6711,7 @@ F_MLT -1.0
 SF_SU2
 P_LOD 3.0
 F_MLT -1.0
-P_LOD 2.0
-SF_ADD
+F_ADD 2.0
 SET_P main_w_i
 SET main_w
 LOD 4.0
@@ -7916,8 +7914,7 @@ F_MLT -1.0
 SF_SU2
 P_LOD main_ca
 F_MLT -1.0
-P_LOD main_ca_i
-SF_ADD
+F_ADD main_ca_i
 SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2
@@ -8618,8 +8615,7 @@ F_MLT -1.0
 SF_SU2
 P_LOD 3.0
 F_MLT -1.0
-P_LOD 2.0
-SF_ADD
+F_ADD 2.0
 SET_P __aux_var
 SET_P __aux_var1
 SET_P __aux_var2

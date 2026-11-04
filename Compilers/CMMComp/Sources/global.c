@@ -251,6 +251,12 @@ void parse_end(char *d_proc)
 	// code no path reaches leaves the program, and with it its hardware -----
 
 	char *pc_file = xasprintf("%s/pc_%s_mem.txt", dir_tmp, cfg.prname);
+
+	// two words the ISA writes as one (#38)
+
+	int  fused = asm_fuse(asm_file, pc_file);
+	if  (fused > 0) ectx.num_ins -= fused;
+
 	int  gone = asm_reach(asm_file, pc_file);
 	if  (gone > 0) ectx.num_ins -= gone;
 

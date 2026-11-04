@@ -401,8 +401,7 @@ LOD 5
 SET_V vi 1
 LOD main_pa
 ADD main_z0
-PSH
-LOD main_n1
+P_LOD main_n1
 PSH
 LDI vi
 ADD 1
@@ -416,8 +415,7 @@ LOD 1.5
 SET_V vf 1
 LOD main_pf
 F_ADD main_fz
-PSH
-LOD main_n1
+P_LOD main_n1
 PSH
 LDI vf
 SET __aux_var
@@ -436,8 +434,7 @@ LOD 5
 SET_V mi 6
 LOD main_pa
 ADD main_z0
-PSH
-LOD main_n1
+P_LOD main_n1
 MLT 4
 ADD main_n2
 PSH
@@ -453,8 +450,7 @@ LOD 1.5
 SET_V mf 6
 LOD main_pf
 F_ADD main_fz
-PSH
-LOD main_n1
+P_LOD main_n1
 MLT 4
 ADD main_n2
 PSH

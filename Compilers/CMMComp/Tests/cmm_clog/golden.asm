@@ -86,8 +86,7 @@ F2I
 OUT 0
 LOD 0.0
 F_MLT 0.0
-P_LOD 1.0
-SF_ADD
+F_ADD 1.0
 CAL __float_log
 F_MLT 0.5
 SET __clog_re

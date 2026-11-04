@@ -1710,3 +1710,147 @@ done:
     st_free(&lines); st_free(&labels); st_free(&pc);
     return removed;
 }
+
+// ---- asm_fuse: one word where the code wrote two (#38) ------------------------
+// See asm_share.h.
+
+// the memory form of a commutative stack operation: P_LOD x; S_ADD is ADD x
+static const char *fuse_mem(const char *mn)
+{
+    static const char *const pair[][2] = {
+        {"S_ADD", "ADD"}, {"S_MLT", "MLT"}, {"S_AND", "AND"}, {"S_ORR", "ORR"}, {"S_XOR", "XOR"},
+        {"SF_ADD", "F_ADD"}, {"SF_MLT", "F_MLT"},
+    };
+    for (size_t k = 0; k < sizeof pair / sizeof pair[0]; k++)
+        if (strcmp(mn, pair[k][0]) == 0) return pair[k][1];
+    return NULL;
+}
+
+int asm_fuse(const char *asm_path, const char *pc_path)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, labels = {0}, pc = {0};
+    read_lines(f, &lines);
+    fclose(f);
+
+    int  *mn_at  = xmalloc((lines.n + 1) * sizeof(int));   // per line: where its mnemonic starts (-1: no instruction)
+    int  *mn_len = xmalloc((lines.n + 1) * sizeof(int));
+    int  *ar_at  = xmalloc((lines.n + 1) * sizeof(int));   // per line: where its operand starts (-1: none)
+    int  *ar_len = xmalloc((lines.n + 1) * sizeof(int));
+    int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));   // per line: its instruction index (-1: none)
+    char *dead   = xcalloc(lines.n + 1, 1);                 // per line: 1 if it leaves
+    char **mn_new = xcalloc(lines.n + 1, sizeof(char *));   // per line: its new mnemonic (NULL: as it is)
+    char **ar_new = xcalloc(lines.n + 1, sizeof(char *));   // per line: its new operand (NULL: as it is)
+    int  *at     = NULL;                                   // per label: the line it marks (-1: none)
+    int   acap = 0, n = 0, ok = 1, removed = 0, fused = 0;
+
+    for (int ln = 0; ln < lines.n && ok; ln++)
+    {
+        char *text = lines.s[ln];
+        int   end  = (int)strlen(text);
+        char *cm   = strstr(text, "//");
+        if (cm) end = (int)(cm - text);
+        mn_at[ln] = ar_at[ln] = ins_of[ln] = -1;
+
+        int ts[8], tl[8], nt = 0;
+        for (int p = 0; p < end && nt < 8; )
+        {
+            while (p < end && isspace((unsigned char)text[p])) p++;
+            if (p >= end) break;
+            ts[nt] = p;
+            while (p < end && !isspace((unsigned char)text[p])) p++;
+            tl[nt] = p - ts[nt]; nt++;
+        }
+        if (nt == 0) continue;
+        int t = 0;
+        for (; t < nt && text[ts[t]] == '@'; t++)
+        {
+            int li = lab_add(&labels, &at, &acap, tok_of(text + ts[t] + 1, tl[t] - 1));
+            at[li] = ln;
+        }
+        if (t >= nt) { ok = 0; break; }                      // a label alone on its line: not ours to guess
+        if (text[ts[t]] == '#') continue;
+        if (isa_find(tok_of(text + ts[t], tl[t])) < 0) { ok = 0; break; }
+        mn_at[ln] = ts[t]; mn_len[ln] = tl[t]; ins_of[ln] = n++;
+        if (t + 1 < nt) { ar_at[ln] = ts[t + 1]; ar_len[ln] = tl[t + 1]; }
+    }
+    if (!ok) goto done;
+
+    // the mnemonic and the operand of a line, as strings (the blocks are the caller's)
+    #define MN(ln) xasprintf("%.*s", mn_len[ln], lines.s[ln] + mn_at[ln])
+    #define AR(ln) xasprintf("%.*s", ar_at[ln] < 0 ? 0 : ar_len[ln], ar_at[ln] < 0 ? "" : lines.s[ln] + ar_at[ln])
+
+    // a load that pushes, then a commutative stack operation on the next line
+    // (no label lands on it, no directive between): the pushed value op the
+    // loaded one is the acc's value op the memory word, one instruction. And
+    // PSH; LOD x is P_LOD x
+    for (int ln = 0; ln + 1 < lines.n; ln++)
+    {
+        int nx = ln + 1;
+        if (mn_at[ln] < 0 || mn_at[nx] < 0 || dead[ln] || dead[nx] || memchr(lines.s[nx], '@', mn_at[nx])) continue;
+        char *a = MN(ln), *b = MN(nx);
+        const char *m = fuse_mem(b);
+        if (strcmp(a, "P_LOD") == 0 && m && ar_at[ln] >= 0 && ar_at[nx] < 0)
+        {
+            mn_new[ln] = xstrdup(m); dead[nx] = 1; fused++;
+        }
+        else if (strcmp(a, "PSH") == 0 && ar_at[ln] < 0 && strcmp(b, "LOD") == 0 && ar_at[nx] >= 0)
+        {
+            // the PSH line keeps its labels and takes the LOD's operand
+            mn_new[ln] = xstrdup("P_LOD"); ar_new[ln] = AR(nx); dead[nx] = 1; fused++;
+        }
+        free(a); free(b);
+    }
+
+    #undef MN
+    #undef AR
+    if (fused == 0) goto done;
+
+    if (pc_path)
+    {
+        FILE *fp = fopen(pc_path, "r");
+        if (fp) { read_lines(fp, &pc); fclose(fp); }
+    }
+
+    // rewrite: a fused line takes its new mnemonic and operand, the line it
+    // absorbed leaves (it has no label: checked above)
+    f = fopen(asm_path, "w");
+    if (!f) { removed = -1; goto done; }
+    char *gone = xcalloc(n + 1, 1);
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        char *text = lines.s[ln];
+        if (dead[ln]) { gone[ins_of[ln]] = 1; continue; }
+        if (!mn_new[ln] && !ar_new[ln]) { fputs(text, f); continue; }
+        int mend = mn_at[ln] + mn_len[ln];
+        int aend = ar_at[ln] < 0 ? mend : ar_at[ln] + ar_len[ln];
+        fprintf(f, "%.*s%s", mn_at[ln], text, mn_new[ln] ? mn_new[ln] : "");
+        if (!mn_new[ln]) fprintf(f, "%.*s", mn_len[ln], text + mn_at[ln]);
+        if (ar_new[ln]) fprintf(f, " %s", ar_new[ln]);
+        else if (ar_at[ln] >= 0) fprintf(f, "%.*s", aend - mend, text + mend);
+        fputs(text + aend, f);
+    }
+    fclose(f);
+
+    if (pc.n > 0)
+    {
+        f = fopen(pc_path, "w");
+        if (f)
+        {
+            for (int i = 0; i < pc.n; i++) { if (i < n && gone[i]) removed++; else fputs(pc.s[i], f); }
+            fclose(f);
+        }
+    }
+    free(gone);
+    if (fused)
+        printf(yanc_lang_en ? "Info: %d pairs of instructions fused into one\n"
+                            : "Info: %d pares de instruções fundidos em uma\n", fused);
+
+done:
+    for (int ln = 0; ln < lines.n; ln++) { free(mn_new[ln]); free(ar_new[ln]); }
+    free(mn_new); free(ar_new);
+    free(mn_at); free(mn_len); free(ar_at); free(ar_len); free(ins_of); free(dead); free(at);
+    st_free(&lines); st_free(&labels); st_free(&pc);
+    return removed;
+}

@@ -36,6 +36,23 @@ int asm_share(const char *asm_path);
 int asm_is_mnemonic(const char *name);
 
 // ****************************************************************************
+// asm_fuse -- one word where the code wrote two (#38) ------------------------
+// ****************************************************************************
+//
+// P_LOD x followed by a commutative stack operation (S_ADD, S_MLT, S_AND,
+// S_ORR, S_XOR, SF_ADD, SF_MLT) is the memory form on x: the pushed value op x
+// is the acc's value op x. PSH; LOD x is P_LOD x. Neither when a label lands on
+// the second line. The float sum and product of the ALU are symmetric in their two
+// operands (SAPHO/ula.v orders them by exponent), so SF_ADD and F_ADD x give
+// the same word. On anything the pass does not understand it leaves the file
+// untouched.
+//
+// Run it before asm_reach. Returns how many instructions the pc map covered
+// that left (the caller's instruction count drops by that much), -1 on an I/O
+// error.
+int asm_fuse(const char *asm_path, const char *pc_path);
+
+// ****************************************************************************
 // asm_reach -- code no path gets to is not in the program, nor its hardware --
 // ****************************************************************************
 //

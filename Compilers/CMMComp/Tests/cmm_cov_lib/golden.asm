@@ -1113,8 +1113,7 @@ F_MLT main_w_i
 F2I
 OUT 0
 LOD 1.0
-P_LOD 1.0
-SF_ADD
+F_ADD 1.0
 CAL __float_log
 F_MLT 0.5
 SET __clog_re
@@ -1186,8 +1185,7 @@ P_LOD main_pc_i
 F_MLT main_one
 SF_ADD
 P_LOD 1.0
-P_LOD 1.0
-SF_ADD
+F_ADD 1.0
 CAL __float_log
 F_MLT 0.5
 SET __clog_re
@@ -5385,8 +5383,7 @@ SF_MLT
 SET_P __aux_var
 PSH
 SF_MLT
-P_LOD __aux_var
-SF_ADD
+F_ADD __aux_var
 CAL __float_sqrt
 F_MLT 1000.0
 F2I
@@ -5408,8 +5405,7 @@ SF_MLT
 SET_P __aux_var
 PSH
 SF_MLT
-P_LOD __aux_var
-SF_ADD
+F_ADD __aux_var
 CAL __float_sqrt
 SF_ADD
 F_MLT 1000.0
@@ -5570,8 +5566,7 @@ SF_MLT
 SET_P __aux_var
 PSH
 SF_MLT
-P_LOD __aux_var
-SF_ADD
+F_ADD __aux_var
 F_MLT 1000.0
 F2I
 OUT 0
@@ -5592,8 +5587,7 @@ SF_MLT
 SET_P __aux_var
 PSH
 SF_MLT
-P_LOD __aux_var
-SF_ADD
+F_ADD __aux_var
 SF_ADD
 F_MLT 1000.0
 F2I
@@ -8931,8 +8925,7 @@ F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
-P_LOD 2.0
-SF_ADD
+F_ADD 2.0
 F_MLT 1000.0
 F2I
 OUT 0
@@ -9255,8 +9248,7 @@ F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
-P_LOD main_fa
-SF_ADD
+F_ADD main_fa
 F_MLT 1000.0
 F2I
 OUT 0
@@ -9921,8 +9913,7 @@ F2I
 OUT 0
 LOD main_pf
 F_ADD main_fz
-P_LOD 1.5
-SF_ADD
+F_ADD 1.5
 F_MLT 1000.0
 F2I
 OUT 0

@@ -1,11 +1,12 @@
 ## messages
 Heads up on line 36: variable 'r' is int, but getting a float.
 Info: 249 assembly instructions generated
+Info: 1 pairs of instructions fused into one
 Info: 1 variables written and never read removed (1 instructions)
 Info: 6 variables share 3 data words (3 saved)
 Heads up: variable 'y' in function 'main' is never read, so it's out of the program and the waveform (#WAVE y, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 248 instructions and 45 variables were found
+Info: 247 instructions and 45 variables were found
 Info: ULA resource -> integer adder
 Info: adding data output handling
 Info: ULA resource -> float-point adder
@@ -155,153 +156,152 @@ lang C+-
 111 ADD 1
 112 STI a
 113 ADD -1
-114 PSH
-115 LOD main_j
-116 PSH
-117 LDI a
-118 ADD 1
-119 STI a
-120 ADD -1
-121 S_ADD
-122 SET main_r
-123 OUT 0
-124 LOD_V a 3
-125 OUT 0
+114 P_LOD main_j
+115 PSH
+116 LDI a
+117 ADD 1
+118 STI a
+119 ADD -1
+120 S_ADD
+121 SET main_r
+122 OUT 0
+123 LOD_V a 3
+124 OUT 0
 // 48: f[0] = 1.5; y = f[0]++;           fout(0, y * 10.0); fout(0, f[0] * 10.0);   // 15 25
-126 LOD 1.5
-127 SET_V f 0
-128 LOD 0
-129 PSH
-130 LDI f
-131 SET __aux_var
-132 F_ADD 1.0
-133 STI f
-134 LOD __aux_var
-135 F_MLT 10.0
-136 F2I
-137 OUT 0
-138 LOD_V f 0
-139 F_MLT 10.0
-140 F2I
-141 OUT 0
+125 LOD 1.5
+126 SET_V f 0
+127 LOD 0
+128 PSH
+129 LDI f
+130 SET __aux_var
+131 F_ADD 1.0
+132 STI f
+133 LOD __aux_var
+134 F_MLT 10.0
+135 F2I
+136 OUT 0
+137 LOD_V f 0
+138 F_MLT 10.0
+139 F2I
+140 OUT 0
 // 49: r = b[1][1]++;                    out(0, r); out(0, b[1][1]);       // 2 3
-142 LOD 1
-143 MLT 3
-144 ADD 1
-145 PSH
-146 LDI b
-147 ADD 1
-148 STI b
-149 ADD -1
-150 SET main_r
-151 OUT 0
-152 LOD_V b 4
-153 OUT 0
+141 LOD 1
+142 MLT 3
+143 ADD 1
+144 PSH
+145 LDI b
+146 ADD 1
+147 STI b
+148 ADD -1
+149 SET main_r
+150 OUT 0
+151 LOD_V b 4
+152 OUT 0
 // 50: k = 10; r = k + a[j]++;           out(0, r); out(0, a[3]);          // 13 4  (a live operand)
-154 LOD 10
-155 SET main_k
-156 LOD main_j
-157 PSH
-158 LDI a
-159 ADD 1
-160 STI a
-161 ADD -1
-162 ADD main_k
-163 SET main_r
-164 OUT 0
-165 LOD_V a 3
-166 OUT 0
+153 LOD 10
+154 SET main_k
+155 LOD main_j
+156 PSH
+157 LDI a
+158 ADD 1
+159 STI a
+160 ADD -1
+161 ADD main_k
+162 SET main_r
+163 OUT 0
+164 LOD_V a 3
+165 OUT 0
 // 52: n = 0; buf[0] = 0; buf[1] = 0; buf[2] = 0;
-167 LOD 0
-168 SET main_n
-169 SET_V buf 0
-170 SET_V buf 1
-171 SET_V buf 2
+166 LOD 0
+167 SET main_n
+168 SET_V buf 0
+169 SET_V buf 1
+170 SET_V buf 2
 // 53: buf[n++] = 7; buf[n++] = 9;
-172 PSH
-173 ADD 1
-174 SET_P main_n
-175 P_LOD 7
-176 STI buf
-177 LOD main_n
-178 PSH
-179 ADD 1
-180 SET_P main_n
-181 P_LOD 9
-182 STI buf
+171 PSH
+172 ADD 1
+173 SET_P main_n
+174 P_LOD 7
+175 STI buf
+176 LOD main_n
+177 PSH
+178 ADD 1
+179 SET_P main_n
+180 P_LOD 9
+181 STI buf
 // 54: out(0, n); out(0, buf[0]); out(0, buf[1]); out(0, buf[2]);          // 2 7 9 0
-183 LOD main_n
-184 OUT 0
-185 LOD_V buf 0
-186 OUT 0
-187 LOD_V buf 1
-188 OUT 0
-189 LOD_V buf 2
-190 OUT 0
+182 LOD main_n
+183 OUT 0
+184 LOD_V buf 0
+185 OUT 0
+186 LOD_V buf 1
+187 OUT 0
+188 LOD_V buf 2
+189 OUT 0
 // 55: k = 0; r = 0;
-191 LOD 0
-192 SET main_k
-193 SET main_r
+190 LOD 0
+191 SET main_k
+192 SET main_r
 // 56: while (k++ < 3) { r = r + 1; }
-194 LOD main_k
-195 PSH
-196 ADD 1
-197 SET_P main_k
-198 GRE 3
-199 JIZ __Lwh2end
-200 LOD main_r
-201 ADD 1
-202 SET main_r
-203 JMP __Lwh2
+193 LOD main_k
+194 PSH
+195 ADD 1
+196 SET_P main_k
+197 GRE 3
+198 JIZ __Lwh2end
+199 LOD main_r
+200 ADD 1
+201 SET main_r
+202 JMP __Lwh2
 // 57: out(0, r); out(0, k);                                               // 3 4
-204 LOD main_r
-205 OUT 0
-206 LOD main_k
-207 OUT 0
+203 LOD main_r
+204 OUT 0
+205 LOD main_k
+206 OUT 0
 // 58: hist[0] = 0; hist[1] = 0; hist[2] = 0; hist[3] = 0;
-208 LOD 0
-209 SET_V hist 0
-210 SET_V hist 1
-211 SET_V hist 2
-212 SET_V hist 3
+207 LOD 0
+208 SET_V hist 0
+209 SET_V hist 1
+210 SET_V hist 2
+211 SET_V hist 3
 // 59: s[0] = 1; s[1] = 3; s[2] = 1; s[3] = 0; s[4] = 1; s[5] = 3;
-213 LOD 1
-214 SET_V s 0
-215 LOD 3
-216 SET_V s 1
-217 LOD 1
-218 SET_V s 2
-219 LOD 0
-220 SET_V s 3
-221 LOD 1
-222 SET_V s 4
-223 LOD 3
-224 SET_V s 5
+212 LOD 1
+213 SET_V s 0
+214 LOD 3
+215 SET_V s 1
+216 LOD 1
+217 SET_V s 2
+218 LOD 0
+219 SET_V s 3
+220 LOD 1
+221 SET_V s 4
+222 LOD 3
+223 SET_V s 5
 // 60: j = 0;
-225 LOD 0
-226 SET main_j
+224 LOD 0
+225 SET main_j
 // 61: while (j < 6) { hist[s[j]]++; j++; }
-227 LOD main_j
-228 LDI s
-229 PSH
-230 LDI hist
-231 ADD 1
-232 STI hist
-233 LOD main_j
-234 ADD 1
-235 SET main_j
-236 LES 5
-237 JIZ __Lwh3top
+226 LOD main_j
+227 LDI s
+228 PSH
+229 LDI hist
+230 ADD 1
+231 STI hist
+232 LOD main_j
+233 ADD 1
+234 SET main_j
+235 LES 5
+236 JIZ __Lwh3top
 // 62: out(0, hist[0]); out(0, hist[1]); out(0, hist[2]); out(0, hist[3]); // 1 3 0 2  (a histogram)
-238 LOD_V hist 0
-239 OUT 0
-240 LOD_V hist 1
-241 OUT 0
-242 LOD_V hist 2
-243 OUT 0
-244 LOD_V hist 3
-245 OUT 0
+237 LOD_V hist 0
+238 OUT 0
+239 LOD_V hist 1
+240 OUT 0
+241 LOD_V hist 2
+242 OUT 0
+243 LOD_V hist 3
+244 OUT 0
 // 31: while (1)
-246 JMP __Lwh1
+245 JMP __Lwh1
 // -3: END
-247 JMP fim
+246 JMP fim
