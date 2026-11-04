@@ -89,61 +89,30 @@ static int comp_ab(expr e, const char *pfx, const char **A, const char **B)
 // is its own (a comp where it takes none, a port's range), not those two
 // (#108 C3).
 
-// output ex: out(0,x);
-void builtin_out(int id, expr e)
+// out(p, x) and fout(p, x): the same word goes out, an int (a float is
+// truncated); each warns when x is of the other kind (is_fout: the fout form)
+static void out_port(int id, expr e, int is_fout)
 {
-    // ------------------------------------------------------------------------
-    // consistency check ------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // check whether it is comp
     if (e.type > TY_FLOAT) fatal(MSG_ERR_PICK_COMP_INFO, pctx.line_num+1);
-
-    // check port range
     if (atoi(v_table[id].name) >= cfg.nuioou) fatal(MSG_ERR_NO_OUT_PORT, pctx.line_num+1, v_table[id].name);
-
-    // ------------------------------------------------------------------------
-    // update variable status -------------------------------------------------
-    // ------------------------------------------------------------------------
 
     if (e.id != 0) v_table[e.id].used = 1;
 
-    // ------------------------------------------------------------------------
-    // execute ----------------------------------------------------------------
-    // ------------------------------------------------------------------------
+    if (e.type == TY_INT && is_fout)    warn(MSG_WARN_USE_OUT , pctx.line_num+1);
+    if (e.type == TY_FLOAT && !is_fout) warn(MSG_WARN_USE_FOUT, pctx.line_num+1);
 
-    // int var
-    if ((e.type == TY_INT) && (e.id!=0))
-    {
-        add_instr("LOD %s\n", v_table[e.id].name);    // a statement starts with acc free
-    }
-
-    // int acc
-    if ((e.type == TY_INT) && (e.id==0))
-    {
-        // nothing to do
-    }
-
-    // float var
-    if ((e.type == TY_FLOAT) && (e.id!=0))
-    {
-        warn(MSG_WARN_USE_FOUT, pctx.line_num+1);
-
-        add_instr("F2I_M %s\n", v_table[e.id].name);  // a statement starts with acc free
-    }
-
-    // float acc
-    if ((e.type == TY_FLOAT) && (e.id==0))
-    {
-        warn(MSG_WARN_USE_FOUT, pctx.line_num+1);
-
-        add_instr("F2I\n");
-    }
+    // a statement starts with acc free: plain loads
+    if      (e.type == TY_INT   && e.id != 0) add_instr("LOD %s\n"  , v_table[e.id].name);
+    else if (e.type == TY_FLOAT && e.id != 0) add_instr("F2I_M %s\n", v_table[e.id].name);
+    else if (e.type == TY_FLOAT)              add_instr("F2I\n");
 
     add_instr("OUT %s\n", v_table[id].name);
 
-    acc_live = 0; // libera acc    
+    acc_live = 0;   // acc released
 }
+
+// output ex: out(0,x);
+void builtin_out(int id, expr e) {out_port(id, e, 0);}
 
 // ----------------------------------------------------------------------------
 // the link to a partner processor (docs/design/toma-and-cade.md) --------------------
@@ -224,58 +193,7 @@ expr builtin_cade_expr(int type, int k)
 }
 
 // output ex: fout(0,x);
-void builtin_fout(int id, expr e)
-{
-    // ------------------------------------------------------------------------
-    // consistency check ------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // check whether it is comp
-    if (e.type > TY_FLOAT) fatal(MSG_ERR_PICK_COMP_INFO, pctx.line_num+1);
-
-    // check port range
-    if (atoi(v_table[id].name) >= cfg.nuioou) fatal(MSG_ERR_NO_OUT_PORT, pctx.line_num+1, v_table[id].name);
-
-    // ------------------------------------------------------------------------
-    // update variable status -------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    if (e.id != 0) v_table[e.id].used = 1;
-
-    // ------------------------------------------------------------------------
-    // execute ----------------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // int var
-    if ((e.type == TY_INT) && (e.id!=0))
-    {
-        warn(MSG_WARN_USE_OUT, pctx.line_num+1);
-
-        add_instr("LOD %s\n", v_table[e.id].name);    // a statement starts with acc free
-    }
-
-    // int acc
-    if ((e.type == TY_INT) && (e.id==0))
-    {
-        warn(MSG_WARN_USE_OUT, pctx.line_num+1);
-    }
-
-    // float var
-    if ((e.type == TY_FLOAT) && (e.id!=0))
-    {
-        add_instr("F2I_M %s\n", v_table[e.id].name);  // a statement starts with acc free
-    }
-
-    // float acc
-    if ((e.type == TY_FLOAT) && (e.id==0))
-    {
-        add_instr("F2I\n");
-    }
-
-    add_instr("OUT %s\n", v_table[id].name);
-
-    acc_live = 0; // libera acc    
-}
+void builtin_fout(int id, expr e) {out_port(id, e, 1);}
 
 // ----------------------------------------------------------------------------
 // special functions that save code -------------------------------------------
