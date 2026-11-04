@@ -90,6 +90,7 @@ cmm_unread 91
 ctrl_flow  101
 dirac_assign 149
 dirac_shapes 1856
+dirac_weights 176
 empty_call 13
 fifo_w     29
 for_loop   76

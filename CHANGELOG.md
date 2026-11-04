@@ -407,6 +407,12 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **The Dirac loops give the same assembly on every host** (#108 A1).
+  The use weights that choose a loop's counter stride were a `long`, 32
+  bits on 64-bit Windows: at depth 3 a sum of uses wrapped there, and the
+  same program got another stride than on Linux. They are a `long long`.
+  `Tests/dirac_weights` holds a program whose assembly differs with 32-bit
+  weights, with its values worked out by hand.
 - **cmmcomp: a float or comp function never called gets its warning.**
   `check_var` took types 5, 6 and 7 for functions, but they are 6 to 9
   (void, int, float, comp) and 5 is a comp constant: an unused `float` or
