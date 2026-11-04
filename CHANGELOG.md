@@ -407,6 +407,11 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **`#NUBITS` and `#FFTSIZ` out of range are errors** (#108 A2, A3).
+  cmmcomp took any value and shifted by it: `#NUBITS 64` compiled
+  `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
+  has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
+  too.
 - **The Dirac loops give the same assembly on every host** (#108 A1).
   The use weights that choose a loop's counter stride were a `long`, 32
   bits on 64-bit Windows: at depth 3 a sum of uses wrapped there, and the

@@ -66,3 +66,5 @@ name_prefix_global.cmm|'mainly' ain't an array
 comp_order.cmm|complex numbers have no order
 wave_undeclared.cmm|gotta declare 'x' first
 wave_not_var.cmm|#WAVE takes a variable, and 'f' isn't one
+nubits_range.cmm|#NUBITS 64 is out of range
+fftsiz_range.cmm|#FFTSIZ 40 is out of range

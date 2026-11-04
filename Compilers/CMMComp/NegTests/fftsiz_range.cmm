@@ -1,0 +1,10 @@
+#FFTSIZ 40
+#NUIOOU 1
+// Negative fixture: v[k) reverses 1 to 30 low bits of the index. With 40
+// the walker shifted an int by 39 and 40 (undefined in C) and indexed a
+// garbage word (#108 A3).
+void main()
+{
+    int v[8];
+    out(0, v[1));
+}

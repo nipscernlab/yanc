@@ -17,6 +17,8 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: the symbol 'i' is reserved for the imaginary part of a complex constant. Hands off!
 - Error on line <n>: that name is way too long, <n> characters tops.
 - Error on line <n>: #NUGAIN <n> is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift; anything else becomes a divider, the critical path of the whole ALU.
+- Error on line <n>: #NUBITS <n> is out of range. A SAPHO word has 2 to 32 bits.
+- Error on line <n>: #FFTSIZ <n> is out of range. v[k) reverses 1 to 30 low bits of the index.
 - Error on line <n>: #FROUND only takes 0 (legacy), 1 (truncation + saturation) or 2 (round to nearest even).
 - Error on line <n>: the biggest integer this thing can hold is <n>!
 - Error on line <n>: '<name>' starts with 0, so it is octal, and octal has no 8 or 9.
@@ -273,6 +275,7 @@ value. What the common ones mean and how to get past them is in
 - Error: #NUGAIN <n> is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift (~12 LUT levels); anything else becomes a constant divider (38 to 70 levels, measured), the critical path of the whole ALU.
 - Error: floating-point setup doesn't add up. You gotta have NUBITS = NBMANT + NBEXPO + 1 (NUBITS <n>, NBMANT <n>, NBEXPO <n> add up to <n>). A program without float needs no #NBMANT or #NBEXPO.
 - Error: the exponent is too short for the mantissa (NBMANT <n>, NBEXPO <n>). You need NBMANT < 2^(NBEXPO-1): with no hidden bit, 1.0 is 2^(NBMANT-1) x 2^-(NBMANT-1), and that exponent has to fit. Widen NBEXPO or narrow NBMANT.
+- Error: #FFTSIZ <n> is out of range. v[k) reverses 1 to 30 low bits of the index.
 - Error: #NUBITS <n> is past 32. A SAPHO word is at most 32 bits.
 - Error: <name> <name>: the operand of LDI/ILI/STI/ISI is an array name or an integer base address.
 - Error: <name> takes <n> words: it must be followed by <n> NOP and the read of its result (expected <name>, found <name>). The compilers write the sequence; in a hand-written .asm, write it out.

@@ -56,14 +56,15 @@ void directive_exec(char *dir, int id, dir_code t)
     int ival = atoi(v_table[id].name);
 
     // #NBMANT, #NBEXPO, #NUIOIN, #NUIOOU, #FROUND, #NUBITS and #FFTSIZ set
-    // what the compiler reads; #FROUND and #NUGAIN are validated here
+    // what the compiler reads; #NUBITS, #FFTSIZ, #FROUND and #NUGAIN are
+    // validated here, since the walker shifts by the first two
     // (asmcomp validates them again: it is the gate every front end passes
     // through; this one just knows the source line)
     switch(t)
     {
         case DIR_ASM_ONLY: break;
-        case DIR_NUBITS: cfg.nubits = ival             ; break;
-        case DIR_FFTSIZ: cfg.fftsiz = ival             ; break;
+        case DIR_NUBITS: if (ival < 2 || ival > 32) fatal(MSG_ERR_NUBITS_RANGE, pctx.line_num+1, ival); cfg.nubits = ival; break;
+        case DIR_FFTSIZ: if (ival < 1 || ival > 30) fatal(MSG_ERR_FFTSIZ_RANGE, pctx.line_num+1, ival); cfg.fftsiz = ival; break;
         case DIR_NBMANT: cfg.nbmant = ival             ; break;
         case DIR_NBEXPO: cfg.nbexpo = ival             ; break;
         case DIR_NUIOIN: cfg.nuioin = ival             ; break;

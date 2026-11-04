@@ -1838,7 +1838,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     rm -rf "$neg_work"
 fi
 
-# ---- 4b2. float format refused by asmcomp -----------------------------------
+# ---- 4b2. float format (and #FFTSIZ) refused by asmcomp ----------------------
 # cmmcomp accepts these two; asmcomp must stop on the float format (TODO item
 # 3), checked only because they use float (Tests/cmm_nofloat is the other side:
 # no float, a format that does not add up, accepted).
@@ -1846,7 +1846,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
     echo ""
     echo "==> float format (asmcomp)"
     neg_work="$SCRATCH/work_neg"
-    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short" "fpfmt_wide|is past 32"; do
+    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short" "fpfmt_wide|is past 32" "fftsiz_wide|#FFTSIZ 40 is out of range"; do
         fixture="${fe%%|*}"; expect="${fe#*|}"; name="asm:$fixture"
         neg_listed+=("$fixture.cmm" "$fixture.asm")
         rm -rf "$neg_work"; mkdir -p "$neg_work/p"
