@@ -121,6 +121,17 @@ tags consumed by Aurora.
   pairs. `warn()` prints the warnings and notes on stdout, in place of 254
   `fprintf(stdout, ...)` and `printf(...)`. Every message keeps its text
   and its stream.
+- **cmmcomp's array reads and library loads are written once** (step P10
+  of #93, second part). The template engine is a module of its own
+  (`tpl.c`), and a template may give a warning where the hand-written
+  branch gave it and take up to nine words from its emitter. A 2D
+  array's index (`arr_2d_index`) and the read of one of its elements
+  (`arr_2d2exp`, for real and for comp arrays) are tables; the 1D array
+  functions share `load_index`, and seven float builtins (`sqrt`, `exp`,
+  `log`, `atan`, `sin`, `tan`, `cos`) share `load_float`. array_index.c
+  goes from 2286 lines to 285, stdlib.c from 2815 to 2584. The tests reach
+  every cell of every table, and the assembly, the waveform's tables and
+  the warnings are byte-identical.
 - **cmmcomp's arithmetic is tables** (step P10 of #93, first part):
   `+`, `-`, `*`, `/`, `%` and the comparisons were one hand-written branch per pair of
   operand places (an int, a float or a comp, in memory or in the
