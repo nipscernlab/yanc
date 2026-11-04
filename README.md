@@ -124,9 +124,9 @@ bash Scripts/regress.sh           # the whole regression (~30 min); --no-sim for
 
 Every change goes through `Scripts/regress.sh`: it compiles each test,
 compares the assembly with its golden, simulates, and checks the results
-against references computed apart from YANC. The quick form (`--no-sim`)
-runs for each change, the whole one for each batch of changes
-([AGENTS.md](AGENTS.md), "The one command"). `Scripts/aurora.bat` builds and
+against references computed apart from YANC. Work goes in batches: the
+quick form (`--no-sim`) runs once at the end of a batch, the whole one
+before the batch's last merge ([AGENTS.md](AGENTS.md), "Work in batches"). `Scripts/aurora.bat` builds and
 deploys the tools into a sibling `Aurora/` checkout, the same files a release
 ships. See [CONTRIBUTING.md](CONTRIBUTING.md) for the conventions.
 
@@ -134,7 +134,8 @@ ships. See [CONTRIBUTING.md](CONTRIBUTING.md) for the conventions.
 yanc/
 ├── Compilers/      the compilers: CMMComp (C±), CPPComp (C++), ASMComp,
 │                   common/ (the ISA table, asm passes), yanc_version.h;
-│                   Tests/ and NegTests/ under each front end
+│                   Tests/ and NegTests/ under each front end, and
+│                   CMMComp's UnitTest/ and DiracCases/
 ├── SAPHO/          the SAPHO processor, in Verilog
 ├── Scripts/        setup, regress.sh, aurora.bat, the pipeline runners,
 │                   hw/ (elaboration, area, Fmax)
