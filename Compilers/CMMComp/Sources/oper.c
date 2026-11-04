@@ -222,7 +222,7 @@ expr oper_sub(expr e1, expr e2)
         return expr_make(TY_INT, 0);
     }
 
-    // an int minus an int is an int plus its negation: sub_tpl has no int cell
+    // an int minus an int is an int plus its negation (no int cell in the table)
     if ((e1.type==TY_INT) && (e2.type==TY_INT)) return oper_add(e1, oper_neg(e2));
 
     emit_tpl(sub_tpl[place_of(e1)][place_of(e2)], e1, e2);
