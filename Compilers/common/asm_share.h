@@ -53,6 +53,21 @@ int asm_is_mnemonic(const char *name);
 int asm_fuse(const char *asm_path, const char *pc_path);
 
 // ****************************************************************************
+// asm_tail -- a call that ends a function is a jump (#38) --------------------
+// ****************************************************************************
+//
+// CAL f followed by a RET that no jump lands on (no label on it) is JMP f:
+// f's own RET returns where the RET after the CAL would have, and RET leaves
+// the acc as it is, so a value f returns goes through. One word, two cycles
+// and one level of the call stack less. On anything the pass does not
+// understand it leaves the file untouched.
+//
+// Run it after asm_callarg: a function a JMP reaches is no longer one that
+// only calls reach, and asm_callarg leaves those alone. Returns how many
+// instructions the pc map covered that left, -1 on an I/O error.
+int asm_tail(const char *asm_path, const char *pc_path);
+
+// ****************************************************************************
 // asm_reach -- code no path gets to is not in the program, nor its hardware --
 // ****************************************************************************
 //

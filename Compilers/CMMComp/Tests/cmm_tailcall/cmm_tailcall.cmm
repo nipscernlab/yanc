@@ -1,0 +1,30 @@
+#NUIOOU 1
+// cmm_tailcall: a call that ends a function is a jump to the callee (asm_tail,
+// #38). twice() ends with add3(), sq_plus() returns sq(), and deep() returns
+// sq_plus(), so the RET of sq carries its value back through two jumps to the
+// CAL in main. maybe() ends in an if: a jump lands on its RET, which stays.
+// The values, worked out by hand:
+//   acc = 1, twice() adds 3 twice           -> 7
+//   sq_plus(4) = (4+1)^2                    -> 25
+//   deep(2) = sq_plus(2) = 9, plus 1        -> 10
+//   maybe(1) adds 3, maybe(-1) does not     -> 10
+int acc;
+
+void add3() { acc = acc + 3; }
+void twice() { add3(); add3(); }
+int sq(int a) { return a * a; }
+int sq_plus(int a) { return sq(a + 1); }
+int deep(int a) { return sq_plus(a); }
+void maybe(int a) { if (a > 0) add3(); }
+
+void main()
+{
+    acc = 1;
+    twice();
+    out(0, acc);
+    out(0, sq_plus(4));
+    out(0, deep(2) + 1);
+    maybe(1);
+    maybe(-1);
+    out(0, acc);
+}

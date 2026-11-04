@@ -532,8 +532,7 @@ ADD 1
 SET update_h_it
 LES 4
 JIZ __Lwh23top
-@__Lwh23end CAL project_h_hat
-RET
+@__Lwh23end JMP project_h_hat
 @fit LOD 0
 SET fit_ii
 @__Lwh29top LOD fit_ii

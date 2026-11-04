@@ -1854,3 +1854,93 @@ done:
     st_free(&lines); st_free(&labels); st_free(&pc);
     return removed;
 }
+
+// ---- asm_tail: a call that ends a function is a jump (#38) ----------------------
+// See asm_share.h.
+
+int asm_tail(const char *asm_path, const char *pc_path)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, pc = {0};
+    read_lines(f, &lines);
+    fclose(f);
+
+    int  *mn_at  = xmalloc((lines.n + 1) * sizeof(int));   // per line: where its mnemonic starts (-1: no instruction)
+    int  *mn_len = xmalloc((lines.n + 1) * sizeof(int));
+    int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));   // per line: its instruction index (-1: none)
+    char *dead   = xcalloc(lines.n + 1, 1);                 // per line: 1 if it leaves
+    char *jump   = xcalloc(lines.n + 1, 1);                 // per line: 1 if its CAL becomes a JMP
+    int   n = 0, ok = 1, removed = 0, tail = 0;
+
+    for (int ln = 0; ln < lines.n && ok; ln++)
+    {
+        char *text = lines.s[ln];
+        int   end  = (int)strlen(text);
+        char *cm   = strstr(text, "//");
+        if (cm) end = (int)(cm - text);
+        mn_at[ln] = ins_of[ln] = -1;
+        int p = 0, t0 = -1, tl = 0;
+        for (;;)                                             // skip the labels: the first other token
+        {
+            while (p < end && isspace((unsigned char)text[p])) p++;
+            if (p >= end) break;
+            int s = p;
+            while (p < end && !isspace((unsigned char)text[p])) p++;
+            if (text[s] != '@') { t0 = s; tl = p - s; break; }
+        }
+        if (t0 < 0) { if (memchr(text, '@', end)) ok = 0; continue; }   // a label alone: not ours to guess
+        if (text[t0] == '#') continue;
+        if (isa_find(tok_of(text + t0, tl)) < 0) { ok = 0; break; }
+        mn_at[ln] = t0; mn_len[ln] = tl; ins_of[ln] = n++;
+    }
+    if (!ok) goto done;
+
+    // CAL f, then RET on the very next line with no label on it: f's own RET
+    // returns where this one would, and the acc goes through untouched
+    for (int ln = 0; ln + 1 < lines.n; ln++)
+    {
+        int nx = ln + 1;
+        if (mn_at[ln] < 0 || mn_at[nx] < 0 || memchr(lines.s[nx], '@', mn_at[nx])) continue;
+        if (mn_len[ln] == 3 && strncmp(lines.s[ln] + mn_at[ln], "CAL", 3) == 0
+         && mn_len[nx] == 3 && strncmp(lines.s[nx] + mn_at[nx], "RET", 3) == 0)
+        {
+            jump[ln] = 1; dead[nx] = 1; tail++;
+        }
+    }
+    if (tail == 0) goto done;
+
+    if (pc_path)
+    {
+        FILE *fp = fopen(pc_path, "r");
+        if (fp) { read_lines(fp, &pc); fclose(fp); }
+    }
+    f = fopen(asm_path, "w");
+    if (!f) { removed = -1; goto done; }
+    char *gone = xcalloc(n + 1, 1);
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        char *text = lines.s[ln];
+        if (dead[ln]) { gone[ins_of[ln]] = 1; continue; }
+        if (jump[ln]) fprintf(f, "%.*sJMP%s", mn_at[ln], text, text + mn_at[ln] + 3);
+        else          fputs(text, f);
+    }
+    fclose(f);
+    if (pc.n > 0)
+    {
+        f = fopen(pc_path, "w");
+        if (f)
+        {
+            for (int i = 0; i < pc.n; i++) { if (i < n && gone[i]) removed++; else fputs(pc.s[i], f); }
+            fclose(f);
+        }
+    }
+    free(gone);
+    printf(yanc_lang_en ? "Info: %d calls that end a function made jumps\n"
+                        : "Info: %d chamadas no fim de uma função viraram saltos\n", tail);
+
+done:
+    free(mn_at); free(mn_len); free(ins_of); free(dead); free(jump);
+    st_free(&lines); st_free(&pc);
+    return removed;
+}

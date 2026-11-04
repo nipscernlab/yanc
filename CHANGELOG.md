@@ -134,6 +134,12 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **A call that ends a function is a jump** (#38). `CAL f` followed by a
+  `RET` no jump lands on is `JMP f`: `f`'s own `RET` returns where the
+  other would, with the value it returns. One word, two cycles and one
+  level of the call stack less, each time. A new pass, `asm_tail`, runs
+  after `asm_callarg`. `Tests/cmm_tailcall` checks it with values worked
+  out by hand; `procBlind` and `procBlindOpt` lose one instruction each.
 - **Two words that the ISA writes as one are one** (#38). A new pass of
   cmmcomp, `asm_fuse` (`Compilers/common/asm_share.c`), writes `P_LOD x`
   followed by a commutative stack operation as its memory form
