@@ -1,0 +1,12 @@
+#NUIOOU 1
+// Negative fixture: of two defaults the second won without a word (#108 A9).
+void main()
+{
+    int k = 3;
+    switch (k)
+    {
+        default: out(0, 1); break;
+        case 1:  out(0, 2); break;
+        default: out(0, 3); break;
+    }
+}

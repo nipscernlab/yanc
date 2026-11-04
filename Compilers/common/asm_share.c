@@ -168,9 +168,9 @@ static int st_add(strtab *t, const char *s)            // index of s, added if n
     if (t->n == t->cap)
     {
         t->cap = t->cap ? 2 * t->cap : 64;
-        t->s   = realloc(t->s, t->cap * sizeof(char *));
+        t->s   = xrealloc(t->s, t->cap * sizeof(char *));
     }
-    t->s[t->n] = strdup(s);
+    t->s[t->n] = xstrdup(s);
     return t->n++;
 }
 
@@ -221,11 +221,11 @@ static int is_literal(const char *s)
 static char *read_line(FILE *f)
 {
     size_t cap = 256, len = 0;
-    char  *s   = malloc(cap);
+    char  *s   = xmalloc(cap);
     int    c;
     while ((c = fgetc(f)) != EOF)
     {
-        if (len + 2 > cap) { cap *= 2; s = realloc(s, cap); }
+        if (len + 2 > cap) { cap *= 2; s = xrealloc(s, cap); }
         s[len++] = (char)c;
         if (c == '\n') break;
     }
@@ -247,7 +247,7 @@ int asm_share(const char *asm_path)
         if (lines.n == lines.cap)
         {
             lines.cap = lines.cap ? 2 * lines.cap : 1024;
-            lines.s   = realloc(lines.s, lines.cap * sizeof(char *));
+            lines.s   = xrealloc(lines.s, lines.cap * sizeof(char *));
         }
         lines.s[lines.n++] = buf;
     }
@@ -287,7 +287,7 @@ int asm_share(const char *asm_path)
         {
             tok = tok_of(text + ts[t] + 1, tl[t] - 1);
             int li = st_add(&labels, tok);
-            if (li >= lab_cap) { lab_cap = 2 * li + 64; lab_at = realloc(lab_at, lab_cap * sizeof(int)); }
+            if (li >= lab_cap) { lab_cap = 2 * li + 64; lab_at = xrealloc(lab_at, lab_cap * sizeof(int)); }
             lab_at[li] = n;
         }
         if (t >= nt) continue;
@@ -302,7 +302,7 @@ int asm_share(const char *asm_path)
                 if (ni >= pin_cap)
                 {
                     int nc = 2 * ni + 64;
-                    pinned = realloc(pinned, nc);
+                    pinned = xrealloc(pinned, nc);
                     memset(pinned + pin_cap, 0, nc - pin_cap);
                     pin_cap = nc;
                 }
@@ -314,7 +314,7 @@ int asm_share(const char *asm_path)
         int op = isa_find(TOK(t));
         if (op < 0) { ok = 0; break; }                     // not ours to guess
 
-        if (n == cap) { cap = cap ? 2 * cap : 1024; ins = realloc(ins, cap * sizeof(as_ins)); }
+        if (n == cap) { cap = cap ? 2 * cap : 1024; ins = xrealloc(ins, cap * sizeof(as_ins)); }
         as_ins *x = &ins[n++];
         memset(x, 0, sizeof(*x));
         x->op = op; x->name = -1; x->line = ln;
@@ -335,7 +335,7 @@ int asm_share(const char *asm_path)
                 if (ni >= pin_cap)
                 {
                     int nc = 2 * ni + 64;
-                    pinned = realloc(pinned, nc);
+                    pinned = xrealloc(pinned, nc);
                     memset(pinned + pin_cap, 0, nc - pin_cap);
                     pin_cap = nc;
                 }
@@ -353,7 +353,7 @@ int asm_share(const char *asm_path)
 
     // flow graph ---------------------------------------------------------------
 
-    int *rets = malloc((n + 1) * sizeof(int)), nret = 0;
+    int *rets = xmalloc((n + 1) * sizeof(int)), nret = 0;
     for (int i = 0; i < n; i++) if (strcmp(isa[ins[i].op].flow, "call") == 0 && i + 1 < n) rets[nret++] = i + 1;
 
     for (int i = 0; i < n && ok; i++)
@@ -377,9 +377,9 @@ int asm_share(const char *asm_path)
     // liveness, iterated to a fixed point -------------------------------------------
 
     int W = (nn + 63) / 64;
-    uint64_t *lin  = calloc((size_t)n * W, sizeof(uint64_t));
-    uint64_t *lout = calloc((size_t)n * W, sizeof(uint64_t));
-    uint64_t *tmp  = malloc(W * sizeof(uint64_t));
+    uint64_t *lin  = xcalloc((size_t)n * W, sizeof(uint64_t));
+    uint64_t *lout = xcalloc((size_t)n * W, sizeof(uint64_t));
+    uint64_t *tmp  = xmalloc(W * sizeof(uint64_t));
 
     for (int changed = 1; changed; )
     {
@@ -417,7 +417,7 @@ int asm_share(const char *asm_path)
     // interference: a write clobbers everything still alive after it, and the
     // names read before any write all need their own initial value -------------
 
-    uint64_t *adj = calloc((size_t)nn * W, sizeof(uint64_t));
+    uint64_t *adj = xcalloc((size_t)nn * W, sizeof(uint64_t));
     for (int i = 0; i < n; i++)
     {
         as_ins *x = &ins[i];
@@ -431,17 +431,17 @@ int asm_share(const char *asm_path)
             if (a != b && BS_TEST(lin, a) && BS_TEST(lin, b)) BS_SET(&adj[(size_t)a * W], b);
 
     // first appearance order, for a stable choice of the name a group keeps
-    int *order = malloc(nn * sizeof(int)), no = 0;
-    char *seen = calloc(nn, 1);
+    int *order = xmalloc(nn * sizeof(int)), no = 0;
+    char *seen = xcalloc(nn, 1);
     for (int i = 0; i < n; i++)
         if (ins[i].name >= 0 && !seen[ins[i].name]) { seen[ins[i].name] = 1; order[no++] = ins[i].name; }
 
     // greedy colouring, most-constrained first --------------------------------------
 
-    int *deg = calloc(nn, sizeof(int)), *color = malloc(nn * sizeof(int));
+    int *deg = xcalloc(nn, sizeof(int)), *color = xmalloc(nn * sizeof(int));
     for (int v = 0; v < nn; v++) { color[v] = -1; for (int u = 0; u < nn; u++) deg[v] += BS_TEST(&adj[(size_t)v * W], u); }
 
-    int *byd = malloc(no * sizeof(int));
+    int *byd = xmalloc(no * sizeof(int));
     memcpy(byd, order, no * sizeof(int));
     for (int a = 1; a < no; a++)                           // stable insertion sort on degree
     {
@@ -451,7 +451,7 @@ int asm_share(const char *asm_path)
     }
 
     int ncol = 0, ncand = 0;
-    char *used = calloc(nn + 1, 1);
+    char *used = xcalloc(nn + 1, 1);
     for (int k = 0; k < no; k++)
     {
         int v = byd[k];
@@ -464,7 +464,7 @@ int asm_share(const char *asm_path)
     }
 
     // the name each group keeps: the one read before any write, else the first seen
-    int *keep = malloc((ncol + 1) * sizeof(int));
+    int *keep = xmalloc((ncol + 1) * sizeof(int));
     for (int c = 0; c < ncol; c++) keep[c] = -1;
     for (int k = 0; k < no; k++) { int v = order[k]; if (color[v] >= 0 && BS_TEST(lin, v)) keep[color[v]] = v; }
     for (int k = 0; k < no; k++) { int v = order[k]; if (color[v] >= 0 && keep[color[v]] < 0) keep[color[v]] = v; }
@@ -534,7 +534,7 @@ static void *grow(void *p, int *cap, int need, size_t sz)   // room for index `n
     if (need < *cap) return p;
     int nc = *cap ? *cap : 64;
     while (nc <= need) nc *= 2;
-    p = realloc(p, nc * sz);
+    p = xrealloc(p, nc * sz);
     *cap = nc;
     return p;
 }
@@ -559,7 +559,7 @@ static void read_lines(FILE *f, strtab *t)
         if (t->n == t->cap)
         {
             t->cap = t->cap ? 2 * t->cap : 1024;
-            t->s   = realloc(t->s, t->cap * sizeof(char *));
+            t->s   = xrealloc(t->s, t->cap * sizeof(char *));
         }
         t->s[t->n++] = buf;
     }
@@ -579,7 +579,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
     int     *reg_lab0 = NULL, *reg_nlab = NULL, nreg = 0, reg_cap = 0, reg_cap2 = 0;  // #IFLIVE block -> its labels:
     int     *reg_lab  = NULL, nrl = 0, rl_cap = 0;      //   reg_lab[reg_lab0[r] ..], reg_nlab[r] of them
     int     *roots   = NULL, nroot = 0, root_cap = 0;
-    rl_line *L   = calloc(lines.n + 1, sizeof(rl_line));
+    rl_line *L   = xcalloc(lines.n + 1, sizeof(rl_line));
     rl_ins  *ins = NULL; int n = 0, cap = 0;
     int      ok = 1, region = -1, markers = 0, removed = 0;
     char    *live = NULL, *used = NULL, *needed = NULL;
@@ -702,7 +702,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
     // (not through one that #ITRAD or #TOAQUI marks, whose address the hardware
     // compares): the JMP in between may then be reached by nothing, or jump to
     // the instruction that follows it, and leave below
-    char *thr = calloc(n + 1, 1), *rootm = calloc(n + 1, 1);
+    char *thr = xcalloc(n + 1, 1), *rootm = xcalloc(n + 1, 1);
     for (int r = 0; r < nroot; r++) if (roots[r] >= 0 && roots[r] < n) rootm[roots[r]] = 1;
     for (int i = 0; i < n && ok; i++)
     {
@@ -721,9 +721,9 @@ int asm_reach(const char *asm_path, const char *pc_path)
 
     // reach: from the entry, the interrupt, #TOAQUI and @fim ------------------------
 
-    live = calloc(n + 1, 1);
-    used = calloc(names.n + 1, 1);
-    work = malloc((n + 1) * sizeof(int));
+    live = xcalloc(n + 1, 1);
+    used = xcalloc(names.n + 1, 1);
+    work = xmalloc((n + 1) * sizeof(int));
     int nw = 0, fim = st_find(&labels, "fim");
     #define VISIT(k) do { int k_ = (k); if (k_ >= 0 && k_ < n && !live[k_]) { live[k_] = 1; work[nw++] = k_; } } while (0)
     if (ok)
@@ -758,7 +758,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
     // end of a loop body, an if whose else is empty), until none is left; not
     // one that #ITRAD or #TOAQUI marks, whose address the hardware compares
     int jumps = 0;
-    next_live = malloc((n + 1) * sizeof(int));
+    next_live = xmalloc((n + 1) * sizeof(int));
     for (int changed = ok; changed; )
     {
         changed = 0;
@@ -776,7 +776,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
     }
 
     // every label a kept jump needs keeps an instruction to sit on
-    needed    = calloc(labels.n + 1, 1);
+    needed    = xcalloc(labels.n + 1, 1);
     next_live[n] = -1;
     for (int i = n - 1; i >= 0; i--) next_live[i] = live[i] ? i : next_live[i + 1];
     for (int i = 0; i < n; i++) if (live[i] && ins[i].target >= 0) needed[ins[i].target] = 1;
@@ -808,7 +808,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
 
     f = fopen(asm_path, "w");
     if (!f) { removed = -1; goto done; }
-    carry = malloc((lof_n + 1) * sizeof(int));
+    carry = xmalloc((lof_n + 1) * sizeof(int));
     int nc = 0;
     for (int ln = 0; ln < lines.n; ln++)
     {
@@ -917,15 +917,15 @@ int asm_divseq(const char *asm_path, const char *pc_path)
     if (pc_path && (f = fopen(pc_path, "r"))) { read_lines(f, &pc); fclose(f); }
 
     // the instruction each line holds (-1: none), and which divisions to expand
-    int  *ins_of = malloc((lines.n + 1) * sizeof(int));
-    char (*mn)[32] = malloc((lines.n + 1) * sizeof(*mn));
+    int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));
+    char (*mn)[32] = xmalloc((lines.n + 1) * sizeof(*mn));
     int   n = 0;
     for (int ln = 0; ln < lines.n; ln++)
     {
         line_mnemonic(lines.s[ln], mn[ln], sizeof(mn[ln]));
         ins_of[ln] = mn[ln][0] ? n++ : -1;
     }
-    char *expand = calloc(n + 1, 1);                     // per instruction: the words of its sequence (0: leave it)
+    char *expand = xcalloc(n + 1, 1);                     // per instruction: the words of its sequence (0: leave it)
     int   added = 0, added_pc = 0, ndiv = 0;
     for (int ln = 0; ln < lines.n; ln++)
     {
@@ -1013,9 +1013,9 @@ int asm_normnop(const char *asm_path, const char *pc_path)
     if (pc_path && (f = fopen(pc_path, "r"))) { read_lines(f, &pc); fclose(f); }
 
     // the instruction each line holds (-1: none), and which JIZ/LDI/ILI get a NOP before them
-    int  *ins_of = malloc((lines.n + 1) * sizeof(int));
-    char (*mn)[32] = malloc((lines.n + 1) * sizeof(*mn));
-    char *pad = calloc(lines.n + 1, 1);                  // per instruction: a NOP goes before it
+    int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));
+    char (*mn)[32] = xmalloc((lines.n + 1) * sizeof(*mn));
+    char *pad = xcalloc(lines.n + 1, 1);                  // per instruction: a NOP goes before it
     int   n = 0, prev = -1, added = 0;
     for (int ln = 0; ln < lines.n; ln++)
     {
@@ -1080,8 +1080,8 @@ static void dp_walk(dp_ctx *c, int r, int start)
     c->state[r] = 1;
 
     int n = c->n, unset = INT_MIN;
-    int *dep  = malloc((n + 1) * sizeof(int));
-    int *work = malloc((n + 1) * sizeof(int)), nw = 0;
+    int *dep  = xmalloc((n + 1) * sizeof(int));
+    int *work = xmalloc((n + 1) * sizeof(int)), nw = 0;
     for (int i = 0; i < n; i++) dep[i] = unset;
     int net = unset, maxd = 0, maxc = 0;
 
@@ -1181,8 +1181,8 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
     dp_ctx c = {0};
     c.n = n;
     c.op = op;
-    c.tgt = malloc((n + 1) * sizeof(int));
-    c.entry = malloc((n + 1) * sizeof(int));
+    c.tgt = xmalloc((n + 1) * sizeof(int));
+    c.entry = xmalloc((n + 1) * sizeof(int));
     for (int i = 0; i < n && !why; i++)
     {
         c.tgt[i] = tgl[i] >= 0 ? lab_at[tgl[i]] : -1;
@@ -1197,10 +1197,10 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
         for (int i = 0; i < n; i++)
             if (strcmp(isa[op[i]].flow, "call") == 0 && c.entry[c.tgt[i]] < 0) c.entry[c.tgt[i]] = nr++;
     }
-    c.state = calloc(nr + 1, sizeof(int));
-    c.net   = calloc(nr + 1, sizeof(int));
-    c.maxd  = calloc(nr + 1, sizeof(int));
-    c.maxc  = calloc(nr + 1, sizeof(int));
+    c.state = xcalloc(nr + 1, sizeof(int));
+    c.net   = xcalloc(nr + 1, sizeof(int));
+    c.maxd  = xcalloc(nr + 1, sizeof(int));
+    c.maxc  = xcalloc(nr + 1, sizeof(int));
     c.why   = why;
     if (!c.why && n > 0)
     {
@@ -1250,7 +1250,7 @@ int asm_divk(const char *asm_path, const char *pc_path)
 
     // where each line sits (0 outside, 1 the division, 2 the product) and
     // whether a float division outside the blocks needs the divider anyway
-    char *part = calloc(lines.n + 1, 1);
+    char *part = xcalloc(lines.n + 1, 1);
     int   blocks = 0, need = 0, in = 0;
     char  mn[32];
     for (int ln = 0; ln < lines.n; ln++)
@@ -1268,7 +1268,7 @@ int asm_divk(const char *asm_path, const char *pc_path)
     // the division; its labels (none is expected) move to the next kept line
     char drop = need ? 2 : 1;
     if (pc_path && (f = fopen(pc_path, "r"))) { read_lines(f, &pc); fclose(f); }
-    char *keep_pc = malloc(pc.n + 1);
+    char *keep_pc = xmalloc(pc.n + 1);
     memset(keep_pc, 1, pc.n + 1);
     f = fopen(asm_path, "w");
     if (!f) { free(keep_pc); removed = -1; goto done; }
@@ -1331,10 +1331,10 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
     read_lines(f, &lines);
     fclose(f);
 
-    int   *set_of = malloc((lines.n + 1) * sizeof(int));  // per line: name its SET / SET_P writes (-1: none)
-    int   *ins_of = malloc((lines.n + 1) * sizeof(int));  // per line: its instruction (-1: none)
-    int   *mn_at  = malloc((lines.n + 1) * sizeof(int));  // per line: where its mnemonic starts
-    char  *is_set = calloc(lines.n + 1, 1);                // per line: 1 SET, 2 SET_P
+    int   *set_of = xmalloc((lines.n + 1) * sizeof(int));  // per line: name its SET / SET_P writes (-1: none)
+    int   *ins_of = xmalloc((lines.n + 1) * sizeof(int));  // per line: its instruction (-1: none)
+    int   *mn_at  = xmalloc((lines.n + 1) * sizeof(int));  // per line: where its mnemonic starts
+    char  *is_set = xcalloc(lines.n + 1, 1);                // per line: 1 SET, 2 SET_P
     char  *rd = NULL, *wr = NULL, *out = NULL;
     int    rcap = 0, wcap = 0, n = 0, ok = 1, removed = 0, vars = 0;
 
@@ -1400,7 +1400,7 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
 
     // the names that go: written, never read. The two halves of a comp, x and
     // x_i, go together or not at all (asmcomp joins them into comp_x)
-    out = calloc(names.n + 1, 1);
+    out = xcalloc(names.n + 1, 1);
     for (int i = 0; i < names.n; i++) out[i] = wr[i] && !rd[i];
     for (int i = 0; i < names.n; i++)
     {
@@ -1437,7 +1437,7 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
     // becomes the POP it also is
     f = fopen(asm_path, "w");
     if (!f) { removed = -1; goto done; }
-    char *dead = calloc(n + 1, 1);
+    char *dead = xcalloc(n + 1, 1);
     char *lab = xstrdup("");                           // the labels of dropped lines, for the next instruction
     for (int ln = 0; ln < lines.n; ln++)
     {
@@ -1544,11 +1544,11 @@ int asm_callarg(const char *asm_path, const char *pc_path)
     read_lines(f, &lines);
     fclose(f);
 
-    int  *op_of  = malloc((lines.n + 1) * sizeof(int));   // per line: its instruction's isa row (-1: none)
-    int  *mn_at  = malloc((lines.n + 1) * sizeof(int));   // per line: where its mnemonic starts
-    int  *tgt_of = malloc((lines.n + 1) * sizeof(int));   // per line: label a jump or call names (-1: none)
-    int  *ins_of = malloc((lines.n + 1) * sizeof(int));   // per line: its instruction index (-1: none)
-    char *dead   = calloc(lines.n + 1, 1);                 // per line: 1 if it leaves
+    int  *op_of  = xmalloc((lines.n + 1) * sizeof(int));   // per line: its instruction's isa row (-1: none)
+    int  *mn_at  = xmalloc((lines.n + 1) * sizeof(int));   // per line: where its mnemonic starts
+    int  *tgt_of = xmalloc((lines.n + 1) * sizeof(int));   // per line: label a jump or call names (-1: none)
+    int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));   // per line: its instruction index (-1: none)
+    char *dead   = xcalloc(lines.n + 1, 1);                 // per line: 1 if it leaves
     char *jumped = NULL;                                   // per label: 1 if a JMP / JIZ names it
     int  *at     = NULL;                                   // per label: the line it marks (-1: none)
     int   acap = 0, jcap = 0, n = 0, ok = 1, removed = 0, drop = 0;
@@ -1667,7 +1667,7 @@ int asm_callarg(const char *asm_path, const char *pc_path)
     // rewrite: a line that leaves takes its labels to the next instruction
     f = fopen(asm_path, "w");
     if (!f) { removed = -1; goto done; }
-    char *gone = calloc(n + 1, 1);
+    char *gone = xcalloc(n + 1, 1);
     char *lab = xstrdup("");                           // the labels of dropped lines, for the next instruction
     for (int ln = 0; ln < lines.n; ln++)
     {

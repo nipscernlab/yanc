@@ -61,6 +61,7 @@
 %{
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "../Headers/interrupt.h"         // interrupt handling
 #include "../Headers/oper.h"        // ALU operations
@@ -254,6 +255,7 @@ IID    : ID                           {declare_var   ($1         );}
 // Function declaration -------------------------------------------------------
 
 funcao : func_intro par_list ')' '{' stmt_list '}' {func_ret($1);} // $1 = func_intro's ID; walker emits everything
+       | func_intro par_list ')' '{'           '}' {func_ret($1);} // an empty body, as the empty block (#108 A12)
 
 // State-setup phase of a function declaration. Pulled into its own named
 // non-terminal so the action is a clean end-action - no mid-rule sitting
@@ -585,5 +587,6 @@ int main(int argc, char *argv[])
 void yyerror (char const *s)
 {
     if (yychar == DIMIN) inum_overflow();   // 128 at 8 bits, not after a minus
+    if (strcmp(s, "memory exhausted") == 0) fatal(MSG_ERR_TOO_DEEP, pctx.line_num+1);   // bison's stack (#108 A14)
     fatal(MSG_ERR_SYNTAX, pctx.line_num+1);
 }

@@ -1,0 +1,7 @@
+#NUIOOU 1
+// Negative fixture: a letter outside ASCII is named whole, not byte by
+// byte (#108 A8).
+void main()
+{
+    int é = 1;
+}

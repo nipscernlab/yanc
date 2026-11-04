@@ -491,7 +491,9 @@ void eval_opernd(char *va, int is_const)
         case  7: nuioin =  atoi(va);                    state =  0; break; // number of input addresses
         case  8: nuioou =  atoi(va);                    state =  0; break; // number of output addresses
         case  9: nugain =  atoi(va);                    state =  0; break; // normalization value
-        case 10: fftsiz =  atoi(va);                    state =  0; break; // number of bits to reverse in the FFT
+        case 10: fftsiz =  atoi(va);                    state =  0;            // number of bits to reverse in the FFT
+                 if (fftsiz < 1 || fftsiz > 30) {fprintf(stderr, MSG_ERR_FFTSIZ_RANGE, fftsiz); exit(EXIT_FAILURE);}
+                 break;
         case 11: instr_arr     (va);                    state = 12; break; // found an array without initialization
         case 12: arr_typ = atoi(va);                    state = 13; break; // pick up the array type
         case 13: arr_add  (atoi(va),arr_typ,"",f_data); state =  0; break; // declare array without initialization

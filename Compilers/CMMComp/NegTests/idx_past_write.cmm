@@ -1,0 +1,7 @@
+// Negative fixture: a store at a constant index past the end wrote another
+// variable's word without a word of warning (#108 A6).
+int a[4];
+void main()
+{
+    a[9] = 1;
+}

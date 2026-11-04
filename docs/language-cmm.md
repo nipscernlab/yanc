@@ -114,7 +114,8 @@ float table[64] "table.txt";      // initialised from a file
   initialiser runs once, before `main`, wherever the file declares the
   global, between functions too, and it may call a function defined above
   it.
-- The size of an array is a number (or a `#define` name for one).
+- The size of an array is a number (or a `#define` name for one), at least
+  1; a matrix has fewer than 2^31 elements.
 - An array is initialised between braces, as in C, or from a file:
 
   ```c
@@ -137,7 +138,9 @@ float table[64] "table.txt";      // initialised from a file
   the memory, when the FPGA is configured: a local array keeps, from one call
   of its function to the next, what the function wrote into it (like a C
   `static`; the compiler warns), and a reset does not bring the values back.
-- `v[k]` reads or writes an element; `M[r][c]` an element of a matrix.
+- `v[k]` reads or writes an element; `M[r][c]` an element of a matrix. A
+  constant index past the end is an error (each index of a matrix on its
+  own); a computed one is not checked, as in C.
 - `v[k)` (a closing parenthesis) reads or writes the element at the
   **bit-reversed** index, the addressing an FFT needs (its width set by
   `#FFTSIZ`).
@@ -178,7 +181,8 @@ division by a literal stays a division.
   with a value (`int k = 0`), `step` an assignment or `k++`; either can be
   empty. One clause each, no commas.
 - `case` takes a constant number. A `case` without `break` falls through to
-  the next, as in C.
+  the next, as in C. As in C, a value appears in one `case` of a `switch`
+  only, and a `switch` has one `default` at most.
 - `break` leaves the innermost loop or `switch`; `continue` goes to the next
   turn of the innermost loop.
 - The empty statement `;` and the empty block `{ }` emit nothing, so a
@@ -278,12 +282,14 @@ instructions: `sqrt`, `exp`, `log`, `pow`, `sin`, `cos`, `tan`, `atan`,
 ## The preprocessor
 
 `#define NAME text` replaces the name by the text from there on:
-`#define N 64`. It takes no arguments. There is no `#include` and no
-`#if`.
+`#define N 64`; with no text, the name is replaced by nothing. It takes
+no arguments, and a program may have any number of them. There is no
+`#include` and no `#if`.
 
 ## What does not exist
 
-Pointers, `struct`, strings, recursion, dynamic memory, `#include`, several
+Pointers, `struct`, strings and characters (`'a'` is an error),
+recursion, dynamic memory, `#include`, several
 source files, arrays of more than two dimensions, arrays as parameters,
 `goto`, `--`, compound assignment, `?:`, casts. Most of them are in the C++
 YANC accepts, at a cost in instructions; C± keeps the processor small.

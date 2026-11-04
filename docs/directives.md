@@ -16,14 +16,14 @@ writes only what it changes. A C++ program says the same with
 
 | directive | default | sets | C++ |
 |---|---|---|---|
-| `#NUBITS n` | 32 | the word width, in bits | `nubits` |
+| `#NUBITS n` | 32 | the word width, in bits: 2 to 32 | `nubits` |
 | `#NBMANT n` | 23 | the float's mantissa bits | `nbmant` |
 | `#NBEXPO n` | 8 | the float's exponent bits | `nbexpo` |
 | `#NUIOIN n` | 1 | the number of input ports | `nuioin` |
 | `#NUIOOU n` | 1 | the number of output ports | `nuioou` |
 | `#FROUND n` | 0 (C++: 2) | how float operations round: 0, 1 or 2 (see [Floating point](floating-point.md)) | always 2 |
 | `#NUGAIN n` | 128 | the divisor of `norm(x)`; a power of two | (no effect) |
-| `#FFTSIZ n` | 3 | how many low bits of the index `v[k)` reverses | (C± only) |
+| `#FFTSIZ n` | 3 | how many low bits of the index `v[k)` reverses: 1 to 30 | (C± only) |
 | `#NDSTAC n` | worked out | the data stack depth | `ndstac` |
 | `#SDEPTH n` | worked out | the call stack depth | `sdepth` |
 

@@ -50,9 +50,13 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: #NUGAIN %d não é potência de dois. norm(x) é x / NUGAIN em hardware: potência de dois vira um deslocamento; qualquer outro valor vira um divisor, o caminho crítico da ALU inteira.\n", \
       "Error on line %d: #NUGAIN %d is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift; anything else becomes a divider, the critical path of the whole ALU.\n")
 
-#define MSG_ERR_NUGAIN_POW2 \
-    M("Erro na linha %d: #NUGAIN %d não é potência de dois. norm(x) é x / NUGAIN em hardware: potência de dois vira um deslocamento; qualquer outro valor vira um divisor, o caminho crítico da ALU inteira.\n", \
-      "Error on line %d: #NUGAIN %d is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift; anything else becomes a divider, the critical path of the whole ALU.\n")
+#define MSG_ERR_NUBITS_RANGE \
+    M("Erro na linha %d: #NUBITS %d está fora da faixa. A palavra do SAPHO tem de 2 a 32 bits.\n", \
+      "Error on line %d: #NUBITS %d is out of range. A SAPHO word has 2 to 32 bits.\n")
+
+#define MSG_ERR_FFTSIZ_RANGE \
+    M("Erro na linha %d: #FFTSIZ %d está fora da faixa. v[k) inverte de 1 a 30 bits baixos do índice.\n", \
+      "Error on line %d: #FFTSIZ %d is out of range. v[k) reverses 1 to 30 low bits of the index.\n")
 
 #define MSG_ERR_FROUND_RANGE \
     M("Erro na linha %d: #FROUND só aceita 0 (legado), 1 (truncamento + saturação) ou 2 (arredondamento ao par).\n", \
@@ -143,6 +147,39 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_ERR_NOT_ARRAY_HARSH \
     M("Erro na linha %d: '%s' não é array não, abensoado!\n", \
       "Error on line %d: '%s' ain't an array, mate!\n")
+
+// a defect of cmmcomp, not of the program: it names the place in the source
+#define MSG_ERR_INTERNAL \
+    M("Erro interno do cmmcomp (%s), na linha %d. Não é culpa do seu programa: avise os mantenedores e mande o programa junto.\n", \
+      "Internal error of cmmcomp (%s), on line %d. Not your program's fault: tell the maintainers and send the program along.\n")
+
+#define MSG_ERR_SCANNER \
+    M("Erro: o leitor do código-fonte parou: %s\n", \
+      "Error: the source scanner stopped: %s\n")
+
+#define MSG_ERR_TOO_DEEP \
+    M("Erro na linha %d: expressão aninhada fundo demais para o compilador. Divida-a em variáveis intermediárias.\n", \
+      "Error on line %d: an expression nested too deep for the compiler. Split it with intermediate variables.\n")
+
+#define MSG_ERR_CASE_TWICE \
+    M("Erro na linha %d: case %s aparece duas vezes neste switch.\n", \
+      "Error on line %d: case %s appears twice in this switch.\n")
+
+#define MSG_ERR_DEFAULT_TWICE \
+    M("Erro na linha %d: este switch já tem um default.\n", \
+      "Error on line %d: this switch already has a default.\n")
+
+#define MSG_ERR_UNKNOWN_CHAR \
+    M("Erro na linha %d: o caractere '%s' não faz parte do C±.\n", \
+      "Error on line %d: the character '%s' is not part of C±.\n")
+
+#define MSG_ERR_INDEX_RANGE \
+    M("Erro na linha %d: o índice %d de '%s' está fora da faixa, de 0 a %d.\n", \
+      "Error on line %d: the index %d of '%s' is out of range, 0 to %d.\n")
+
+#define MSG_ERR_ARRAY_SIZE \
+    M("Erro na linha %d: o array '%s' tem %lld elementos; ele pode ter de 1 a %lld.\n", \
+      "Error on line %d: the array '%s' has %lld elements; it can have 1 to %lld.\n")
 
 #define MSG_ERR_ARRAY_2D \
     M("Erro na linha %d: array '%s' tem duas dimensões!\n", \

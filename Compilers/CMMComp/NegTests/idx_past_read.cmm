@@ -1,0 +1,8 @@
+#NUIOOU 1
+// Negative fixture: a constant index past the end read another variable's
+// word without a word of warning (#108 A6).
+int a[4];
+void main()
+{
+    out(0, a[4]);
+}

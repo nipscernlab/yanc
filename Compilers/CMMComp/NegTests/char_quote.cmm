@@ -1,0 +1,9 @@
+#NUIOOU 1
+// Negative fixture: a character that is no part of C± was dropped, so
+// 'a' read the variable a (#108 A8).
+void main()
+{
+    int a = 1;
+    int x = 'a';
+    out(0, x);
+}

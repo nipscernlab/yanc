@@ -1,0 +1,32 @@
+// dirac_weights: the use weights of the Dirac loops (dirac.c) at depth 3.
+// The product of matrices runs three loops; a stride used at the innermost
+// one weighs 1000^3, so four products in one sum add past 2^31. Those
+// weights were a long, 32 bits on 64-bit Windows: the sum wrapped there
+// and the loops took another counter stride than on Linux, so the same
+// program gave other assembly (159 instructions against 160). They are a
+// long long now, and this golden is the same on every host (#108 A1).
+//
+// The values, worked out by hand: M is 3x4 with M[k][k] = 2, P and Q are
+// 4x3 with P[k][k] = 1 and Q[k][k] = 3, R is 4x3 with R[k][1] = 1. Then
+// MP = 2I, MQ = 6I and MR has 2 in every row of column 1, so
+// C = MP + MQ + MR + MP is 10 on the diagonal, plus 2 in column 1:
+//   10  2  0
+//    0 12  0
+//    0  2 10
+// printed row by row.
+#NUIOOU 1
+
+float M[3][4];
+float P[4][3];
+float Q[4][3];
+float R[4][3];
+
+void main()
+{
+    for (int k = 0; k < 3; k++) { M[k][k] = 2.0; P[k][k] = 1.0; Q[k][k] = 3.0; R[k][1] = 1.0; }
+    float C[3][3];
+    C # |M||P| + |M||Q| + |M||R| + |M||P|;
+    for (int r = 0; r < 3; r++)
+        for (int c = 0; c < 3; c++)
+            out(0, C[r][c]);
+}

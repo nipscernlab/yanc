@@ -309,7 +309,7 @@ the directives through as strings).
 | `comp2gtkw.c`: mantissa in `int` (`strtol`), result in host `float`, `re/im[64]` | `Scripts/comp2gtkw.c:10-34,45-46` |
 | `regress.sh` `CFG_NUBITS/NBMANT/NBEXPO` defaults 32/23/8 for the cppcomp build | `Scripts/regress.sh:109-116` |
 | fixtures only exercise 16/10/5, 23/16/6, 32/23/8 — nothing above 32 | `Compilers/CMMComp/Tests/*/Software/*.cmm` |
-| project top-levels hard-code `[31:0]` (DTW, PulseSim, ResetCheck) — project-specific, leave | `Tests/DTW/TopLevel/*.v`, `Tests/PulseSim/TopLevel/generate_random_32.v` |
+| project top-levels hard-code `[31:0]` (DTW, PulseSim, ResetCheck) — project-specific, leave | `Tests/DTW/TopLevel/*.v`, `Tests/PulseSim/TopLevel/generate_random_32.v` (PulseSim removed since, #108) |
 
 ### 2.6 Critical-path depth of the ALU
 

@@ -1182,8 +1182,12 @@ static expr ast_emit_expr_impl(expr_node *n)
                 typecheck_expr(n->left);
                 typecheck_expr(n->right);
                 if (n->left->type == TY_INT && n->right->type == TY_INT)
-                    return arr_1d2exp_const(n->id, atoi(v_table[n->left ->id].name) * v_table[n->id].cols
-                                                 + atoi(v_table[n->right->id].name), 2);
+                {
+                    int r = atoi(v_table[n->left->id].name), c = atoi(v_table[n->right->id].name);
+                    const_index_check(n->id, r, v_table[n->id].size);
+                    const_index_check(n->id, c, v_table[n->id].cols);
+                    return arr_1d2exp_const(n->id, r * v_table[n->id].cols + c, 2);
+                }
             }
             // a matrix element whose column index is computed: row * row length +
             // column is one int expression, the column computed over the pushed
@@ -1343,8 +1347,8 @@ static expr ast_emit_expr_impl(expr_node *n)
         case EXPR_DIRAC_IN:
             break;
     }
-    fatal("ast_emit_expr: unhandled kind=%d op=%d at line %d\n",
-          n->kind, n->op, n->line);
+    char *where = xasprintf("ast_emit_expr, kind %d op %d", n->kind, n->op);
+    fatal(MSG_ERR_INTERNAL, where, n->line);
 }
 
 // ----------------------------------------------------------------------------
@@ -1784,7 +1788,7 @@ static void emit_cond_int_load(expr e, int is_switch)
     }
     if ((e.type == TY_COMP) && (e.id != 0)) {
         if (is_switch) { warn(msg_comp, pctx.line_num+1); add_instr("F2I_M %s\n", v_table[e.id].name); }
-        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", v_table[get_img_id(e.id)].name); add_instr("AND %lld\n", mask); }
+        else           { add_instr("LOD %s\n", v_table[e.id].name); add_instr("ORR %s\n", sym(get_img_id(e.id))->name); add_instr("AND %lld\n", mask); }
     }
     if ((e.type == TY_COMP) && (e.id == 0)) {                    // the imag part in the acc, the real on the stack
         if (is_switch) { warn(msg_comp, pctx.line_num+1); add_instr("POP\n"); add_instr("F2I\n"); }
@@ -1925,8 +1929,10 @@ void stmt_emit(stmt_node *n)
                 typecheck_expr(n->rhs);
                 int rt = n->rhs->type;
                 if (n->idx->type == TY_INT && n->idx2->type == TY_INT && (rt == at || (at == 3 && rt == 5))) {
-                    int k = atoi(v_table[n->idx->id].name) * v_table[n->id].cols + atoi(v_table[n->idx2->id].name);
-                    assign_array_const(n->id, k, 2, ast_emit_expr(n->rhs));
+                    int r = atoi(v_table[n->idx->id].name), c = atoi(v_table[n->idx2->id].name);
+                    const_index_check(n->id, r, v_table[n->id].size);
+                    const_index_check(n->id, c, v_table[n->id].cols);
+                    assign_array_const(n->id, r * v_table[n->id].cols + c, 2, ast_emit_expr(n->rhs));
                     break;
                 }
             }
@@ -2337,14 +2343,14 @@ void stmt_emit(stmt_node *n)
             {
                 int pid = n->params[i];
                 if (v_table[pid].type > TY_FLOAT)
-                    add_instr("SET_P %s\n", v_table[get_img_id(pid)].name);
+                    add_instr("SET_P %s\n", sym(get_img_id(pid))->name);
                 add_instr("SET_P %s\n", v_table[pid].name);
             }
             if (n->n_params >= 1)
             {
                 int pid = n->params[0];
                 if (v_table[pid].type > TY_FLOAT)
-                    add_instr("SET_P %s\n", v_table[get_img_id(pid)].name);
+                    add_instr("SET_P %s\n", sym(get_img_id(pid))->name);
                 add_instr("SET %s\n", v_table[pid].name);
             }
             // No reset here: the label is above the parameter SETs, so the body

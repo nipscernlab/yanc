@@ -90,20 +90,21 @@ static void replace_brackets(char *str)
 }
 
 // the next line of f with its end of line, of any length (NULL at the end of
-// the file); the block is the caller's
+// the file); the block is the caller's. Byte by byte: a NUL in the line, which
+// fgets + strlen took for its end, cut the line and shifted every later one
+// (#108 A19); it is kept as a space, since the table is text
 static char *read_src_line(FILE *f)
 {
-    char   chunk[256];
     char  *line = NULL;
-    size_t len  = 0;
-    while (fgets(chunk, sizeof chunk, f) != NULL)
+    size_t len  = 0, cap = 0;
+    int    c;
+    while ((c = getc(f)) != EOF)
     {
-        size_t k = strlen(chunk);
-        line = xrealloc(line, len + k + 1);
-        memcpy(line + len, chunk, k + 1);
-        len += k;
-        if (k > 0 && chunk[k - 1] == '\n') break;
+        if (len + 2 > cap) {cap = cap ? 2 * cap : 256; line = xrealloc(line, cap);}
+        line[len++] = c ? (char)c : ' ';
+        if (c == '\n') break;
     }
+    if (line) line[len] = '\0';
     return line;
 }
 
@@ -149,6 +150,7 @@ void parse_init(char *f_name, char *d_proc, char *d_macro, char *d_tmp, char *d_
     if (yyin  == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, cmm_src);
 
     fatal_hook(out_remove);       // from here on, an error removes what this run wrote
+    xstr_oom_hook(out_remove);    // and so does running out of memory
 
     char *asm_file = xasprintf("%s/%s.asm", d_proc, cfg.prname); // output .asm file name
     ectx.f_asm = fopen(asm_file, "w"); // create the .asm file
@@ -320,6 +322,7 @@ void parse_end(char *d_proc)
 
     // compiled: what this run wrote stays
     fatal_hook(NULL);
+    xstr_oom_hook(NULL);
     for (int i = 0; i < out_n; i++) free(out_path[i]);
     out_n = 0;
 }

@@ -1,0 +1,10 @@
+#define EMPTY
+int g = 5;
+// Negative fixture: a #define with no body swallowed the next line, so g
+// was undeclared and every later line number was off by one (#108 A7).
+// The error must be the one below, on its own line.
+void main()
+{
+    g = g + 1;
+    x = 1;
+}

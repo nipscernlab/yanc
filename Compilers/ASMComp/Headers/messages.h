@@ -82,6 +82,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro: o expoente é curto demais para a mantissa (NBMANT %d, NBEXPO %d). Tem que ser NBMANT < 2^(NBEXPO-1): sem bit escondido, 1.0 é 2^(NBMANT-1) x 2^-(NBMANT-1), e esse expoente precisa caber. Aumente NBEXPO ou diminua NBMANT.\n", \
       "Error: the exponent is too short for the mantissa (NBMANT %d, NBEXPO %d). You need NBMANT < 2^(NBEXPO-1): with no hidden bit, 1.0 is 2^(NBMANT-1) x 2^-(NBMANT-1), and that exponent has to fit. Widen NBEXPO or narrow NBMANT.\n")
 
+#define MSG_ERR_FFTSIZ_RANGE \
+    M("Erro: #FFTSIZ %d está fora da faixa. v[k) inverte de 1 a 30 bits baixos do índice.\n", \
+      "Error: #FFTSIZ %d is out of range. v[k) reverses 1 to 30 low bits of the index.\n")
+
 #define MSG_ERR_NUBITS_WIDE \
     M("Erro: #NUBITS %d passa de 32. A palavra do SAPHO tem no máximo 32 bits.\n", \
       "Error: #NUBITS %d is past 32. A SAPHO word is at most 32 bits.\n")

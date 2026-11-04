@@ -1,0 +1,7 @@
+// Negative fixture: 65536 x 65536 overflowed the compiler's int, and the
+// matrix compiled with size 0 (#108 A5).
+int m[65536][65536];
+void main()
+{
+    m[1][2] = 1;
+}

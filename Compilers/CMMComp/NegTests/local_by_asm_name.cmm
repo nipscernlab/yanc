@@ -1,0 +1,14 @@
+#NUIOOU 1
+// Negative fixture: a local of f is f_y in the .asm, a name the program
+// does not have; main reached it by that name and used f's y (#108 A10).
+void f()
+{
+    int y = 3;
+    out(0, y);
+}
+void main()
+{
+    f();
+    f_y = 7;
+    out(0, f_y);
+}

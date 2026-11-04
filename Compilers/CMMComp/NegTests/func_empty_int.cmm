@@ -1,0 +1,6 @@
+// Negative fixture: an int function with an empty body has no return.
+int g() {}
+void main()
+{
+    int k = g();
+}

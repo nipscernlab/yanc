@@ -1,0 +1,8 @@
+#NUIOOU 1
+// Negative fixture: a comp matrix read past its last row; both halves of a
+// comp array know its shape (#108 A6).
+comp m[2][3];
+void main()
+{
+    out(0, real(m[2][0]));
+}

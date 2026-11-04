@@ -1192,7 +1192,7 @@ static cmp_side cmp_side_of(expr e)
     v_table[e.id].used = 1;
     if (e.type == TY_COMP) {
         d.re = v_table[e.id].name;
-        d.im = v_table[get_img_id(e.id)].name;
+        d.im = sym(get_img_id(e.id))->name;
     } else if (e.type == TY_INT && v_table[e.id].is_const == 1) {  // an int literal: the float literal
         char *t = xasprintf("%s.0", v_table[e.id].name);
         d.re = cmp_flit(t);
@@ -1301,7 +1301,7 @@ expr oper_cmp(expr e1, expr e2, int type)
         case 1: strcpy(op, "GRE"); break;
         case 2: strcpy(op, "EQU"); break;
         default:
-            fatal("oper_cmp: invalid type %d at line %d\n", type, pctx.line_num+1);
+            fatal(MSG_ERR_INTERNAL, "oper_cmp", pctx.line_num+1);
     }
 
     // The memory forms compute `X op acc` (ula in1 = memory, in2 = acc), so an
@@ -1309,8 +1309,8 @@ expr oper_cmp(expr e1, expr e2, int type)
     // instruction: e1 in acc, e2 in memory is `rev e2` (a < b == b > a); e2 in
     // acc, e1 in memory is `op e1`. EQU is one unit for int and float.
     char rev [16]; strcpy(rev, type == 0 ? "GRE" : type == 1 ? "LES" : "EQU");
-    char fop [16]; if (type == 2) strcpy(fop , "EQU"); else sprintf(fop , "F_%s", op );
-    char frev[16]; if (type == 2) strcpy(frev, "EQU"); else sprintf(frev, "F_%s", rev);
+    char fop [20]; if (type == 2) strcpy(fop , "EQU"); else snprintf(fop , sizeof fop , "F_%s", op );
+    char frev[20]; if (type == 2) strcpy(frev, "EQU"); else snprintf(frev, sizeof frev, "F_%s", rev);
 
     // int var with int var: the variable is loaded and the literal stays in
     // memory, so a value the acc already holds is not loaded again
@@ -1454,7 +1454,7 @@ expr oper_lin(expr e)
     if ((e.type == TY_COMP) && (e.id != 0))
     {
         add_instr("%s %s\n", ld, v_table[e.id].name);
-        add_instr("ORR %s\n", v_table[get_img_id(e.id)].name);
+        add_instr("ORR %s\n", sym(get_img_id(e.id))->name);
         add_instr("AND %lld\n", mant_pow2() - 1);
         add_instr("LIN\n");
     }
@@ -1489,6 +1489,7 @@ expr oper_logic(expr e1, expr e2, int type)
     {
         case 0: strcpy(op, "LAN"); break;
         case 1: strcpy(op, "LOR" ); break;
+        default: fatal(MSG_ERR_INTERNAL, "oper_logic", pctx.line_num+1);
     }
 
     // a float operand counts by its truth, the word AND 2^NBMANT - 1
@@ -1598,6 +1599,7 @@ expr oper_bitw(expr e1, expr e2, int type)
         case  0: strcpy(op, "AND"); break;
         case  1: strcpy(op, "ORR"); break;
         case  2: strcpy(op, "XOR"); break;
+        default: fatal(MSG_ERR_INTERNAL, "oper_bitw", pctx.line_num+1);
     }
 
     char ld[10]; if (acc_live == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");
@@ -1652,6 +1654,7 @@ expr oper_shift(expr e1, expr e2, int type)
         case  0: strcpy(op, "SHL"); break;
         case  1: strcpy(op, "SHR"); break;
         case  2: strcpy(op, "SRS"); break;
+        default: fatal(MSG_ERR_INTERNAL, "oper_shift", pctx.line_num+1);
     }
 
     char ld[10]; if (acc_live == 0) strcpy(ld,"LOD"); else strcpy(ld,"P_LOD");

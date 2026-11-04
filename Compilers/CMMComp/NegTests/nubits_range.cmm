@@ -1,0 +1,10 @@
+#NUBITS 64
+#NUIOOU 1
+// Negative fixture: a SAPHO word has 2 to 32 bits. Past 32 the walker
+// shifted by the raw value (undefined in C), and out(0, x + (2+3))
+// compiled to x - 1 without a word (#108 A2).
+void main()
+{
+    int x = 1;
+    out(0, x + (2+3));
+}

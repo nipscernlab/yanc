@@ -1,6 +1,7 @@
 // exe_dir -- the folders a tool finds next to its own executable. See exe_dir.h.
 
 #include "exe_dir.h"
+#include "xstr.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,8 +30,7 @@ static int make_one(const char *path)
 
 int make_dir(const char *path)       // as mkdir -p: every missing level
 {
-    char p[4096];
-    snprintf(p, sizeof(p), "%s", path);
+    char *p = xstrdup(path);         // any length: a cut path made another folder (#108 A22)
     for (char *c = p + 1; *c; c++)
         if ((*c == '/' || *c == '\\') && c[-1] != ':')
         {
@@ -38,20 +38,23 @@ int make_dir(const char *path)       // as mkdir -p: every missing level
             make_one(p);
             *c = keep;
         }
-    return make_one(p);
+    int r = make_one(p);
+    free(p);
+    return r;
 }
 
 char *abs_path(const char *path)
 {
-    char buf[4096];
+    // the system allocates a path of any length (#108 A22); the path as given
+    // when it cannot (a file not there yet)
 #ifdef _WIN32
-    if (!_fullpath(buf, path, sizeof(buf))) snprintf(buf, sizeof(buf), "%s", path);
+    char *sys = _fullpath(NULL, path, 0);
 #else
-    if (!realpath(path, buf)) snprintf(buf, sizeof(buf), "%s", path);
+    char *sys = realpath(path, NULL);
 #endif
-    for (char *c = buf; *c; c++) if (*c == '\\') *c = '/';
-    char *r = malloc(strlen(buf) + 1);
-    if (r) strcpy(r, buf);
+    char *r = xstrdup(sys ? sys : path);
+    free(sys);
+    for (char *c = r; *c; c++) if (*c == '\\') *c = '/';
     return r;
 }
 
@@ -81,13 +84,13 @@ char *rel_path(const char *from_dir, const char *to_dir)
         if (a != b || a == 0) break;
     }
     if (last == 0 && !(f[0] == '/' && t[0] == '/')) { free(f); return t; }   // another drive: absolute
-    if (f[last] == 0 && t[last] == 0) { free(f); free(t); return strdup("."); }
+    if (f[last] == 0 && t[last] == 0) { free(f); free(t); return xstrdup("."); }
     // one ".." per component of from_dir past the common part
     int ups = 0;
     for (size_t k = last; f[k]; k++) if (f[k] == '/' && f[k + 1]) ups++;
     if (f[last] == 0) ups = 0;
     const char *rest = t[last] == '/' ? t + last + 1 : t + last;
-    char *r = malloc(3 * (size_t)ups + strlen(rest) + 2);
+    char *r = xmalloc(3 * (size_t)ups + strlen(rest) + 2);
     r[0] = 0;
     for (int k = 0; k < ups; k++) strcat(r, k ? "/.." : "..");
     if (*rest) { if (ups) strcat(r, "/"); strcat(r, rest); }
@@ -102,8 +105,8 @@ char *path_stem(const char *path)
     for (const char *c = path; *c; c++) if (*c == '/' || *c == '\\') b = c + 1;
     const char *dot = strrchr(b, '.');
     size_t n = dot ? (size_t)(dot - b) : strlen(b);
-    char *r = malloc(n + 1);
-    if (r) {memcpy(r, b, n); r[n] = 0;}
+    char *r = xmalloc(n + 1);
+    memcpy(r, b, n); r[n] = 0;
     return r;
 }
 
@@ -136,15 +139,10 @@ char *exe_find_dir(const char *const *candidates)
     if (!base[0]) return NULL;
     for (int i = 0; candidates[i]; i++)
     {
-        char path[4096];
-        snprintf(path, sizeof(path), "%s/%s", base, candidates[i]);
+        char *path = xasprintf("%s/%s", base, candidates[i]);
         struct stat st;
-        if (stat(path, &st) == 0 && (st.st_mode & S_IFDIR))
-        {
-            char *r = malloc(strlen(path) + 1);
-            if (r) strcpy(r, path);
-            return r;
-        }
+        if (stat(path, &st) == 0 && (st.st_mode & S_IFDIR)) return path;
+        free(path);
     }
     return NULL;
 }

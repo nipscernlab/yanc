@@ -123,25 +123,27 @@ static void cont_pop(void) {cont_n--;}
 // The switch currently collecting cases. case_test / defaut_test bump its
 // running case count (stmt_node->id2) and stamp each label with its swit id;
 // nested switches each get their own node, so the counts never collide.
+// Each also keeps the values of its cases and whether it has a default: a
+// repeated one is an error, as in C (#108 A9).
 
-static stmt_node **sw_stk  = NULL;
-static int         sw_n    = 0;
-static int         sw_cap  = 0;
+typedef struct { stmt_node *n; int *vals; int nv, cap_v; int has_def; } sw_entry;
+static sw_entry *sw_stk  = NULL;
+static int       sw_n    = 0;
+static int       sw_cap  = 0;
 
 static void sw_push(stmt_node *n)
 {
     if (sw_n + 1 > sw_cap)
     {
         int new_cap = sw_cap ? sw_cap * 2 : 8;
-        stmt_node **t = xrealloc(sw_stk, (size_t)new_cap * sizeof(*t));
-        sw_stk  = t;
-        sw_cap  = new_cap;
+        sw_stk = xrealloc(sw_stk, (size_t)new_cap * sizeof(*sw_stk));
+        sw_cap = new_cap;
     }
-    sw_stk[sw_n++] = n;
+    sw_stk[sw_n++] = (sw_entry){n, NULL, 0, 0, 0};
 }
 
-static stmt_node *sw_top(void) {return sw_n ? sw_stk[sw_n - 1] : NULL;}
-static void       sw_pop(void) {sw_n--;}
+static stmt_node *sw_top(void) {return sw_n ? sw_stk[sw_n - 1].n : NULL;}
+static void       sw_pop(void) {free(sw_stk[--sw_n].vals);}
 
 // ----------------------------------------------------------------------------
 // if/else --------------------------------------------------------------------
@@ -360,6 +362,11 @@ void case_test(int val_id, int val_type)
     // the grammar reduces a case label only inside sw_body, after
     // exec_switch pushed the switch and opened its body list
     stmt_node *sw  = sw_top();
+    sw_entry  *e   = &sw_stk[sw_n - 1];
+    for (int k = 0; k < e->nv; k++)        // a constant is one row of v_table: one id a value
+        if (e->vals[k] == val_id) fatal(MSG_ERR_CASE_TWICE, pctx.line_num+1, v_table[val_id].name);
+    if (e->nv == e->cap_v) {e->cap_v = e->cap_v ? 2 * e->cap_v : 8; e->vals = xrealloc(e->vals, (size_t)e->cap_v * sizeof *e->vals);}
+    e->vals[e->nv++] = val_id;
     sw->id2++;  // running case count (becomes case_max at end_switch)
     stmt_block_push(stmt_list_top(), stmt_case_label(sw->id, sw->id2, val_id, val_type));
 }
@@ -367,6 +374,8 @@ void case_test(int val_id, int val_type)
 void defaut_test(void)
 {
     stmt_node *sw  = sw_top();             // inside sw_body, as case_test
+    if (sw_stk[sw_n - 1].has_def) fatal(MSG_ERR_DEFAULT_TWICE, pctx.line_num+1);
+    sw_stk[sw_n - 1].has_def = 1;
     sw->id2++;
     stmt_block_push(stmt_list_top(), stmt_default_label(sw->id, sw->id2));
 }

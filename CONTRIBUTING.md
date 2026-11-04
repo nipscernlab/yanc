@@ -87,7 +87,23 @@ The symbol table of cmmcomp (`v_table`, one `symbol` row per name, in
 `symbols.c`) is grow-on-demand: it starts small and `realloc`s on
 overflow, with `memset` to keep the BSS-zero semantics that callers rely
 on. A new attribute of a name is a new field of `symbol`, and it grows
-with the table through `var_grow`.
+with the table through `var_grow`. Since a call such as `lex_id` may grow
+the table, read a row it returns through `sym(lex_id("x"))->name`, never
+`v_table[lex_id("x")].name`: C does not say whether `v_table` is read
+before or after the call.
+
+Every allocation goes through `Compilers/common/xstr.h` (`xmalloc`,
+`xstrdup`, `xasprintf`...), which ends the tool with a message instead of
+returning NULL; a name, a line or a path lives in a block of its own
+size, never in a `char[N]`.
+
+What cmmcomp builds for the whole run is never freed, on purpose: the
+symbol table and its names, the syntax tree (`ast.c`) and the Dirac
+loops' trees (`dirac.c`). cmmcomp compiles one program and exits, and
+the system takes it all back then; a leak checker (`ASAN_OPTIONS=
+detect_leaks=1`) lists them, about 92 KB over the 133 tests. What a
+function allocates for its own use (a formatted instruction, a path, a
+temporary name) it frees before it returns.
 
 ## Commit message style
 

@@ -54,13 +54,13 @@
 typedef struct {
     int n, first, step;
     int num;
-    int ns, cap_s; int *st; long *w;          // strides the index is used with, and how often
+    int ns, cap_s; int *st; long long *w;          // strides the index is used with, and how often
     int nd; int *ds, *dv;                     // derived variables __dd<dv>: value stride*turn - stride*n (cap_s)
     int nh, cap_h; expr_node ***hn; int *hv;  // parts computed at the top of each turn
 } dl_loop;
 
 // an index: sum of st[i] * (the index of loop lv[i]) + k
-typedef struct { int nt; int lv[2]; int st[2]; long k; } dl_ix;
+typedef struct { int nt; int lv[2]; int st[2]; long long k; } dl_ix;
 
 // a position in a row or a column: loop lv (< 0: none) plus k
 typedef struct { int lv; int k; } dl_pos;
@@ -174,9 +174,9 @@ static int is_num(const expr_node *n) {return n->rows == 1 && n->cols == 1;}
 
 static void ix_add(dl_ix *ix, dl_pos p, int stride)
 {
-    if (p.lv < 0) {ix->k += (long)stride * p.k; return;}
+    if (p.lv < 0) {ix->k += (long long)stride * p.k; return;}
     ix->lv[ix->nt] = p.lv; ix->st[ix->nt] = stride; ix->nt++;
-    ix->k += (long)stride * p.k;
+    ix->k += (long long)stride * p.k;
 }
 
 static expr_node *elem_new(int arr, int type, dl_ix ix)
@@ -253,9 +253,9 @@ static expr_node *scalar_of(expr_node *n)
     if (n->kind == EXPR_LITERAL && !conv) return expr_lit(n->type, n->id);
     if (n->kind == EXPR_VAR     && !conv) {v_table[n->id].used = 1; return expr_var(n->type, n->id);}
     if (n->kind == EXPR_LITERAL) {
-        long k = atol(v_table[n->id].name);
+        long long k = atoll(v_table[n->id].name);
         if (k < mant_pow2()) {
-            char b[32]; snprintf(b, sizeof b, "%ld.0", k);
+            char b[32]; snprintf(b, sizeof b, "%lld.0", k);
             return expr_lit(TY_FLOAT, lex_fnum(b));
         }
     }
@@ -449,7 +449,7 @@ static void use_ix(const dl_ix *ix, int deeper)
 {
     for (int i = 0; i < ix->nt; i++) {
         dl_loop *l = &loops[ix->lv[i]];
-        long w = 1; for (int d = 0; d < deeper && d < 6; d++) w *= 1000;
+        long long w = 1; for (int d = 0; d < deeper && d < 6; d++) w *= 1000;
         int j;
         for (j = 0; j < l->ns; j++) if (l->st[j] == ix->st[i]) break;
         if (j == l->ns) {
@@ -507,7 +507,7 @@ static char *var_of(int lv, int stride)
 
 // the variables of an index, the innermost loop first, and the constant
 // offset that makes the sum of them the cell's address
-static int ix_vars(const dl_ix *ix, char *v[2], long *off)
+static int ix_vars(const dl_ix *ix, char *v[2], long long *off)
 {
     v[0] = v[1] = NULL;
     int ord[2] = {0, 1};
@@ -516,7 +516,7 @@ static int ix_vars(const dl_ix *ix, char *v[2], long *off)
     for (int i = 0; i < ix->nt; i++) {
         int t = ord[i], lv = ix->lv[t], s = ix->st[t];
         v[i] = var_of(lv, s);
-        *off += (long)s * (loops[lv].first + loops[lv].n);
+        *off += (long long)s * (loops[lv].first + loops[lv].n);
     }
     return ix->nt;
 }
@@ -524,9 +524,9 @@ static int ix_vars(const dl_ix *ix, char *v[2], long *off)
 // puts the index of ix in the accumulator (pushing what is there when
 // acc_live); returns the constant offset, and in *key the sum it loaded (a
 // block the caller frees)
-static long ix_load(const dl_ix *ix, char **key)
+static long long ix_load(const dl_ix *ix, char **key)
 {
-    char *v[2]; long off;
+    char *v[2]; long long off;
     int nt = ix_vars(ix, v, &off);
     // a sum is a key in brackets: the next SET may change a part of it (acc_now)
     *key = nt > 1 ? xasprintf("[%s+%s]", v[0], v[1]) : xstrdup(v[0]);
@@ -550,12 +550,12 @@ expr dirac_elem_emit(expr_node *n)
 {
     dl_elem *e = n->dl;
     if (e->ix.nt == 0)
-        add_instr("%s %s %ld\n", acc_live ? "P_LOD_V" : "LOD_V", arr_name(e->arr), e->ix.k);
+        add_instr("%s %s %lld\n", acc_live ? "P_LOD_V" : "LOD_V", arr_name(e->arr), e->ix.k);
     else {
         char *key;
-        long off = ix_load(&e->ix, &key);
+        long long off = ix_load(&e->ix, &key);
         free(key);
-        add_instr("LDI_V %s %ld\n", arr_name(e->arr), off);
+        add_instr("LDI_V %s %lld\n", arr_name(e->arr), off);
     }
     acc_live = 1;
     return expr_make(n->type, 0);
@@ -619,12 +619,12 @@ static void loop_open(int lv, int push, char *top, char *end)
     snprintf(top, 32, "__Ld%d", label_n);
     snprintf(end, 32, "__Ld%de", label_n++);
     for (int j = 0; j < l->nd; j++) {
-        add_instr("%s %ld\n", push ? "P_LOD" : "LOD", -(long)l->ds[j] * l->n); push = 0;
+        add_instr("%s %lld\n", push ? "P_LOD" : "LOD", -(long long)l->ds[j] * l->n); push = 0;
         char *dd = dl_nm("dd", l->dv[j]);
         add_instr("SET %s\n", dd);
         free(dd);
     }
-    add_instr("%s %ld\n", push ? "P_LOD" : "LOD", -(long)l->step * l->n);
+    add_instr("%s %lld\n", push ? "P_LOD" : "LOD", -(long long)l->step * l->n);
     add_instr("SET %s\n", c);
     add_sinst(0, "@%s ", top);
     acc_now(c);              // the label forgets the acc, but both ways in end with SET c
@@ -688,7 +688,7 @@ expr dirac_sum_emit(expr_node *n)
 typedef struct {
     int kind;          // 0 an array (STI_V), 1 an output port, 2 an output port as fout
     int arr, port;     // the array (v_table id, may be __dirac_tmp) or the port
-    long base;         // the block of __dirac_tmp
+    long long base;         // the block of __dirac_tmp
     int type;          // the array's element type
     int cols;          // a matrix: its row length (0: a vector)
 } dl_dst;
@@ -724,7 +724,7 @@ static int tmp_block(int words, int line)
 }
 
 // stores the value in the accumulator (or in memory) at the index pushed
-static void store(expr e, const dl_dst *d, long off)
+static void store(expr e, const dl_dst *d, long long off)
 {
     // a value in memory goes over the index, which is still in the acc; one
     // of another type is converted on the way, by the _M form
@@ -733,7 +733,7 @@ static void store(expr e, const dl_dst *d, long off)
     int conv = (d->type == TY_FLOAT && e.type == TY_INT) ? 1 : (d->type == TY_INT && e.type == TY_FLOAT) ? 2 : 0;
     if (e.id != 0) add_instr("%s %s\n", conv == 1 ? "P_I2F_M" : conv == 2 ? "P_F2I_M" : "P_LOD", v_table[e.id].name);
     else if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
-    add_instr("STI_V %s %ld\n", arr_name(d->arr), off);
+    add_instr("STI_V %s %lld\n", arr_name(d->arr), off);
     acc_live = 0;
 }
 
@@ -750,12 +750,12 @@ static void emit_target(expr_node *el, const dl_dst *d, const dl_ix *six)
             e = in_acc(e);
             if (conv) add_instr(conv == 1 ? "I2F\n" : "F2I\n");
         }
-        add_instr("SET_V %s %ld\n", arr_name(d->arr), six->k + d->base);
+        add_instr("SET_V %s %lld\n", arr_name(d->arr), six->k + d->base);
         acc_live = 0;
     } else if (d->kind == 0) {
         char *key;
         acc_live = 0;
-        long off = ix_load(six, &key);
+        long long off = ix_load(six, &key);
         acc_live = 1;                       // the index is the value to keep: the first load pushes it
         acc_now(key);
         free(key);
@@ -845,7 +845,7 @@ static int has_arr(expr_node *n, int arr)
 }
 
 // does every array leaf of the target read it at the cell it writes?
-static int reads_elsewhere(expr_node *n, int arr, const dl_ix *six, long base)
+static int reads_elsewhere(expr_node *n, int arr, const dl_ix *six, long long base)
 {
     if (!n) return 0;
     if (n->kind == EXPR_DIRAC_ELEM) {

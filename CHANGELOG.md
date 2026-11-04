@@ -407,6 +407,68 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **`#NUBITS` and `#FFTSIZ` out of range are errors** (#108 A2, A3).
+  cmmcomp took any value and shifted by it: `#NUBITS 64` compiled
+  `x + (2+3)` to `x - 1`, and `#FFTSIZ 40` indexed a garbage word. A word
+  has 2 to 32 bits and `v[k)` reverses 1 to 30; asmcomp checks `#FFTSIZ`
+  too.
+- **Who owns cmmcomp's memory is written down** (#108 A24), in
+  CONTRIBUTING.md: the tables and trees of the run are never freed, on
+  purpose, and every allocation goes through `xstr.h`.
+- **The shared code of the tools checks every allocation** (#108 A22,
+  A23). `asm_share.c` had 58 `malloc`/`calloc`/`realloc`/`strdup` whose
+  failure crashed asmcomp or cmmcomp; `exe_dir.c` cut a path at 4096
+  characters without a word (a longer `-o` made another folder). They go
+  through `xstr.h`, and a path has any length. The tools build with
+  `-Werror` at every optimisation level, not only the CI's.
+- **A NUL byte in the source is named** (#108 A19), as any other unknown
+  character, and the source table reads a line byte by byte, so a NUL no
+  longer cuts it and shifts the waveform's source track.
+- **An internal error of cmmcomp is a message in both languages** (#108
+  A17, A18), naming where it happened. Three were English-only text, and
+  the switches of the logic, bitwise and shift operators and of the
+  directives had no `default`, so a bad code left the mnemonic unset.
+  `MSG_ERR_NUGAIN_POW2` was defined twice.
+- **No read of the symbol table races a call that grows it** (#108 A16).
+  `v_table[lex_id("__x")].name` let the compiler read `v_table` before
+  `lex_id` reallocated it; the 59 such uses read through `sym()`, which
+  takes the table after the call.
+- **cmmcomp has a 16 MB stack on Windows** (#108 A15). It walks an
+  expression's tree one call a level, and Windows gives 1 MB: a sum of
+  20000 terms crashed there.
+- **Every way cmmcomp stops goes through its error path** (#108 A13,
+  A14). flex's own error (a folder given as the program) printed English
+  only and left empty outputs; running out of memory left them too; an
+  expression nested past the parser's stack was a "Syntax error". Each is
+  now a message in both languages, and the run's outputs are removed.
+- **A function may have an empty body** (#108 A12): `void f() {}` and an
+  empty `main` were a syntax error, though the manual says `{ }` is a
+  statement. A non-void one still needs its `return`.
+- **A local is reached only by its own name** (#108 A10). A local `y` of
+  `f` is `f_y` in the `.asm`, and `main` could read and write it as
+  `f_y`; that name is now undeclared, as in C.
+- **A repeated `case` and a second `default` are errors** (#108 A9), as
+  in C. The second `case 1:` could never run, and of two defaults the
+  second won without a word.
+- **The lexer no longer loses text** (#108 A7, A8, A11). `#define NAME`
+  with no body swallowed the next line and shifted every later line
+  number; any character C± does not know (`'a'`) was dropped, so `'a'`
+  read the variable `a`; the 257th `#define` on were ignored. An empty
+  define is now empty, an unknown character is an error that names it, and
+  the defines have no limit. A block comment is counted in one pass.
+- **A constant index past the end, and an array of no element, are
+  errors** (#108 A5, A6). `int a[4]; a[9] = 1;` wrote another variable's
+  word, `int a[0];` compiled, and `int m[65536][65536];` overflowed the
+  compiler's int and compiled with size 0. A matrix's row and column are
+  each checked, and the imaginary half of a comp array now knows its shape.
+- **The port of `|in(p)⟩` is read whole** (#108 A4). It was copied into 64
+  characters and cut: port 1 written with 70 leading zeros became port 0.
+- **The Dirac loops give the same assembly on every host** (#108 A1).
+  The use weights that choose a loop's counter stride were a `long`, 32
+  bits on 64-bit Windows: at depth 3 a sum of uses wrapped there, and the
+  same program got another stride than on Linux. They are a `long long`.
+  `Tests/dirac_weights` holds a program whose assembly differs with 32-bit
+  weights, with its values worked out by hand.
 - **cmmcomp: a float or comp function never called gets its warning.**
   `check_var` took types 5, 6 and 7 for functions, but they are 6 to 9
   (void, int, float, comp) and 5 is a comp constant: an unused `float` or
@@ -636,6 +698,12 @@ tags consumed by Aurora.
   string ran past it; it now has the string's length plus the NUL.
 - **The shared assembly passes cut lines longer than 4,096 characters**;
   they read lines of any length now (a long `#arrayd`).
+
+### Removed
+- **`Compilers/CMMComp/Tests/PulseSim/`** (#108): a top level of `proc_sim`
+  with a random generator, which no script ran and whose testbench had no
+  expected output. `proc_sim` itself is still simulated against its
+  `golden_sim`.
 
 ## [v9.1] – 2026-10-20
 

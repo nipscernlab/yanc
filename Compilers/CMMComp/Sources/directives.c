@@ -56,20 +56,22 @@ void directive_exec(char *dir, int id, dir_code t)
     int ival = atoi(v_table[id].name);
 
     // #NBMANT, #NBEXPO, #NUIOIN, #NUIOOU, #FROUND, #NUBITS and #FFTSIZ set
-    // what the compiler reads; #FROUND and #NUGAIN are validated here
+    // what the compiler reads; #NUBITS, #FFTSIZ, #FROUND and #NUGAIN are
+    // validated here, since the walker shifts by the first two
     // (asmcomp validates them again: it is the gate every front end passes
     // through; this one just knows the source line)
     switch(t)
     {
         case DIR_ASM_ONLY: break;
-        case DIR_NUBITS: cfg.nubits = ival             ; break;
-        case DIR_FFTSIZ: cfg.fftsiz = ival             ; break;
+        case DIR_NUBITS: if (ival < 2 || ival > 32) fatal(MSG_ERR_NUBITS_RANGE, pctx.line_num+1, ival); cfg.nubits = ival; break;
+        case DIR_FFTSIZ: if (ival < 1 || ival > 30) fatal(MSG_ERR_FFTSIZ_RANGE, pctx.line_num+1, ival); cfg.fftsiz = ival; break;
         case DIR_NBMANT: cfg.nbmant = ival             ; break;
         case DIR_NBEXPO: cfg.nbexpo = ival             ; break;
         case DIR_NUIOIN: cfg.nuioin = ival             ; break;
         case DIR_NUIOOU: cfg.nuioou = ival             ; break;
         case DIR_FROUND: if (ival < 0 || ival > 2) fatal(MSG_ERR_FROUND_RANGE, pctx.line_num+1); cfg.fround = ival; break; // #FROUND level
         case DIR_NUGAIN: if (ival <= 0 || (ival & (ival - 1)) != 0) fatal(MSG_ERR_NUGAIN_POW2, pctx.line_num+1, ival); break;
+        default: fatal(MSG_ERR_INTERNAL, "directive_exec", pctx.line_num+1);
     }
 
     stmt_append(stmt_directive(dir, id));

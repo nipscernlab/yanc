@@ -43,12 +43,17 @@ BIN    ?= bin
 # makes it work in UTF-8 (argv, file names), as it does on Linux and macOS;
 # POSIX -> neither.
 WINDRES ?= windres
+# cmmcomp walks an expression's tree by recursion, one call a level: a sum
+# of 20000 terms is 20000 levels. Windows gives a program a 1 MB stack (8 MB
+# on Linux), so cmmcomp asks for 16 MB there (#108 A15).
 ifeq ($(OS),Windows_NT)
   EXE  := .exe
   UTF8 := Compilers/common/utf8_res.o
+  CMM_STACK := -Wl,--stack,16777216
 else
   EXE  :=
   UTF8 :=
+  CMM_STACK :=
 endif
 
 CMM := Compilers/CMMComp/Sources
@@ -129,7 +134,7 @@ $(BIN)/cmmcomp$(EXE): $(addprefix $(CMM)/,$(CMMCOMP_C)) \
                       $(COMMON)/asm_share.c $(COMMON)/asm_share.h $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(COMMON)/xstr.c $(COMMON)/xstr.h $(CONSOLE) $(EXEDIR) \
                       $(wildcard Compilers/CMMComp/Headers/*.h) $(VERSION_H) | $(BIN)
 	cd $(CMM) && $(BISON) -y -d -Wno-yacc CMMComp.y && $(FLEX) CMMComp.l
-	$(CC) $(CFLAGS) $(CMM_WARN) -o $@ $(addprefix $(CMM)/,$(CMMCOMP_C)) $(CMM)/lex.yy.c $(CMM)/y.tab.c $(addprefix $(COMMON)/,$(CMMCOMP_COMMON)) $(UTF8) $(LDLIBS)
+	$(CC) $(CFLAGS) $(CMM_WARN) -o $@ $(addprefix $(CMM)/,$(CMMCOMP_C)) $(CMM)/lex.yy.c $(CMM)/y.tab.c $(addprefix $(COMMON)/,$(CMMCOMP_COMMON)) $(UTF8) $(CMM_STACK) $(LDLIBS)
 
 # --- asmcomp (flex: pass1.l is the first pass, ASMComp.l the second) --------
 $(BIN)/asmcomp$(EXE): $(addprefix $(ASM)/,$(ASMCOMP_C)) $(ASM)/ASMComp.l $(ASM)/pass1.l $(COMMON)/yanc_num.c $(COMMON)/yanc_num.h $(COMMON)/xstr.c $(COMMON)/xstr.h $(CONSOLE) $(EXEDIR) \
@@ -155,8 +160,8 @@ $(BIN)/gen_gtkw$(EXE): $(SCR)/gen_gtkw.c $(EXEDIR) $(COMMON)/xstr.c $(COMMON)/xs
 	$(CC) $(CFLAGS) -o $@ $(SCR)/gen_gtkw.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(COMMON)/xstr.c $(UTF8) $(LDLIBS)
 
 # --- yanc, the driver (runs the tools next to it) ---------------------------
-$(BIN)/yanc$(EXE): Compilers/Driver/yanc.c $(CONSOLE) $(EXEDIR) $(VERSION_H) | $(BIN)
-	$(CC) $(CFLAGS) -o $@ Compilers/Driver/yanc.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(UTF8) $(LDLIBS)
+$(BIN)/yanc$(EXE): Compilers/Driver/yanc.c $(CONSOLE) $(EXEDIR) $(COMMON)/xstr.c $(COMMON)/xstr.h $(VERSION_H) | $(BIN)
+	$(CC) $(CFLAGS) -o $@ Compilers/Driver/yanc.c $(COMMON)/console_utf8.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(COMMON)/xstr.c $(UTF8) $(LDLIBS)
 
 # --- the UTF-8 manifest (Windows) ----------------------------------------------
 Compilers/common/utf8_res.o: Compilers/common/utf8.rc Compilers/common/utf8.manifest
