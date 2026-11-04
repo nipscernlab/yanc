@@ -224,9 +224,6 @@ void dirac_not_vector(int id);
 // a name used as a vector that is not 1D...). Idempotent.
 void shapecheck_expr(expr_node *n);
 
-// frees the node and every descendant recursively
-void expr_free(expr_node *n);
-
 // recursively walks an expression tree and emits the corresponding assembly
 // via the existing oper_* / exec_* / arr_* / pplus_* / num2exp / id2exp
 // helpers. Returns the result POD the same way those helpers do. Called by
@@ -362,8 +359,7 @@ stmt_node *stmt_dire_inter(void);
 // #TOAQUI directive (PC tracker marker -> cheguei pin)
 stmt_node *stmt_dire_toaqui(void);
 
-// Empty STMT_BLOCK; grow it with stmt_block_push.
-stmt_node *stmt_block     (void);
+// grows a STMT_BLOCK (stmt_list_open makes an empty one)
 void       stmt_block_push(stmt_node *blk, stmt_node *kid);
 
 // Compound control-flow constructors (cond/body trees are owned). The bodies,

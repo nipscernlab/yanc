@@ -29,6 +29,8 @@
 #include "../Headers/dirac.h"    // the Dirac notation in loops
 #include "../../common/xstr.h"
 
+static void expr_free(expr_node *n);   // frees the node and every descendant recursively
+
 // ----------------------------------------------------------------------------
 // expressions ----------------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -278,7 +280,7 @@ void dirac_not_vector(int id)
     else                       fatal(MSG_ERR_NOT_A_VECTOR, pctx.line_num + 1, name);
 }
 
-void expr_free(expr_node *n)
+static void expr_free(expr_node *n)
 {
     if (!n) return;
     expr_free(n->left);
@@ -1472,7 +1474,7 @@ stmt_node *stmt_dirac_shift(int dst, expr_node *c, int a)
 // STMT_BLOCK + stmt_list scaffold stack --------------------------------------
 // ----------------------------------------------------------------------------
 
-stmt_node *stmt_block(void)
+static stmt_node *stmt_block(void)
 {
     return snode_new(STMT_BLOCK);
 }
