@@ -1,18 +1,21 @@
 # Negative test manifest for regress.sh's CMM negative phase.
 # Each fixture is a malformed .cmm that cmmcomp MUST reject with a clean
 # non-zero exit (never a crash, never a silent accept) and the listed
-# diagnostic substring (matched against -en output).
+# diagnostic substring (matched against the English output, YANC_LANG=en).
+# A "Syntax error" names its line, so that a parser change that fails
+# earlier, for another reason, does not pass.
 #
 # format:  <fixture.cmm>|<expected substring>
 # (lines starting with '#' and blank lines are ignored)
 #
-# These live in NegTests/ — a sibling of Tests/ — on purpose: the CI smoke
-# test does `find Compilers/CMMComp/Tests -name '*.cmm'` and compiles every
-# hit, so a deliberately-broken .cmm under Tests/ would fail CI.
-syntax.cmm|Syntax error
+# These live in NegTests/, a sibling of Tests/, so that the regression's
+# and CI's walks over Tests/ never compile them. Every file here is listed
+# in this manifest, in nowarn.txt or in regress.sh's float-format phase;
+# regress.sh fails on one that is not, since it would never run.
+syntax.cmm|Syntax error on line 14.
 no_main.cmm|main() function
 no_main_funcs.cmm|main() function
-garbage.cmm|Syntax error
+garbage.cmm|Syntax error on line 1.
 undeclared.cmm|declared the variable
 define_recursive.cmm|declare the variable
 nugain_not_pow2.cmm|power of two
@@ -42,7 +45,7 @@ ini_count.cmm|has 2 positions and the list between braces reaches position 3
 ini_1d_rows.cmm|braces inside the list only mark the rows of a 2D array
 ini_rows.cmm|each with up to 2 values
 octal_digit.cmm|so it is octal, and octal has no 8 or 9
-ninum_size.cmm|Syntax error
+ninum_size.cmm|Syntax error on line 5.
 int_word8.cmm|biggest integer this thing can hold is 127
 int_minus128.cmm|biggest integer this thing can hold is 127
 
@@ -55,7 +58,7 @@ dirac_out_matrix.cmm|Slice it up first
 dirac_not_matrix.cmm|ain't even a matrix
 dirac_not_vector.cmm|ain't even a vector
 dirac_scalar_ket.cmm|ain't even a vector
-dirac_braket_one.cmm|Syntax error
+dirac_braket_one.cmm|Syntax error on line 17.
 dirac_not_yet.cmm|still in the oven
 no_return_path.cmm|some path gets to the end without a return
 name_too_long.cmm|that name is way too long, 1000 characters tops
