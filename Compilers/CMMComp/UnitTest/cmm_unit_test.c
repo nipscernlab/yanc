@@ -13,12 +13,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../Headers/acc.h"
 #include "../Headers/context.h"
 #include "../Headers/convert.h"
 #include "../Headers/diag.h"
 #include "../Headers/directives.h"
 #include "../Headers/global.h"
 #include "../Headers/symbols.h"
+#include "../../common/xstr.h"
 
 static int     failed = 0, checked = 0;
 static jmp_buf on_fatal;
@@ -144,6 +146,34 @@ static void test_lex_id(void)
     pctx.fname = "";
 }
 
+// what the acc holds after each instruction (acc.c, step P9 of #93)
+static void after(const char *instr) { acc_after(xstrdup(instr)); }
+
+static void test_acc(void)
+{
+    emit_peephole_reset();
+    after("LOD x\n");
+    check_int("acc after LOD x holds x", acc_holds("x"), 1);
+    check_int("a second LOD x is dropped", acc_has_load("LOD x\n"), 1);
+    check_int("a P_LOD x is not", acc_has_load("P_LOD x\n"), 0);
+    after("SET y\n");
+    check_int("acc after SET y holds x", acc_holds("x"), 1);
+    check_int("acc after SET y holds y", acc_holds("y"), 1);
+    acc_now("[dk0+dd1]");
+    check_int("acc_now names the acc alone", acc_holds("x"), 0);
+    check_int("acc_now's key", acc_holds("[dk0+dd1]"), 1);
+    after("PSH\n");
+    check_int("a PSH keeps the key", acc_holds("[dk0+dd1]"), 1);
+    after("SET dk0\n");
+    check_int("a SET drops a key in brackets", acc_holds("[dk0+dd1]"), 0);
+    check_int("and the acc is what it set", acc_holds("dk0"), 1);
+    after("ADD 1\n");
+    check_int("any other instruction forgets", acc_holds("dk0"), 0);
+    after("LOD z\n");
+    emit_peephole_reset();
+    check_int("a label forgets", acc_holds("z"), 0);
+}
+
 int main(void)
 {
     add_var("__acc");                               // as parse_init: id 0 is the accumulator
@@ -153,6 +183,7 @@ int main(void)
     test_mant_pow2();
     test_int_to_bin();
     test_lex_id();
+    test_acc();
     printf("cmm_unit_test: %d checks, %d failed\n", checked, failed);
     return failed ? 1 : 0;
 }

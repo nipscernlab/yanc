@@ -121,6 +121,15 @@ tags consumed by Aurora.
   pairs. `warn()` prints the warnings and notes on stdout, in place of 254
   `fprintf(stdout, ...)` and `printf(...)`. Every message keeps its text
   and its stream.
+- **cmmcomp knows its accumulator in one place** (step P9 of #93):
+  `acc.c` holds `acc_live` (a value an expression still needs, the old
+  `acc_ok`), the values the acc holds, and the two questions `add_instr`
+  asks (is this a LOD of what the acc holds; what does it hold after this
+  instruction). The Dirac loops kept a record of their own, valid until
+  the next instruction; they name the acc through `acc.c` now, a sum of
+  loop variables as a key in brackets that the next `SET` drops. The unit
+  tests check the model instruction by instruction (52 checks). The
+  assembly and the waveform's tables are byte-identical.
 - **cmmcomp's state is three structs, and its helpers have unit tests**
   (step P8 of #93). Some twenty globals are the fields of `cfg` (the
   target the directives set), `pctx` (the parse) and `ectx` (the
