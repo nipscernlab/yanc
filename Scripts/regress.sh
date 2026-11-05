@@ -1415,7 +1415,13 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             fi
             if command -v powershell.exe >/dev/null 2>&1 && command -v cygpath >/dev/null 2>&1; then
                 vlflags=(); [ -n "$YANC_VL_CFLAGS" ] && vlflags=(-VlCflags "$YANC_VL_CFLAGS")
-                if ! powershell.exe -ExecutionPolicy Bypass -NoProfile \
+                # PowerShell takes verilator_bin.exe for a program only through
+                # PATHEXT, which it reads once, at its start. An MSYS2 bash
+                # started from Git Bash has none, and PowerShell then refuses
+                # the .exe ("Cannot run a document in the middle of a pipeline"):
+                # give it Windows' default when it is missing.
+                if ! PATHEXT="${PATHEXT:-.COM;.EXE;.BAT;.CMD}" \
+                     powershell.exe -ExecutionPolicy Bypass -NoProfile \
                         -File "$CPP_ROOT/Tests/Verilator/run_verilator_step.ps1" \
                         -Prname  "$prname" \
                         -TmpDir  "$tmp" \

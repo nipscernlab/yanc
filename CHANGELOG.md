@@ -8,6 +8,16 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Fixed
+- **The Verilator tests pass however the MSYS2 shell was opened.** An
+  MSYS2 bash started from Git Bash has no `PATHEXT`, and without it the
+  PowerShell that `Scripts/regress.sh` starts for them refused to run
+  `verilator_bin.exe` ("Cannot run a document in the middle of a
+  pipeline"): the six Verilator tests failed. The regression now gives
+  that PowerShell Windows' default `PATHEXT` when the variable is
+  missing. PowerShell reads it once, at its start, so setting it inside
+  `run_verilator_step.ps1` did not help.
+
 ## [v9.2] – 2026-11-05
 
 A cmmcomp reorganized (#93) and audited (#108), smaller assembly, and one
