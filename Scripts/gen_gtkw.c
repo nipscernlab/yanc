@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <dirent.h>
 
 #include "../Compilers/common/exe_dir.h"
 #include "../Compilers/common/yanc_lang.h"
@@ -47,6 +48,10 @@
                             "gen_gtkw: cannot write '%s'\n")
 #define MSG_INFO_DONE     M("gen_gtkw: %d sinais, %d processador(es) -> %s\n", \
                             "gen_gtkw: %d signals, %d processor(s) -> %s\n")
+#define MSG_WARN_NO_TYPE  M("gen_gtkw: não achei a pasta do processador de '%s' em '%s';\n" \
+                            "  as faixas de instrução e de código ficam em números\n", \
+                            "gen_gtkw: cannot find the processor folder of '%s' in '%s';\n" \
+                            "  the instruction and source tracks stay as numbers\n")
 #define MSG_CLI_USAGE \
     M("uso: gen_gtkw <entrada.vcd> <saida.gtkw> <base> [<comp2gtkw>]\n" \
       "  escreve a vista formatada do GTKWave (saida.gtkw) de um dump de simulação;\n" \
@@ -493,6 +498,68 @@ static void emit_proc_section(const Proc *p) {
 }
 
 // ---- processor detection ---------------------------------------------------
+// whether <base>/<dir>/trad_opcode.txt (or <base>/trad_opcode.txt, dir NULL) exists
+static int has_trad(const char *dir) {
+    char *path = dir ? xasprintf("%s/%s/trad_opcode.txt", g_tmp_base, dir)
+                     : xasprintf("%s/trad_opcode.txt", g_tmp_base);
+    FILE *f = fopen(path, "r");
+    free(path);
+    if (!f) return 0;
+    fclose(f);
+    return 1;
+}
+
+// a whole file as one string, or NULL; the block is the caller's
+static char *slurp(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return NULL;
+    fseek(f, 0, SEEK_END); long sz = ftell(f); fseek(f, 0, SEEK_SET);
+    if (sz < 0) { fclose(f); return NULL; }
+    char *b = (char *)malloc((size_t)sz + 1);
+    if (!b) { fprintf(stderr, MSG_ERR_MEMORY); exit(2); }
+    size_t n = fread(b, 1, (size_t)sz, f); b[n] = 0; fclose(f);
+    return b;
+}
+
+static int is_mirror(const char *name) {
+    static const char *pre[] = { "me1_", "me2_", "comp_me3_", "arr_me1_", "arr_me2_", "comp_arr_me3_" };
+    for (size_t k = 0; k < sizeof pre / sizeof pre[0]; k++)
+        if (strncmp(name, pre[k], strlen(pre[k])) == 0) return 1;
+    return 0;
+}
+
+// The folder under <base> that holds this instance's processor: it has a
+// trad_opcode.txt and a <dir>.v that declares every variable mirror the dump
+// shows at <inst>. Only a single match counts; with no mirrors, only a single
+// processor folder. NULL if none or several (the block is the caller's).
+static char *type_by_mirrors(const char *inst) {
+    DIR *d = opendir(g_tmp_base);
+    if (!d) return NULL;
+    char *found = NULL;
+    int matches = 0;
+    struct dirent *e;
+    while ((e = readdir(d)) != NULL) {
+        if (e->d_name[0] == '.' || !has_trad(e->d_name)) continue;
+        char *vpath = xasprintf("%s/%s/%s.v", g_tmp_base, e->d_name, e->d_name);
+        char *text = slurp(vpath);
+        free(vpath);
+        if (!text) continue;
+        int ok = 1;
+        for (int i = 0; i < g_nsig && ok; i++)
+            if (strcmp(g_sig[i].scope, inst) == 0 && is_mirror(g_sig[i].name) &&
+                !strstr(text, g_sig[i].name)) ok = 0;
+        free(text);
+        if (!ok) continue;
+        matches++;
+        free(found);
+        found = xstrdup(e->d_name);
+    }
+    closedir(d);
+    if (matches == 1) return found;
+    free(found);
+    return NULL;
+}
+
 static void derive_core_and_type(Proc *p) {
     // core = the ".core" scope under inst. Single-proc tbs dump no signal AT the
     // core scope itself (only core.sp/core.ula/...), so derive the core path by
@@ -522,6 +589,16 @@ static void derive_core_and_type(Proc *p) {
         const char *nm = strrchr(p->inst, '.'); nm = nm ? nm + 1 : p->inst;
         p->type = xstrdup(nm);
         char *u = strstr(p->type, "_inst"); if (u && u[5] == 0) *u = 0;
+        // Under Verilator the processor's inside is not traced (tracing_off), so
+        // there is no p_<type>.core and the instance name is all there is. In a
+        // project it often differs from the processor (DTWv4_inst of ProcDTW),
+        // so when neither <base>/<name>/ nor <base>/ holds the translate files,
+        // look for the folder whose <dir>.v declares this instance's mirrors.
+        if (!has_trad(p->type) && !has_trad(NULL)) {
+            char *t = type_by_mirrors(p->inst);
+            if (t) { free(p->type); p->type = t; }
+            else fprintf(stderr, MSG_WARN_NO_TYPE, p->inst, g_tmp_base);
+        }
     }
 }
 

@@ -457,6 +457,14 @@ tags consumed by Aurora.
   put MSYS2's `usr\bin` on `PATH` after `ucrt64\bin`, since Verilator's
   `--binary` runs `make` from there. `aurora.bat` and the build page name
   `ucrt64\bin`.
+- **The waveform of a project simulated with Verilator shows the
+  instructions and the source lines.** Verilator does not trace the inside
+  of a processor, so `gen_gtkw` named its folder after the instance
+  (`DTWv4` for `DTWv4_inst` of `ProcDTW`), found no `trad_opcode.txt` there
+  and left the Assembly and C± tracks as numbers. When neither that folder
+  nor the base holds the tables, it now takes the processor folder whose
+  `<folder>.v` declares every variable of the instance, and says so when
+  none or several do.
 - **cppcomp removes its partial outputs on Windows** (#117). A refused
   program left its `.asm` and `pc_*_mem.txt`: the error exited with them
   still open, and Windows does not remove an open file. The cleanup closes
