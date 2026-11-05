@@ -1,12 +1,16 @@
 # Line-ending policy for cross-platform (Linux + Windows/MSYS2) checkouts.
 #
-# Without this, core.autocrlf=true on Windows converts text files to CRLF on
-# checkout. That is fatal for the shell scripts: they run under MSYS2 /
-# git-bash, and a non-interactive bash chokes on the trailing CR
-# ("$'\r': command not found", "syntax error near unexpected token $'do\r'").
-# Pin shell scripts to LF and the Windows scripts to CRLF so both work
-# regardless of the cloning machine's autocrlf setting. Other file types are
-# intentionally left to the existing autocrlf behaviour (no mass renormalise).
+# The repository stores text with LF, and every checkout holds the same bytes
+# whatever the cloning git's core.autocrlf says. Git for Windows installs with
+# autocrlf=true and MSYS2's git without it, so without the first rule a clone
+# made by one shows every text file as modified in the other (#119). Binaries
+# are detected by text=auto and left alone.
+#
+# The shell scripts would break anyway with CR: a non-interactive bash under
+# MSYS2 chokes on it ("$'\r': command not found"). The Windows scripts are the
+# one exception, CRLF, for cmd.exe and PowerShell. A later line wins, so these
+# exceptions stay below the default.
+* text=auto eol=lf
 
 # Shell scripts MUST be LF (run by bash/sh under MSYS2 on Windows).
 *.sh   text eol=lf

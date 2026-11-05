@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ****************************************************************************
-# YANC setup (Linux) -- one-time prep for the single_proc.sh / multi_proc.sh runners.
+# YANC setup (Linux, MSYS2) -- one-time prep for the single_proc.sh / multi_proc.sh runners.
 #
-# POSIX counterpart of Scripts/setup.bat. Run it once after cloning the repo
-# and it will:
+# POSIX counterpart of Scripts/setup.bat, for Linux and for MSYS2's UCRT64
+# terminal on Windows. Run it once after cloning the repo and it will:
 #
 #   1. Locate the build toolchain (gcc / bison / flex) and, if a supported
 #      package manager is present, offer to install whatever is missing.
 #   2. Produce the YANC binaries in <repo>/bin :
 #        * if they are already there, keep them
 #        * else if the build toolchain is present, COMPILE them from source
-#        * else DOWNLOAD the prebuilt Linux binaries from the latest release
+#        * else DOWNLOAD the prebuilt binaries of this system from the latest release
 #   3. Locate the simulators (Icarus Verilog, Verilator) and GTKWave, offering
 #      to install the missing ones via the package manager.
 #   4. Cache every resolved path in Scripts/tools.local.sh, which the runners
@@ -19,11 +19,10 @@
 # Flags:
 #   setup.sh             auto: keep / build / download as described above
 #   setup.sh --rebuild   force a fresh compile from source
-#   setup.sh --download  force fetching the prebuilt Linux binaries
+#   setup.sh --download  force fetching the prebuilt binaries
 #
-# NOTE on GTKWave: this uses your distro's gtkwave package. The Windows flow
-# expects the nipscernlab GTKWave fork; the stock gtkwave still opens the
-# waveform and applies the generated .gtkw, but its panel chrome differs.
+# GTKWave comes from the package manager too (MSYS2's or the distribution's).
+# The runners give it only the options it knows (gtkwave_opts in env.sh).
 # ****************************************************************************
 
 set -uo pipefail
@@ -41,11 +40,12 @@ case "${1:-}" in
     * ) echo "usage: $0 [--rebuild|--download]"; exit 2 ;;
 esac
 
-# Latest release on GitHub (prebuilt Linux tarball: yanc-bin-linux-*.tar.gz).
+# Latest release on GitHub (prebuilt binaries: yanc-bin-linux-*.tar.gz for
+# Linux, yanc-bin-*.zip for Windows).
 RELEASE_API="https://api.github.com/repos/nipscernlab/yanc/releases/latest"
 
 echo "============================================================"
-echo " YANC setup (Linux)"
+echo " YANC setup"
 echo " repo : $ROOT_DIR"
 echo "============================================================"
 
@@ -68,9 +68,13 @@ if [ -n "$PKG" ]; then echo "package manager: $PKG"; else echo "package manager:
 pkg_name() {
     if [ "$PKG" = msys2 ]; then
         case "$1" in
-            gcc|iverilog|verilator|python) echo "$MINGW_PACKAGE_PREFIX-$1" ;;
-            make|bison|flex|diffutils)     echo "$1" ;;
-            gtkwave) ;;                    # the nipscernlab build: a zip, docs/install.md
+            gcc|iverilog|python|lz4)       echo "$MINGW_PACKAGE_PREFIX-$1" ;;
+            # MSYS2's Verilator does not depend on lz4, but its FST writer
+            # (--trace-fst, multi_proc) includes lz4.h; and --binary builds
+            # the C++ it writes with make and g++, through a Python script
+            verilator) echo "$MINGW_PACKAGE_PREFIX-verilator $MINGW_PACKAGE_PREFIX-lz4 make $MINGW_PACKAGE_PREFIX-gcc $MINGW_PACKAGE_PREFIX-python" ;;
+            gtkwave)   echo "$MINGW_PACKAGE_PREFIX-gtkwave" ;;
+            make|bison|flex|diffutils|unzip) echo "$1" ;;
         esac
         return
     fi
@@ -176,36 +180,43 @@ _fetch_file() {    # $1=url $2=dest
     else return 1; fi
 }
 
-# Pull the latest yanc-bin-linux-*.tar.gz release asset and unpack its bin/ into
-# <repo>/bin -- the Linux counterpart of setup.bat's :download_bins.
+# Pull the latest release asset of this system (yanc-bin-linux-*.tar.gz on
+# Linux, yanc-bin-*.zip under MSYS2) and unpack its bin/ into <repo>/bin --
+# the counterpart of setup.bat's :download_bins.
 download_bins() {
-    echo "[download] Fetching prebuilt Linux binaries from the latest GitHub release..."
+    local pattern kind
+    if [ "$PKG" = msys2 ]; then
+        pattern='https://[^"]*/yanc-bin-v[^"]*\.zip'; kind=Windows
+        command -v unzip >/dev/null 2>&1 || want unzip unzip optional "unpacks the Windows release" \
+            || { echo "[download] 'unzip' not found; cannot unpack the release archive."; return 1; }
+    else
+        pattern='https://[^"]*/yanc-bin-linux-[^"]*\.tar\.gz'; kind=Linux
+        command -v tar >/dev/null 2>&1 || { echo "[download] 'tar' not found; cannot unpack the release archive."; return 1; }
+    fi
+    echo "[download] Fetching the prebuilt $kind binaries from the latest GitHub release..."
     if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
         echo "[download] need curl or wget to download; install one, or use --rebuild to build from source."
         return 1
     fi
-    if ! command -v tar >/dev/null 2>&1; then
-        echo "[download] 'tar' not found; cannot unpack the release archive."
-        return 1
-    fi
     # The browser_download_url carries the asset filename, so grep the URL directly.
     local url
-    url="$(_fetch_stdout "$RELEASE_API" 2>/dev/null \
-           | grep -oE 'https://[^"]*yanc-bin-linux-[^"]*\.tar\.gz' | head -1)"
+    url="$(_fetch_stdout "$RELEASE_API" 2>/dev/null | grep -oE "$pattern" | head -1)"
     if [ -z "$url" ]; then
-        echo "[download] no yanc-bin-linux-*.tar.gz asset in the latest release."
+        echo "[download] no $kind asset in the latest release."
         echo "           Download one from https://github.com/nipscernlab/yanc/releases"
         echo "           and extract its bin/ into $YANC_BIN."
         return 1
     fi
     echo "[download] $url"
     local tmp; tmp="$(mktemp -d)"
-    if ! _fetch_file "$url" "$tmp/yanc-linux.tar.gz"; then
+    if ! _fetch_file "$url" "$tmp/${url##*/}"; then
         echo "[download] download failed."; rm -rf "$tmp"; return 1
     fi
-    if ! tar -xzf "$tmp/yanc-linux.tar.gz" -C "$tmp"; then
-        echo "[download] could not unpack the archive."; rm -rf "$tmp"; return 1
-    fi
+    if [ "$PKG" = msys2 ]; then
+        unzip -q "$tmp/${url##*/}" -d "$tmp"
+    else
+        tar -xzf "$tmp/${url##*/}" -C "$tmp"
+    fi || { echo "[download] could not unpack the archive."; rm -rf "$tmp"; return 1; }
     if [ ! -d "$tmp/bin" ]; then
         echo "[download] archive has no bin/ folder."; rm -rf "$tmp"; return 1
     fi
@@ -228,7 +239,7 @@ elif [ "$bins_present" = 1 ]; then
 elif [ "$build_ok" = 1 ]; then
     build_bins || { echo "ERROR: build failed."; exit 1; }
 else
-    echo "No build toolchain (gcc/bison/flex) - falling back to the prebuilt Linux release."
+    echo "No build toolchain (gcc/bison/flex) - falling back to the prebuilt release."
     download_bins || { echo "ERROR: no binaries, no toolchain, and download failed - install gcc/bison/flex or download manually."; exit 1; }
 fi
 
@@ -239,18 +250,24 @@ echo
 echo "--- Simulation tools ----------------------------------------------------"
 want iverilog  iverilog  optional "needed for the Icarus flow: single_proc.sh / multi_proc.sh"   || true
 want verilator verilator optional "needed for the Verilator flow: single_proc.sh --sim verilator" || true
-want gtkwave   gtkwave   optional "needed to view the waveform (Windows: the nipscernlab build, docs/install.md)" || true
+# A Verilator installed before lz4 was asked for: the FST trace of
+# multi_proc.sh --sim verilator stops at "lz4.h: No such file or directory".
+if [ "$PKG" = msys2 ] && command -v verilator >/dev/null 2>&1 && [ ! -f "${MINGW_PREFIX:-/ucrt64}/include/lz4.h" ]; then
+    echo
+    echo "[setup] lz4.h not found (Verilator's FST trace needs it: multi_proc.sh --sim verilator)."
+    ans=""
+    read -r -p "        Install '$(pkg_name lz4)' via $PKG now? [y/N] " ans
+    case "$ans" in
+        y|Y) eval "$PKG_INSTALL $(pkg_name lz4)" || echo "        install failed." ;;
+    esac
+fi
+want gtkwave   gtkwave   optional "needed to view the waveform" || true
 want cmp       diffutils optional "Scripts/regress.sh compares files with cmp and diff"   || true
 want python3   python    optional "Scripts/regress.sh and its checks are Python"         || true
 
 command -v iverilog  >/dev/null 2>&1 && echo "[icarus]    $(command -v iverilog)"
 command -v verilator >/dev/null 2>&1 && echo "[verilator] $(command -v verilator)"
-if command -v gtkwave >/dev/null 2>&1; then
-    case "$(uname -s)" in
-        MINGW*|MSYS*|UCRT*|CLANG*) echo "[gtkwave]   $(command -v gtkwave)" ;;
-        *) echo "[gtkwave]   $(command -v gtkwave)  (distro build; not the nipscernlab fork)" ;;
-    esac
-fi
+command -v gtkwave   >/dev/null 2>&1 && echo "[gtkwave]   $(command -v gtkwave)"
 
 # ---------------------------------------------------------------------------
 # 4) Cache the resolved paths for env.sh -------------------------------------

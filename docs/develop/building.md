@@ -41,6 +41,16 @@ UCRT64 environment (the package list is in
 distribution (Debian/Ubuntu: `build-essential bison flex`). The simulators
 and GTKWave are the same as for using YANC ([Installing YANC](../install.md#to-simulate)).
 
+On Windows, clone and run git from one side only, preferably MSYS2's git in
+the UCRT64 terminal (`pacman -S git`). Git for Windows installs with
+`core.autocrlf=true` and MSYS2's git without it. `.gitattributes` makes
+both check text out with LF (the `.bat`, `.cmd` and `.ps1` with CRLF), so
+a clone made after that rule (#119) holds the same bytes in either git. A
+clone made before it by Git for Windows still has CRLF in its files: once
+it has the rule, `git status` is clean in both gits, but the files are
+rewritten with LF only by a fresh clone or, with no uncommitted work, by
+`git rm --cached -r -q . && git reset --hard`.
+
 ## Testing
 
 ```sh
@@ -90,82 +100,56 @@ table or to a message regenerates its page:
 
 You don't have to install and wire these up by hand. Run **once**:
 
-```bat
-Scripts\setup.bat      :: Windows
-```
 ```sh
-bash Scripts/setup.sh  # Linux
+bash Scripts/setup.sh  # Linux, and Windows in the MSYS2 UCRT64 terminal
 ```
 
-It **checks** every dependency and **helps you get the missing ones**:
+It **checks** every dependency and **helps you get the missing ones**, through
+the package manager (`pacman` in the MSYS2 terminal, the distribution's on
+Linux):
 
-* finds (or, with MSYS2, offers to `pacman -S`) the `gcc` / `bison` / `flex`
-  build toolchain;
-* produces the YANC binaries in `bin\` — **either** keeping the `.exe` a release
-  zip already shipped / downloading the prebuilt ones from the latest release
-  (no build toolchain needed), **or** compiling them once from source;
-* finds the simulators, offering to `pacman -S` **Icarus** and/or **Verilator**
-  from MSYS2 if they're missing;
-* **downloads the nipscernlab GTKWave** portable bundle if it isn't already
-  present;
-* remembers every resolved path so the runners need no manual configuration.
+* finds, or offers to install, the `gcc` / `make` / `bison` / `flex` build
+  toolchain;
+* produces the YANC binaries in `bin/`: it keeps the ones already there,
+  compiles them from source when the toolchain is present, and otherwise
+  downloads the prebuilt ones of this system from the latest release
+  (`yanc-bin-linux-*.tar.gz`, or under MSYS2 `yanc-bin-*.zip`, which it
+  unpacks with `unzip`);
+* finds, or offers to install, Icarus, Verilator (with `lz4`, `make`, `gcc`
+  and `python` on MSYS2) and GTKWave;
+* caches every resolved path in `Scripts/tools.local.sh` (gitignored), which
+  `Scripts/env.sh` loads for each runner, falling back to a `PATH` lookup for
+  anything not cached.
 
-On **Linux**, `setup.sh` does the equivalent through your package manager: it
-offers to install `gcc`/`bison`/`flex` and the simulators, and produces the
-binaries in `bin/` — building them from source when the toolchain is present, or
-downloading the prebuilt Linux tarball from the latest release when it isn't. It
-uses the distro `gtkwave` and caches the paths in `Scripts/tools.local.sh` for
-the runners. Re-run with `--rebuild` to recompile or `--download` to refetch.
+Re-run with `--rebuild` to recompile or `--download` to refetch. If something
+can't be resolved automatically (e.g. MSYS2 itself isn't installed yet), setup
+prints the link and command to fix it, then you re-run it.
 
-If something can't be resolved automatically (e.g. MSYS2 itself isn't installed
-yet), setup prints the exact link and command to fix it, then you re-run it.
+`Scripts\setup.bat` does the same from `cmd`, for the `.bat` runners: it finds
+MSYS2 by its `pacman.exe`, takes the tools from its `ucrt64\bin`, offers to
+`pacman -S` what is missing, and caches the paths in `Scripts\tools.local.bat`
+for `Scripts\env.bat`. `Scripts\setup.bat --rebuild` recompiles and
+`--download` refetches the prebuilt binaries.
 
-### What `setup.bat` does on Windows
-
-On **Linux** `setup.sh` installs the dependencies through your package manager,
-then builds the binaries from source into `bin/` (or downloads the prebuilt
-Linux tarball from the release when no toolchain is present; `--download` forces
-it), uses the distro `gtkwave`, and caches the paths in
-`Scripts/tools.local.sh` for `Scripts/env.sh`. The rest of this section
-describes the richer Windows `setup.bat`, which covers both ways of getting
-YANC and picks automatically:
-
-* **Binary mode** — if `bin\` already contains the `.exe` (e.g. you extracted a
-  release zip), it keeps them; no `bison`/`flex`/`gcc` needed. If the build
-  toolchain is *missing*, it offers to **download** the prebuilt binaries from
-  the latest GitHub release into `bin\`.
-* **Source mode** — if you cloned the repo and have the MSYS2 toolchain (or let
-  setup install it via `pacman`), it **compiles** the six binaries straight into
-  `bin\` once, so later runs never recompile.
-
-It then locates the simulators and **GTKWave** (which must be the
-[nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) —
-setup offers to download its portable Windows bundle if missing), and caches
-every resolved path in `Scripts\tools.local.bat` (gitignored). `Scripts\env.bat`
-loads that cache for each runner, falling back to a `PATH` lookup for
-anything not cached — so if the tools are already on your `PATH`, the scripts
-work even before running setup.
-
-Force a specific mode with `Scripts\setup.bat --rebuild` (recompile from source)
-or `Scripts\setup.bat --download` (refetch the prebuilt binaries).
 ## Building from source
 
 Requirements (Windows + [MSYS2](https://www.msys2.org/)):
 
-* The MinGW-w64 cross toolchain — install with `pacman -S mingw-w64-x86_64-gcc`. The build calls `x86_64-w64-mingw32-gcc.exe` (the cross tuple, not plain `gcc.exe`) on purpose: it produces stand-alone Windows `.exe`s with no MSYS2 DLL runtime dependency, so the deployed binaries work on any Windows machine.
+* The MinGW-w64 cross toolchain of MSYS2's UCRT64 environment — install with `pacman -S mingw-w64-ucrt-x86_64-gcc`. The build calls `x86_64-w64-mingw32-gcc.exe` (the cross tuple, not plain `gcc.exe`) on purpose: it produces stand-alone Windows `.exe`s with no MSYS2 DLL runtime dependency (only the UCRT, part of Windows 10 and later), so the deployed binaries run without MSYS2.
 * `make`, `bison` and `flex` — install with `pacman -S make bison flex`.
 * These tools must be reachable on your `PATH`. The script bails early with the exact line to add if any of them is missing. Typical setup:
   ```
-  set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+  set PATH=C:\msys64\ucrt64\bin;C:\msys64\usr\bin;%PATH%
   ```
 * Optional, only needed if you want to simulate the generated Verilog. MSYS2
-  ships both only in UCRT64 now (no longer in MINGW64), so the bash scripts
-  of an "MSYS2 UCRT64" terminal are the way to simulate
-  ([Installing YANC](../install.md#to-simulate)); the `.bat` runners still
-  look for them in `mingw64\bin` and have not been moved to UCRT64 yet (#117):
+  ships both simulators only in UCRT64 (no longer in MINGW64), and
+  `setup.bat` looks for them in `ucrt64\bin`. The `.bat` runners pass
+  Verilator the same gcc 16 workaround as the bash scripts
+  (`YANC_VL_CFLAGS`, set in `Scripts\env.bat`; see
+  [Installing YANC](../install.md#to-simulate)):
   * [Icarus Verilog](http://iverilog.icarus.com/) (`iverilog` + `vvp`) — `pacman -S mingw-w64-ucrt-x86_64-iverilog`, and/or
-  * [Verilator](https://verilator.org/) **5.x** — `pacman -S mingw-w64-ucrt-x86_64-verilator`. Its `--binary` mode drives the `g++` and `python3` of the same environment.
-  * GTKWave — the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) to view the waveform.
+  * [Verilator](https://verilator.org/) **5.x** — `pacman -S mingw-w64-ucrt-x86_64-verilator mingw-w64-ucrt-x86_64-lz4`. Its `--binary` mode drives the `g++`, `python3` and `make` of the same MSYS2; the FST trace of `multi_proc` includes `lz4.h`, which the Verilator package does not pull in.
+  * GTKWave, to view the waveform — `pacman -S mingw-w64-ucrt-x86_64-gtkwave`.
 
 The actual compile commands live in a single top-level **`Makefile`** (the
 source of truth shared by the setup scripts, `aurora.bat`, and the CI/release

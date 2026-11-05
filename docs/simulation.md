@@ -10,16 +10,18 @@ Verilator and opens the waveform in GTKWave.
 ## Simulating with Icarus
 
 From the output folder, with `SAPHO` the `SAPHO/` folder that comes with
-YANC:
+YANC (on Windows, in the MSYS2 UCRT64 terminal, written `/c/path/to/SAPHO`
+for `C:\path\to\SAPHO`; see [Installing YANC](install.md)):
 
-```bat
+```sh
+export SAPHO=/path/to/yanc/SAPHO
 cd my_program
-iverilog -s my_program_tb -o sim.vvp -y %SAPHO% my_program_tb.v my_program.v
+iverilog -s my_program_tb -o sim.vvp -y "$SAPHO" my_program_tb.v my_program.v
 vvp sim.vvp
-type output_0.txt
+cat output_0.txt
 ```
 
-`-y %SAPHO%` makes the simulator look in `SAPHO/` for each module it is
+`-y "$SAPHO"` makes the simulator look in `SAPHO/` for each module it is
 missing, in the file of the same name: `processor` in `processor.v`, and
 from there `core.v`, `ula.v`, `addr_dec.v`, `instr_dec.v`, and `myFIFO.v`
 or `myDCFIFO.v` when a project uses them. Listing the files instead works
@@ -61,16 +63,21 @@ declared variables (`N`, `ind`, `istep`, `j`, `k`, `m`, `mmax`,
 
 Verilator 5 compiles the same generated `<proc>_tb.v` directly — `--timing` understands the testbench's clock and `#` delays, so no separate C++ driver is needed:
 
-```bat
-:: --- simulate with Verilator, from the output folder (my_program\) --------
+```sh
+# from the output folder, my_program/
 cd my_program
-verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps ^
-          --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK ^
-          -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl ^
-          -y %SAPHO% my_program_tb.v my_program.v
-vl\Vmy_program_tb.exe   :: runs the sim, writes my_program_tb.vcd here
+verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps \
+          --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK \
+          -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl \
+          -y "$SAPHO" my_program_tb.v my_program.v
+./vl/Vmy_program_tb     # runs the sim, writes my_program_tb.vcd here
 gtkwave my_program_tb.vcd
 ```
+
+On Windows, MSYS2's gcc 16 needs `-CFLAGS -D_GLIBCXX_ASSERTIONS` added to
+the `verilator` line, or the link fails (see
+[Installing YANC](install.md#to-simulate)); the scripts below add it
+themselves.
 
 `--timescale 1ns/1ps` gives the SAPHO modules the testbench's time unit:
 the files `-y` finds are read on their own, so they do not inherit the
@@ -93,9 +100,9 @@ variables and arrays** grouped per processor — run **`gen_gtkw`** (it is in th
 release's `bin/`), then open the waveform with it applied via `-a`. From the
 Quick start's output folder:
 
-```bat
+```sh
 gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
-gtkwave --dark --zoom-fit --left-justify my_program_tb.vcd -a my_program_tb.gtkw
+gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
 
 `gen_gtkw` reads only the VCD **header** (the signal list), classifies each
@@ -116,7 +123,10 @@ the testbench dumps the header, advances one tick, flushes and `$finish`es — a
 tiny header VCD in milliseconds (Verilator's header FST is converted with
 `fst2vcd -f`). **The runner scripts wire this whole sequence up
 correctly** (header pass → `gen_gtkw` → `gtkwave -a`), so they are the reference
-for using it in practice. `--zoom-fit` fits the whole trace to the window.
+for using it in practice. They also open GTKWave with `--dark`, and with
+`--zoom-fit` (the whole trace in the window) and `--left-justify` when that
+GTKWave lists them, as the nipscernlab build does (see
+[Installing YANC](install.md#to-simulate)).
 
 ## Pre-wired scripts
 
@@ -134,8 +144,10 @@ Scripts\single_proc_cpp  .bat / .sh   one C++ processor   (front end: cppcomp)
   ... --no-view                -> (single_proc_cpp) run the pipeline, skip GTKWave
 ```
 
-On Linux make them executable once (`chmod +x Scripts/*.sh`) and run
-`Scripts/single_proc.sh` (or `Scripts/single_proc.sh --sim verilator`).
+In the UCRT64 terminal on Windows, as on Linux, run
+`Scripts/single_proc.sh` (or `Scripts/single_proc.sh --sim verilator`); on
+Linux make them executable once (`chmod +x Scripts/*.sh`). The `.bat`
+versions do the same from `cmd`.
 
 **The C++ runner (`single_proc_cpp`)** feeds a `.cpp` program — the bundled
 `Compilers/CPPComp/Tests/proc_cpp` demo — through `cppcomp` instead of

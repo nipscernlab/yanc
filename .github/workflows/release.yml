@@ -31,13 +31,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup MSYS2 (mingw64 + bison + flex)
+      - name: Setup MSYS2 (ucrt64 + bison + flex)
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           update: false
           install: >-
-            mingw-w64-x86_64-gcc
+            mingw-w64-ucrt-x86_64-gcc
             make
             bison
             flex
@@ -88,7 +88,7 @@ jobs:
           # extracting into components/ produces components/{bin,SAPHO,Macros,Header}/,
           # the layout Aurora expects.
           zip -r "../${{ steps.artifact.outputs.name }}.zip" \
-              bin SAPHO Macros Header README.md example install.bat uninstall.bat
+              bin SAPHO Macros Header README.md example install.sh install.bat uninstall.bat
           ls -la "../${{ steps.artifact.outputs.name }}.zip"
 
       - name: Upload artifact (always)
@@ -110,7 +110,7 @@ jobs:
           body: |
             **YANC ${{ github.ref_name }}** — prebuilt binaries for both platforms:
 
-            - `yanc-bin-${{ github.ref_name }}.zip` — Windows (MSYS2 / MinGW-w64) `.exe`
+            - `yanc-bin-${{ github.ref_name }}.zip` — Windows (MSYS2 UCRT64) `.exe`
             - `yanc-bin-linux-${{ github.ref_name }}.tar.gz` — Linux x86-64
 
             See `CHANGELOG.md` for the full list of changes in this release; the

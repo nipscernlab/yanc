@@ -54,13 +54,15 @@ prints `SAPHO processor ready: my_program/my_program.v`.
 
 The testbench runs the processor and writes what it outputs to
 `output_0.txt`. With Icarus, from the output folder (`SAPHO` being the
-`SAPHO/` folder of the package):
+`SAPHO/` folder of the package, written `/c/path/to/SAPHO` in the MSYS2
+terminal on Windows):
 
-```bat
+```sh
+export SAPHO=/path/to/yanc/SAPHO
 cd my_program
-iverilog -s my_program_tb -o sim.vvp -y %SAPHO% my_program_tb.v my_program.v
+iverilog -s my_program_tb -o sim.vvp -y "$SAPHO" my_program_tb.v my_program.v
 vvp sim.vvp
-type output_0.txt
+cat output_0.txt
 ```
 
 `-y` tells the simulator where to find the SAPHO modules the processor
@@ -75,7 +77,7 @@ turns it into a view that shows, clock by clock, the source line being
 executed, the assembly instruction, and every variable by name (a variable
 written and never read is not in the processor, see below):
 
-```bat
+```sh
 gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
 gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```

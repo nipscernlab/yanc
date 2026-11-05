@@ -17,8 +17,12 @@
 ::   ROOT_DIR    repo root           YANC_BIN   <repo>\bin (the prebuilt exes)
 ::   IVERILOG    iverilog.exe        VVP        vvp.exe
 ::   VERILATOR   verilator_bin.exe   VERILATOR_ROOT  (Verilator share dir)
-::   MINGW_BIN   MSYS2 mingw64\bin (on PATH for MSYS2-sourced iverilog/verilator)
+::   MINGW_BIN   MSYS2 ucrt64\bin (on PATH for MSYS2-sourced iverilog/verilator)
+::   MSYS_USR_BIN  MSYS2 usr\bin, when MINGW_BIN is MSYS2's (make, for Verilator)
 ::   GTKWAVE     gtkwave.exe         FST2VCD    fst2vcd.exe
+::   GTKWAVE_OPTS  the options of the gtkwave call this GTKWave knows (see below)
+::   YANC_VL_CFLAGS  what every Verilator call adds as -CFLAGS (see below)
+::   YANC_VL_ARGS    the same, as Verilator arguments: -CFLAGS "<flags>"
 :: ****************************************************************************
 
 @echo off
@@ -61,9 +65,38 @@ if not defined MINGW_BIN if defined VVP       for %%I in ("%VVP%")       do set 
 if not defined MINGW_BIN if defined VERILATOR for %%I in ("%VERILATOR%") do set "MINGW_BIN=%%~dpI"
 if not defined MINGW_BIN if defined GTKWAVE   for %%I in ("%GTKWAVE%")   do set "MINGW_BIN=%%~dpI"
 
-:: VERILATOR_ROOT: MSYS2's verilator_bin.exe has /mingw64/share/verilator built
+:: MSYS_USR_BIN: Verilator's --binary runs make, which MSYS2 keeps in usr\bin.
+:: The runners put it on PATH after MINGW_BIN, the order of the UCRT64 terminal.
+set "MSYS_USR_BIN="
+if defined MINGW_BIN for %%I in ("%MINGW_BIN%\..\..\usr\bin") do if exist "%%~fI\make.exe" set "MSYS_USR_BIN=%%~fI"
+
+:: VERILATOR_ROOT: MSYS2's verilator_bin.exe has /ucrt64/share/verilator built
 :: in, a path only MSYS2 resolves, so run from cmd it cannot find its include
 :: files (verilated_std.sv). setup.bat caches the Windows path; without the
 :: cache, derive it from the tool's folder (<prefix>\bin -> <prefix>\share\verilator).
 if defined VERILATOR_ROOT if not exist "%VERILATOR_ROOT%" set "VERILATOR_ROOT="
 if not defined VERILATOR_ROOT if defined VERILATOR for %%I in ("%VERILATOR%") do if exist "%%~dpI..\share\verilator" for %%R in ("%%~dpI..\share\verilator") do set "VERILATOR_ROOT=%%~fR"
+
+:: GTKWAVE_OPTS: the options of the runners' gtkwave call that this GTKWave
+:: lists in its --help. The nipscernlab build has --zoom-fit and
+:: --left-justify; MSYS2's and the distributions' GTKWave refuse an option they
+:: do not know and open nothing, so each one goes only where it is listed.
+set "GTKWAVE_OPTS="
+set "YANC_GW_HELP=%TEMP%\yanc_gtkwave_help.txt"
+if exist "%YANC_GW_HELP%" del "%YANC_GW_HELP%"
+if defined GTKWAVE "%GTKWAVE%" --help > "%YANC_GW_HELP%" 2>&1
+if exist "%YANC_GW_HELP%" findstr /c:"--dark" "%YANC_GW_HELP%" >nul && set "GTKWAVE_OPTS=%GTKWAVE_OPTS% --dark"
+if exist "%YANC_GW_HELP%" findstr /c:"--zoom-fit" "%YANC_GW_HELP%" >nul && set "GTKWAVE_OPTS=%GTKWAVE_OPTS% --zoom-fit"
+if exist "%YANC_GW_HELP%" findstr /c:"--left-justify" "%YANC_GW_HELP%" >nul && set "GTKWAVE_OPTS=%GTKWAVE_OPTS% --left-justify"
+if exist "%YANC_GW_HELP%" del "%YANC_GW_HELP%"
+set "YANC_GW_HELP="
+
+:: YANC_VL_CFLAGS: MSYS2's gcc 16 (16.1 and 16.2) ships a libstdc++ without the
+:: std::string move constructor at -Os, which Verilator's build uses. With
+:: _GLIBCXX_ASSERTIONS libstdc++ drops its extern template for basic_string, so
+:: the compiler instantiates the constructor itself (#117), as in Scripts\env.sh.
+:: A value already set is kept; cmd cannot hold an empty variable, so
+:: YANC_VL_CFLAGS=none passes nothing.
+if not defined YANC_VL_CFLAGS set "YANC_VL_CFLAGS=-D_GLIBCXX_ASSERTIONS"
+set "YANC_VL_ARGS="
+if /i not "%YANC_VL_CFLAGS%"=="none" set YANC_VL_ARGS=-CFLAGS "%YANC_VL_CFLAGS%"

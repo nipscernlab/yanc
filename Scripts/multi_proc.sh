@@ -150,7 +150,7 @@ fi
 echo "#### Generating the .gtkw layout (gen_gtkw)${GTKWAVE:+ and launching GTKWave}"
 "$BIN_DIR/gen_gtkw" "$TMP_DIR/${TB}_hdr.vcd" "$TMP_DIR/$TB.gtkw" "$TMP_DIR" "$BIN_DIR/comp2gtkw"
 if [ -n "$GTKWAVE" ]; then
-    "$GTKWAVE" --dark --zoom-fit --left-justify "$TMP_DIR/$TB.vcd" -a "$TMP_DIR/$TB.gtkw"
+    "$GTKWAVE" $(gtkwave_opts) "$TMP_DIR/$TB.vcd" -a "$TMP_DIR/$TB.gtkw"
 else
     echo "[multi_proc] no gtkwave: the waveform is $TMP_DIR/$TB.vcd, its layout $TMP_DIR/$TB.gtkw"
 fi

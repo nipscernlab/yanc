@@ -17,6 +17,7 @@
 #   ROOT_DIR  repo root          YANC_BIN  <repo>/bin (the built binaries)
 #   IVERILOG  iverilog           VVP       vvp
 #   VERILATOR verilator          GTKWAVE   gtkwave        FST2VCD  fst2vcd
+#   gtkwave_opts     the options of the gtkwave call this GTKWave knows (below)
 #   YANC_VL_CFLAGS   what every Verilator call adds as -CFLAGS (see below)
 # ****************************************************************************
 
@@ -35,6 +36,19 @@ YANC_BIN="$ROOT_DIR/bin"
 : "${VERILATOR:=$(command -v verilator 2>/dev/null || true)}"
 : "${GTKWAVE:=$(command -v gtkwave    2>/dev/null || true)}"
 : "${FST2VCD:=$(command -v fst2vcd    2>/dev/null || true)}"
+
+# gtkwave_opts: the options of the runners' gtkwave call that this GTKWave
+# lists in its --help. The nipscernlab build has --zoom-fit and --left-justify;
+# MSYS2's and the distributions' GTKWave refuse an option they do not know and
+# open nothing, so each one goes only where it is listed. A function, so that
+# only a runner about to open GTKWave asks it.
+gtkwave_opts() {
+    local help o
+    help="$("$GTKWAVE" --help 2>&1 || true)"
+    for o in --dark --zoom-fit --left-justify; do
+        case "$help" in *"$o"*) printf ' %s' "$o" ;; esac
+    done
+}
 
 # MSYS2's libstdc++ (gcc 16.1 and 16.2, MINGW64 and UCRT64) lacks the
 # std::string move constructor that Verilator's code needs at -Os. With

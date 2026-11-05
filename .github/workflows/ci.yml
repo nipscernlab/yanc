@@ -20,13 +20,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup MSYS2 (mingw64 + make + bison + flex)
+      - name: Setup MSYS2 (ucrt64 + make + bison + flex)
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           update: false
           install: >-
-            mingw-w64-x86_64-gcc
+            mingw-w64-ucrt-x86_64-gcc
             make
             bison
             flex
@@ -176,6 +176,75 @@ jobs:
           bash -e "$RUNNER_TEMP/quickstart.sh"
           test "$(tr -d '\r' < my_program/output_0.txt)" = 55
           test -s my_program/my_program_tb.gtkw
+
+  # What a Windows user does with a release, as README.md and docs/ say it:
+  # MSYS2's UCRT64 with its newest packages (update: true, so a package that
+  # MSYS2 drops or breaks shows here first), the package's install.sh, the
+  # README Quick start, and the manual's Verilator command.
+  windows-user:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup MSYS2 UCRT64, the packages the manual lists
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            make
+            bison
+            flex
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-iverilog
+            mingw-w64-ucrt-x86_64-verilator
+            mingw-w64-ucrt-x86_64-lz4
+
+      - name: Stage the release package and run its install.sh
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          make stage STAGE="$(cygpath -u "$RUNNER_TEMP")/yanc"
+          cd "$(cygpath -u "$RUNNER_TEMP")/yanc"
+          ./install.sh < /dev/null
+          cat /etc/profile.d/yanc.sh
+
+      - name: README Quick start, in a new UCRT64 terminal
+        shell: msys2 {0}
+        # A new step is a new login shell: yanc comes from /etc/profile.d.
+        run: |
+          set -euo pipefail
+          T="$(cygpath -u "$RUNNER_TEMP")"
+          command -v yanc
+          awk '/<!-- quickstart-sh/{f=1;next} f&&/^```sh/{p=1;next} p&&/^```/{p=0;f=0;next} p' README.md \
+            | grep -v -e '^export SAPHO=' -e '^gtkwave ' > "$T/quickstart.sh"
+          export SAPHO="$T/yanc/SAPHO"
+          mkdir -p "$T/qs" && cd "$T/qs"
+          cp "$T/yanc/example/my_program.cpp" .
+          bash -e "$T/quickstart.sh"
+          test "$(tr -d '\r' < my_program/output_0.txt)" = 55
+          test -s my_program/my_program_tb.gtkw
+
+      - name: The manual's Verilator command
+        shell: msys2 {0}
+        # docs/simulation.md, with the -CFLAGS it says MSYS2's gcc 16 needs.
+        run: |
+          set -euo pipefail
+          T="$(cygpath -u "$RUNNER_TEMP")"
+          export SAPHO="$T/yanc/SAPHO"
+          mkdir -p "$T/vl" && cd "$T/vl"
+          cp "$T/yanc/example/my_program.cpp" .
+          yanc my_program.cpp
+          cd my_program
+          verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps \
+                    -CFLAGS -D_GLIBCXX_ASSERTIONS \
+                    --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK \
+                    -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl \
+                    -y "$SAPHO" my_program_tb.v my_program.v
+          ./vl/Vmy_program_tb
+          test "$(tr -d '\r' < output_0.txt)" = 55
 
   # The manual (docs/): built on every push the way the release publishes it.
   # -W makes every Sphinx warning an error (a broken link, a page outside the

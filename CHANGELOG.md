@@ -8,6 +8,19 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v9.2] – 2026-11-05
+
+A cmmcomp reorganized (#93) and audited (#108), smaller assembly, and one
+way to install on Windows. A variable written and never read leaves the
+program, a call that ends a function is a jump (#38), and the defects
+listed under Fixed, several of which gave wrong results or stopped
+cmmcomp, are gone. C± reads literals, initializers and brace lists as C
+does, and `#WAVE` keeps a variable for the waveform. asmcomp writes `LDI`
+and `STI` with a constant offset (`LDI_V`, `STI_V`), and `SAPHO/` changed:
+take `SAPHO/` and asmcomp from the same release. On Windows everything
+comes from MSYS2's UCRT64, with the same commands as on Linux
+(`./install.sh`).
+
 ### Added
 - **Coverage counts every cell of the operator tables** (#108).
   `Scripts/cmm_cov.sh` counted each `add_instr` / `add_sinst` call as one
@@ -134,6 +147,24 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **On Windows, everything comes from MSYS2's UCRT64.** The README quick
+  start, the release's README, `docs/install.md`, `docs/simulation.md` and
+  `docs/first-program.md` give the same `sh` commands for Windows and
+  Linux, typed on Windows in the UCRT64 terminal; the `cmd` blocks are gone.
+  The Windows zip carries `install.sh`, which under MSYS2 writes
+  `/etc/profile.d/yanc.sh` (the MSYS2 terminal does not see the Windows
+  `PATH` that `install.bat` writes), and on both systems checks for Icarus,
+  GTKWave and Verilator and says how to get them; under MSYS2 it installs
+  them with `pacman` if asked. GTKWave is MSYS2's package
+  (`mingw-w64-ucrt-x86_64-gtkwave`): `setup.bat` and `setup.sh` offer it,
+  and `setup.bat` no longer downloads the nipscernlab build. The Verilator
+  offers bring `make`, `gcc` and `python` along, which its `--binary`
+  needs. `setup.sh` under MSYS2, without a toolchain, downloads the Windows
+  release instead of the Linux one. CI and the release build on UCRT64
+  instead of MINGW64 (the `.exe` still depend only on Windows and its
+  UCRT), and a new CI job, `windows-user`, runs the user's way on Windows
+  with MSYS2's newest packages: `install.sh`, the quick start and the
+  manual's Verilator command.
 - **A call that ends a function is a jump** (#38). `CAL f` followed by a
   `RET` no jump lands on is `JMP f`: `f`'s own `RET` returns where the
   other would, with the value it returns. One word, two cycles and one
@@ -439,6 +470,43 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **The runners open any GTKWave.** They called GTKWave with `--zoom-fit`
+  and `--left-justify`, which only the nipscernlab build has; MSYS2's and
+  the distributions' GTKWave refuse an option they do not know, print their
+  usage and open nothing. `gtkwave_opts` in `Scripts/env.sh` and
+  `GTKWAVE_OPTS` in `Scripts\env.bat` pass each of `--dark`, `--zoom-fit`
+  and `--left-justify` only when the GTKWave's `--help` lists it.
+- **Every git checks the text out with LF** (#119). Git for Windows
+  installs with `core.autocrlf=true` and MSYS2's git without it, so a
+  clone made by one showed every text file as modified in the other.
+  `.gitattributes` now starts with `* text=auto eol=lf`; the `.sh` (LF)
+  and `.bat`, `.cmd`, `.ps1` (CRLF) rules still win. No stored file
+  changed: all were already LF.
+- **The `.bat` scripts use MSYS2's UCRT64** (#117). `setup.bat` looked for
+  gcc, Icarus and Verilator in `mingw64\bin` and offered the MINGW64
+  packages, which no longer include the simulators. It now finds MSYS2 by
+  its `pacman.exe`, takes the tools from `ucrt64\bin` and offers
+  `mingw-w64-ucrt-x86_64-*`; its g++ probe follows `setup.sh` (gcc 16 and
+  `-D_GLIBCXX_ASSERTIONS`) instead of asking for gcc 15, and a `::` comment
+  inside a block, which stopped it once Verilator was found ("is was
+  unexpected at this time"), moved out. `env.bat` sets `YANC_VL_CFLAGS`
+  and the runners pass it to Verilator, as the bash scripts do; they also
+  put MSYS2's `usr\bin` on `PATH` after `ucrt64\bin`, since Verilator's
+  `--binary` runs `make` from there. `aurora.bat` and the build page name
+  `ucrt64\bin`.
+- **The waveform of a project simulated with Verilator shows the
+  instructions and the source lines.** Verilator does not trace the inside
+  of a processor, so `gen_gtkw` named its folder after the instance
+  (`DTWv4` for `DTWv4_inst` of `ProcDTW`), found no `trad_opcode.txt` there
+  and left the Assembly and C± tracks as numbers. When neither that folder
+  nor the base holds the tables, it now takes the processor folder whose
+  `<folder>.v` declares every variable of the instance, and says so when
+  none or several do.
+- **Verilator's FST trace has lz4 on MSYS2.** MSYS2's Verilator package
+  does not pull in lz4, and its FST writer includes `lz4.h`, so
+  `multi_proc --sim verilator` stopped compiling Verilator's runtime. The
+  manual lists `mingw-w64-ucrt-x86_64-lz4`, and `setup.sh` and `setup.bat`
+  install it with Verilator or offer it when it is missing.
 - **cppcomp removes its partial outputs on Windows** (#117). A refused
   program left its `.asm` and `pc_*_mem.txt`: the error exited with them
   still open, and Windows does not remove an open file. The cleanup closes
@@ -3233,7 +3301,8 @@ history).
   MinGW-w64, packages them in `yanc-bin-vN.zip`, and publishes the zip
   as a release asset.
 
-[Unreleased]: https://github.com/nipscernlab/yanc/compare/v9.1...HEAD
+[Unreleased]: https://github.com/nipscernlab/yanc/compare/v9.2...HEAD
+[v9.2]: https://github.com/nipscernlab/yanc/releases/tag/v9.2
 [v9.1]: https://github.com/nipscernlab/yanc/releases/tag/v9.1
 [v9.0]: https://github.com/nipscernlab/yanc/releases/tag/v9.0
 [v8.0]: https://github.com/nipscernlab/yanc/releases/tag/v8.0

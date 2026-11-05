@@ -67,7 +67,9 @@ if "%VIEW%"=="1" if not defined GTKWAVE (
     exit /b 1
 )
 
-:: When iverilog/verilator come from MSYS2, their tools need mingw64\bin on PATH.
+:: When iverilog/verilator come from MSYS2, their tools need ucrt64\bin on PATH,
+:: and Verilator's make is in usr\bin, which goes after it.
+if defined MSYS_USR_BIN set "PATH=%MSYS_USR_BIN%;%PATH%"
 if defined MINGW_BIN set "PATH=%MINGW_BIN%;%PATH%"
 
 :: What to compile/simulate (a project under Compilers\CPPComp\Tests) ---------
@@ -147,7 +149,7 @@ goto run_gtkwave
 :: --- Verilator --------------------------------------------------------------
 :sim_verilator
 echo #### Running Verilator (+define+YANC_TRACE, --binary --timing --trace)
-"%VERILATOR%" --binary --timing --trace +define+YANC_TRACE ^
+"%VERILATOR%" --binary --timing --trace +define+YANC_TRACE %YANC_VL_ARGS% ^
     --top-module %PROC%_tb ^
     -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH ^
     -Wno-CASEINCOMPLETE -Wno-IMPLICIT -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP ^
@@ -173,7 +175,7 @@ if "%VIEW%"=="0" (
     exit /b 0
 )
 echo #### Launching GTKWave
-"%GTKWAVE%" --dark --zoom-fit --left-justify "%WAVE%" -a "%GTKWOUT%"
+"%GTKWAVE%" %GTKWAVE_OPTS% "%WAVE%" -a "%GTKWOUT%"
 
 cd /d "%ROOT_DIR%"
 exit /b 0
