@@ -134,6 +134,15 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
+- **On Windows the manual uses one terminal, MSYS2's UCRT64.** The README
+  quick start, the release's README, `docs/install.md`,
+  `docs/simulation.md` and `docs/first-program.md` give the same `sh`
+  commands for Windows and Linux: MSYS2 provides the simulators, and a line
+  in `/etc/profile.d/yanc.sh` puts the package's `bin/` on the PATH of its
+  terminal, which does not see the Windows `PATH` that `install.bat` writes.
+  The `cmd` blocks are gone. `install.md` lists the packages for using YANC
+  apart from those for building it, and the Verilator command takes
+  `-CFLAGS -D_GLIBCXX_ASSERTIONS` under MSYS2's gcc 16.
 - **A call that ends a function is a jump** (#38). `CAL f` followed by a
   `RET` no jump lands on is `JMP f`: `f`'s own `RET` returns where the
   other would, with the value it returns. One word, two cycles and one

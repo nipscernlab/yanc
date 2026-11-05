@@ -34,15 +34,34 @@ Verilog is the [`SAPHO/`](SAPHO/) folder of this repository.
 
 ## Quick start
 
-**1. Install.** Download the latest
+**1. Install.** On Windows, YANC runs in the terminal of
+[MSYS2](https://www.msys2.org/), in its UCRT64 environment, with the same
+commands as on Linux. Install MSYS2, open the "MSYS2 UCRT64" terminal and
+install Icarus Verilog, which simulates the processor:
+
+```sh
+pacman -S mingw-w64-ucrt-x86_64-iverilog
+```
+
+On Linux, Icarus comes from the distribution (`iverilog` on Debian and
+Ubuntu).
+
+Download the latest
 [release](https://github.com/nipscernlab/yanc/releases/latest):
 `yanc-bin-<version>.zip` for Windows, `yanc-bin-linux-<version>.tar.gz` for
-Linux. Unpack it anywhere and run its install script once: `install.bat` on
-Windows, `./install.sh` on Linux. It puts the tools on your PATH, with no
-administrator rights. Open a new
-terminal: `yanc -h` answers. To simulate you also need
-[Icarus Verilog](http://iverilog.icarus.com/), and to see the waveform,
-GTKWave ([docs/install.md](docs/install.md)).
+Linux, and unpack it anywhere. From the unpacked folder, put its tools on
+your PATH, once, with no administrator rights. In the UCRT64 terminal,
+where `C:\Users\me\yanc` is `/c/Users/me/yanc`:
+
+```sh
+cd /c/Users/me/yanc
+echo "export PATH=\"\$PATH:$(pwd)/bin\"" > /etc/profile.d/yanc.sh
+```
+
+On Linux, `./install.sh`. Open a new terminal: `yanc -h` answers. Every
+command below is typed in that terminal. To see the waveform you also need
+GTKWave, and to simulate faster, Verilator: both are in
+[docs/install.md](docs/install.md).
 
 **2. Compile.** The package's `example/my_program.cpp`:
 
@@ -67,17 +86,8 @@ Verilog, its memories and a testbench. A C± program is the same command on
 a `.cmm` file.
 
 **3. Simulate.** From the output folder, with `SAPHO` the `SAPHO/` folder of
-the package. On Windows (`cmd`):
-
-```bat
-set SAPHO=C:\path\to\yanc\SAPHO
-cd my_program
-iverilog -s my_program_tb -o sim.vvp -y %SAPHO% my_program_tb.v my_program.v
-vvp sim.vvp
-type output_0.txt
-```
-
-On Linux:
+the package (on Windows written the MSYS2 way, `/c/path/to/yanc/SAPHO`
+for `C:\path\to\yanc\SAPHO`):
 
 <!-- quickstart-sh -->
 ```sh
@@ -90,7 +100,7 @@ cat output_0.txt
 
 `output_0.txt` holds `55`.
 
-**4. See the waveform.** Still in `my_program/`, on either system:
+**4. See the waveform.** Still in `my_program/`:
 
 <!-- quickstart-sh -->
 ```sh
@@ -111,10 +121,10 @@ manual: [docs/index.md](docs/index.md).
 ## Develop
 
 The build needs `gcc`, `make`, `bison` and `flex` (on Windows from
-[MSYS2](https://www.msys2.org/), in its UCRT64 environment; on Linux from
-the distribution). `Scripts/setup.bat` / `Scripts/setup.sh` check and
-install what is missing; the details, including the workaround for MSYS2's
-gcc 16 with Verilator, are in [docs/install.md](docs/install.md).
+[MSYS2](https://www.msys2.org/), in the same UCRT64 terminal; on Linux from
+the distribution). `Scripts/setup.sh` checks and installs what is missing;
+the details, including the workaround for MSYS2's gcc 16 with Verilator,
+are in [docs/install.md](docs/install.md).
 
 ```sh
 make                              # build every tool into bin/

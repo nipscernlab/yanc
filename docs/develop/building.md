@@ -100,12 +100,11 @@ table or to a message regenerates its page:
 
 You don't have to install and wire these up by hand. Run **once**:
 
-```bat
-Scripts\setup.bat      :: Windows
-```
 ```sh
-bash Scripts/setup.sh  # Linux
+bash Scripts/setup.sh  # Linux, and Windows in the MSYS2 UCRT64 terminal
 ```
+
+(`Scripts\setup.bat` does the same from `cmd`, for the `.bat` runners.)
 
 It **checks** every dependency and **helps you get the missing ones**:
 
@@ -120,12 +119,15 @@ It **checks** every dependency and **helps you get the missing ones**:
   present;
 * remembers every resolved path so the runners need no manual configuration.
 
-On **Linux**, `setup.sh` does the equivalent through your package manager: it
-offers to install `gcc`/`bison`/`flex` and the simulators, and produces the
-binaries in `bin/` — building them from source when the toolchain is present, or
-downloading the prebuilt Linux tarball from the latest release when it isn't. It
-uses the distro `gtkwave` and caches the paths in `Scripts/tools.local.sh` for
-the runners. Re-run with `--rebuild` to recompile or `--download` to refetch.
+The list above is `setup.bat`'s. `setup.sh` does the equivalent through the
+package manager (`pacman` in the MSYS2 terminal, the distribution's on
+Linux): it offers to install `gcc`/`bison`/`flex` and the simulators (with
+`lz4` for Verilator on MSYS2), and produces the binaries in `bin/`, building
+them from source when the toolchain is present, or on Linux downloading the
+prebuilt tarball from the latest release when it isn't. It does not download
+GTKWave: on Linux it uses the distribution's, on Windows the nipscernlab
+build installed as [Installing YANC](../install.md#to-simulate) says. It
+caches the paths in `Scripts/tools.local.sh` for the runners. Re-run with `--rebuild` to recompile or `--download` to refetch.
 
 If something can't be resolved automatically (e.g. MSYS2 itself isn't installed
 yet), setup prints the exact link and command to fix it, then you re-run it.
