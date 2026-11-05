@@ -205,7 +205,7 @@ jobs:
         shell: msys2 {0}
         run: pacman -S --needed --noconfirm make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-python
 
-      - name: "A2: cmd, verilator_bin.exe as the .bat runners call it"
+      - name: "A2: cmd, verilator_bin.exe as the .bat runners call it, MSYS2 first on PATH"
         id: a_vl2
         continue-on-error: true
         timeout-minutes: 10
@@ -213,13 +213,16 @@ jobs:
         run: |
           . "$env:RUNNER_TEMP\helpers.ps1"
           $root = '${{ steps.msys2.outputs.msys2-location }}'
-          $u = [Environment]::GetEnvironmentVariable('Path', 'User')
-          [Environment]::SetEnvironmentVariable('Path', "$u;$root\usr\bin", 'User')
+          # MSYS2's folders ahead of the rest of the user PATH: WindowsApps,
+          # in every user PATH, holds a python3 alias to the Microsoft Store,
+          # which round four found first
+          $u = ([Environment]::GetEnvironmentVariable('Path', 'User') -split ';' | Where-Object { $_ -and $_ -ne "$root\ucrt64\bin" }) -join ';'
+          [Environment]::SetEnvironmentVariable('Path', "$root\ucrt64\bin;$root\usr\bin;$u", 'User')
           $env:Path = New-TerminalPath
           $w = "$env:WORK\a_vl2"; New-Item -ItemType Directory -Force $w | Out-Null
           Copy-Item "$env:PKG_DIR\example\my_program.cpp" $w
           $vl = Get-Block docs/simulation.md '## Simulating with Verilator' 'bat' | Where-Object { $_ -notmatch '^gtkwave ' -and $_ -notmatch '^::' }
-          $vl = $vl | ForEach-Object { ($_ -replace '^verilator ', 'verilator_bin ') -replace '\s+::.*$', '' }
+          $vl = $vl | ForEach-Object { ($_ -replace '^verilator ', 'verilator_bin -CFLAGS -D_GLIBCXX_ASSERTIONS ') -replace '\s+::.*$', '' }
           $bat = @('@echo on', "set SAPHO=$env:PKG_DIR\SAPHO", "set VERILATOR_ROOT=$root\ucrt64\share\verilator", 'yanc my_program.cpp || exit /b 1') + $vl
           $bat | Set-Content "$w\vl.bat" -Encoding ascii
           Get-Content "$w\vl.bat"
@@ -227,7 +230,7 @@ jobs:
           if ($rc -ne 0) { throw "verilator_bin from cmd failed ($rc)" }
           if (-not (Test-Path "$w\my_program\my_program_tb.vcd")) { throw 'no waveform' }
 
-      - name: "B2: UCRT64 shell, Verilator with make, gcc and python"
+      - name: "B2: UCRT64 shell, Verilator with make, gcc, python and the gcc 16 flag"
         id: b_vl2
         continue-on-error: true
         timeout-minutes: 10
@@ -240,6 +243,7 @@ jobs:
             SAPHO="$(cygpath -u "$PKG_DIR")/SAPHO" /usr/bin/bash -lc "
               set -e; cd '$w'; yanc my_program.cpp; cd my_program
               verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps \
+                -CFLAGS -D_GLIBCXX_ASSERTIONS \
                 --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK \
                 -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl \
                 -y \"\$SAPHO\" my_program_tb.v my_program.v
@@ -250,9 +254,9 @@ jobs:
         shell: pwsh
         run: |
           $r = @(
-            "| strategy | README commands | the manual's Verilator command | Verilator with make, gcc and python |",
+            "| strategy | README commands | the manual's Verilator command | Verilator with make, gcc, python and -D_GLIBCXX_ASSERTIONS |",
             "|---|---|---|---|",
-            "| A, cmd | ${{ steps.a.outcome }} | ${{ steps.a_vl.outcome }} | ${{ steps.a_vl2.outcome }} (verilator_bin, VERILATOR_ROOT, usr\bin) |",
+            "| A, cmd | ${{ steps.a.outcome }} | ${{ steps.a_vl.outcome }} | ${{ steps.a_vl2.outcome }} (verilator_bin, VERILATOR_ROOT, MSYS2 first on PATH) |",
             "| B, UCRT64 shell | ${{ steps.b.outcome }} | ${{ steps.b_vl.outcome }} | ${{ steps.b_vl2.outcome }} |"
           )
           $r | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
