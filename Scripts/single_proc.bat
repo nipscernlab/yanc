@@ -159,7 +159,7 @@ set GTKWOUT=%TMP_PRO%\%PROC%_tb.gtkw
 :run_gtkwave
 echo #### Generating the .gtkw layout (gen_gtkw) and launching GTKWave
 %BIN_DIR%\gen_gtkw.exe %HDR% %GTKWOUT% %SRC_DIR% %BIN_DIR%\comp2gtkw.exe
-%GTKWAVE% --dark --zoom-fit --left-justify %WAVE% -a %GTKWOUT%
+%GTKWAVE% %GTKWAVE_OPTS% %WAVE% -a %GTKWOUT%
 
 cd %ROOT_DIR%
 exit /b 0

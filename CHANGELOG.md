@@ -457,6 +457,12 @@ tags consumed by Aurora.
 - **The `.bat` scripts use MSYS2's UCRT64** (#117). `setup.bat` looked for
   gcc, Icarus and Verilator in `mingw64\bin` and offered the MINGW64
   packages, which no longer include the simulators. It now finds MSYS2 by
+- **The runners open any GTKWave.** They called GTKWave with `--zoom-fit`
+  and `--left-justify`, which only the nipscernlab build has; MSYS2's and
+  the distributions' GTKWave refuse an option they do not know, print their
+  usage and open nothing. `gtkwave_opts` in `Scripts/env.sh` and
+  `GTKWAVE_OPTS` in `Scripts\env.bat` pass each of `--dark`, `--zoom-fit`
+  and `--left-justify` only when the GTKWave's `--help` lists it.
   its `pacman.exe`, takes the tools from `ucrt64\bin` and offers
   `mingw-w64-ucrt-x86_64-*`; its g++ probe follows `setup.sh` (gcc 16 and
   `-D_GLIBCXX_ASSERTIONS`) instead of asking for gcc 15, and a `::` comment

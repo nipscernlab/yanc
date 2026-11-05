@@ -115,6 +115,6 @@ if [ "$VIEW" = 0 ]; then
     cd "$ROOT_DIR"; exit 0
 fi
 echo "#### Launching GTKWave"
-"$GTKWAVE" --dark --zoom-fit --left-justify "$WAVE_VCD" -a "$GTKW_OUT"
+"$GTKWAVE" $(gtkwave_opts) "$WAVE_VCD" -a "$GTKW_OUT"
 
 cd "$ROOT_DIR"

@@ -200,7 +200,7 @@ echo #### Running the Verilator simulation
 :proj_gtkwave
 echo #### Generating the .gtkw layout (gen_gtkw) and launching GTKWave
 %BIN_DIR%\gen_gtkw.exe %TMP_DIR%\%TB%_hdr.vcd %TMP_DIR%\%TB%.gtkw %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
-%GTKWAVE% --dark --zoom-fit --left-justify %TMP_DIR%\%TB%.vcd -a %TMP_DIR%\%TB%.gtkw
+%GTKWAVE% %GTKWAVE_OPTS% %TMP_DIR%\%TB%.vcd -a %TMP_DIR%\%TB%.gtkw
 
 cd %ROOT_DIR%
 exit /b 0

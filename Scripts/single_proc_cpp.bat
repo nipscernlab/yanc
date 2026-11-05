@@ -175,7 +175,7 @@ if "%VIEW%"=="0" (
     exit /b 0
 )
 echo #### Launching GTKWave
-"%GTKWAVE%" --dark --zoom-fit --left-justify "%WAVE%" -a "%GTKWOUT%"
+"%GTKWAVE%" %GTKWAVE_OPTS% "%WAVE%" -a "%GTKWOUT%"
 
 cd /d "%ROOT_DIR%"
 exit /b 0
