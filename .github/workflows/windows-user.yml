@@ -115,6 +115,7 @@ jobs:
       - name: "A: cmd, README commands"
         id: a
         continue-on-error: true
+        timeout-minutes: 10
         shell: pwsh
         run: |
           . "$env:RUNNER_TEMP\helpers.ps1"
@@ -138,6 +139,7 @@ jobs:
       - name: "A: cmd, the manual's Verilator command"
         id: a_vl
         continue-on-error: true
+        timeout-minutes: 10
         shell: pwsh
         run: |
           . "$env:RUNNER_TEMP\helpers.ps1"
@@ -155,6 +157,7 @@ jobs:
       - name: "B: UCRT64 shell, README commands"
         id: b
         continue-on-error: true
+        timeout-minutes: 10
         shell: msys2 {0}
         run: |
           set -euo pipefail
@@ -175,6 +178,7 @@ jobs:
       - name: "B: UCRT64 shell, the manual's Verilator command"
         id: b_vl
         continue-on-error: true
+        timeout-minutes: 10
         shell: msys2 {0}
         run: |
           set -euo pipefail
@@ -203,6 +207,7 @@ jobs:
       - name: "A2: cmd, verilator_bin.exe as the .bat runners call it"
         id: a_vl2
         continue-on-error: true
+        timeout-minutes: 10
         shell: pwsh
         run: |
           . "$env:RUNNER_TEMP\helpers.ps1"
@@ -224,6 +229,7 @@ jobs:
       - name: "B2: UCRT64 shell, Verilator with make and gcc"
         id: b_vl2
         continue-on-error: true
+        timeout-minutes: 10
         shell: msys2 {0}
         run: |
           set -euo pipefail
