@@ -1,0 +1,203 @@
+name: Windows user
+
+# Follows the documented steps of a Windows user of the release package, on a
+# machine set up only as docs/install.md says, to find out which way of using
+# YANC with MSYS2's simulators works as written.
+#
+# The package is built as release.yml builds it. The user's MSYS2 is a fresh
+# UCRT64 with the default (minimal) PATH and only the packages the table of
+# docs/install.md lists, read from the file itself. Each "new terminal" gets
+# the PATH a new terminal of a clean Windows would have: the system folders
+# and the user PATH from the registry, never the runner's own PATH, which
+# carries other compilers (Strawberry Perl's gcc, the image's own MSYS2).
+#
+# Two strategies, each tried in its own step:
+#   A  cmd:          <msys2>\ucrt64\bin on the user PATH next to YANC's bin\,
+#                    the README's cmd commands
+#   B  UCRT64 shell: YANC's bin on MSYS2's PATH through /etc/profile.d,
+#                    the README's sh commands
+# plus the manual's Verilator command in each. The steps report, they do not
+# gate (continue-on-error), until a strategy is chosen.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pkg:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: >-
+            mingw-w64-x86_64-gcc
+            make
+            bison
+            flex
+      - name: Build and stage, as release.yml does
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          make stage STAGE=out
+          ls out
+      - uses: actions/upload-artifact@v6
+        with:
+          name: yanc-package
+          path: out
+          retention-days: 3
+
+  user:
+    needs: pkg
+    runs-on: windows-latest
+    env:
+      PKG_DIR: D:\yanc
+      WORK: D:\qs
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Packages the manual lists for simulating on Windows
+        id: pk
+        shell: pwsh
+        run: |
+          $lines = Get-Content docs/install.md
+          $start = ($lines | Select-String -Pattern '^On \*\*Windows\*\*' | Select-Object -First 1).LineNumber
+          $table = $lines[$start..($lines.Count-1)] | Where-Object { $_ -match '^\|' } | Select-Object -First 12
+          $pk = ($table | Select-String -Pattern 'mingw-w64-ucrt-x86_64-[a-z0-9]+' -AllMatches).Matches.Value | Sort-Object -Unique
+          "Packages: $($pk -join ' ')"
+          "list=$($pk -join ' ')" >> $env:GITHUB_OUTPUT
+
+      - id: msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          path-type: minimal
+          install: ${{ steps.pk.outputs.list }}
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: yanc-package
+          path: ${{ env.PKG_DIR }}
+
+      - name: install.bat, as the package's README says
+        shell: cmd
+        run: |
+          cd /d %PKG_DIR%
+          call install.bat
+
+      - name: The helper the strategy steps share
+        shell: pwsh
+        run: |
+          # new-terminal PATH: the system folders and the user PATH, as a new
+          # cmd of a clean Windows would have
+          @'
+          function New-TerminalPath {
+            $sys = 'C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\'
+            $user = [Environment]::GetEnvironmentVariable('Path', 'User')
+            return "$sys;$user"
+          }
+          function Get-Block([string]$file, [string]$after, [string]$fence) {
+            $l = Get-Content $file; $i = 0
+            while ($i -lt $l.Count -and $l[$i] -notmatch [regex]::Escape($after)) { $i++ }
+            while ($i -lt $l.Count -and $l[$i] -notmatch "^``````$fence") { $i++ }
+            $i++; $out = @()
+            while ($i -lt $l.Count -and $l[$i] -notmatch '^```') { $out += $l[$i]; $i++ }
+            return $out
+          }
+          '@ | Set-Content "$env:RUNNER_TEMP\helpers.ps1"
+          "user PATH after install.bat:"
+          [Environment]::GetEnvironmentVariable('Path', 'User') -split ';'
+
+      - name: "A: cmd, README commands"
+        id: a
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          . "$env:RUNNER_TEMP\helpers.ps1"
+          $ucrt = Join-Path '${{ steps.msys2.outputs.msys2-location }}' 'ucrt64\bin'
+          $u = [Environment]::GetEnvironmentVariable('Path', 'User')
+          [Environment]::SetEnvironmentVariable('Path', "$u;$ucrt", 'User')
+          $env:Path = New-TerminalPath
+          $w = "$env:WORK\a"; New-Item -ItemType Directory -Force $w | Out-Null
+          Copy-Item "$env:PKG_DIR\example\my_program.cpp" $w
+          $sim = Get-Block README.md 'On Windows (`cmd`)' 'bat'
+          $sim = $sim | ForEach-Object { if ($_ -match '^set SAPHO=') { "set SAPHO=$env:PKG_DIR\SAPHO" } else { $_ } }
+          $view = Get-Block README.md '**4. See the waveform.**' 'sh' | Where-Object { $_ -notmatch '^gtkwave ' }
+          $bat = @('@echo on', 'yanc my_program.cpp || exit /b 1') + ($sim | ForEach-Object { "$_ || exit /b 1" }) + ($view | ForEach-Object { "$_ || exit /b 1" })
+          $bat | Set-Content "$w\qs.bat" -Encoding ascii
+          Get-Content "$w\qs.bat"
+          Push-Location $w; cmd /c qs.bat; $rc = $LASTEXITCODE; Pop-Location
+          if ($rc -ne 0) { throw "the README's cmd commands failed ($rc)" }
+          if ((Get-Content "$w\my_program\output_0.txt").Trim() -ne '55') { throw 'output_0.txt is not 55' }
+          if (-not (Test-Path "$w\my_program\my_program_tb.gtkw")) { throw 'no .gtkw' }
+
+      - name: "A: cmd, the manual's Verilator command"
+        id: a_vl
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          . "$env:RUNNER_TEMP\helpers.ps1"
+          $env:Path = New-TerminalPath
+          $w = "$env:WORK\a_vl"; New-Item -ItemType Directory -Force $w | Out-Null
+          Copy-Item "$env:PKG_DIR\example\my_program.cpp" $w
+          $vl = Get-Block docs/simulation.md '## Simulating with Verilator' 'bat' | Where-Object { $_ -notmatch '^gtkwave ' -and $_ -notmatch '^::' }
+          $bat = @('@echo on', "set SAPHO=$env:PKG_DIR\SAPHO", 'yanc my_program.cpp || exit /b 1') + $vl
+          $bat | Set-Content "$w\vl.bat" -Encoding ascii
+          Get-Content "$w\vl.bat"
+          Push-Location $w; cmd /c vl.bat; $rc = $LASTEXITCODE; Pop-Location
+          if ($rc -ne 0) { throw "the manual's Verilator commands failed ($rc)" }
+          if (-not (Test-Path "$w\my_program\my_program_tb.vcd")) { throw 'no waveform' }
+
+      - name: "B: UCRT64 shell, README commands"
+        id: b
+        continue-on-error: true
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          bin="$(cygpath -u "$PKG_DIR")/bin"
+          echo "export PATH=\"\$PATH:$bin\"" > /etc/profile.d/yanc.sh
+          awk '/<!-- quickstart-sh/{f=1;next} f&&/^```sh/{p=1;next} p&&/^```/{p=0;f=0;next} p' README.md \
+            | grep -v -e '^export SAPHO=' -e '^gtkwave ' > /tmp/qs.sh
+          cat /tmp/qs.sh
+          w="$(cygpath -u "$WORK")/b"; mkdir -p "$w"; cp "$(cygpath -u "$PKG_DIR")/example/my_program.cpp" "$w"
+          # a new login shell, as a new UCRT64 terminal: its PATH comes from
+          # /etc/profile (minimal) and /etc/profile.d
+          env -i HOME="$HOME" MSYSTEM=UCRT64 MSYS2_PATH_TYPE=minimal SYSTEMROOT="$SYSTEMROOT" \
+            WINDIR="$WINDIR" TEMP="$TEMP" TMP="$TMP" \
+            SAPHO="$(cygpath -u "$PKG_DIR")/SAPHO" /usr/bin/bash -lc "cd '$w' && command -v yanc iverilog && bash -e /tmp/qs.sh"
+          test "$(tr -d '\r' < "$w/my_program/output_0.txt")" = 55
+          test -s "$w/my_program/my_program_tb.gtkw"
+
+      - name: "B: UCRT64 shell, the manual's Verilator command"
+        id: b_vl
+        continue-on-error: true
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          w="$(cygpath -u "$WORK")/b_vl"; mkdir -p "$w"; cp "$(cygpath -u "$PKG_DIR")/example/my_program.cpp" "$w"
+          env -i HOME="$HOME" MSYSTEM=UCRT64 MSYS2_PATH_TYPE=minimal SYSTEMROOT="$SYSTEMROOT" \
+            WINDIR="$WINDIR" TEMP="$TEMP" TMP="$TMP" \
+            SAPHO="$(cygpath -u "$PKG_DIR")/SAPHO" /usr/bin/bash -lc "
+              set -e; cd '$w'; yanc my_program.cpp; cd my_program
+              verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps \
+                --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK \
+                -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl \
+                -y \"\$SAPHO\" my_program_tb.v my_program.v
+              ./vl/Vmy_program_tb
+              test -s my_program_tb.vcd"
+
+      - name: Summary
+        shell: pwsh
+        run: |
+          $r = @(
+            "| strategy | README commands | the manual's Verilator command |",
+            "|---|---|---|",
+            "| A, cmd | ${{ steps.a.outcome }} | ${{ steps.a_vl.outcome }} |",
+            "| B, UCRT64 shell | ${{ steps.b.outcome }} | ${{ steps.b_vl.outcome }} |"
+          )
+          $r | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          $r
