@@ -76,9 +76,9 @@ compiler defects.
 > Verilator's build uses: linking fails with `undefined reference to
 > std::__cxx11::basic_string<...>::basic_string(...&&)`. YANC's scripts pass
 > `-D_GLIBCXX_ASSERTIONS` to Verilator under MSYS2 (`YANC_VL_CFLAGS` in
-> `Scripts/env.sh`), with which the compiler builds the constructor itself;
-> no downgrade is needed. `Scripts/setup.sh` checks it. The Icarus flow is
-> unaffected.
+> `Scripts/env.sh` and `Scripts\env.bat`), with which the compiler builds
+> the constructor itself; no downgrade is needed. `Scripts/setup.sh` and
+> `Scripts\setup.bat` check it. The Icarus flow is unaffected.
 
 On **Linux**, they come from the distribution's package manager:
 

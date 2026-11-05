@@ -61,7 +61,7 @@ if not defined GTKWAVE (
 if /i "%SIM%"=="verilator" (
     if not defined VERILATOR (
         echo [multi_proc] Verilator not found - run Scripts\setup.bat, or install it
-        echo            with "pacman -S mingw-w64-x86_64-verilator" and re-run.
+        echo            with "pacman -S mingw-w64-ucrt-x86_64-verilator" and re-run.
         exit /b 1
     )
     if not defined FST2VCD (
@@ -77,7 +77,9 @@ if /i "%SIM%"=="verilator" (
     )
 )
 
-:: When iverilog/verilator come from MSYS2, their tools need mingw64\bin on PATH.
+:: When iverilog/verilator come from MSYS2, their tools need ucrt64\bin on PATH,
+:: and Verilator's make is in usr\bin, which goes after it.
+if defined MSYS_USR_BIN set "PATH=%MSYS_USR_BIN%;%PATH%"
 if defined MINGW_BIN set "PATH=%MINGW_BIN%;%PATH%"
 
 :: Verilator warning suppressions: the design isn't lint-clean and the project
@@ -158,7 +160,7 @@ goto :proj_run_icarus
 
 :proj_build_vl
 echo #### Running Verilator (+define+YANC_TRACE, --binary --timing --trace-fst)
-%VERILATOR% --binary --timing --trace-fst +define+YANC_TRACE --top-module %TB% %VL_WARN% --Mdir %VL_DIR% !HDL_V! !PRO_V! !TOP_V!
+%VERILATOR% --binary --timing --trace-fst +define+YANC_TRACE %YANC_VL_ARGS% --top-module %TB% %VL_WARN% --Mdir %VL_DIR% !HDL_V! !PRO_V! !TOP_V!
 endlocal
 goto :proj_run_vl
 

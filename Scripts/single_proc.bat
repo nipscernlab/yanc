@@ -53,7 +53,7 @@ if not defined GTKWAVE (
 if /i "%SIM%"=="verilator" (
     if not defined VERILATOR (
         echo [single_proc] Verilator not found - run Scripts\setup.bat, or install it
-        echo            with "pacman -S mingw-w64-x86_64-verilator" and re-run.
+        echo            with "pacman -S mingw-w64-ucrt-x86_64-verilator" and re-run.
         exit /b 1
     )
 ) else (
@@ -64,7 +64,9 @@ if /i "%SIM%"=="verilator" (
     )
 )
 
-:: When iverilog/verilator come from MSYS2, their tools need mingw64\bin on PATH.
+:: When iverilog/verilator come from MSYS2, their tools need ucrt64\bin on PATH,
+:: and Verilator's make is in usr\bin, which goes after it.
+if defined MSYS_USR_BIN set "PATH=%MSYS_USR_BIN%;%PATH%"
 if defined MINGW_BIN set "PATH=%MINGW_BIN%;%PATH%"
 
 :: What to simulate (a project under Compilers\CMMComp\Tests) -----------------
@@ -137,7 +139,7 @@ goto :run_gtkwave
 :: --- Verilator --------------------------------------------------------------
 :sim_verilator
 echo #### Running Verilator (+define+YANC_TRACE, --binary --timing --trace)
-%VERILATOR% --binary --timing --trace +define+YANC_TRACE ^
+%VERILATOR% --binary --timing --trace +define+YANC_TRACE %YANC_VL_ARGS% ^
     --top-module %PROC%_tb ^
     -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH ^
     -Wno-CASEINCOMPLETE -Wno-IMPLICIT -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP ^

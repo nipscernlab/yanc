@@ -58,27 +58,29 @@ for %%E in (bison.exe) do if not "%%~$PATH:E"=="" set "BISON=%%~$PATH:E"
 for %%E in (flex.exe)  do if not "%%~$PATH:E"=="" set "FLEX=%%~$PATH:E"
 
 for %%R in ("C:\msys64" "C:\packs\msys64" "%SystemDrive%\msys64" "C:\tools\msys64") do (
-    if exist "%%~R\mingw64\bin\x86_64-w64-mingw32-gcc.exe" (
-        if not defined MSYS2_ROOT set "MSYS2_ROOT=%%~R"
-        if not defined GCC   set "GCC=%%~R\mingw64\bin\x86_64-w64-mingw32-gcc.exe"
-        if not defined BISON if exist "%%~R\usr\bin\bison.exe" set "BISON=%%~R\usr\bin\bison.exe"
-        if not defined FLEX  if exist "%%~R\usr\bin\flex.exe"  set "FLEX=%%~R\usr\bin\flex.exe"
-    )
+    if not defined MSYS2_ROOT if exist "%%~R\usr\bin\pacman.exe" set "MSYS2_ROOT=%%~R"
 )
+
+:: MSYS2's ucrt64\bin: the UCRT64 environment, the only one that still ships
+:: Icarus and Verilator (MINGW64 no longer does). It holds the gcc, the
+:: simulators and the DLLs they link against, so the runners put it on PATH
+:: when the tools come from MSYS2. The name MINGW_BIN is kept so that a
+:: tools.local.bat written by an earlier setup.bat still loads.
+set "MINGW_BIN="
+set "PKG=mingw-w64-ucrt-x86_64"
+if defined MSYS2_ROOT set "MINGW_BIN=%MSYS2_ROOT%\ucrt64\bin"
+if defined MSYS2_ROOT if not defined GCC   if exist "%MSYS2_ROOT%\ucrt64\bin\x86_64-w64-mingw32-gcc.exe" set "GCC=%MSYS2_ROOT%\ucrt64\bin\x86_64-w64-mingw32-gcc.exe"
+if defined MSYS2_ROOT if not defined BISON if exist "%MSYS2_ROOT%\usr\bin\bison.exe" set "BISON=%MSYS2_ROOT%\usr\bin\bison.exe"
+if defined MSYS2_ROOT if not defined FLEX  if exist "%MSYS2_ROOT%\usr\bin\flex.exe"  set "FLEX=%MSYS2_ROOT%\usr\bin\flex.exe"
 
 set "BUILD_OK="
 if defined GCC if defined BISON if defined FLEX set "BUILD_OK=1"
 
-:: MSYS2's mingw64\bin: provides iverilog/verilator and the DLLs they link
-:: against, so the runners must put it on PATH when the tools come from MSYS2.
-set "MINGW_BIN="
-if defined MSYS2_ROOT set "MINGW_BIN=%MSYS2_ROOT%\mingw64\bin"
-
 set "BIN_PRESENT="
 if exist "%YANC_BIN%\cmmcomp.exe" if exist "%YANC_BIN%\asmcomp.exe" if exist "%YANC_BIN%\cppcomp.exe" if exist "%YANC_BIN%\gen_gtkw.exe" set "BIN_PRESENT=1"
 
-:: C++ toolchain sanity for the Verilator flow (gcc 16.1.0-5 has a broken
-:: libstdc++ -- see :check_cxx). Non-fatal; the Icarus flow is unaffected.
+:: C++ toolchain sanity for the Verilator flow (MSYS2's gcc 16 lacks a
+:: libstdc++ symbol -- see :check_cxx). Non-fatal; the Icarus flow is unaffected.
 call :check_cxx
 
 :: Offer to install the build tools via pacman if we are going to need them
@@ -94,15 +96,15 @@ if not defined BIN_PRESENT if not "%FORCE%"=="download" if not defined BUILD_OK 
         set "ans="
         set /p "ans=Install the build tools now via pacman? [y/N] "
         if /i "!ans!"=="y" (
-            "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm mingw-w64-x86_64-gcc bison flex
-            if exist "!MSYS2_ROOT!\mingw64\bin\x86_64-w64-mingw32-gcc.exe" set "GCC=!MSYS2_ROOT!\mingw64\bin\x86_64-w64-mingw32-gcc.exe"
+            "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm make bison flex !PKG!-gcc
+            if exist "!MINGW_BIN!\x86_64-w64-mingw32-gcc.exe" set "GCC=!MINGW_BIN!\x86_64-w64-mingw32-gcc.exe"
             if exist "!MSYS2_ROOT!\usr\bin\bison.exe" set "BISON=!MSYS2_ROOT!\usr\bin\bison.exe"
             if exist "!MSYS2_ROOT!\usr\bin\flex.exe"  set "FLEX=!MSYS2_ROOT!\usr\bin\flex.exe"
             if defined GCC if defined BISON if defined FLEX set "BUILD_OK=1"
         )
     ) else (
         echo        Install MSYS2 from https://www.msys2.org/ then run:
-        echo            pacman -S mingw-w64-x86_64-gcc bison flex
+        echo            pacman -S make bison flex mingw-w64-ucrt-x86_64-gcc
         echo        ^(or just let setup download the prebuilt binaries below^)
     )
 )
@@ -154,13 +156,13 @@ set "GTKWAVE="
 set "FST2VCD="
 :: (MINGW_BIN is resolved earlier, from MSYS2_ROOT - do not clear it here)
 
-:: Icarus Verilog (iverilog + vvp) -- ships in MSYS2, so offer pacman ---------
-:: (mingw-w64-x86_64-iverilog). A standalone install is still accepted if found.
+:: Icarus Verilog (iverilog + vvp) -- ships in MSYS2's UCRT64, so offer pacman
+:: (mingw-w64-ucrt-x86_64-iverilog). A standalone install is still accepted.
 for %%E in (iverilog.exe) do if not "%%~$PATH:E"=="" set "IVERILOG=%%~$PATH:E"
 for %%E in (vvp.exe)      do if not "%%~$PATH:E"=="" set "VVP=%%~$PATH:E"
 if defined MSYS2_ROOT (
-    if not defined IVERILOG if exist "%MSYS2_ROOT%\mingw64\bin\iverilog.exe" set "IVERILOG=%MSYS2_ROOT%\mingw64\bin\iverilog.exe"
-    if not defined VVP      if exist "%MSYS2_ROOT%\mingw64\bin\vvp.exe"      set "VVP=%MSYS2_ROOT%\mingw64\bin\vvp.exe"
+    if not defined IVERILOG if exist "%MINGW_BIN%\iverilog.exe" set "IVERILOG=%MINGW_BIN%\iverilog.exe"
+    if not defined VVP      if exist "%MINGW_BIN%\vvp.exe"      set "VVP=%MINGW_BIN%\vvp.exe"
 )
 for %%D in ("C:\iverilog\bin" "C:\nipscern\Aurora\components\Packages\iverilog\bin") do (
     if not defined IVERILOG if exist "%%~D\iverilog.exe" set "IVERILOG=%%~D\iverilog.exe"
@@ -170,33 +172,35 @@ if not defined IVERILOG if defined MSYS2_ROOT (
     set "ans="
     set /p "ans=[icarus] not found. Install it via pacman now? [y/N] "
     if /i "!ans!"=="y" (
-        "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm mingw-w64-x86_64-iverilog
-        if exist "!MSYS2_ROOT!\mingw64\bin\iverilog.exe" set "IVERILOG=!MSYS2_ROOT!\mingw64\bin\iverilog.exe"
-        if exist "!MSYS2_ROOT!\mingw64\bin\vvp.exe"      set "VVP=!MSYS2_ROOT!\mingw64\bin\vvp.exe"
+        "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm !PKG!-iverilog
+        if exist "!MINGW_BIN!\iverilog.exe" set "IVERILOG=!MINGW_BIN!\iverilog.exe"
+        if exist "!MINGW_BIN!\vvp.exe"      set "VVP=!MINGW_BIN!\vvp.exe"
     )
 )
 if defined IVERILOG (
     echo [icarus]    %IVERILOG%
 ) else (
-    echo [icarus]    NOT found - install MSYS2 + "pacman -S mingw-w64-x86_64-iverilog"
+    echo [icarus]    NOT found - install MSYS2 + "pacman -S mingw-w64-ucrt-x86_64-iverilog"
     echo             ^(or a standalone build; needed for single_proc.bat / multi_proc.bat^)
 )
 
-:: Verilator -- ships in MSYS2, so offer pacman if MSYS2 is present -----------
+:: Verilator -- ships in MSYS2's UCRT64, so offer pacman if MSYS2 is present --
 for %%E in (verilator_bin.exe) do if not "%%~$PATH:E"=="" set "VERILATOR=%%~$PATH:E"
-if defined MSYS2_ROOT if not defined VERILATOR if exist "%MSYS2_ROOT%\mingw64\bin\verilator_bin.exe" set "VERILATOR=%MSYS2_ROOT%\mingw64\bin\verilator_bin.exe"
+if defined MSYS2_ROOT if not defined VERILATOR if exist "%MINGW_BIN%\verilator_bin.exe" set "VERILATOR=%MINGW_BIN%\verilator_bin.exe"
 if not defined VERILATOR if defined MSYS2_ROOT (
     set "ans="
     set /p "ans=[verilator] not found. Install it via pacman now? [y/N] "
     if /i "!ans!"=="y" (
-        "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm mingw-w64-x86_64-verilator
-        if exist "!MSYS2_ROOT!\mingw64\bin\verilator_bin.exe" set "VERILATOR=!MSYS2_ROOT!\mingw64\bin\verilator_bin.exe"
+        "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm !PKG!-verilator
+        if exist "!MINGW_BIN!\verilator_bin.exe" set "VERILATOR=!MINGW_BIN!\verilator_bin.exe"
     )
 )
+:: VERILATOR_ROOT = ...\share\verilator. MINGW_BIN, the ucrt64\bin holding
+:: Verilator's g++/python3 chain, is usually already set from MSYS2_ROOT; if
+:: Verilator was found elsewhere on PATH, derive it from the exe location.
+:: (These lines stay outside the block: cmd misparses a :: comment inside
+:: parentheses.)
 if defined VERILATOR (
-    :: VERILATOR_ROOT = ...\share\verilator. MINGW_BIN (the mingw64\bin holding
-    :: Verilator's g++/python3 chain) is usually already set from MSYS2_ROOT; if
-    :: Verilator was found elsewhere on PATH, derive it from the exe location.
     if not defined MINGW_BIN (
         for %%F in ("%VERILATOR%") do set "MINGW_BIN=%%~dpF"
         if "!MINGW_BIN:~-1!"=="\" set "MINGW_BIN=!MINGW_BIN:~0,-1!"
@@ -204,7 +208,7 @@ if defined VERILATOR (
     if not defined VERILATOR_ROOT for %%F in ("!MINGW_BIN!\..") do if exist "%%~fF\share\verilator" set "VERILATOR_ROOT=%%~fF\share\verilator"
     echo [verilator] !VERILATOR!
 ) else (
-    echo [verilator] NOT found - install MSYS2 + "pacman -S mingw-w64-x86_64-verilator"
+    echo [verilator] NOT found - install MSYS2 + "pacman -S mingw-w64-ucrt-x86_64-verilator"
     echo             ^(needed only for the Verilator flow: single_proc.bat --sim verilator^)
 )
 
@@ -263,35 +267,53 @@ exit /b 0
 :: ===========================================================================
 
 :check_cxx
-:: MSYS2's mingw-w64-x86_64-gcc 16.1.0-5 shipped a broken libstdc++ (the
-:: std::string move-constructor symbol is missing), so Verilator's verilated.cpp
-:: fails to link. Probe it functionally -- compile a tiny std::string-move
-:: program with the same g++ Verilator uses -- and warn loudly if it breaks.
-:: Catches the real defect rather than matching one version string.
+:: MSYS2's gcc 16 (16.1 and 16.2, MINGW64 and UCRT64) ships a libstdc++ whose
+:: std::string move constructor is missing; it shows at -Os, which
+:: Verilator's build uses. With -D_GLIBCXX_ASSERTIONS the compiler
+:: instantiates the constructor itself, and the runners pass that to
+:: Verilator (Scripts\env.bat, YANC_VL_CFLAGS; #117). Probe with the g++
+:: Verilator uses, without the flag and then with it, as setup.sh does.
+:: Non-fatal: the Icarus flow does not need g++.
 set "GXX="
 if defined MINGW_BIN if exist "%MINGW_BIN%\g++.exe" set "GXX=%MINGW_BIN%\g++.exe"
 if not defined GXX for %%E in (g++.exe) do if not "%%~$PATH:E"=="" set "GXX=%%~$PATH:E"
 if not defined GXX exit /b 0
 > "%TEMP%\yanc_cxx_probe.cpp" echo #include ^<string^>
 >>"%TEMP%\yanc_cxx_probe.cpp" echo int main(){std::string a="x";std::string b=std::move(a)+"y";return b.size()?0:1;}
-"%GXX%" -Os -o "%TEMP%\yanc_cxx_probe.exe" "%TEMP%\yanc_cxx_probe.cpp" >nul 2>&1
-if errorlevel 1 (
-    echo.
-    echo **************************************************************************
-    echo  WARNING: this g++ cannot link std::string move -- the Verilator flow
-    echo  WILL FAIL. MSYS2's mingw-w64-x86_64-gcc 16.1.0-5 ships a broken
-    echo  libstdc++. Downgrade to a known-good gcc ^(15.1.0-5^) from the pacman
-    echo  cache ^(see README Dependencies for the full command^):
-    echo    pacman -U mingw-w64-x86_64-gcc-15.1.0-5-any.pkg.tar.zst mingw-w64-x86_64-gcc-libs-15.1.0-5-any.pkg.tar.zst
-    echo  Do NOT use gcc 16.1.0-5. ^(The Icarus flow is unaffected.^)
-    echo **************************************************************************
-)
+set "CXX_OK="
+set "CXX_FLAG="
+call :cxx_probe
+if not defined CXX_OK call :cxx_probe -D_GLIBCXX_ASSERTIONS
+if not defined CXX_OK goto :cxx_broken
+if not defined CXX_FLAG goto :cxx_done
+echo [g++]       this g++ lacks the std::string move constructor at -Os; the
+echo             runners pass -D_GLIBCXX_ASSERTIONS to Verilator, which works around it.
+goto :cxx_done
+:cxx_broken
+echo.
+echo **************************************************************************
+echo  WARNING: this g++ cannot link a std::string move, even with
+echo  -D_GLIBCXX_ASSERTIONS: the Verilator flow will fail. The Icarus flow is
+echo  unaffected. See docs\install.md.
+echo **************************************************************************
+:cxx_done
 del "%TEMP%\yanc_cxx_probe.cpp" "%TEMP%\yanc_cxx_probe.exe" >nul 2>&1
+exit /b 0
+
+:cxx_probe
+:: %1 = an extra flag, or nothing. Sets CXX_OK (and CXX_FLAG) if the probe
+:: links. g++ runs cc1plus, as and ld from its own folder, so that folder goes
+:: first on PATH for the call.
+setlocal
+for %%F in ("%GXX%") do set "PATH=%%~dpF;%PATH%"
+"%GXX%" -Os %1 -o "%TEMP%\yanc_cxx_probe.exe" "%TEMP%\yanc_cxx_probe.cpp" >nul 2>&1
+if errorlevel 1 (endlocal & exit /b 0)
+endlocal & set "CXX_OK=1" & set "CXX_FLAG=%~1"
 exit /b 0
 
 :build_bins
 :: Delegate to the top-level Makefile (single source of truth for the compile
-:: rules). Put MSYS2's usr\bin (make, sh, bison, flex) and mingw64\bin (the
+:: rules). Put MSYS2's usr\bin (make, sh, bison, flex) and ucrt64\bin (the
 :: cross gcc) on PATH so the MSYS2 make and its sh-based recipes resolve the
 :: toolchain, then build into the repo-local bin\. We cd into the repo and use
 :: the Makefile's default cwd-relative BIN=bin, so no Windows path (with

@@ -162,17 +162,18 @@ or `Scripts\setup.bat --download` (refetch the prebuilt binaries).
 
 Requirements (Windows + [MSYS2](https://www.msys2.org/)):
 
-* The MinGW-w64 cross toolchain — install with `pacman -S mingw-w64-x86_64-gcc`. The build calls `x86_64-w64-mingw32-gcc.exe` (the cross tuple, not plain `gcc.exe`) on purpose: it produces stand-alone Windows `.exe`s with no MSYS2 DLL runtime dependency, so the deployed binaries work on any Windows machine.
+* The MinGW-w64 cross toolchain of MSYS2's UCRT64 environment — install with `pacman -S mingw-w64-ucrt-x86_64-gcc`. The build calls `x86_64-w64-mingw32-gcc.exe` (the cross tuple, not plain `gcc.exe`) on purpose: it produces stand-alone Windows `.exe`s with no MSYS2 DLL runtime dependency (only the UCRT, part of Windows 10 and later), so the deployed binaries run without MSYS2.
 * `make`, `bison` and `flex` — install with `pacman -S make bison flex`.
 * These tools must be reachable on your `PATH`. The script bails early with the exact line to add if any of them is missing. Typical setup:
   ```
-  set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+  set PATH=C:\msys64\ucrt64\bin;C:\msys64\usr\bin;%PATH%
   ```
 * Optional, only needed if you want to simulate the generated Verilog. MSYS2
-  ships both only in UCRT64 now (no longer in MINGW64), so the bash scripts
-  of an "MSYS2 UCRT64" terminal are the way to simulate
-  ([Installing YANC](../install.md#to-simulate)); the `.bat` runners still
-  look for them in `mingw64\bin` and have not been moved to UCRT64 yet (#117):
+  ships both simulators only in UCRT64 (no longer in MINGW64), and
+  `setup.bat` looks for them in `ucrt64\bin`. The `.bat` runners pass
+  Verilator the same gcc 16 workaround as the bash scripts
+  (`YANC_VL_CFLAGS`, set in `Scripts\env.bat`; see
+  [Installing YANC](../install.md#to-simulate)):
   * [Icarus Verilog](http://iverilog.icarus.com/) (`iverilog` + `vvp`) — `pacman -S mingw-w64-ucrt-x86_64-iverilog`, and/or
   * [Verilator](https://verilator.org/) **5.x** — `pacman -S mingw-w64-ucrt-x86_64-verilator`. Its `--binary` mode drives the `g++` and `python3` of the same environment.
   * GTKWave — the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) to view the waveform.

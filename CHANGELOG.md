@@ -445,6 +445,18 @@ tags consumed by Aurora.
   `.gitattributes` now starts with `* text=auto eol=lf`; the `.sh` (LF)
   and `.bat`, `.cmd`, `.ps1` (CRLF) rules still win. No stored file
   changed: all were already LF.
+- **The `.bat` scripts use MSYS2's UCRT64** (#117). `setup.bat` looked for
+  gcc, Icarus and Verilator in `mingw64\bin` and offered the MINGW64
+  packages, which no longer include the simulators. It now finds MSYS2 by
+  its `pacman.exe`, takes the tools from `ucrt64\bin` and offers
+  `mingw-w64-ucrt-x86_64-*`; its g++ probe follows `setup.sh` (gcc 16 and
+  `-D_GLIBCXX_ASSERTIONS`) instead of asking for gcc 15, and a `::` comment
+  inside a block, which stopped it once Verilator was found ("is was
+  unexpected at this time"), moved out. `env.bat` sets `YANC_VL_CFLAGS`
+  and the runners pass it to Verilator, as the bash scripts do; they also
+  put MSYS2's `usr\bin` on `PATH` after `ucrt64\bin`, since Verilator's
+  `--binary` runs `make` from there. `aurora.bat` and the build page name
+  `ucrt64\bin`.
 - **cppcomp removes its partial outputs on Windows** (#117). A refused
   program left its `.asm` and `pc_*_mem.txt`: the error exited with them
   still open, and Windows does not remove an open file. The cleanup closes
