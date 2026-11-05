@@ -8,6 +8,19 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v9.2] – 2026-11-05
+
+A cmmcomp reorganized (#93) and audited (#108), smaller assembly, and one
+way to install on Windows. A variable written and never read leaves the
+program, a call that ends a function is a jump (#38), and the defects
+listed under Fixed, several of which gave wrong results or stopped
+cmmcomp, are gone. C± reads literals, initializers and brace lists as C
+does, and `#WAVE` keeps a variable for the waveform. asmcomp writes `LDI`
+and `STI` with a constant offset (`LDI_V`, `STI_V`), and `SAPHO/` changed:
+take `SAPHO/` and asmcomp from the same release. On Windows everything
+comes from MSYS2's UCRT64, with the same commands as on Linux
+(`./install.sh`).
+
 ### Added
 - **Coverage counts every cell of the operator tables** (#108).
   `Scripts/cmm_cov.sh` counted each `add_instr` / `add_sinst` call as one
@@ -3288,7 +3301,8 @@ history).
   MinGW-w64, packages them in `yanc-bin-vN.zip`, and publishes the zip
   as a release asset.
 
-[Unreleased]: https://github.com/nipscernlab/yanc/compare/v9.1...HEAD
+[Unreleased]: https://github.com/nipscernlab/yanc/compare/v9.2...HEAD
+[v9.2]: https://github.com/nipscernlab/yanc/releases/tag/v9.2
 [v9.1]: https://github.com/nipscernlab/yanc/releases/tag/v9.1
 [v9.0]: https://github.com/nipscernlab/yanc/releases/tag/v9.0
 [v8.0]: https://github.com/nipscernlab/yanc/releases/tag/v8.0
