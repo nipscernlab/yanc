@@ -439,6 +439,12 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **Every git checks the text out with LF** (#119). Git for Windows
+  installs with `core.autocrlf=true` and MSYS2's git without it, so a
+  clone made by one showed every text file as modified in the other.
+  `.gitattributes` now starts with `* text=auto eol=lf`; the `.sh` (LF)
+  and `.bat`, `.cmd`, `.ps1` (CRLF) rules still win. No stored file
+  changed: all were already LF.
 - **cppcomp removes its partial outputs on Windows** (#117). A refused
   program left its `.asm` and `pc_*_mem.txt`: the error exited with them
   still open, and Windows does not remove an open file. The cleanup closes

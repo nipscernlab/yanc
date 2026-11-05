@@ -41,6 +41,16 @@ UCRT64 environment (the package list is in
 distribution (Debian/Ubuntu: `build-essential bison flex`). The simulators
 and GTKWave are the same as for using YANC ([Installing YANC](../install.md#to-simulate)).
 
+On Windows, clone and run git from one side only, preferably MSYS2's git in
+the UCRT64 terminal (`pacman -S git`). Git for Windows installs with
+`core.autocrlf=true` and MSYS2's git without it. `.gitattributes` makes
+both check text out with LF (the `.bat`, `.cmd` and `.ps1` with CRLF), so
+a clone made after that rule (#119) holds the same bytes in either git. A
+clone made before it by Git for Windows still has CRLF in its files: once
+it has the rule, `git status` is clean in both gits, but the files are
+rewritten with LF only by a fresh clone or, with no uncommitted work, by
+`git rm --cached -r -q . && git reset --hard`.
+
 ## Testing
 
 ```sh
