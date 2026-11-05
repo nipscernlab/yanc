@@ -44,6 +44,7 @@ ships Icarus and Verilator for MINGW64. GTKWave is a separate download:
 | --- | --- | --- |
 | Icarus Verilog | `mingw-w64-ucrt-x86_64-iverilog` | simulating the generated Verilog |
 | Verilator 5.x | `mingw-w64-ucrt-x86_64-verilator` | faster simulation, for long runs |
+| LZ4 | `mingw-w64-ucrt-x86_64-lz4` | Verilator's FST trace (`multi_proc --sim verilator`); the Verilator package does not pull it in |
 | GTKWave | the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) | looking at the waveform |
 
 To build YANC and run its scripts as well, the whole list:
@@ -51,7 +52,8 @@ To build YANC and run its scripts as well, the whole list:
 ```sh
 pacman -S --needed make bison flex diffutils \
   mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-python \
-  mingw-w64-ucrt-x86_64-iverilog mingw-w64-ucrt-x86_64-verilator
+  mingw-w64-ucrt-x86_64-iverilog mingw-w64-ucrt-x86_64-verilator \
+  mingw-w64-ucrt-x86_64-lz4
 ```
 
 `diffutils` (`cmp`, `diff`) and Python are what `Scripts/regress.sh` and its

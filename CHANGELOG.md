@@ -465,6 +465,11 @@ tags consumed by Aurora.
   nor the base holds the tables, it now takes the processor folder whose
   `<folder>.v` declares every variable of the instance, and says so when
   none or several do.
+- **Verilator's FST trace has lz4 on MSYS2.** MSYS2's Verilator package
+  does not pull in lz4, and its FST writer includes `lz4.h`, so
+  `multi_proc --sim verilator` stopped compiling Verilator's runtime. The
+  manual lists `mingw-w64-ucrt-x86_64-lz4`, and `setup.sh` and `setup.bat`
+  install it with Verilator or offer it when it is missing.
 - **cppcomp removes its partial outputs on Windows** (#117). A refused
   program left its `.asm` and `pc_*_mem.txt`: the error exited with them
   still open, and Windows does not remove an open file. The cleanup closes

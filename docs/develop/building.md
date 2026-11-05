@@ -175,7 +175,7 @@ Requirements (Windows + [MSYS2](https://www.msys2.org/)):
   (`YANC_VL_CFLAGS`, set in `Scripts\env.bat`; see
   [Installing YANC](../install.md#to-simulate)):
   * [Icarus Verilog](http://iverilog.icarus.com/) (`iverilog` + `vvp`) — `pacman -S mingw-w64-ucrt-x86_64-iverilog`, and/or
-  * [Verilator](https://verilator.org/) **5.x** — `pacman -S mingw-w64-ucrt-x86_64-verilator`. Its `--binary` mode drives the `g++` and `python3` of the same environment.
+  * [Verilator](https://verilator.org/) **5.x** — `pacman -S mingw-w64-ucrt-x86_64-verilator mingw-w64-ucrt-x86_64-lz4`. Its `--binary` mode drives the `g++`, `python3` and `make` of the same MSYS2; the FST trace of `multi_proc` includes `lz4.h`, which the Verilator package does not pull in.
   * GTKWave — the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) to view the waveform.
 
 The actual compile commands live in a single top-level **`Makefile`** (the

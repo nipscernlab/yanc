@@ -191,10 +191,20 @@ if not defined VERILATOR if defined MSYS2_ROOT (
     set "ans="
     set /p "ans=[verilator] not found. Install it via pacman now? [y/N] "
     if /i "!ans!"=="y" (
-        "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm !PKG!-verilator
+        "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm !PKG!-verilator !PKG!-lz4
         if exist "!MINGW_BIN!\verilator_bin.exe" set "VERILATOR=!MINGW_BIN!\verilator_bin.exe"
     )
 )
+:: MSYS2's Verilator does not depend on lz4, but its FST writer (--trace-fst,
+:: multi_proc.bat --sim verilator) includes lz4.h: offer it when it is missing.
+set "LZ4_MISSING="
+if defined VERILATOR if defined MSYS2_ROOT if not exist "%MSYS2_ROOT%\ucrt64\include\lz4.h" set "LZ4_MISSING=1"
+if defined LZ4_MISSING (
+    set "ans="
+    set /p "ans=[verilator] lz4.h not found, needed by multi_proc.bat --sim verilator. Install !PKG!-lz4 via pacman now? [y/N] "
+    if /i "!ans!"=="y" "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm !PKG!-lz4
+)
+
 :: VERILATOR_ROOT = ...\share\verilator. MINGW_BIN, the ucrt64\bin holding
 :: Verilator's g++/python3 chain, is usually already set from MSYS2_ROOT; if
 :: Verilator was found elsewhere on PATH, derive it from the exe location.

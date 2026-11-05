@@ -68,7 +68,10 @@ if [ -n "$PKG" ]; then echo "package manager: $PKG"; else echo "package manager:
 pkg_name() {
     if [ "$PKG" = msys2 ]; then
         case "$1" in
-            gcc|iverilog|verilator|python) echo "$MINGW_PACKAGE_PREFIX-$1" ;;
+            gcc|iverilog|python|lz4)       echo "$MINGW_PACKAGE_PREFIX-$1" ;;
+            # MSYS2's Verilator does not depend on lz4, but its FST writer
+            # (--trace-fst, multi_proc) includes lz4.h
+            verilator) echo "$MINGW_PACKAGE_PREFIX-verilator $MINGW_PACKAGE_PREFIX-lz4" ;;
             make|bison|flex|diffutils)     echo "$1" ;;
             gtkwave) ;;                    # the nipscernlab build: a zip, docs/install.md
         esac
@@ -239,6 +242,17 @@ echo
 echo "--- Simulation tools ----------------------------------------------------"
 want iverilog  iverilog  optional "needed for the Icarus flow: single_proc.sh / multi_proc.sh"   || true
 want verilator verilator optional "needed for the Verilator flow: single_proc.sh --sim verilator" || true
+# A Verilator installed before lz4 was asked for: the FST trace of
+# multi_proc.sh --sim verilator stops at "lz4.h: No such file or directory".
+if [ "$PKG" = msys2 ] && command -v verilator >/dev/null 2>&1 && [ ! -f "${MINGW_PREFIX:-/ucrt64}/include/lz4.h" ]; then
+    echo
+    echo "[setup] lz4.h not found (Verilator's FST trace needs it: multi_proc.sh --sim verilator)."
+    ans=""
+    read -r -p "        Install '$(pkg_name lz4)' via $PKG now? [y/N] " ans
+    case "$ans" in
+        y|Y) eval "$PKG_INSTALL $(pkg_name lz4)" || echo "        install failed." ;;
+    esac
+fi
 want gtkwave   gtkwave   optional "needed to view the waveform (Windows: the nipscernlab build, docs/install.md)" || true
 want cmp       diffutils optional "Scripts/regress.sh compares files with cmp and diff"   || true
 want python3   python    optional "Scripts/regress.sh and its checks are Python"         || true
