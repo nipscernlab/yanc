@@ -131,7 +131,7 @@ jobs:
           $bat = @('@echo on', 'yanc my_program.cpp || exit /b 1') + ($sim | ForEach-Object { "$_ || exit /b 1" }) + ($view | ForEach-Object { "$_ || exit /b 1" })
           $bat | Set-Content "$w\qs.bat" -Encoding ascii
           Get-Content "$w\qs.bat"
-          Push-Location $w; cmd /c qs.bat; $rc = $LASTEXITCODE; Pop-Location
+          Push-Location $w; cmd /c "qs.bat < NUL"; $rc = $LASTEXITCODE; Pop-Location
           if ($rc -ne 0) { throw "the README's cmd commands failed ($rc)" }
           if ((Get-Content "$w\my_program\output_0.txt").Trim() -ne '55') { throw 'output_0.txt is not 55' }
           if (-not (Test-Path "$w\my_program\my_program_tb.gtkw")) { throw 'no .gtkw' }
@@ -150,7 +150,7 @@ jobs:
           $bat = @('@echo on', "set SAPHO=$env:PKG_DIR\SAPHO", 'yanc my_program.cpp || exit /b 1') + $vl
           $bat | Set-Content "$w\vl.bat" -Encoding ascii
           Get-Content "$w\vl.bat"
-          Push-Location $w; cmd /c vl.bat; $rc = $LASTEXITCODE; Pop-Location
+          Push-Location $w; cmd /c "vl.bat < NUL"; $rc = $LASTEXITCODE; Pop-Location
           if ($rc -ne 0) { throw "the manual's Verilator commands failed ($rc)" }
           if (-not (Test-Path "$w\my_program\my_program_tb.vcd")) { throw 'no waveform' }
 
@@ -195,14 +195,15 @@ jobs:
               test -s my_program_tb.vcd"
 
       # What Verilator needs beyond the manual's table, to know what each
-      # strategy would have to document: make and gcc (Verilator's --binary
-      # runs make and g++; the package depends only on perl) and lz4 (the FST
-      # writer, not used here). In cmd, verilator is a Perl script that cmd
+      # strategy would have to document: make, gcc and python (Verilator's
+      # --binary runs make, g++ and python3; the package depends only on perl;
+      # without python3 a cmd run stops at "Python was not found", the Store
+      # alias) and lz4 (the FST writer, not used here). In cmd, verilator is a Perl script that cmd
       # cannot run, so the .bat runners call verilator_bin.exe with
       # VERILATOR_ROOT and MSYS2's usr\bin (make) on PATH; A2 does the same.
       - name: Packages Verilator runs, beyond the table
         shell: msys2 {0}
-        run: pacman -S --needed --noconfirm make mingw-w64-ucrt-x86_64-gcc
+        run: pacman -S --needed --noconfirm make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-python
 
       - name: "A2: cmd, verilator_bin.exe as the .bat runners call it"
         id: a_vl2
@@ -222,11 +223,11 @@ jobs:
           $bat = @('@echo on', "set SAPHO=$env:PKG_DIR\SAPHO", "set VERILATOR_ROOT=$root\ucrt64\share\verilator", 'yanc my_program.cpp || exit /b 1') + $vl
           $bat | Set-Content "$w\vl.bat" -Encoding ascii
           Get-Content "$w\vl.bat"
-          Push-Location $w; cmd /c vl.bat; $rc = $LASTEXITCODE; Pop-Location
+          Push-Location $w; cmd /c "vl.bat < NUL"; $rc = $LASTEXITCODE; Pop-Location
           if ($rc -ne 0) { throw "verilator_bin from cmd failed ($rc)" }
           if (-not (Test-Path "$w\my_program\my_program_tb.vcd")) { throw 'no waveform' }
 
-      - name: "B2: UCRT64 shell, Verilator with make and gcc"
+      - name: "B2: UCRT64 shell, Verilator with make, gcc and python"
         id: b_vl2
         continue-on-error: true
         timeout-minutes: 10
@@ -249,7 +250,7 @@ jobs:
         shell: pwsh
         run: |
           $r = @(
-            "| strategy | README commands | the manual's Verilator command | Verilator with make and gcc |",
+            "| strategy | README commands | the manual's Verilator command | Verilator with make, gcc and python |",
             "|---|---|---|---|",
             "| A, cmd | ${{ steps.a.outcome }} | ${{ steps.a_vl.outcome }} | ${{ steps.a_vl2.outcome }} (verilator_bin, VERILATOR_ROOT, usr\bin) |",
             "| B, UCRT64 shell | ${{ steps.b.outcome }} | ${{ steps.b_vl.outcome }} | ${{ steps.b_vl2.outcome }} |"
