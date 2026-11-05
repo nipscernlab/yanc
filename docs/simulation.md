@@ -102,7 +102,7 @@ Quick start's output folder:
 
 ```sh
 gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
-gtkwave --dark --zoom-fit --left-justify my_program_tb.vcd -a my_program_tb.gtkw
+gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
 
 `gen_gtkw` reads only the VCD **header** (the signal list), classifies each
@@ -123,7 +123,10 @@ the testbench dumps the header, advances one tick, flushes and `$finish`es — a
 tiny header VCD in milliseconds (Verilator's header FST is converted with
 `fst2vcd -f`). **The runner scripts wire this whole sequence up
 correctly** (header pass → `gen_gtkw` → `gtkwave -a`), so they are the reference
-for using it in practice. `--zoom-fit` fits the whole trace to the window.
+for using it in practice. They also open GTKWave with `--dark`, and with
+`--zoom-fit` (the whole trace in the window) and `--left-justify` when that
+GTKWave lists them, as the nipscernlab build does (see
+[Installing YANC](install.md#to-simulate)).
 
 ## Pre-wired scripts
 

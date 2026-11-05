@@ -134,15 +134,24 @@ tags consumed by Aurora.
   both compilers.
 
 ### Changed
-- **On Windows the manual uses one terminal, MSYS2's UCRT64.** The README
-  quick start, the release's README, `docs/install.md`,
-  `docs/simulation.md` and `docs/first-program.md` give the same `sh`
-  commands for Windows and Linux: MSYS2 provides the simulators, and a line
-  in `/etc/profile.d/yanc.sh` puts the package's `bin/` on the PATH of its
-  terminal, which does not see the Windows `PATH` that `install.bat` writes.
-  The `cmd` blocks are gone. `install.md` lists the packages for using YANC
-  apart from those for building it, and the Verilator command takes
-  `-CFLAGS -D_GLIBCXX_ASSERTIONS` under MSYS2's gcc 16.
+- **On Windows, everything comes from MSYS2's UCRT64.** The README quick
+  start, the release's README, `docs/install.md`, `docs/simulation.md` and
+  `docs/first-program.md` give the same `sh` commands for Windows and
+  Linux, typed on Windows in the UCRT64 terminal; the `cmd` blocks are gone.
+  The Windows zip carries `install.sh`, which under MSYS2 writes
+  `/etc/profile.d/yanc.sh` (the MSYS2 terminal does not see the Windows
+  `PATH` that `install.bat` writes), and on both systems checks for Icarus,
+  GTKWave and Verilator and says how to get them; under MSYS2 it installs
+  them with `pacman` if asked. GTKWave is MSYS2's package
+  (`mingw-w64-ucrt-x86_64-gtkwave`): `setup.bat` and `setup.sh` offer it,
+  and `setup.bat` no longer downloads the nipscernlab build. The Verilator
+  offers bring `make`, `gcc` and `python` along, which its `--binary`
+  needs. `setup.sh` under MSYS2, without a toolchain, downloads the Windows
+  release instead of the Linux one. CI and the release build on UCRT64
+  instead of MINGW64 (the `.exe` still depend only on Windows and its
+  UCRT), and a new CI job, `windows-user`, runs the user's way on Windows
+  with MSYS2's newest packages: `install.sh`, the quick start and the
+  manual's Verilator command.
 - **A call that ends a function is a jump** (#38). `CAL f` followed by a
   `RET` no jump lands on is `JMP f`: `f`'s own `RET` returns where the
   other would, with the value it returns. One word, two cycles and one
@@ -448,6 +457,12 @@ tags consumed by Aurora.
   the stacks).
 
 ### Fixed
+- **The runners open any GTKWave.** They called GTKWave with `--zoom-fit`
+  and `--left-justify`, which only the nipscernlab build has; MSYS2's and
+  the distributions' GTKWave refuse an option they do not know, print their
+  usage and open nothing. `gtkwave_opts` in `Scripts/env.sh` and
+  `GTKWAVE_OPTS` in `Scripts\env.bat` pass each of `--dark`, `--zoom-fit`
+  and `--left-justify` only when the GTKWave's `--help` lists it.
 - **Every git checks the text out with LF** (#119). Git for Windows
   installs with `core.autocrlf=true` and MSYS2's git without it, so a
   clone made by one showed every text file as modified in the other.
@@ -457,12 +472,6 @@ tags consumed by Aurora.
 - **The `.bat` scripts use MSYS2's UCRT64** (#117). `setup.bat` looked for
   gcc, Icarus and Verilator in `mingw64\bin` and offered the MINGW64
   packages, which no longer include the simulators. It now finds MSYS2 by
-- **The runners open any GTKWave.** They called GTKWave with `--zoom-fit`
-  and `--left-justify`, which only the nipscernlab build has; MSYS2's and
-  the distributions' GTKWave refuse an option they do not know, print their
-  usage and open nothing. `gtkwave_opts` in `Scripts/env.sh` and
-  `GTKWAVE_OPTS` in `Scripts\env.bat` pass each of `--dark`, `--zoom-fit`
-  and `--left-justify` only when the GTKWave's `--help` lists it.
   its `pacman.exe`, takes the tools from `ucrt64\bin` and offers
   `mingw-w64-ucrt-x86_64-*`; its g++ probe follows `setup.sh` (gcc 16 and
   `-D_GLIBCXX_ASSERTIONS`) instead of asking for gcc 15, and a `::` comment

@@ -3,29 +3,34 @@
 YANC runs on Windows and Linux with the same commands. On Windows they are
 typed in the terminal of [MSYS2](https://www.msys2.org/), in its **UCRT64**
 environment: install MSYS2 and open the "MSYS2 UCRT64" terminal, which also
-provides the simulators (see [To simulate](#to-simulate)). On Linux, any
-shell.
+provides the simulators and GTKWave (see [To simulate](#to-simulate)). On
+Linux, any terminal.
 
 ## The release package
 
 Download the latest release from
 <https://github.com/nipscernlab/yanc/releases/latest>:
 `yanc-bin-<version>.zip` for Windows, `yanc-bin-linux-<version>.tar.gz` for
-Linux. Unpack it anywhere and, from the unpacked folder, put its tools on
-your PATH, once, with no administrator rights:
+Linux. Unpack it anywhere and, from the unpacked folder (in the UCRT64
+terminal `C:\Users\me\yanc` is `/c/Users/me/yanc`), run once, with no
+administrator rights:
 
 ```sh
-# Windows, in the UCRT64 terminal: bin/ on the PATH of every MSYS2 terminal
-echo "export PATH=\"\$PATH:$(pwd)/bin\"" > /etc/profile.d/yanc.sh
-# Linux: a launcher per tool in ~/.local/bin (or $PREFIX/bin)
 ./install.sh
 ```
 
-Open a new terminal: `yanc -h` answers. `rm /etc/profile.d/yanc.sh`
-(Windows) or `./install.sh --uninstall` (Linux) undoes it. The MSYS2
-terminal does not see the Windows `PATH`; the package's `install.bat` puts
-`bin\` there instead, to call `yanc` from `cmd` or PowerShell
-(`uninstall.bat` takes it off). The package holds:
+It puts the tools on your PATH: on Windows a file `/etc/profile.d/yanc.sh`
+puts the package's `bin/` on the PATH of every new MSYS2 terminal, on Linux
+a launcher per tool goes in `~/.local/bin` (`PREFIX=... ./install.sh` for
+another place). Then it checks for Icarus Verilog, GTKWave and Verilator
+and says how to get the missing ones; on Windows it installs them with
+`pacman` if you answer `y`. Open a new terminal: `yanc -h` answers.
+`./install.sh --uninstall` undoes it.
+
+The MSYS2 terminal does not see the Windows `PATH`, nor `cmd` and
+PowerShell MSYS2's. The package's `install.bat` puts `bin\` on the Windows
+user `PATH`, to call `yanc` from `cmd` or PowerShell (`uninstall.bat` takes
+it off). The package holds:
 
 | folder | contents |
 |---|---|
@@ -42,58 +47,37 @@ so keep the package's folders together.
 
 YANC writes the processor's Verilog and a testbench; running it takes a
 Verilog simulator, and looking at the result a waveform viewer (see
-[Simulation](simulation.md)).
+[Simulation](simulation.md)). `install.sh` checks for these; the packages
+are:
 
-On **Windows**, [MSYS2](https://www.msys2.org/) provides both simulators, in
-its **UCRT64** environment: MSYS2 no longer ships Icarus and Verilator for
-MINGW64. GTKWave is a separate download:
+| what | MSYS2 UCRT64 (`pacman -S`) | Debian / Ubuntu (`apt install`) | for |
+| --- | --- | --- | --- |
+| Icarus Verilog | `mingw-w64-ucrt-x86_64-iverilog` | `iverilog` | simulating the generated Verilog |
+| GTKWave | `mingw-w64-ucrt-x86_64-gtkwave` | `gtkwave` | looking at the waveform |
+| Verilator 5 | `mingw-w64-ucrt-x86_64-verilator`, with `make`, `mingw-w64-ucrt-x86_64-gcc`, `mingw-w64-ucrt-x86_64-python` and `mingw-w64-ucrt-x86_64-lz4` | `verilator`, with `make`, `g++` and `python3` | faster simulation, for long runs: Verilator turns the Verilog into C++ and builds it with `make` and `g++`; its FST trace (`multi_proc --sim verilator`) needs `lz4.h`, which MSYS2's Verilator does not pull in |
 
-| what | `pacman` package / source | for |
-| --- | --- | --- |
-| Icarus Verilog | `mingw-w64-ucrt-x86_64-iverilog` | simulating the generated Verilog |
-| Verilator 5.x | `mingw-w64-ucrt-x86_64-verilator`, with `make`, `mingw-w64-ucrt-x86_64-gcc` and `mingw-w64-ucrt-x86_64-python` | faster simulation, for long runs: Verilator turns the Verilog into C++ and builds it with `make` and `g++` |
-| LZ4 | `mingw-w64-ucrt-x86_64-lz4` | Verilator's FST trace (`multi_proc --sim verilator`); the Verilator package does not pull it in |
-| GTKWave | the [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases) | looking at the waveform |
-
-To use YANC with Icarus only:
+On Windows, MSYS2 ships Icarus and Verilator only for UCRT64: it no longer
+does for MINGW64. Everything, in the UCRT64 terminal:
 
 ```sh
-pacman -S --needed mingw-w64-ucrt-x86_64-iverilog
+pacman -S --needed mingw-w64-ucrt-x86_64-iverilog mingw-w64-ucrt-x86_64-gtkwave \
+  mingw-w64-ucrt-x86_64-verilator mingw-w64-ucrt-x86_64-lz4 \
+  make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-python
 ```
 
-With Verilator as well:
+To build YANC and run its scripts as well, add `bison flex diffutils`:
+`diffutils` (`cmp`, `diff`) and Python are what `Scripts/regress.sh` and
+its checks run, and without them the regression fails in ways that look
+like compiler defects. `pacman -Syu` keeps MSYS2 up to date.
 
-```sh
-pacman -S --needed make mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-python \
-  mingw-w64-ucrt-x86_64-iverilog mingw-w64-ucrt-x86_64-verilator \
-  mingw-w64-ucrt-x86_64-lz4
-```
-
-To build YANC and run its scripts as well, the whole list:
-
-```sh
-pacman -S --needed make bison flex diffutils \
-  mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-python \
-  mingw-w64-ucrt-x86_64-iverilog mingw-w64-ucrt-x86_64-verilator \
-  mingw-w64-ucrt-x86_64-lz4
-```
-
-`diffutils` (`cmp`, `diff`) and Python are what `Scripts/regress.sh` and its
-checks run; without them the regression fails in ways that look like
-compiler defects.
-
-> **GTKWave: the nipscernlab build** formats YANC's waveform views; the
-> generic GTKWave does not show them the same way. Extract the zip to a
-> folder of your choice. The MSYS2 terminal does not see the Windows `PATH`,
-> so add the folder to MSYS2's, **after** `/ucrt64/bin` (the zip carries its
-> own `libstdc++-6.dll` and `libgcc_s_seh-1.dll`, which MSYS2's tools must not
-> pick up first), for example in a file `/etc/profile.d/gtkwave.sh`:
-> ```sh
-> export PATH="$PATH:/c/<your folder>/gtkwave-nipscern"
-> ```
-> Without GTKWave, `single_proc.sh` and `multi_proc.sh` still simulate and
-> write the waveform and its layout; they only do not open it. The Verilator
-> flow of `multi_proc.sh` needs `fst2vcd`, which comes with GTKWave.
+> **GTKWave.** YANC's scripts give GTKWave the options it knows:
+> `--dark`, and `--zoom-fit` and `--left-justify` when it lists them (the
+> [nipscernlab build](https://github.com/nipscernlab/gtkwave-nipscern/releases)
+> does; MSYS2's and the distributions' do not, and refuse an option they do
+> not know). Any of them applies the layout `gen_gtkw` writes. Without
+> GTKWave, `single_proc.sh` and `multi_proc.sh` still simulate and write the
+> waveform and its layout; they only do not open it. The Verilator flow of
+> `multi_proc.sh` needs `fst2vcd`, which comes with GTKWave.
 >
 > **gcc 16 and Verilator.** MSYS2's gcc 16 (16.1 and 16.2) ships a
 > `libstdc++` without the `std::string` move constructor at `-Os`, which
@@ -106,19 +90,6 @@ compiler defects.
 > [Simulation](simulation.md#simulating-with-verilator)).
 > `Scripts/setup.sh` and `Scripts\setup.bat` check it. The Icarus flow is
 > unaffected.
-
-On **Linux**, they come from the distribution's package manager:
-
-| Package | What it's for |
-| ------- | ------------- |
-| `iverilog` | simulating the generated Verilog |
-| `verilator` | faster simulation, for long runs |
-| `gtkwave` | looking at the waveform |
-
-> **Note on Linux GTKWave:** there is no Linux build of the nipscernlab fork
-> yet, so the Linux flow uses your distro's stock `gtkwave`. It still opens the
-> waveform and applies the generated `.gtkw` layout; only the panel chrome
-> (dark SST-less view) differs from the Windows fork.
 
 ## Building YANC from source
 

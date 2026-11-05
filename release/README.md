@@ -7,20 +7,29 @@ memory images and a testbench. Full documentation:
 
 ## Install
 
-On Windows, YANC runs in the terminal of MSYS2 (<https://www.msys2.org/>),
-in its UCRT64 environment, with the same commands as on Linux. Put the
-tools on your PATH once, from this folder, with no administrator rights:
+YANC runs with the same commands on Windows and on Linux. On Windows they
+are typed in the "MSYS2 UCRT64" terminal of MSYS2
+(<https://www.msys2.org/>). From this folder, run once, with no
+administrator rights:
 
-| system | command | what it does |
-|---|---|---|
-| Windows, in the "MSYS2 UCRT64" terminal | `echo "export PATH=\"\$PATH:$(pwd)/bin\"" > /etc/profile.d/yanc.sh` | adds `bin/` to the PATH of every MSYS2 terminal; `rm /etc/profile.d/yanc.sh` undoes it |
-| Linux | `./install.sh` | a launcher per tool in `~/.local/bin` (`PREFIX=... ./install.sh` for another place); `./install.sh --uninstall` removes them |
+```
+./install.sh
+```
 
-Then open a new terminal: `yanc -h` answers. Keep this folder where it is:
-the tools find `SAPHO/`, `Macros/` and `Header/` next to `bin/` by
-themselves. `install.bat` puts `bin\` on your Windows user PATH instead,
-which `cmd` and PowerShell see and the MSYS2 terminal does not, to call
-`yanc` from there (`uninstall.bat` takes it off).
+| system | what it does |
+|---|---|
+| Windows, in the UCRT64 terminal | writes `/etc/profile.d/yanc.sh`, which puts `bin/` on the PATH of every new MSYS2 terminal |
+| Linux | a launcher per tool in `~/.local/bin` (`PREFIX=... ./install.sh` for another place) |
+
+Then it checks for Icarus Verilog and GTKWave, and for Verilator, and says
+how to get the missing ones; on Windows it installs them with `pacman` if
+you answer `y`. `./install.sh --uninstall` undoes it. Open a new terminal:
+`yanc -h` answers. Keep this folder where it is: the tools find `SAPHO/`,
+`Macros/` and `Header/` next to `bin/` by themselves.
+
+`install.bat` puts `bin\` on your Windows user PATH instead, which `cmd`
+and PowerShell see and the MSYS2 terminal does not, to call `yanc` from
+there (`uninstall.bat` takes it off).
 
 ## What is in this package
 
@@ -34,9 +43,7 @@ which `cmd` and PowerShell see and the MSYS2 terminal does not, to call
 
 The binaries need nothing else to produce the Verilog. To simulate it you
 need a Verilog simulator (Icarus Verilog, or Verilator); to look at the
-waveform, GTKWave. On Windows the simulators come from MSYS2 (Icarus:
-`pacman -S mingw-w64-ucrt-x86_64-iverilog`); the packages for Verilator,
-and GTKWave, are in
+waveform, GTKWave. `install.sh` checks for them; the packages are listed in
 <https://github.com/nipscernlab/yanc/blob/main/docs/install.md>.
 
 ## Quick start

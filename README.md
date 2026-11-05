@@ -34,34 +34,29 @@ Verilog is the [`SAPHO/`](SAPHO/) folder of this repository.
 
 ## Quick start
 
-**1. Install.** On Windows, YANC runs in the terminal of
-[MSYS2](https://www.msys2.org/), in its UCRT64 environment, with the same
-commands as on Linux. Install MSYS2, open the "MSYS2 UCRT64" terminal and
-install Icarus Verilog, which simulates the processor:
-
-```sh
-pacman -S mingw-w64-ucrt-x86_64-iverilog
-```
-
-On Linux, Icarus comes from the distribution (`iverilog` on Debian and
-Ubuntu).
+**1. Install.** YANC runs with the same commands on Windows and on Linux.
+On Windows they are typed in the terminal of [MSYS2](https://www.msys2.org/):
+install MSYS2 and open its "MSYS2 UCRT64" terminal, which also provides the
+simulators and GTKWave. On Linux, any terminal.
 
 Download the latest
 [release](https://github.com/nipscernlab/yanc/releases/latest):
 `yanc-bin-<version>.zip` for Windows, `yanc-bin-linux-<version>.tar.gz` for
-Linux, and unpack it anywhere. From the unpacked folder, put its tools on
-your PATH, once, with no administrator rights. In the UCRT64 terminal,
-where `C:\Users\me\yanc` is `/c/Users/me/yanc`:
+Linux, and unpack it anywhere. From the unpacked folder (in the UCRT64
+terminal `C:\Users\me\yanc` is `/c/Users/me/yanc`), run once, with no
+administrator rights:
 
 ```sh
 cd /c/Users/me/yanc
-echo "export PATH=\"\$PATH:$(pwd)/bin\"" > /etc/profile.d/yanc.sh
+./install.sh
 ```
 
-On Linux, `./install.sh`. Open a new terminal: `yanc -h` answers. Every
-command below is typed in that terminal. To see the waveform you also need
-GTKWave, and to simulate faster, Verilator: both are in
-[docs/install.md](docs/install.md).
+It puts the tools on your PATH, checks for Icarus Verilog, which simulates
+the processor, and GTKWave, which shows the waveform, and says how to get
+the missing ones; on Windows it installs them with MSYS2's `pacman` if you
+answer `y`, and Verilator, the faster simulator, as well. Open a new
+terminal: `yanc -h` answers. Every command below is typed in that terminal.
+The details are in [docs/install.md](docs/install.md).
 
 **2. Compile.** The package's `example/my_program.cpp`:
 

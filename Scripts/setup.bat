@@ -12,9 +12,8 @@
 ::        * if they are already there (a release that ships the .exe), keep them
 ::        * else if the build toolchain is present, COMPILE them from source
 ::        * else DOWNLOAD the prebuilt binaries from the latest GitHub release
-::   3. Locate the simulation tools (Icarus Verilog, Verilator) and GTKWave.
-::      GTKWave must be the nipscernlab build -- if it is missing, setup offers
-::      to download the portable Windows bundle from that project's releases.
+::   3. Locate the simulation tools (Icarus Verilog, Verilator) and GTKWave,
+::      and offer to install the missing ones from MSYS2's UCRT64 with pacman.
 ::   4. Cache every resolved path in Scripts\tools.local.bat, which the
 ::      runners load through Scripts\env.bat. No path is hardcoded anywhere.
 ::
@@ -31,7 +30,6 @@ cls
 set "SCRIPTS_DIR=%~dp0"
 pushd "%SCRIPTS_DIR%.." & set "ROOT_DIR=%CD%" & popd
 set "YANC_BIN=%ROOT_DIR%\bin"
-set "TOOLS_DIR=%ROOT_DIR%\tools"
 set "CACHE=%SCRIPTS_DIR%tools.local.bat"
 
 set "FORCE="
@@ -191,7 +189,7 @@ if not defined VERILATOR if defined MSYS2_ROOT (
     set "ans="
     set /p "ans=[verilator] not found. Install it via pacman now? [y/N] "
     if /i "!ans!"=="y" (
-        "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm !PKG!-verilator !PKG!-lz4
+        "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm !PKG!-verilator !PKG!-lz4 make !PKG!-gcc !PKG!-python
         if exist "!MINGW_BIN!\verilator_bin.exe" set "VERILATOR=!MINGW_BIN!\verilator_bin.exe"
     )
 )
@@ -222,26 +220,27 @@ if defined VERILATOR (
     echo             ^(needed only for the Verilator flow: single_proc.bat --sim verilator^)
 )
 
-:: GTKWave -- MUST be the nipscernlab build; auto-download the portable bundle -
+:: GTKWave -- MSYS2's UCRT64 package, offered through pacman like Icarus. A
+:: GTKWave already on PATH (the nipscernlab build, say) is kept; the runners
+:: give each GTKWave only the options it knows (Scripts\env.bat, GTKWAVE_OPTS).
 for %%E in (gtkwave.exe) do if not "%%~$PATH:E"=="" set "GTKWAVE=%%~$PATH:E"
-for %%E in (fst2vcd.exe) do if not "%%~$PATH:E"=="" set "FST2VCD=%%~$PATH:E"
-if not defined GTKWAVE if exist "%TOOLS_DIR%\gtkwave-nipscern\gtkwave.exe" set "GTKWAVE=%TOOLS_DIR%\gtkwave-nipscern\gtkwave.exe"
-if not defined GTKWAVE if exist "C:\nipscern\Aurora\components\Packages\gtkwave-nipscern\gtkwave.exe" set "GTKWAVE=C:\nipscern\Aurora\components\Packages\gtkwave-nipscern\gtkwave.exe"
-if not defined GTKWAVE (
-    for /r "%TOOLS_DIR%\gtkwave-nipscern" %%F in (gtkwave.exe) do if not defined GTKWAVE set "GTKWAVE=%%F"
-)
-if not defined GTKWAVE (
+if defined MSYS2_ROOT if not defined GTKWAVE if exist "%MINGW_BIN%\gtkwave.exe" set "GTKWAVE=%MINGW_BIN%\gtkwave.exe"
+if not defined GTKWAVE if defined MSYS2_ROOT (
     set "ans="
-    set /p "ans=[gtkwave] nipscernlab GTKWave not found. Download portable bundle now? [Y/n] "
-    if /i not "!ans!"=="n" call :download_gtkwave
+    set /p "ans=[gtkwave] not found. Install it via pacman now? [y/N] "
+    if /i "!ans!"=="y" (
+        "!MSYS2_ROOT!\usr\bin\pacman.exe" -S --needed --noconfirm !PKG!-gtkwave
+        if exist "!MINGW_BIN!\gtkwave.exe" set "GTKWAVE=!MINGW_BIN!\gtkwave.exe"
+    )
 )
-:: fst2vcd lives next to gtkwave in the nipscern bundle
-if defined GTKWAVE if not defined FST2VCD for %%F in ("%GTKWAVE%") do if exist "%%~dpFfst2vcd.exe" set "FST2VCD=%%~dpFfst2vcd.exe"
+:: fst2vcd comes with GTKWave, in the same folder
+if defined GTKWAVE for %%F in ("%GTKWAVE%") do if exist "%%~dpFfst2vcd.exe" set "FST2VCD=%%~dpFfst2vcd.exe"
+if not defined FST2VCD for %%E in (fst2vcd.exe) do if not "%%~$PATH:E"=="" set "FST2VCD=%%~$PATH:E"
 if defined GTKWAVE (
     echo [gtkwave]   %GTKWAVE%
 ) else (
-    echo [gtkwave]   NOT found - get it from
-    echo             https://github.com/nipscernlab/gtkwave-nipscern/releases
+    echo [gtkwave]   NOT found - install MSYS2 + "pacman -S mingw-w64-ucrt-x86_64-gtkwave"
+    echo             ^(the runners still simulate and write the waveform without it^)
 )
 
 :: ---------------------------------------------------------------------------
@@ -370,25 +369,4 @@ if errorlevel 1 (
     echo            bin\ folder into "%YANC_BIN%".
     exit /b 1
 )
-exit /b 0
-
-:download_gtkwave
-echo [download] Fetching the nipscernlab GTKWave portable bundle...
-if not exist "%TOOLS_DIR%" mkdir "%TOOLS_DIR%"
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$ErrorActionPreference='Stop'; $h=@{'User-Agent'='yanc-setup'};" ^
-  "$r=Invoke-RestMethod 'https://api.github.com/repos/nipscernlab/gtkwave-nipscern/releases/latest' -Headers $h;" ^
-  "$a=$r.assets ^| Where-Object { $_.name -like '*win*x64*.zip' -or $_.name -like '*win64*.zip' -or $_.name -like '*windows*.zip' } ^| Select-Object -First 1;" ^
-  "if(-not $a){throw 'no Windows asset in the gtkwave-nipscern latest release'};" ^
-  "$zip=Join-Path $env:TEMP $a.name;" ^
-  "Invoke-WebRequest $a.browser_download_url -OutFile $zip -Headers $h;" ^
-  "$dst='%TOOLS_DIR%\gtkwave-nipscern'; if(Test-Path $dst){Remove-Item $dst -Recurse -Force}; New-Item -ItemType Directory -Force -Path $dst ^| Out-Null;" ^
-  "Expand-Archive $zip $dst -Force;" ^
-  "Write-Host ('[download] extracted ' + $a.name + ' -> ' + $dst)"
-if errorlevel 1 (
-    echo [download] GTKWave download FAILED. Install it manually from
-    echo            https://github.com/nipscernlab/gtkwave-nipscern/releases
-    exit /b 1
-)
-for /r "%TOOLS_DIR%\gtkwave-nipscern" %%F in (gtkwave.exe) do if not defined GTKWAVE set "GTKWAVE=%%F"
 exit /b 0
