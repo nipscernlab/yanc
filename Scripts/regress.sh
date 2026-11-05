@@ -200,6 +200,11 @@ declare -A SIZE_CURRENT
 # memory on the machine before trusting the run's timings, and re-run a
 # failing heavy test on its own.
 retried_names=()
+# On Windows the tools and vvp write text files in text mode, with CRLF, and
+# the goldens are stored with LF (.gitattributes): every comparison with a
+# golden ignores the CR, which is the line ending, not part of the result.
+same() { cmp -s <(tr -d '\r' < "$1") <(tr -d '\r' < "$2"); }   # same <a> <b>
+
 vvp_once_more() {   # vvp_once_more <name> <file.vvp>: re-run in the cwd (twice at most), 0 if it exits 0
     retried_names+=("$1")
     "$VVP" "$2" >/dev/null 2>&1 && return 0
@@ -444,11 +449,11 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         elif [ ! -f "$golden" ]; then
             echo "FAIL ($prname): no golden at $golden (run --update?)"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
-        elif cmp -s "$asm_file" "$golden"; then
+        elif same "$asm_file" "$golden"; then
             asm_status="PASS"
         else
             echo "FAIL ($prname): asm differs from golden"
-            diff "$golden" "$asm_file" | head -20 | sed 's/^/    /'
+            diff --strip-trailing-cr "$golden" "$asm_file" | head -20 | sed 's/^/    /'
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
 
@@ -478,9 +483,9 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         elif [ ! -f "$golden_map" ]; then
             echo "FAIL ($prname): no golden_map.txt (run --update-map?)"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
-        elif ! cmp -s "$work_proc/map.txt" "$golden_map"; then
+        elif ! same "$work_proc/map.txt" "$golden_map"; then
             echo "FAIL ($prname): what the waveform shows differs from golden_map.txt"
-            diff "$golden_map" "$work_proc/map.txt" | head -20 | sed 's/^/    /'
+            diff --strip-trailing-cr "$golden_map" "$work_proc/map.txt" | head -20 | sed 's/^/    /'
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
 
@@ -562,7 +567,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         sim_fail=0
         for f in "${out_files[@]}"; do
             base="$(basename "$f")"
-            if ! cmp -s "$f" "$golden_sim/$base"; then
+            if ! same "$f" "$golden_sim/$base"; then
                 echo "FAIL ($prname): $base differs from sim golden"
                 sim_fail=1
             fi
@@ -648,7 +653,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                 sim_fail=0
                 for f in "${out_files[@]}"; do
                     base="$(basename "$f")"
-                    if ! cmp -s "$f" "$golden_proj/$base"; then
+                    if ! same "$f" "$golden_proj/$base"; then
                         echo "FAIL ($proj): $base differs from sim golden"
                         sim_fail=1
                     fi
@@ -750,7 +755,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             for f in output_link.txt output_pingpong.txt output_link_cpp.txt output_pingpong_cpp.txt; do
                 if [ ! -s "$proj_tmp/$f" ]; then
                     echo "FAIL ($proj): the testbench wrote no $f"; sim_fail=1
-                elif ! cmp -s "$proj_tmp/$f" "$golden_proj/$f"; then
+                elif ! same "$proj_tmp/$f" "$golden_proj/$f"; then
                     echo "FAIL ($proj): $f differs from sim golden"; sim_fail=1
                 fi
             done
@@ -1303,7 +1308,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                     head -n "$blen" "$out_f" > "$rtmp/burst_boot.txt"
                     for k in $(seq 2 $nbursts); do
                         head -n $((blen * k)) "$out_f" | tail -n "$blen" > "$rtmp/burst_rst.txt"
-                        cmp -s "$rtmp/burst_boot.txt" "$rtmp/burst_rst.txt" || anchor_ok=0
+                        same "$rtmp/burst_boot.txt" "$rtmp/burst_rst.txt" || anchor_ok=0
                     done
                 fi
                 if [ "$anchor_ok" -eq 0 ]; then
@@ -1320,7 +1325,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
                     elif [ ! -f "$golden_rst/output_reset.txt" ]; then
                         echo "FAIL ($rtest): no golden at $golden_rst (run --update?)"
                         fail=$((fail + 1)); failed_names+=("$rtest")
-                    elif cmp -s "$out_f" "$golden_rst/output_reset.txt"; then
+                    elif same "$out_f" "$golden_rst/output_reset.txt"; then
                         echo "PASS ($rtest)  [burst repeated after 5 one-cycle mid-run resets]"
                         pass=$((pass + 1))
                     else
@@ -1472,8 +1477,8 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             [ $vvp_status -ne 0 ] && died=1
             [ ! -s "$out" ] && died=1
             if [ $died -eq 0 ] && [ -f "$gold_c" ]; then
-                osz=$(wc -c < "$out"); gsz=$(wc -c < "$gold_c")
-                if [ "$osz" -lt "$gsz" ] && head -c "$osz" "$gold_c" | cmp -s - "$out"; then died=1; fi
+                osz=$(tr -d '\r' < "$out" | wc -c); gsz=$(tr -d '\r' < "$gold_c" | wc -c)
+                if [ "$osz" -lt "$gsz" ] && head -c "$osz" <(tr -d '\r' < "$gold_c") | cmp -s - <(tr -d '\r' < "$out"); then died=1; fi
             fi
             [ $died -eq 1 ] && vvp_once_more "$base" "$od/$prname.vvp"
             popd >/dev/null
@@ -1493,7 +1498,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             pass=$((pass+1))
         elif [ ! -f "$gold" ]; then
             echo "FAIL ($base): no golden at $gold (run --update?)"; fail=$((fail+1)); failed_names+=("$base")
-        elif cmp -s "$out" "$gold"; then
+        elif same "$out" "$gold"; then
             echo "PASS ($base): $(tr '\n' ' ' < "$out")"
             pass=$((pass+1))
         else
@@ -1955,13 +1960,13 @@ rm -rf "$drv"; mkdir -p "$drv"
 cp -r "$CMM_ROOT/Tests/sw_test" "$drv/sw_test"
 cp -r "$CPP_ROOT/Tests/test1"   "$drv/test1"
 ( cd "$drv/sw_test" && "$YANC" sw_test.cmm >/dev/null 2>&1 ) && [ -f "$drv/sw_test/sw_test/sw_test.v" ] \
-    && diff -q "$drv/sw_test/golden.asm" "$drv/sw_test/sw_test/sw_test.asm" >/dev/null
+    && diff -q --strip-trailing-cr "$drv/sw_test/golden.asm" "$drv/sw_test/sw_test/sw_test.asm" >/dev/null
 r1=$?
 ( cd "$drv/sw_test" && rm -rf sw_test && "$YANC" -S sw_test.cmm >/dev/null 2>&1 && [ ! -f sw_test/sw_test.v ] \
     && "$YANC" sw_test/sw_test.asm >/dev/null 2>&1 ) && [ -f "$drv/sw_test/sw_test/sw_test.v" ]
 r2=$?
 ( cd "$drv/test1" && "$YANC" -o by_yanc test1.cpp >/dev/null 2>&1 && "$CPPC" -o direct test1.cpp >/dev/null 2>&1 ) \
-    && diff -q "$drv/test1/by_yanc/test1.asm" "$drv/test1/direct/test1.asm" >/dev/null && [ -f "$drv/test1/by_yanc/test1.v" ]
+    && diff -q --strip-trailing-cr "$drv/test1/by_yanc/test1.asm" "$drv/test1/direct/test1.asm" >/dev/null && [ -f "$drv/test1/by_yanc/test1.v" ]
 r3=$?
 printf 'void main()\n{\n    int a = 1\n}\n' > "$drv/bad.cmm"
 cp "$CMM_ROOT/Tests/cmm_bigin/golden.asm" "$drv/bad-name.asm"   # an .asm names the processor too
@@ -1984,7 +1989,7 @@ if [ "$r5" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
     ( cd "$acc/eco" && "$IVERILOG" -s eco_tb -o eco.vvp eco_tb.v eco.v \
           "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1 \
       && "$VVP" eco.vvp >/dev/null 2>&1 ) \
-        && cmp -s "$acc/eco/output_0.txt" "$CMM_ROOT/Tests/cmm_bigin/golden_sim/output_0.txt"
+        && same "$acc/eco/output_0.txt" "$CMM_ROOT/Tests/cmm_bigin/golden_sim/output_0.txt"
     r5=$?
 fi
 # an .asm on its own (written by hand: no prog_log.txt beside it, no
@@ -2001,7 +2006,7 @@ if [ "$r6" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
     ( cd "$hand" && "$IVERILOG" -s eco_hand_tb -o h.vvp eco_hand_tb.v eco_hand.v \
           "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1 \
       && "$VVP" h.vvp >/dev/null 2>&1 ) \
-        && cmp -s "$hand/output_0.txt" "$CMM_ROOT/Tests/cmm_bigin/golden_sim/output_0.txt"
+        && same "$hand/output_0.txt" "$CMM_ROOT/Tests/cmm_bigin/golden_sim/output_0.txt"
     r6=$?
 fi
 for t in "1 C+- to Verilog, .asm = golden" "2 -S then the .asm" "3 C++ .asm = cppcomp's" "4 errors stop it" "5 a folder with accents and spaces" "6 an .asm on its own"; do
