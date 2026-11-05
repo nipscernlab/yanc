@@ -190,14 +190,63 @@ jobs:
               ./vl/Vmy_program_tb
               test -s my_program_tb.vcd"
 
+      # What Verilator needs beyond the manual's table, to know what each
+      # strategy would have to document: make and gcc (Verilator's --binary
+      # runs make and g++; the package depends only on perl) and lz4 (the FST
+      # writer, not used here). In cmd, verilator is a Perl script that cmd
+      # cannot run, so the .bat runners call verilator_bin.exe with
+      # VERILATOR_ROOT and MSYS2's usr\bin (make) on PATH; A2 does the same.
+      - name: Packages Verilator runs, beyond the table
+        shell: msys2 {0}
+        run: pacman -S --needed --noconfirm make mingw-w64-ucrt-x86_64-gcc
+
+      - name: "A2: cmd, verilator_bin.exe as the .bat runners call it"
+        id: a_vl2
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          . "$env:RUNNER_TEMP\helpers.ps1"
+          $root = '${{ steps.msys2.outputs.msys2-location }}'
+          $u = [Environment]::GetEnvironmentVariable('Path', 'User')
+          [Environment]::SetEnvironmentVariable('Path', "$u;$root\usr\bin", 'User')
+          $env:Path = New-TerminalPath
+          $w = "$env:WORK\a_vl2"; New-Item -ItemType Directory -Force $w | Out-Null
+          Copy-Item "$env:PKG_DIR\example\my_program.cpp" $w
+          $vl = Get-Block docs/simulation.md '## Simulating with Verilator' 'bat' | Where-Object { $_ -notmatch '^gtkwave ' -and $_ -notmatch '^::' }
+          $vl = $vl | ForEach-Object { ($_ -replace '^verilator ', 'verilator_bin ') -replace '\s+::.*$', '' }
+          $bat = @('@echo on', "set SAPHO=$env:PKG_DIR\SAPHO", "set VERILATOR_ROOT=$root\ucrt64\share\verilator", 'yanc my_program.cpp || exit /b 1') + $vl
+          $bat | Set-Content "$w\vl.bat" -Encoding ascii
+          Get-Content "$w\vl.bat"
+          Push-Location $w; cmd /c vl.bat; $rc = $LASTEXITCODE; Pop-Location
+          if ($rc -ne 0) { throw "verilator_bin from cmd failed ($rc)" }
+          if (-not (Test-Path "$w\my_program\my_program_tb.vcd")) { throw 'no waveform' }
+
+      - name: "B2: UCRT64 shell, Verilator with make and gcc"
+        id: b_vl2
+        continue-on-error: true
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          w="$(cygpath -u "$WORK")/b_vl2"; mkdir -p "$w"; cp "$(cygpath -u "$PKG_DIR")/example/my_program.cpp" "$w"
+          env -i HOME="$HOME" MSYSTEM=UCRT64 MSYS2_PATH_TYPE=minimal SYSTEMROOT="$SYSTEMROOT" \
+            WINDIR="$WINDIR" TEMP="$TEMP" TMP="$TMP" \
+            SAPHO="$(cygpath -u "$PKG_DIR")/SAPHO" /usr/bin/bash -lc "
+              set -e; cd '$w'; yanc my_program.cpp; cd my_program
+              verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps \
+                --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK \
+                -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl \
+                -y \"\$SAPHO\" my_program_tb.v my_program.v
+              ./vl/Vmy_program_tb
+              test -s my_program_tb.vcd"
+
       - name: Summary
         shell: pwsh
         run: |
           $r = @(
-            "| strategy | README commands | the manual's Verilator command |",
-            "|---|---|---|",
-            "| A, cmd | ${{ steps.a.outcome }} | ${{ steps.a_vl.outcome }} |",
-            "| B, UCRT64 shell | ${{ steps.b.outcome }} | ${{ steps.b_vl.outcome }} |"
+            "| strategy | README commands | the manual's Verilator command | Verilator with make and gcc |",
+            "|---|---|---|---|",
+            "| A, cmd | ${{ steps.a.outcome }} | ${{ steps.a_vl.outcome }} | ${{ steps.a_vl2.outcome }} (verilator_bin, VERILATOR_ROOT, usr\bin) |",
+            "| B, UCRT64 shell | ${{ steps.b.outcome }} | ${{ steps.b_vl.outcome }} | ${{ steps.b_vl2.outcome }} |"
           )
           $r | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
           $r
