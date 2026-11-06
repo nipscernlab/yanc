@@ -11,6 +11,7 @@ them and wire them to the processor's pins. Each one has a testbench under
 | `myDCFIFO` | a buffer of words between two clocks | `out()` on one side, `in()` on the other |
 | `myKeyPS2` | a PS/2 keyboard, characters ready | `cade_sync(k)` |
 | `myVGAText` | a VGA text screen, 80 x 30 characters | `toma_sync(k, w)` |
+| `myHDMIText` | the same text screen on an ADV7513 HDMI transmitter | `toma_sync(k, w)` |
 
 ## FIFOs: `myFIFO` and `myDCFIFO`
 
@@ -300,6 +301,62 @@ reset of the block alone, the screen memory never read past its end. The regress
 a C± and a C++ SAPHO of 8 bits, each with a keyboard and a screen, echoing
 what a simulated keyboard types, and a 32-bit C++ SAPHO that uses
 `<iostream>`. Design and decisions: [design/vga-text.md](design/vga-text.md).
+
+## Screen over HDMI: `myHDMIText`
+
+The text screen of `myVGAText` on an HDMI output driven by an Analog
+Devices ADV7513, as on the DE10-Nano: the same words, the same `toma` link,
+the same pins, plus the two I2C pins with which the block sets the chip up
+after each reset. A program written for `myVGAText` runs unchanged; the top
+swaps the module and adds `scl` and `sda`. The block holds a `myVGAText`,
+so the font, the words and the scan are the same file.
+
+**Parameters.** `NUBITS` and `LINK_SYNC`, as `myVGAText`. `WAIT_BITS` (13)
+is for testbenches only.
+
+**Pins.** Those of `myVGAText`, and:
+
+| pin | direction | connect to |
+|---|---|---|
+| `scl`, `sda` | inout | the ADV7513's I2C, open drain (the block pulls low or lets go; the board pulls up) |
+
+**The chip's set-up.** 260 ms after reset the block writes eleven registers
+of the ADV7513 (I2C address 0x72): HPD taken as always high, power up, the
+fixed registers the chip's programming guide requires, 8 bits a colour.
+Everything else is the chip's default: 24-bit RGB with separate syncs in,
+DVI out. The writes take 45 ms; SCL runs at 7.9 kHz, one quarter of a bit
+per video line, so the block needs no clock of its own. The ACK is not
+read: if the monitor shows nothing, the set-up did not take.
+
+**The board.** The DE10-Nano's top, as in
+`Boards/DE10-Nano/hdmi_text/de10nano_hdmi.v`:
+
+```verilog
+assign HDMI_TX_D   = {24{pixel}};    // white on black; pixel is 0 outside the window
+assign HDMI_TX_DE  = ativo;
+assign HDMI_TX_HS  = hs;
+assign HDMI_TX_VS  = vs;
+assign HDMI_TX_CLK = ~clk;           // the chip samples in the middle of the pixel
+```
+
+The pixel clock comes from a PLL at 25.175 MHz (the board gives 50 MHz).
+`Boards/DE10-Nano/hdmi_text/` is a whole Quartus project: the top, the
+PLL, the `.qsf` with the pins, an `.sdc` that times the outputs against the
+chip's setup and hold, and a C++ program that writes a test card;
+its `README.md` says how to build it.
+
+**Size**, measured with Quartus 23.1 on the DE10-Nano's Cyclone V
+(5CSEBA6U23I7), `NUBITS` 32, the block alone: 213 ALMs, 170 registers and
+6 memory blocks, of which the I2C is 21 ALMs and 17 registers; Fmax 149
+MHz, the screen's. The DE10-Nano example with an 8-bit C++ SAPHO takes 272
+ALMs and runs at up to 88.7 MHz for the 25.18 MHz asked, the outputs to
+the ADV7513 with 14 ns of setup slack and 17.8 ns of hold slack.
+
+**Not yet checked on the board.** Simulated (`Scripts/hw/tb_hdmitext.v`:
+the screen against a `myVGAText`, the eleven writes decoded from the bus
+and timed; the regress pass `HDMITEXT`: the test card on a whole system)
+and synthesized. Design and what is open:
+[design/hdmi-text.md](design/hdmi-text.md).
 
 ## Text from C++: `<iostream>` and `<cstdio>`
 

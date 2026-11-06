@@ -38,7 +38,7 @@ covers the processor and the AURORA IDE.
 
 - [Peripherals](peripherals.md): blocks beside the processor, wired in your
   top level: the FIFOs `myFIFO` and `myDCFIFO`, the PS/2 keyboard
-  `myKeyPS2`, the VGA text screen `myVGAText`.
+  `myKeyPS2`, the VGA text screen `myVGAText` and its HDMI form `myHDMIText`.
 
 ## Simulating
 
@@ -119,6 +119,7 @@ design/myfifo
 design/fround1-subtraction
 design/ps2-keyboard
 design/vga-text
+design/hdmi-text
 design/cpp-iostream
 design/burst
 design/array-unit
