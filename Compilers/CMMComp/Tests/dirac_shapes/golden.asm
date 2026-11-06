@@ -82,16 +82,14 @@ STI_V A 8
 LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld1e
-JMP __Ld1
+JNZ __Ld1
 @__Ld1e LOD __dd3_main
 ADD 2
 SET __dd3_main
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld0e
-JMP __Ld0
+JNZ __Ld0
 @__Ld0e LOD 0
 SET k
 @__Lwh1 LOD k
@@ -130,16 +128,14 @@ STI_V A 8
 LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld3e
-JMP __Ld3
+JNZ __Ld3
 @__Ld3e LOD __dd3_main
 ADD 1
 SET __dd3_main
 LOD __dk0_main
 ADD 2
 SET __dk0_main
-JIZ __Ld2e
-JMP __Ld2
+JNZ __Ld2
 @__Ld2e LOD 0
 SET k
 @__Lwh2 LOD k
@@ -179,16 +175,14 @@ STI_V A 8
 LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld5e
-JMP __Ld5
+JNZ __Ld5
 @__Ld5e LOD __dd3_main
 ADD 1
 SET __dd3_main
 LOD __dk0_main
 ADD 2
 SET __dk0_main
-JIZ __Ld4e
-JMP __Ld4
+JNZ __Ld4
 @__Ld4e LOD 0
 SET k
 @__Lwh3 LOD k
@@ -215,8 +209,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld6e
-JMP __Ld6
+JNZ __Ld6
 @__Ld6e LOD_V v 0
 SET __dhf2_main
 LOD -3
@@ -238,8 +231,7 @@ SF_ADD
 P_LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld8e
-JMP __Ld8
+JNZ __Ld8
 @__Ld8e POP
 STI_V __dirac_tmp 3
 LOD __dd3_main
@@ -248,8 +240,7 @@ SET __dd3_main
 LOD __dk0_main
 ADD 3
 SET __dk0_main
-JIZ __Ld7e
-JMP __Ld7
+JNZ __Ld7
 @__Ld7e LOD -3
 SET __dk4_main
 @__Ld9 PSH
@@ -258,8 +249,7 @@ STI_V v 3
 LOD __dk4_main
 ADD 1
 SET __dk4_main
-JIZ __Ld9e
-JMP __Ld9
+JNZ __Ld9
 @__Ld9e LOD 0
 SET k
 @__Lwh4 LOD k
@@ -282,8 +272,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld10e
-JMP __Ld10
+JNZ __Ld10
 @__Ld10e LOD 0
 SET k
 @__Lwh5 LOD k
@@ -306,8 +295,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld11e
-JMP __Ld11
+JNZ __Ld11
 @__Ld11e LOD 0
 SET k
 @__Lwh6 LOD k
@@ -328,8 +316,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld12e
-JMP __Ld12
+JNZ __Ld12
 @__Ld12e LOD 0
 SET k
 @__Lwh7 LOD k
@@ -353,8 +340,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld13e
-JMP __Ld13
+JNZ __Ld13
 @__Ld13e LOD 0
 SET k
 @__Lwh8 LOD k
@@ -374,8 +360,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld14e
-JMP __Ld14
+JNZ __Ld14
 @__Ld14e LOD -3
 SET __dk0_main
 @__Ld15 PSH
@@ -388,8 +373,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld15e
-JMP __Ld15
+JNZ __Ld15
 @__Ld15e LOD 0
 SET k
 @__Lwh9 LOD k
@@ -413,8 +397,7 @@ SF_ADD
 P_LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld16e
-JMP __Ld16
+JNZ __Ld16
 @__Ld16e POP
 F_MLT a
 P_LOD -2
@@ -437,8 +420,7 @@ SF_ADD
 P_LOD __dk2_main
 ADD 1
 SET __dk2_main
-JIZ __Ld18e
-JMP __Ld18
+JNZ __Ld18
 @__Ld18e POP
 SF_MLT
 SF_ADD
@@ -448,8 +430,7 @@ SET __dd3_main
 LOD __dk1_main
 ADD 3
 SET __dk1_main
-JIZ __Ld17e
-JMP __Ld17
+JNZ __Ld17
 @__Ld17e POP
 SET x
 F2I_M x
@@ -466,8 +447,7 @@ SF_ADD
 P_LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld19e
-JMP __Ld19
+JNZ __Ld19
 @__Ld19e POP
 F_MLT 2.0
 F_ADD 1.0
@@ -493,8 +473,7 @@ SF_ADD
 P_LOD __dk8_main
 ADD 1
 SET __dk8_main
-JIZ __Ld21e
-JMP __Ld21
+JNZ __Ld21
 @__Ld21e POP
 STI_V __dirac_tmp 3
 LOD __dd9_main
@@ -503,8 +482,7 @@ SET __dd9_main
 LOD __dk7_main
 ADD 3
 SET __dk7_main
-JIZ __Ld20e
-JMP __Ld20
+JNZ __Ld20
 @__Ld20e LOD_V __dirac_tmp 0
 SET __dhf13_main
 LOD_V __dirac_tmp 0
@@ -519,8 +497,7 @@ SF_ADD
 P_LOD __dk10_main
 ADD 1
 SET __dk10_main
-JIZ __Ld22e
-JMP __Ld22
+JNZ __Ld22
 @__Ld22e POP
 F_MLT a
 P_LOD -2
@@ -543,8 +520,7 @@ SF_ADD
 P_LOD __dk12_main
 ADD 1
 SET __dk12_main
-JIZ __Ld24e
-JMP __Ld24
+JNZ __Ld24
 @__Ld24e POP
 SF_MLT
 SF_ADD
@@ -554,8 +530,7 @@ SET __dd14_main
 LOD __dk11_main
 ADD 3
 SET __dk11_main
-JIZ __Ld23e
-JMP __Ld23
+JNZ __Ld23
 @__Ld23e POP
 SET x
 F2I_M x
@@ -581,15 +556,13 @@ SET __dd2_main
 LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld26e
-JMP __Ld26
+JNZ __Ld26
 @__Ld26e POP
 STI_V y 2
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld25e
-JMP __Ld25
+JNZ __Ld25
 @__Ld25e LOD_V y 0
 F2I
 OUT 0
@@ -617,15 +590,13 @@ SET __dd2_main
 LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld28e
-JMP __Ld28
+JNZ __Ld28
 @__Ld28e POP
 STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld27e
-JMP __Ld27
+JNZ __Ld27
 @__Ld27e LOD 0
 SET k
 @__Lwh10 LOD k
@@ -658,8 +629,7 @@ SET __dd2_main
 LOD __dk0_main
 ADD 2
 SET __dk0_main
-JIZ __Ld29e
-JMP __Ld29
+JNZ __Ld29
 @__Ld29e LOD 0
 SET k
 @__Lwh11 LOD k
@@ -690,8 +660,7 @@ SF_ADD
 P_LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld31e
-JMP __Ld31
+JNZ __Ld31
 @__Ld31e POP
 P_LOD __dd2_main
 LDI_V e 3
@@ -703,8 +672,7 @@ SET __dd2_main
 LOD __dk0_main
 ADD 3
 SET __dk0_main
-JIZ __Ld30e
-JMP __Ld30
+JNZ __Ld30
 @__Ld30e LOD 0
 SET k
 @__Lwh12 LOD k
@@ -735,8 +703,7 @@ SF_ADD
 P_LOD __dk5_main
 ADD 1
 SET __dk5_main
-JIZ __Ld33e
-JMP __Ld33
+JNZ __Ld33
 @__Ld33e POP
 STI_V __dirac_tmp 3
 LOD __dd6_main
@@ -745,8 +712,7 @@ SET __dd6_main
 LOD __dk4_main
 ADD 3
 SET __dk4_main
-JIZ __Ld32e
-JMP __Ld32
+JNZ __Ld32
 @__Ld32e LOD_V __dirac_tmp 0
 SET __dhf9_main
 LOD -3
@@ -768,8 +734,7 @@ SF_ADD
 P_LOD __dk8_main
 ADD 1
 SET __dk8_main
-JIZ __Ld35e
-JMP __Ld35
+JNZ __Ld35
 @__Ld35e POP
 STI_V v 3
 LOD __dd10_main
@@ -778,8 +743,7 @@ SET __dd10_main
 LOD __dk7_main
 ADD 3
 SET __dk7_main
-JIZ __Ld34e
-JMP __Ld34
+JNZ __Ld34
 @__Ld34e LOD 0
 SET k
 @__Lwh13 LOD k
@@ -810,8 +774,7 @@ SF_ADD
 P_LOD __dk5_main
 ADD 1
 SET __dk5_main
-JIZ __Ld37e
-JMP __Ld37
+JNZ __Ld37
 @__Ld37e POP
 STI_V __dirac_tmp 3
 LOD __dd6_main
@@ -820,8 +783,7 @@ SET __dd6_main
 LOD __dk4_main
 ADD 3
 SET __dk4_main
-JIZ __Ld36e
-JMP __Ld36
+JNZ __Ld36
 @__Ld36e LOD_V __dirac_tmp 0
 SET __dhf9_main
 LOD -3
@@ -843,8 +805,7 @@ SF_ADD
 P_LOD __dk8_main
 ADD 1
 SET __dk8_main
-JIZ __Ld39e
-JMP __Ld39
+JNZ __Ld39
 @__Ld39e POP
 STI_V v 3
 LOD __dd10_main
@@ -853,8 +814,7 @@ SET __dd10_main
 LOD __dk7_main
 ADD 3
 SET __dk7_main
-JIZ __Ld38e
-JMP __Ld38
+JNZ __Ld38
 @__Ld38e LOD 0
 SET k
 @__Lwh14 LOD k
@@ -893,20 +853,17 @@ SET __dd4_main
 LOD __dk2_main
 ADD 1
 SET __dk2_main
-JIZ __Ld42e
-JMP __Ld42
+JNZ __Ld42
 @__Ld42e POP
 STI_V C 12
 LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld41e
-JMP __Ld41
+JNZ __Ld41
 @__Ld41e LOD __dk0_main
 ADD 3
 SET __dk0_main
-JIZ __Ld40e
-JMP __Ld40
+JNZ __Ld40
 @__Ld40e LOD 0
 SET k
 @__Lwh15 LOD k
@@ -943,8 +900,7 @@ STI_V C 9
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld43e
-JMP __Ld43
+JNZ __Ld43
 @__Ld43e LOD 0
 SET k
 @__Lwh16 LOD k
@@ -976,8 +932,7 @@ STI_V C 9
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld44e
-JMP __Ld44
+JNZ __Ld44
 @__Ld44e LOD -12
 SET __dk1_main
 @__Ld45 P_LOD 3.0
@@ -985,8 +940,7 @@ STI_V C 12
 LOD __dk1_main
 ADD 4
 SET __dk1_main
-JIZ __Ld45e
-JMP __Ld45
+JNZ __Ld45
 @__Ld45e LOD 0
 SET k
 @__Lwh17 LOD k
@@ -1018,8 +972,7 @@ STI_V A 6
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld46e
-JMP __Ld46
+JNZ __Ld46
 @__Ld46e LOD -6
 SET __dk1_main
 @__Ld47 P_LOD 2.0
@@ -1027,8 +980,7 @@ STI_V A 6
 LOD __dk1_main
 ADD 3
 SET __dk1_main
-JIZ __Ld47e
-JMP __Ld47
+JNZ __Ld47
 @__Ld47e LOD 0
 SET k
 @__Lwh18 LOD k
@@ -1068,16 +1020,14 @@ STI_V C 12
 LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld49e
-JMP __Ld49
+JNZ __Ld49
 @__Ld49e LOD __dd3_main
 ADD 1
 SET __dd3_main
 LOD __dk0_main
 ADD 3
 SET __dk0_main
-JIZ __Ld48e
-JMP __Ld48
+JNZ __Ld48
 @__Ld48e LOD 0
 SET k
 @__Lwh19 LOD k
@@ -1121,8 +1071,7 @@ S_ADD
 P_LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld51e
-JMP __Ld51
+JNZ __Ld51
 @__Ld51e POP
 STI_V iv 3
 LOD __dd2_main
@@ -1131,8 +1080,7 @@ SET __dd2_main
 LOD __dk0_main
 ADD 3
 SET __dk0_main
-JIZ __Ld50e
-JMP __Ld50
+JNZ __Ld50
 @__Ld50e LOD 0
 SET k
 @__Lwh20 LOD k
@@ -1155,8 +1103,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld52e
-JMP __Ld52
+JNZ __Ld52
 @__Ld52e LOD 0
 SET k
 @__Lwh21 LOD k
@@ -1179,8 +1126,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld53e
-JMP __Ld53
+JNZ __Ld53
 @__Ld53e LOD 0
 SET k
 @__Lwh22 LOD k
@@ -1206,8 +1152,7 @@ SF_ADD
 P_LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld54e
-JMP __Ld54
+JNZ __Ld54
 @__Ld54e POP
 SET x
 F2I_M x
@@ -1220,8 +1165,7 @@ STI_V iv 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld55e
-JMP __Ld55
+JNZ __Ld55
 @__Ld55e LOD_V iv 1
 SET_V iv 2
 LOD_V iv 0
@@ -1246,8 +1190,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld56e
-JMP __Ld56
+JNZ __Ld56
 @__Ld56e LOD 0
 SET k
 @__Lwh24 LOD k
@@ -1267,8 +1210,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld57e
-JMP __Ld57
+JNZ __Ld57
 @__Ld57e LOD 0
 SET k
 @__Lwh25 LOD k
@@ -1287,8 +1229,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld58e
-JMP __Ld58
+JNZ __Ld58
 @__Ld58e LOD 0
 SET k
 @__Lwh26 LOD k
@@ -1308,8 +1249,7 @@ STI_V C 9
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld59e
-JMP __Ld59
+JNZ __Ld59
 @__Ld59e LOD -9
 SET __dk0_main
 @__Ld60 LDI_V M 9
@@ -1337,20 +1277,17 @@ SET __dd4_main
 LOD __dk2_main
 ADD 1
 SET __dk2_main
-JIZ __Ld62e
-JMP __Ld62
+JNZ __Ld62
 @__Ld62e POP
 STI_V __dirac_tmp 12
 LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld61e
-JMP __Ld61
+JNZ __Ld61
 @__Ld61e LOD __dk0_main
 ADD 3
 SET __dk0_main
-JIZ __Ld60e
-JMP __Ld60
+JNZ __Ld60
 @__Ld60e LOD -9
 SET __dk5_main
 @__Ld63 PSH
@@ -1359,8 +1296,7 @@ STI_V C 9
 LOD __dk5_main
 ADD 1
 SET __dk5_main
-JIZ __Ld63e
-JMP __Ld63
+JNZ __Ld63
 @__Ld63e LOD 0
 SET k
 @__Lwh27 LOD k
@@ -1393,8 +1329,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld64e
-JMP __Ld64
+JNZ __Ld64
 @__Ld64e LOD_V v 0
 SET __dhf2_main
 LOD -3
@@ -1418,15 +1353,13 @@ SET __dd3_main
 LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld66e
-JMP __Ld66
+JNZ __Ld66
 @__Ld66e POP
 STI_V __dirac_tmp 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld65e
-JMP __Ld65
+JNZ __Ld65
 @__Ld65e LOD -3
 SET __dk4_main
 @__Ld67 PSH
@@ -1435,8 +1368,7 @@ STI_V v 3
 LOD __dk4_main
 ADD 1
 SET __dk4_main
-JIZ __Ld67e
-JMP __Ld67
+JNZ __Ld67
 @__Ld67e LOD 0
 SET k
 @__Lwh28 LOD k
@@ -1461,8 +1393,7 @@ STI_V iv 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld68e
-JMP __Ld68
+JNZ __Ld68
 @__Ld68e LOD 0
 SET k
 @__Lwh29 LOD k
@@ -1480,8 +1411,7 @@ OUT 0
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld69e
-JMP __Ld69
+JNZ __Ld69
 @__Ld69e LOD -3
 SET __dk0_main
 @__Ld70 LDI_V ia 3
@@ -1489,8 +1419,7 @@ OUT 0
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld70e
-JMP __Ld70
+JNZ __Ld70
 @__Ld70e LOD -3
 SET __dk0_main
 @__Ld71 LDI_V a 3
@@ -1500,8 +1429,7 @@ OUT 0
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld71e
-JMP __Ld71
+JNZ __Ld71
 @__Ld71e LOD -9
 SET __dk0_main
 @__Ld72 LDI_V IM 9
@@ -1517,15 +1445,13 @@ S_ADD
 P_LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld73e
-JMP __Ld73
+JNZ __Ld73
 @__Ld73e POP
 OUT 0
 LOD __dk0_main
 ADD 3
 SET __dk0_main
-JIZ __Ld72e
-JMP __Ld72
+JNZ __Ld72
 @__Ld72e LOD -3
 SET __dd6_main
 LOD -9
@@ -1545,8 +1471,7 @@ SF_ADD
 P_LOD __dk5_main
 ADD 1
 SET __dk5_main
-JIZ __Ld75e
-JMP __Ld75
+JNZ __Ld75
 @__Ld75e POP
 STI_V __dirac_tmp 3
 LOD __dd6_main
@@ -1555,8 +1480,7 @@ SET __dd6_main
 LOD __dk4_main
 ADD 3
 SET __dk4_main
-JIZ __Ld74e
-JMP __Ld74
+JNZ __Ld74
 @__Ld74e LOD_V __dirac_tmp 0
 SET __dhf9_main
 LOD -9
@@ -1574,16 +1498,14 @@ SF_ADD
 P_LOD __dk8_main
 ADD 1
 SET __dk8_main
-JIZ __Ld77e
-JMP __Ld77
+JNZ __Ld77
 @__Ld77e POP
 F2I
 OUT 0
 LOD __dk7_main
 ADD 3
 SET __dk7_main
-JIZ __Ld76e
-JMP __Ld76
+JNZ __Ld76
 @__Ld76e LOD 3.0
 SET x
 F_MLT 3.0
@@ -1609,15 +1531,13 @@ SET __dd12_main
 LOD __dk11_main
 ADD 1
 SET __dk11_main
-JIZ __Ld79e
-JMP __Ld79
+JNZ __Ld79
 @__Ld79e POP
 STI_V __dirac_tmp 3
 LOD __dk10_main
 ADD 1
 SET __dk10_main
-JIZ __Ld78e
-JMP __Ld78
+JNZ __Ld78
 @__Ld78e LOD_V __dirac_tmp 0
 SET __dhf18_main
 LOD __dhf9_main
@@ -1638,8 +1558,7 @@ SET __dd19_main
 LOD __dk13_main
 ADD 1
 SET __dk13_main
-JIZ __Ld80e
-JMP __Ld80
+JNZ __Ld80
 @__Ld80e POP
 P_LOD M
 F_MLT e
@@ -1653,8 +1572,7 @@ SF_ADD
 P_LOD __dk14_main
 ADD 1
 SET __dk14_main
-JIZ __Ld81e
-JMP __Ld81
+JNZ __Ld81
 @__Ld81e POP
 SF_MLT
 P_LOD -6
@@ -1679,8 +1597,7 @@ SET __dd21_main
 LOD __dk16_main
 ADD 1
 SET __dk16_main
-JIZ __Ld83e
-JMP __Ld83
+JNZ __Ld83
 @__Ld83e POP
 P_LOD __dd20_main
 LDI_V M 9
@@ -1696,8 +1613,7 @@ SF_ADD
 P_LOD __dk17_main
 ADD 1
 SET __dk17_main
-JIZ __Ld84e
-JMP __Ld84
+JNZ __Ld84
 @__Ld84e POP
 SF_MLT
 SF_ADD
@@ -1707,8 +1623,7 @@ SET __dd20_main
 LOD __dk15_main
 ADD 1
 SET __dk15_main
-JIZ __Ld82e
-JMP __Ld82
+JNZ __Ld82
 @__Ld82e POP
 SF_ADD
 SET x
@@ -1736,8 +1651,7 @@ SF_ADD
 P_LOD __dk6_main
 ADD 1
 SET __dk6_main
-JIZ __Ld86e
-JMP __Ld86
+JNZ __Ld86
 @__Ld86e POP
 STI_V __dirac_tmp 3
 LOD __dd7_main
@@ -1746,8 +1660,7 @@ SET __dd7_main
 LOD __dk5_main
 ADD 3
 SET __dk5_main
-JIZ __Ld85e
-JMP __Ld85
+JNZ __Ld85
 @__Ld85e LOD_V __dirac_tmp 0
 SET __dhf10_main
 LOD -3
@@ -1769,8 +1682,7 @@ SF_ADD
 P_LOD __dk9_main
 ADD 1
 SET __dk9_main
-JIZ __Ld88e
-JMP __Ld88
+JNZ __Ld88
 @__Ld88e POP
 P_LOD __dd11_main
 LDI_V e 3
@@ -1783,8 +1695,7 @@ SET __dd11_main
 LOD __dk8_main
 ADD 3
 SET __dk8_main
-JIZ __Ld87e
-JMP __Ld87
+JNZ __Ld87
 @__Ld87e LOD 0
 SET k
 @__Lwh30 LOD k
@@ -1815,8 +1726,7 @@ STI_V v 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld89e
-JMP __Ld89
+JNZ __Ld89
 @__Ld89e LOD 0
 SET k
 @__Lwh31 LOD k
@@ -1852,8 +1762,7 @@ STI_V w 3
 LOD __dk0_tw
 ADD 1
 SET __dk0_tw
-JIZ __Ld90e
-JMP __Ld90
+JNZ __Ld90
 @__Ld90e LOD -3
 SET __dd6_tw
 LOD -9
@@ -1873,8 +1782,7 @@ SF_ADD
 P_LOD __dk5_tw
 ADD 1
 SET __dk5_tw
-JIZ __Ld92e
-JMP __Ld92
+JNZ __Ld92
 @__Ld92e POP
 STI_V __dirac_tmp 3
 LOD __dd6_tw
@@ -1883,8 +1791,7 @@ SET __dd6_tw
 LOD __dk4_tw
 ADD 3
 SET __dk4_tw
-JIZ __Ld91e
-JMP __Ld91
+JNZ __Ld91
 @__Ld91e LOD_V __dirac_tmp 0
 SET __dhf9_tw
 LOD -3
@@ -1906,8 +1813,7 @@ SF_ADD
 P_LOD __dk8_tw
 ADD 1
 SET __dk8_tw
-JIZ __Ld94e
-JMP __Ld94
+JNZ __Ld94
 @__Ld94e POP
 STI_V w 3
 LOD __dd10_tw
@@ -1916,8 +1822,7 @@ SET __dd10_tw
 LOD __dk7_tw
 ADD 3
 SET __dk7_tw
-JIZ __Ld93e
-JMP __Ld93
+JNZ __Ld93
 @__Ld93e LOD tw_s
 F_ADD 1.0
 RET

@@ -32,7 +32,7 @@ Info: ULA resource -> float to int converter
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point sign computation (standard library)
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 18% of the Assembly Instruction Set
+Info: using 17% of the Assembly Instruction Set
 Info: using 27% of the ULA operations
 Sweet: the processor is good to go.
 ## variables

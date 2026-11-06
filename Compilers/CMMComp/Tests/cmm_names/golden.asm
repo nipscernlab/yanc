@@ -72,8 +72,7 @@ F2I
 OUT 0
 LOD main_k
 ADD -3
-JIZ __sw_body_1_1
-JMP __sw_body_1_2
+JNZ __sw_body_1_2
 @__sw_body_1_1 LOD 1
 JMP __switch_end_1
 @__sw_body_1_2 @__switch_end_1 LOD sw_body_1_1

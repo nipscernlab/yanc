@@ -13,8 +13,7 @@ OUT 0
 ADD 1
 SET main_k
 GRE 5
-JIZ __Lwh2end
-JMP __Lwh2
+JNZ __Lwh2
 @__Lwh2end LOD 0
 SET main_k
 @__Lwh3 LOD 20
@@ -24,8 +23,7 @@ LOD main_k
 ADD 1
 SET main_k
 GRE 3
-JIZ __Lwh3end
-JMP __Lwh3
+JNZ __Lwh3
 @__Lwh3end LOD 0
 SET main_k
 @__Lwh4 LOD 2
@@ -38,8 +36,7 @@ LOD main_k
 ADD 1
 SET main_k
 GRE 10
-JIZ __Lwh4end
-JMP __Lwh4
+JNZ __Lwh4
 @__Lwh4end LOD 0
 SET main_k
 @__Lwh5 LOD main_k
@@ -53,8 +50,7 @@ ADD main_k
 OUT 0
 @__Lwh5cont LOD main_k
 GRE 5
-JIZ __Lwh5end
-JMP __Lwh5
+JNZ __Lwh5
 @__Lwh5end LOD 0
 SET main_k
 @__Lwh6 LOD 0
@@ -71,8 +67,7 @@ LOD main_n
 ADD 1
 SET main_n
 GRE 5
-JIZ __Lwh7end
-JMP __Lwh7
+JNZ __Lwh7
 @__Lwh7end LOD main_k
 ADD 1
 SET main_k

@@ -55,7 +55,7 @@ for path in sorted(glob.glob(f"{root}/*/golden.asm")):
         if op == "JMP" and l2 == arg: hits["JMP to the next instruction"].append(where)
         if op in ("JMP", "RET") and l2 is None and op2 != "NOP":
             hits["unreachable after JMP/RET"].append(where)
-        if op in ("JMP", "JIZ") and arg in labels:
+        if op in ("JMP", "JIZ", "JNZ") and arg in labels:
             t = ins[labels[arg]]
             if t[1] == "JMP" and t[2] != arg: hits[f"{op} to a JMP (thread)"].append(where)   # not @fim JMP fim
 # words written and never read (per program), ignoring outputs/ports

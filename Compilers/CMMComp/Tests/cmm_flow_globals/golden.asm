@@ -53,8 +53,7 @@ ADD 1
 SET h_x
 JMP __Lwh1
 @__Lwh1end @s ADD -1
-JIZ __sw_body_1_1
-JMP __sw_body_1_2
+JNZ __sw_body_1_2
 @__sw_body_1_1 LOD 10
 RET
 @__sw_body_1_2 LOD 20

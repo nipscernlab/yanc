@@ -139,6 +139,12 @@ def run(inp):
     for _ in range(7): n = wrap(n + 1)       # n1 -> n7, each returns its argument + 1
     if n != wrap(x + 7): s = wrap(s + 1024)
     if t != wrap(14 * wrap(x - y)): s = wrap(s + 2048)
+    # the loop tested at the bottom (JNZ), checked and not summed: three turns
+    t = 0
+    while True:
+        t += 1
+        if not t < 3: break
+    if t != 3: s = wrap(s + 8192)
     u = s % M                                # the fold works on the raw word (>> is logical)
     u ^= u >> 16; u ^= u >> 8; u ^= u >> 4
     return u & 15, terms

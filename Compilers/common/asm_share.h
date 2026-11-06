@@ -68,6 +68,23 @@ int asm_fuse(const char *asm_path, const char *pc_path);
 int asm_tail(const char *asm_path, const char *pc_path);
 
 // ****************************************************************************
+// asm_jnz -- JIZ x; JMP y; @x is JNZ y (#78) ---------------------------------
+// ****************************************************************************
+//
+// The bottom of a loop that tests at the bottom, and a test whose true side is
+// elsewhere, come out of the compilers as JIZ x; JMP y with x the instruction
+// right after the JMP: on zero, go on at x; otherwise go to y. JNZ y does the
+// same in one word. Only when the three lines follow one another, no label sits
+// on the JMP (nothing jumps to it) and the JMP has no #ITRAD / #TOAQUI mark.
+// The JNZ keeps the JIZ's source line in the pc map. On anything the pass does
+// not understand it leaves the file untouched.
+//
+// Run it last among the passes that remove instructions (after asm_tail), so
+// that the pairs they leave next to each other are caught too. Returns how
+// many instructions the pc map covered that left, -1 on an I/O error.
+int asm_jnz(const char *asm_path, const char *pc_path);
+
+// ****************************************************************************
 // asm_reach -- code no path gets to is not in the program, nor its hardware --
 // ****************************************************************************
 //
@@ -75,7 +92,7 @@ int asm_tail(const char *asm_path, const char *pc_path);
 // nobody calls (or a library header's inline function) would still pay for
 // its divider. This pass walks the program from where the PC can start --
 // address 0, the #ITRAD interrupt point, the #TOAQUI mark and @fim -- along
-// fall-through, JMP, both ways of JIZ and CAL (then the instruction after
+// fall-through, JMP, both ways of JIZ and JNZ, and CAL (then the instruction after
 // it), and drops every instruction it never reaches, and every #array /
 // #arrays that only those used. The ISA has no indirect jump, so the walk is
 // exact: C++'s function pointers and virtual calls are chains of direct CALs.
@@ -86,7 +103,7 @@ int asm_tail(const char *asm_path, const char *pc_path);
 // functions): the block stays only if one of the labels is reached. The
 // marker lines always leave the file.
 //
-// A JMP or JIZ to an unconditional JMP first goes straight to where that one
+// A JMP, JIZ or JNZ to an unconditional JMP first goes straight to where that one
 // goes. A JMP whose target is the instruction that follows it anyway (a break
 // at the end of a loop body, an if whose else is empty) leaves too. Neither
 // goes through or drops a JMP that #ITRAD or #TOAQUI marks.
@@ -133,7 +150,7 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
 // acc: once asm_unread has taken out the SET of a parameter nothing reads, the
 // instructions before each CAL of that function that change only the acc
 // compute a value nobody uses, and they leave (their labels move to the next
-// instruction). Only for a function no JMP or JIZ reaches and nothing runs
+// instruction). Only for a function no JMP, JIZ or JNZ reaches and nothing runs
 // into from the instruction above it. An instruction with any other effect (a
 // push, a pop, I/O, a call, a link, a divider) stays, and so does everything
 // before it. On a #ITRAD, or on anything the pass does not understand, it
@@ -196,14 +213,14 @@ const char *asm_div_read (const char *mn);        // QUO / REM / F_QUO, NULL if 
 int         asm_div_words(const char *mn);        // its words (above), 0 if mn is no division
 
 // ****************************************************************************
-// asm_normnop -- a NOP between a normalised operation and a JIZ/LDI/ILI ------
+// asm_normnop -- a NOP between a normalised operation and a JIZ/JNZ/LDI/ILI --
 // ****************************************************************************
 //
-// JIZ (the jump decision) and LDI/ILI (the read index) take the ALU output of
+// JIZ and JNZ (the jump decision) and LDI/ILI (the read index) take the ALU output of
 // the instruction right before them, and read it before the float normaliser
 // (SAPHO/ula.v, out_fast): the normaliser is the longest path, and leaving it
-// out of the jump and of the read address raises the clock. So a JIZ, LDI or
-// ILI right after an operation whose ALU result goes through the normaliser
+// out of the jump and of the read address raises the clock. So a JIZ, JNZ,
+// LDI or ILI right after an operation whose ALU result goes through the normaliser
 // (asm_is_norm) gets a NOP in between: the NOP's ALU output is the
 // accumulator, the normalised result. A label on that line stays there: a
 // jump to it comes from a jump, never from the normalised operation.

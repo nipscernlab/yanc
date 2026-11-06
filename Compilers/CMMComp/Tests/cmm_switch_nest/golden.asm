@@ -18,8 +18,7 @@ JIZ __sw_body_1_2
 JMP __sw_body_1_3
 @__sw_body_1_1 LOD main_b
 ADD -2
-JIZ __sw_body_2_1
-JMP __sw_body_2_2
+JNZ __sw_body_2_2
 @__sw_body_2_1 LOD 12
 OUT 0
 JMP __switch_end_2
@@ -36,11 +35,9 @@ OUT 0
 @__switch_end_1 LOD 5
 SET main_a
 ADD -5
-JIZ __sw_body_3_1
-JMP __sw_body_3_2
+JNZ __sw_body_3_2
 @__sw_body_3_1 LOD main_a
-JIZ __Lif1else
-JMP __switch_end_3
+JNZ __switch_end_3
 @__Lif1else LOD 999
 OUT 0
 @__sw_body_3_2 LOD 888

@@ -20,7 +20,7 @@ A processor contains only the hardware of the instructions its program
 uses. An integer division takes five words, `DIV k; NOP; NOP; NOP; QUO`
 (also `MOD`/`REM`), a float division four, `F_DIV k; NOP; NOP; F_QUO`:
 the compilers write it that way, because the dividers take five and four
-cycles. A `JIZ`, `LDI` or `ILI` right after an operation whose result goes through the
+cycles. A `JIZ`, `JNZ`, `LDI` or `ILI` right after an operation whose result goes through the
 float normaliser (`F_ADD`, `F_SU1`, `F_SU2`, `F_MLT`, `F_DIV`/`F_QUO`,
 `F_ROT`, `I2F`, `I2F_M`, `F_INN` and their stack, `P_` and `_V` forms) gets
 a `NOP` before it: the jump and the read index take the arithmetic unit
@@ -74,140 +74,141 @@ named, `addr` its address only).
 |---|---|---|---|---|---|---|
 | `JMP` | 16 | code | - | - | - | go to x |
 | `JIZ` | 17 | code | r | - | - | go to x when a is 0 |
-| `CAL` | 18 | code | - | - | - | call x (the return address is pushed on the subroutine stack) |
-| `RET` | 19 | none | - | - | - | return to the address the last CAL pushed |
-| `TOM` | 20 | link | r | - | - | offer a on link x; wait here until the partner takes it |
-| `CAD` | 21 | link | w | - | - | wait here until link x offers a word; a = that word |
+| `JNZ` | 18 | code | r | - | - | go to x when a is not 0 |
+| `CAL` | 19 | code | - | - | - | call x (the return address is pushed on the subroutine stack) |
+| `RET` | 20 | none | - | - | - | return to the address the last CAL pushed |
+| `TOM` | 21 | link | r | - | - | offer a on link x; wait here until the partner takes it |
+| `CAD` | 22 | link | w | - | - | wait here until link x offers a word; a = that word |
 
 ## Integer arithmetic
 
 | mnemonic | opcode | operand | a | stack | x | computes |
 |---|---|---|---|---|---|---|
-| `ADD` | 22 | data | rw | - | r | a = a + x |
-| `ADD_V` | 22 | offset | rw | - | r | as ADD, x at a constant offset from the name |
-| `S_ADD` | 23 | none | rw | pop | - | a = a + x |
-| `MLT` | 24 | data | rw | - | r | a = x * a |
-| `MLT_V` | 24 | offset | rw | - | r | as MLT, x at a constant offset from the name |
-| `S_MLT` | 25 | none | rw | pop | - | a = x * a |
-| `DIV` | 26 | data | rw | - | r | starts x / a (integer quotient, toward zero); read it with QUO four words later |
-| `QUO` | 26 | none | w | - | - | a = the quotient of the DIV four words before |
-| `S_DIV` | 27 | none | rw | pop | - | starts x / a (integer quotient, toward zero); read it with QUO four words later |
-| `MOD` | 28 | data | rw | - | r | starts x % a (remainder, the sign of x); read it with REM four words later |
-| `REM` | 28 | none | w | - | - | a = the remainder of the MOD four words before |
-| `S_MOD` | 29 | none | rw | pop | - | starts x % a (remainder, the sign of x); read it with REM four words later |
-| `SGN` | 30 | data | rw | - | r | a = a with the sign of x |
-| `S_SGN` | 31 | none | rw | pop | - | a = a with the sign of x |
+| `ADD` | 23 | data | rw | - | r | a = a + x |
+| `ADD_V` | 23 | offset | rw | - | r | as ADD, x at a constant offset from the name |
+| `S_ADD` | 24 | none | rw | pop | - | a = a + x |
+| `MLT` | 25 | data | rw | - | r | a = x * a |
+| `MLT_V` | 25 | offset | rw | - | r | as MLT, x at a constant offset from the name |
+| `S_MLT` | 26 | none | rw | pop | - | a = x * a |
+| `DIV` | 27 | data | rw | - | r | starts x / a (integer quotient, toward zero); read it with QUO four words later |
+| `QUO` | 27 | none | w | - | - | a = the quotient of the DIV four words before |
+| `S_DIV` | 28 | none | rw | pop | - | starts x / a (integer quotient, toward zero); read it with QUO four words later |
+| `MOD` | 29 | data | rw | - | r | starts x % a (remainder, the sign of x); read it with REM four words later |
+| `REM` | 29 | none | w | - | - | a = the remainder of the MOD four words before |
+| `S_MOD` | 30 | none | rw | pop | - | starts x % a (remainder, the sign of x); read it with REM four words later |
+| `SGN` | 31 | data | rw | - | r | a = a with the sign of x |
+| `S_SGN` | 32 | none | rw | pop | - | a = a with the sign of x |
 
 ## Float arithmetic
 
 | mnemonic | opcode | operand | a | stack | x | computes |
 |---|---|---|---|---|---|---|
-| `F_ADD` | 32 | data | rw | - | r | a = x + a |
-| `F_ADD_V` | 32 | offset | rw | - | r | as F_ADD, x at a constant offset from the name |
-| `SF_ADD` | 33 | none | rw | pop | - | a = x + a |
-| `F_SU1` | 34 | data | rw | - | r | a = a - x |
-| `F_SU2` | 35 | data | rw | - | r | a = x - a |
-| `SF_SU1` | 36 | none | rw | pop | - | a = a - x |
-| `SF_SU2` | 37 | none | rw | pop | - | a = x - a |
-| `F_MLT` | 38 | data | rw | - | r | a = x * a |
-| `F_MLT_V` | 38 | offset | rw | - | r | as F_MLT, x at a constant offset from the name |
-| `SF_MLT` | 39 | none | rw | pop | - | a = x * a |
-| `F_DIV` | 40 | data | rw | - | r | starts x / a; read it with F_QUO three words later |
-| `F_QUO` | 40 | none | w | - | - | a = the quotient of the F_DIV three words before |
-| `SF_DIV` | 41 | none | rw | pop | - | starts x / a; read it with F_QUO three words later |
-| `F_SGN` | 42 | data | rw | - | r | a = a with the sign of x |
-| `SF_SGN` | 43 | none | rw | pop | - | a = a with the sign of x |
-| `F_SCL` | 44 | data | rw | - | r | a = a * 2^x (x an int, a a float) |
-| `SF_SCL` | 45 | none | rw | pop | - | a = a * 2^x (x an int, a a float) |
+| `F_ADD` | 33 | data | rw | - | r | a = x + a |
+| `F_ADD_V` | 33 | offset | rw | - | r | as F_ADD, x at a constant offset from the name |
+| `SF_ADD` | 34 | none | rw | pop | - | a = x + a |
+| `F_SU1` | 35 | data | rw | - | r | a = a - x |
+| `F_SU2` | 36 | data | rw | - | r | a = x - a |
+| `SF_SU1` | 37 | none | rw | pop | - | a = a - x |
+| `SF_SU2` | 38 | none | rw | pop | - | a = x - a |
+| `F_MLT` | 39 | data | rw | - | r | a = x * a |
+| `F_MLT_V` | 39 | offset | rw | - | r | as F_MLT, x at a constant offset from the name |
+| `SF_MLT` | 40 | none | rw | pop | - | a = x * a |
+| `F_DIV` | 41 | data | rw | - | r | starts x / a; read it with F_QUO three words later |
+| `F_QUO` | 41 | none | w | - | - | a = the quotient of the F_DIV three words before |
+| `SF_DIV` | 42 | none | rw | pop | - | starts x / a; read it with F_QUO three words later |
+| `F_SGN` | 43 | data | rw | - | r | a = a with the sign of x |
+| `SF_SGN` | 44 | none | rw | pop | - | a = a with the sign of x |
+| `F_SCL` | 45 | data | rw | - | r | a = a * 2^x (x an int, a a float) |
+| `SF_SCL` | 46 | none | rw | pop | - | a = a * 2^x (x an int, a a float) |
 
 ## Integer unary
 
 | mnemonic | opcode | operand | a | stack | x | computes |
 |---|---|---|---|---|---|---|
-| `NEG` | 46 | none | rw | - | - | a = -a |
-| `NEG_M` | 47 | data | w | - | r | a = -x |
-| `P_NEG_M` | 48 | data | rw | push | r | push a; a = -x |
-| `ABS` | 49 | none | rw | - | - | a = \|a\| |
-| `ABS_M` | 50 | data | w | - | r | a = \|x\| |
-| `P_ABS_M` | 51 | data | rw | push | r | push a; a = \|x\| |
-| `PST` | 52 | none | rw | - | - | a = a, or 0 when a is negative |
-| `PST_M` | 53 | data | w | - | r | a = x, or 0 when x is negative |
-| `P_PST_M` | 54 | data | rw | push | r | push a; a = x, or 0 when x is negative |
-| `NRM` | 55 | none | rw | - | - | a = a / NUGAIN (the #NUGAIN directive, a power of two) |
-| `NRM_M` | 56 | data | w | - | r | a = x / NUGAIN (the #NUGAIN directive, a power of two) |
-| `P_NRM_M` | 57 | data | rw | push | r | push a; a = x / NUGAIN (the #NUGAIN directive, a power of two) |
-| `INV` | 58 | none | rw | - | - | a = ~a (bitwise not) |
-| `INV_M` | 59 | data | w | - | r | a = ~x (bitwise not) |
-| `P_INV_M` | 60 | data | rw | push | r | push a; a = ~x (bitwise not) |
-| `LIN` | 61 | none | rw | - | - | a = !a (1 or 0) |
-| `LIN_M` | 62 | data | w | - | r | a = !x (1 or 0) |
-| `P_LIN_M` | 63 | data | rw | push | r | push a; a = !x (1 or 0) |
+| `NEG` | 47 | none | rw | - | - | a = -a |
+| `NEG_M` | 48 | data | w | - | r | a = -x |
+| `P_NEG_M` | 49 | data | rw | push | r | push a; a = -x |
+| `ABS` | 50 | none | rw | - | - | a = \|a\| |
+| `ABS_M` | 51 | data | w | - | r | a = \|x\| |
+| `P_ABS_M` | 52 | data | rw | push | r | push a; a = \|x\| |
+| `PST` | 53 | none | rw | - | - | a = a, or 0 when a is negative |
+| `PST_M` | 54 | data | w | - | r | a = x, or 0 when x is negative |
+| `P_PST_M` | 55 | data | rw | push | r | push a; a = x, or 0 when x is negative |
+| `NRM` | 56 | none | rw | - | - | a = a / NUGAIN (the #NUGAIN directive, a power of two) |
+| `NRM_M` | 57 | data | w | - | r | a = x / NUGAIN (the #NUGAIN directive, a power of two) |
+| `P_NRM_M` | 58 | data | rw | push | r | push a; a = x / NUGAIN (the #NUGAIN directive, a power of two) |
+| `INV` | 59 | none | rw | - | - | a = ~a (bitwise not) |
+| `INV_M` | 60 | data | w | - | r | a = ~x (bitwise not) |
+| `P_INV_M` | 61 | data | rw | push | r | push a; a = ~x (bitwise not) |
+| `LIN` | 62 | none | rw | - | - | a = !a (1 or 0) |
+| `LIN_M` | 63 | data | w | - | r | a = !x (1 or 0) |
+| `P_LIN_M` | 64 | data | rw | push | r | push a; a = !x (1 or 0) |
 
 ## Float unary
 
 | mnemonic | opcode | operand | a | stack | x | computes |
 |---|---|---|---|---|---|---|
-| `F_NEG` | 64 | none | rw | - | - | a = -a, float |
-| `F_NEG_M` | 65 | data | w | - | r | a = -x, float |
-| `PF_NEG_M` | 66 | data | rw | push | r | push a; a = -x, float |
-| `F_ABS` | 67 | none | rw | - | - | a = \|a\|, float |
-| `F_ABS_M` | 68 | data | w | - | r | a = \|x\|, float |
-| `PF_ABS_M` | 69 | data | rw | push | r | push a; a = \|x\|, float |
-| `F_PST` | 70 | none | rw | - | - | a = a, or 0 when a is negative, float |
-| `F_PST_M` | 71 | data | w | - | r | a = x, or 0 when x is negative, float |
-| `PF_PST_M` | 72 | data | rw | push | r | push a; a = x, or 0 when x is negative, float |
-| `F_ROT` | 73 | none | rw | - | - | the power of two nearest to the square root of the float a |
-| `XPO` | 74 | none | rw | - | - | a = the base-2 exponent of the float a, as an int |
-| `XPO_M` | 75 | data | w | - | r | a = the base-2 exponent of the float x, as an int |
+| `F_NEG` | 65 | none | rw | - | - | a = -a, float |
+| `F_NEG_M` | 66 | data | w | - | r | a = -x, float |
+| `PF_NEG_M` | 67 | data | rw | push | r | push a; a = -x, float |
+| `F_ABS` | 68 | none | rw | - | - | a = \|a\|, float |
+| `F_ABS_M` | 69 | data | w | - | r | a = \|x\|, float |
+| `PF_ABS_M` | 70 | data | rw | push | r | push a; a = \|x\|, float |
+| `F_PST` | 71 | none | rw | - | - | a = a, or 0 when a is negative, float |
+| `F_PST_M` | 72 | data | w | - | r | a = x, or 0 when x is negative, float |
+| `PF_PST_M` | 73 | data | rw | push | r | push a; a = x, or 0 when x is negative, float |
+| `F_ROT` | 74 | none | rw | - | - | the power of two nearest to the square root of the float a |
+| `XPO` | 75 | none | rw | - | - | a = the base-2 exponent of the float a, as an int |
+| `XPO_M` | 76 | data | w | - | r | a = the base-2 exponent of the float x, as an int |
 
 ## Conversions
 
 | mnemonic | opcode | operand | a | stack | x | computes |
 |---|---|---|---|---|---|---|
-| `I2F` | 76 | none | rw | - | - | a = a converted from int to float |
-| `I2F_M` | 77 | data | w | - | r | a = x converted from int to float |
-| `P_I2F_M` | 78 | data | rw | push | r | push a; a = x converted from int to float |
-| `F2I` | 79 | none | rw | - | - | a = a converted from float to int |
-| `F2I_M` | 80 | data | w | - | r | a = x converted from float to int |
-| `P_F2I_M` | 81 | data | rw | push | r | push a; a = x converted from float to int |
+| `I2F` | 77 | none | rw | - | - | a = a converted from int to float |
+| `I2F_M` | 78 | data | w | - | r | a = x converted from int to float |
+| `P_I2F_M` | 79 | data | rw | push | r | push a; a = x converted from int to float |
+| `F2I` | 80 | none | rw | - | - | a = a converted from float to int |
+| `F2I_M` | 81 | data | w | - | r | a = x converted from float to int |
+| `P_F2I_M` | 82 | data | rw | push | r | push a; a = x converted from float to int |
 
 ## Logic
 
 | mnemonic | opcode | operand | a | stack | x | computes |
 |---|---|---|---|---|---|---|
-| `AND` | 82 | data | rw | - | r | a = x & a (bitwise) |
-| `S_AND` | 83 | none | rw | pop | - | a = x & a (bitwise) |
-| `ORR` | 84 | data | rw | - | r | a = x \| a (bitwise) |
-| `S_ORR` | 85 | none | rw | pop | - | a = x \| a (bitwise) |
-| `XOR` | 86 | data | rw | - | r | a = x ^ a (bitwise) |
-| `S_XOR` | 87 | none | rw | pop | - | a = x ^ a (bitwise) |
-| `LAN` | 88 | data | rw | - | r | a = x && a (1 or 0) |
-| `S_LAN` | 89 | none | rw | pop | - | a = x && a (1 or 0) |
-| `LOR` | 90 | data | rw | - | r | a = x \|\| a (1 or 0) |
-| `S_LOR` | 91 | none | rw | pop | - | a = x \|\| a (1 or 0) |
+| `AND` | 83 | data | rw | - | r | a = x & a (bitwise) |
+| `S_AND` | 84 | none | rw | pop | - | a = x & a (bitwise) |
+| `ORR` | 85 | data | rw | - | r | a = x \| a (bitwise) |
+| `S_ORR` | 86 | none | rw | pop | - | a = x \| a (bitwise) |
+| `XOR` | 87 | data | rw | - | r | a = x ^ a (bitwise) |
+| `S_XOR` | 88 | none | rw | pop | - | a = x ^ a (bitwise) |
+| `LAN` | 89 | data | rw | - | r | a = x && a (1 or 0) |
+| `S_LAN` | 90 | none | rw | pop | - | a = x && a (1 or 0) |
+| `LOR` | 91 | data | rw | - | r | a = x \|\| a (1 or 0) |
+| `S_LOR` | 92 | none | rw | pop | - | a = x \|\| a (1 or 0) |
 
 ## Comparisons
 
 | mnemonic | opcode | operand | a | stack | x | computes |
 |---|---|---|---|---|---|---|
-| `LES` | 92 | data | rw | - | r | a = x < a (1 or 0) |
-| `S_LES` | 93 | none | rw | pop | - | a = x < a (1 or 0) |
-| `GRE` | 94 | data | rw | - | r | a = x > a (1 or 0) |
-| `S_GRE` | 95 | none | rw | pop | - | a = x > a (1 or 0) |
-| `EQU` | 96 | data | rw | - | r | a = x == a (1 or 0) |
-| `S_EQU` | 97 | none | rw | pop | - | a = x == a (1 or 0) |
-| `F_LES` | 98 | data | rw | - | r | a = x < a, floats (1 or 0) |
-| `SF_LES` | 99 | none | rw | pop | - | a = x < a, floats (1 or 0) |
-| `F_GRE` | 100 | data | rw | - | r | a = x > a, floats (1 or 0) |
-| `SF_GRE` | 101 | none | rw | pop | - | a = x > a, floats (1 or 0) |
+| `LES` | 93 | data | rw | - | r | a = x < a (1 or 0) |
+| `S_LES` | 94 | none | rw | pop | - | a = x < a (1 or 0) |
+| `GRE` | 95 | data | rw | - | r | a = x > a (1 or 0) |
+| `S_GRE` | 96 | none | rw | pop | - | a = x > a (1 or 0) |
+| `EQU` | 97 | data | rw | - | r | a = x == a (1 or 0) |
+| `S_EQU` | 98 | none | rw | pop | - | a = x == a (1 or 0) |
+| `F_LES` | 99 | data | rw | - | r | a = x < a, floats (1 or 0) |
+| `SF_LES` | 100 | none | rw | pop | - | a = x < a, floats (1 or 0) |
+| `F_GRE` | 101 | data | rw | - | r | a = x > a, floats (1 or 0) |
+| `SF_GRE` | 102 | none | rw | pop | - | a = x > a, floats (1 or 0) |
 
 ## Shifts
 
 | mnemonic | opcode | operand | a | stack | x | computes |
 |---|---|---|---|---|---|---|
-| `SHL` | 102 | data | rw | - | r | a = x << a |
-| `S_SHL` | 103 | none | rw | pop | - | a = x << a |
-| `SHR` | 104 | data | rw | - | r | a = x >> a (logical: zeros enter) |
-| `S_SHR` | 105 | none | rw | pop | - | a = x >> a (logical: zeros enter) |
-| `SRS` | 106 | data | rw | - | r | a = x >> a (arithmetic: the sign enters) |
-| `S_SRS` | 107 | none | rw | pop | - | a = x >> a (arithmetic: the sign enters) |
+| `SHL` | 103 | data | rw | - | r | a = x << a |
+| `S_SHL` | 104 | none | rw | pop | - | a = x << a |
+| `SHR` | 105 | data | rw | - | r | a = x >> a (logical: zeros enter) |
+| `S_SHR` | 106 | none | rw | pop | - | a = x >> a (logical: zeros enter) |
+| `SRS` | 107 | data | rw | - | r | a = x >> a (arithmetic: the sign enters) |
+| `S_SRS` | 108 | none | rw | pop | - | a = x >> a (arithmetic: the sign enters) |

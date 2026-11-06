@@ -586,7 +586,8 @@ the program (`NPTR`, `RPT`):
    pointer mode: `[1:0]` k, the pointer of the instruction's own access,
    `[3:2]` its change after the access (01 +1, 10 -1). asmcomp widens the
    operand by one bit, so no other operand reaches that bit (an invariant
-   of the assembler, not checked by the hardware). `SETP k a` (opcode 110)
+   of the assembler, not checked by the hardware). `SETP k a` (opcode 110;
+   the numbers here predate `JNZ`, #78, which moved the opcodes from 18 up by one)
    loads pointer k with the address a, an immediate (every Dirac pointer
    starts at a constant address).
 2. **A parallel store of the previous result**: in pointer mode, `[4]` also

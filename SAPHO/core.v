@@ -63,6 +63,7 @@ module prefetch
 	parameter [MINSTW-1:0] TOAQUIADDR = 0,
 	parameter              CAL        = 0,
 	parameter              JIZ        = 0,
+	parameter              JNZ        = 0,
 	parameter              TOM        = 0,
 	parameter              CAD        = 0
 )(
@@ -85,20 +86,23 @@ module prefetch
 );
 
 // flow-control opcodes, as numbered in Compilers/common/isa.tsv (check_isa.py
-// holds these four to the table)
-localparam [NBOPCO-1:0] OP_JMP = 16, OP_JIZ = 17, OP_CAL = 18, OP_RET = 19;
-localparam [NBOPCO-1:0] OP_TOM = 20, OP_CAD = 21;
+// holds them to the table)
+localparam [NBOPCO-1:0] OP_JMP = 16, OP_JIZ = 17, OP_JNZ = 18, OP_CAL = 19;
+localparam [NBOPCO-1:0] OP_RET = 20, OP_TOM = 21, OP_CAD = 22;
 
 wire wJMP;
 wire wJMPZ;
 
-generate if ((JIZ) != 0) begin : jmp_sel
-//             JMP                                        JIZ
-assign wJMPZ = (opcode == OP_JMP) | ((opcode == OP_JIZ) & ~is_um);
-end else begin : jmp_sel
-//             JMP
-assign wJMPZ = (opcode == OP_JMP);
-end endgenerate
+// the conditional jumps test the same bit, is_um (the acc is not zero): JIZ
+// jumps when it is clear, JNZ when it is set. Each is there only when the
+// program uses it.
+wire wJIZ, wJNZ;
+generate if ((JIZ) != 0) begin : jiz_sel assign wJIZ = (opcode == OP_JIZ) & ~is_um; end
+         else            begin : jiz_sel assign wJIZ = 1'b0;                       end endgenerate
+generate if ((JNZ) != 0) begin : jnz_sel assign wJNZ = (opcode == OP_JNZ) &  is_um; end
+         else            begin : jnz_sel assign wJNZ = 1'b0;                       end endgenerate
+
+assign wJMPZ = (opcode == OP_JMP) | wJIZ | wJNZ;
 
 // toma / cade (docs/design/toma-and-cade.md): a jump to itself until the partner's
 // bit lets it through. The target is not the operand (free for the link
@@ -263,6 +267,7 @@ module instr_fetch
 
 	parameter CAL    = 0,
 	parameter JIZ    = 0,
+	parameter JNZ    = 0,
 	parameter TOM    = 0,
 	parameter CAD    = 0
 )(
@@ -330,6 +335,7 @@ prefetch #(.MINSTW(MINSTW),
            .TOAQUIADDR(TOAQUIADDR),
 		   .CAL   (CAL   ),
 		   .JIZ   (JIZ   ),
+		   .JNZ   (JNZ   ),
 		   .TOM   (TOM   ),
 		   .CAD   (CAD   )) pf(rst, tom_go, cad_go, self_addr, pf_self, pc_addr, opcode, operand,
                                pf_instr, pf_addr,
@@ -604,6 +610,7 @@ module core
 	
 	// implements jumps
 	parameter    JIZ   = 0,
+	parameter    JNZ   = 0,
 	parameter    CAL   = 0,
 
 	// the links to partner processors (docs/design/toma-and-cade-links.md)
@@ -776,6 +783,7 @@ instr_fetch #(
 	.SDEPTH     (SDEPTH     ),
 	.CAL        (CAL        ),
 	.JIZ        (JIZ        ),
+	.JNZ        (JNZ        ),
 	.TOM        (TOM        ),
 	.CAD        (CAD        )) instr_fetch (.clk    (clk       ),
 	                                .rst    (rst       ),
@@ -808,7 +816,7 @@ instr_fetch #(
 // Built only where needed: link k only with its TOMS/CADS bit; the operand is
 // compared and the links multiplexed only with TOM (or CAD) on two or more.
 
-localparam [NBOPCO-1:0] OP_TOM = 20, OP_CAD = 21;
+localparam [NBOPCO-1:0] OP_TOM = 21, OP_CAD = 22;
 
 function integer n_ones (input [NLINK-1:0] m); integer i; begin
 	n_ones = 0; for (i = 0; i < NLINK; i = i + 1) n_ones = n_ones + m[i];
@@ -1150,13 +1158,13 @@ end else begin : toma_reg
 end endgenerate
 
 assign uic_acc = racc;
-// JIZ branch decision: if_acc must reflect "accumulator is non-zero" across the
+// JIZ / JNZ branch decision: if_acc must reflect "accumulator is non-zero" across the
 // WHOLE word, not just bit 0. Using ula_out[0] alone made `while (x)` / `if (x)`
 // misbehave for any multi-bit value with a clear LSB (e.g. 2, 4, ...). The
 // OR-reduction gives true C truthiness; JIZ jumps iff the word is exactly zero.
 // It reads the ALU before the float normaliser (ula_fast): the normaliser is
 // the longest path, and asmcomp puts a NOP between a normalised operation and
-// a JIZ right after it (asm_normnop), so the word tested is never one of them.
+// a JIZ or JNZ right after it (asm_normnop), so the word tested is never one of them.
 assign  if_acc = |ula_fast;
 
 // Indirect Addressing --------------------------------------------------------

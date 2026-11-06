@@ -179,6 +179,7 @@ module processor
 	
 	// implements jumps
 	parameter    JIZ   = 0,
+	parameter    JNZ   = 0,
 	parameter    CAL   = 0,
 
 	// the links to partner processors (docs/design/toma-and-cade-links.md)
@@ -379,6 +380,7 @@ core #(.NBOPCO ( NBOPCO ),
 	  .PF_INN  ( PF_INN ),
 	     .OUT  (   OUT  ),
 		 .JIZ  (   JIZ  ),
+		 .JNZ  (   JNZ  ),
          .CAL  (   CAL  ),
          .TOM  (   TOM  ),
          .CAD  (   CAD  ),

@@ -20,8 +20,7 @@ ADD 1
 SET main_k
 LOD 5
 XOR main_k
-JIZ __Lwh1end
-JMP __Lwh1
+JNZ __Lwh1
 @__Lwh1end LOD main_k
 OUT 0
 @__Lwh2 LOD main_k
@@ -112,8 +111,7 @@ LOD 0
 SET sw2_r
 LOD sw2_v
 ADD -5
-JIZ __sw_body_2_1
-JMP __sw_body_2_2
+JNZ __sw_body_2_2
 @__sw_body_2_1 LOD 5
 XOR sw2_v
 JIZ __switch_end_2

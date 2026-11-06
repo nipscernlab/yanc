@@ -91,10 +91,13 @@ operators, exceptions, variadic functions (see
 - **`N divisions, 5 words each for DIV/MOD and 4 for F_DIV`**: every
   division is written as five instructions (integer) or four (float),
   because the dividers take that many clock cycles.
-- **`N NOP inserted between a float operation and the JIZ/LDI/ILI after
-  it`** (asmcomp): a hand-written `.asm` tests a float result with `JIZ`, or
-  uses it as the index of `LDI`/`ILI`, right away; the jump and the read
-  index take the arithmetic unit before the float normaliser, so a `NOP`
+- **`N NOP inserted between a float operation and the JIZ/JNZ/LDI/ILI after
+  it`** (asmcomp): a hand-written `.asm` tests a float result with `JIZ` or
+  `JNZ`, or uses it as the index of `LDI`/`ILI`, right away; the jump and the
+  read index take the arithmetic unit before the float normaliser, so a `NOP`
   goes in between (one word and one cycle each).
+- **`N JIZ + JMP pairs made one JNZ each`** (cmmcomp, cppcomp): the bottom
+  of a loop that tests at the bottom, `JIZ x; JMP y` with `x` right after
+  the `JMP`, is written as `JNZ y`, one word less each.
 - **`stack depths from the program: SDEPTH n, NDSTAC n`**: the stacks are as
   deep as the program needs.

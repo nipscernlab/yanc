@@ -2,17 +2,18 @@
 Info: 57 assembly instructions generated
 Info: 1 unreachable instructions removed
 Info: 2 variables written and never read removed (2 instructions)
+Info: 1 JIZ + JMP pairs made one JNZ each
 Info: 5 variables share 4 data words (1 saved)
 Heads up: variable 'x' in function 'f' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
 Heads up: variable 'x' in function 's' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 54 instructions and 13 variables were found
+Info: 53 instructions and 13 variables were found
 Info: adding stack memory for function calls
 Info: adding data output handling
 Info: ULA resource -> < operator for int
 Info: ULA resource -> integer adder
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 6% of the Assembly Instruction Set
+Info: using 7% of the Assembly Instruction Set
 Info: using 5% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
@@ -94,11 +95,10 @@ lang C+-
 46 JMP __Lwh1
 // 40: switch (x) {
 47 ADD -1
-48 JIZ __sw_body_1_1
-49 JMP __sw_body_1_2
+48 JNZ __sw_body_1_2
 // 41: case 1:  return 10;
-50 LOD 10
-51 RET
+49 LOD 10
+50 RET
 // 42: default: return 20;
-52 LOD 20
-53 RET
+51 LOD 20
+52 RET

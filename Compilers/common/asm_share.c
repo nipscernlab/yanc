@@ -34,7 +34,8 @@ static const as_isa isa[] = {
     {"PF_INN", "in", "-", "-", "push", "rw", "in"},
     {"OUT", "out", "-", "-", "-", "r", "out"},
     {"JMP", "code", "-", "jmp", "-", "-", "-"},
-    {"JIZ", "code", "-", "jz", "-", "r", "-"},
+    {"JIZ", "code", "-", "cond", "-", "r", "-"},
+    {"JNZ", "code", "-", "cond", "-", "r", "-"},
     {"CAL", "code", "-", "call", "-", "-", "-"},
     {"RET", "none", "-", "ret", "-", "-", "-"},
     {"TOM", "link", "-", "-", "-", "r", "-"},
@@ -182,7 +183,7 @@ typedef struct {
     int  op;          // row of isa[]
     int  name;        // data name it touches (-1: none, or a literal)
     int  line;        // line of the file it sits on
-    char *target;     // label, for jmp / jz / call (NULL: none; the block is ins's)
+    char *target;     // label, for jmp / cond / call (NULL: none; the block is ins's)
     int  nsucc, succ[2];
 } as_ins;
 
@@ -368,7 +369,7 @@ int asm_share(const char *asm_path)
             tgt = lab_at[li];
         }
         if      (strcmp(fl, "jmp")  == 0 || strcmp(fl, "call") == 0) { x->succ[0] = tgt; x->nsucc = 1; }
-        else if (strcmp(fl, "jz")   == 0) { x->succ[0] = tgt; x->succ[1] = i + 1; x->nsucc = 2; }
+        else if (strcmp(fl, "cond") == 0) { x->succ[0] = tgt; x->succ[1] = i + 1; x->nsucc = 2; }
         else if (strcmp(fl, "ret")  == 0) x->nsucc = -1;   // every return site, below
         else                              { x->succ[0] = i + 1; x->nsucc = 1; }
     }
@@ -698,7 +699,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
         if (pc.n > n) ok = 0;                              // not the map of this file
     }
 
-    // a JMP or JIZ to an unconditional JMP goes straight to where that one goes
+    // a JMP, JIZ or JNZ to an unconditional JMP goes straight to where that one goes
     // (not through one that #ITRAD or #TOAQUI marks, whose address the hardware
     // compares): the JMP in between may then be reached by nothing, or jump to
     // the instruction that follows it, and leave below
@@ -707,7 +708,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
     for (int i = 0; i < n && ok; i++)
     {
         const char *fl = isa[ins[i].op].flow;
-        if (strcmp(fl, "jmp") != 0 && strcmp(fl, "jz") != 0) continue;
+        if (strcmp(fl, "jmp") != 0 && strcmp(fl, "cond") != 0) continue;
         int t = ins[i].target;
         for (int hops = 0; hops < n; hops++)               // a cycle of JMPs ends here too
         {
@@ -737,7 +738,7 @@ int asm_reach(const char *asm_path, const char *pc_path)
             const char *fl = isa[ins[i].op].flow;
             int tg = ins[i].target >= 0 ? lab_at[ins[i].target] : -1;
             if      (strcmp(fl, "jmp") == 0) VISIT(tg);
-            else if (strcmp(fl, "jz") == 0 || strcmp(fl, "call") == 0) { VISIT(tg); VISIT(i + 1); }
+            else if (strcmp(fl, "cond") == 0 || strcmp(fl, "call") == 0) { VISIT(tg); VISIT(i + 1); }
             else if (strcmp(fl, "ret") != 0) VISIT(i + 1);
         }
         for (int i = 0; i < n; i++)                        // a block none of whose labels is reached goes too
@@ -980,7 +981,7 @@ done:
     return added_pc;
 }
 
-// ---- asm_normnop: a NOP between a normalised operation and a JIZ/LDI/ILI ------------
+// ---- asm_normnop: a NOP between a normalised operation and a JIZ/JNZ/LDI/ILI --------
 // See asm_share.h. The mnemonics whose ALU operation goes through the
 // normaliser: the instr_dec.v rows with ALU operation 3, 5, 7, 25, 26, 46, 47
 // or 48, and their aliases (Scripts/check_isa.py holds the list to the decoder).
@@ -1000,7 +1001,7 @@ int asm_is_norm(const char *mn)
 // the instructions that read the ALU output before the normaliser
 static int reads_fast(const char *mn)
 {
-    return strcmp(mn, "JIZ") == 0 || strcmp(mn, "LDI") == 0 || strcmp(mn, "LDI_V") == 0 || strcmp(mn, "ILI") == 0;
+    return strcmp(mn, "JIZ") == 0 || strcmp(mn, "JNZ") == 0 || strcmp(mn, "LDI") == 0 || strcmp(mn, "LDI_V") == 0 || strcmp(mn, "ILI") == 0;
 }
 
 int asm_normnop(const char *asm_path, const char *pc_path)
@@ -1012,7 +1013,7 @@ int asm_normnop(const char *asm_path, const char *pc_path)
     fclose(f);
     if (pc_path && (f = fopen(pc_path, "r"))) { read_lines(f, &pc); fclose(f); }
 
-    // the instruction each line holds (-1: none), and which JIZ/LDI/ILI get a NOP before them
+    // the instruction each line holds (-1: none), and which JIZ/JNZ/LDI/ILI get a NOP before them
     int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));
     char (*mn)[32] = xmalloc((lines.n + 1) * sizeof(*mn));
     char *pad = xcalloc(lines.n + 1, 1);                  // per instruction: a NOP goes before it
@@ -1047,8 +1048,8 @@ int asm_normnop(const char *asm_path, const char *pc_path)
         }
         fclose(f);
     }
-    printf(yanc_lang_en ? "Info: %d NOP inserted between a float operation and the JIZ/LDI/ILI after it\n"
-                        : "Info: %d NOP inserido(s) entre uma operação float e o JIZ/LDI/ILI logo depois dela\n", added);
+    printf(yanc_lang_en ? "Info: %d NOP inserted between a float operation and the JIZ/JNZ/LDI/ILI after it\n"
+                        : "Info: %d NOP inserido(s) entre uma operação float e o JIZ/JNZ/LDI/ILI logo depois dela\n", added);
 
 done:
     free(pad); free(mn); free(ins_of);
@@ -1100,7 +1101,7 @@ static void dp_walk(dp_ctx *c, int r, int start)
         else if (strcmp(x->stk, "pop")  == 0) d--;
         if (d > maxd) maxd = d;
         if      (strcmp(x->flow, "jmp") == 0) GO(c->tgt[i], d);
-        else if (strcmp(x->flow, "jz")  == 0) { GO(c->tgt[i], d); GO(i + 1, d); }
+        else if (strcmp(x->flow, "cond") == 0) { GO(c->tgt[i], d); GO(i + 1, d); }
         else if (strcmp(x->flow, "call") == 0)
         {
             int q = c->entry[c->tgt[i]];
@@ -1549,7 +1550,7 @@ int asm_callarg(const char *asm_path, const char *pc_path)
     int  *tgt_of = xmalloc((lines.n + 1) * sizeof(int));   // per line: label a jump or call names (-1: none)
     int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));   // per line: its instruction index (-1: none)
     char *dead   = xcalloc(lines.n + 1, 1);                 // per line: 1 if it leaves
-    char *jumped = NULL;                                   // per label: 1 if a JMP / JIZ names it
+    char *jumped = NULL;                                   // per label: 1 if a JMP / JIZ / JNZ names it
     int  *at     = NULL;                                   // per label: the line it marks (-1: none)
     int   acap = 0, jcap = 0, n = 0, ok = 1, removed = 0, drop = 0;
 
@@ -1941,6 +1942,136 @@ int asm_tail(const char *asm_path, const char *pc_path)
 
 done:
     free(mn_at); free(mn_len); free(ins_of); free(dead); free(jump);
+    st_free(&lines); st_free(&pc);
+    return removed;
+}
+
+// ---- asm_jnz: JIZ x; JMP y; @x is JNZ y (#78) -----------------------------------
+// See asm_share.h.
+
+// a line's operand (the one token after its mnemonic, before any comment):
+// 1 and the token in out, 0 if there is none or anything else follows it
+static int line_operand(const char *text, int mn_at, int mn_len, char *out, size_t cap)
+{
+    int end = (int)strlen(text);
+    const char *cm = strstr(text, "//");
+    if (cm) end = (int)(cm - text);
+    int p = mn_at + mn_len;
+    while (p < end && isspace((unsigned char)text[p])) p++;
+    int s = p;
+    while (p < end && !isspace((unsigned char)text[p])) p++;
+    if (p == s || (size_t)(p - s) >= cap) return 0;
+    memcpy(out, text + s, (size_t)(p - s)); out[p - s] = 0;
+    while (p < end && isspace((unsigned char)text[p])) p++;
+    return p == end;
+}
+
+// 1 if @name is among the labels in front of a line's mnemonic
+static int line_has_label(const char *text, int mn_at, const char *name)
+{
+    size_t nl = strlen(name);
+    for (int p = 0; p < mn_at; )
+    {
+        while (p < mn_at && isspace((unsigned char)text[p])) p++;
+        int s = p;
+        while (p < mn_at && !isspace((unsigned char)text[p])) p++;
+        if (p > s && text[s] == '@' && (size_t)(p - s - 1) == nl && strncmp(text + s + 1, name, nl) == 0) return 1;
+    }
+    return 0;
+}
+
+int asm_jnz(const char *asm_path, const char *pc_path)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, pc = {0};
+    read_lines(f, &lines);
+    fclose(f);
+
+    int  *mn_at  = xmalloc((lines.n + 1) * sizeof(int));   // per line: where its mnemonic starts (-1: no instruction)
+    int  *mn_len = xmalloc((lines.n + 1) * sizeof(int));
+    int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));   // per line: its instruction index (-1: none)
+    char *dead   = xcalloc(lines.n + 1, 1);                 // per line: 1 if it leaves (the JMP)
+    char *jnz    = xcalloc(lines.n + 1, 1);                 // per line: 1 if its JIZ becomes a JNZ
+    char (*to)[256] = xcalloc(lines.n + 1, sizeof(*to));   // per JNZ line: where it goes (the JMP's operand)
+    int   n = 0, ok = 1, removed = 0, made = 0;
+
+    for (int ln = 0; ln < lines.n && ok; ln++)
+    {
+        char *text = lines.s[ln];
+        int   end  = (int)strlen(text);
+        char *cm   = strstr(text, "//");
+        if (cm) end = (int)(cm - text);
+        mn_at[ln] = ins_of[ln] = -1;
+        int p = 0, t0 = -1, tl = 0;
+        for (;;)                                             // skip the labels: the first other token
+        {
+            while (p < end && isspace((unsigned char)text[p])) p++;
+            if (p >= end) break;
+            int s = p;
+            while (p < end && !isspace((unsigned char)text[p])) p++;
+            if (text[s] != '@') { t0 = s; tl = p - s; break; }
+        }
+        if (t0 < 0) continue;                               // blank, or a label alone: never one of the three lines
+        if (text[t0] == '#') continue;                      // a directive (#ITRAD, #TOAQUI...): the same
+        if (isa_find(tok_of(text + t0, tl)) < 0) { ok = 0; break; }
+        mn_at[ln] = t0; mn_len[ln] = tl; ins_of[ln] = n++;
+    }
+    if (!ok) goto done;
+
+    // JIZ x, then a JMP y on the very next line with no label on it, then the
+    // line @x: when the acc is zero both go to x, otherwise to y, which is
+    // what JNZ y does with x falling through. The three lines in a row also
+    // keep out a JMP that #ITRAD or #TOAQUI marks (the mark is a line of its own).
+    #define IS(ln, m) (mn_at[ln] >= 0 && mn_len[ln] == 3 && strncmp(lines.s[ln] + mn_at[ln], m, 3) == 0)
+    for (int ln = 0; ln + 2 < lines.n; ln++)
+    {
+        int j = ln + 1, x = ln + 2;
+        char lab[256];
+        if (!IS(ln, "JIZ") || !IS(j, "JMP") || mn_at[x] < 0) continue;
+        if (memchr(lines.s[j], '@', (size_t)mn_at[j])) continue;          // something jumps to the JMP itself
+        if (!line_operand(lines.s[ln], mn_at[ln], 3, lab, sizeof(lab))) continue;
+        if (!line_operand(lines.s[j], mn_at[j], 3, to[ln], sizeof(to[ln]))) continue;
+        if (!line_has_label(lines.s[x], mn_at[x], lab)) continue;
+        jnz[ln] = 1; dead[j] = 1; made++;
+        ln = j;                                                          // the JMP is gone: not a JIZ's partner again
+    }
+    #undef IS
+    if (made == 0) goto done;
+
+    if (pc_path)
+    {
+        FILE *fp = fopen(pc_path, "r");
+        if (fp) { read_lines(fp, &pc); fclose(fp); }
+    }
+    f = fopen(asm_path, "w");
+    if (!f) { removed = -1; goto done; }
+    char *gone = xcalloc(n + 1, 1);
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        char *text = lines.s[ln];
+        if (dead[ln]) { gone[ins_of[ln]] = 1; continue; }
+        if (!jnz[ln]) { fputs(text, f); continue; }
+        const char *cm = strstr(text, "//");                // the JIZ's labels and comment stay
+        fprintf(f, "%.*sJNZ %s", mn_at[ln], text, to[ln]);
+        if (cm) fprintf(f, " %s", cm); else fputc('\n', f);
+    }
+    fclose(f);
+    if (pc.n > 0)                                            // the JNZ keeps the JIZ's source line
+    {
+        f = fopen(pc_path, "w");
+        if (f)
+        {
+            for (int i = 0; i < pc.n; i++) { if (i < n && gone[i]) removed++; else fputs(pc.s[i], f); }
+            fclose(f);
+        }
+    }
+    free(gone);
+    printf(yanc_lang_en ? "Info: %d JIZ + JMP pairs made one JNZ each\n"
+                        : "Info: %d pares JIZ + JMP viraram um JNZ cada\n", made);
+
+done:
+    free(mn_at); free(mn_len); free(ins_of); free(dead); free(jnz); free(to);
     st_free(&lines); st_free(&pc);
     return removed;
 }

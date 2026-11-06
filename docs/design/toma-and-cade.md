@@ -91,7 +91,9 @@ row in `instr_dec.v` (like `JMP`/`JIZ`): an opcode without one decodes to
 **Opcodes** (agreed 2026-10-07). Flow control is kept below opcode 32
 (`check_isa.py`), and 0-31 are all taken: `TOM` = 20 and `CAD` = 21, right
 after `RET`, every opcode from `ADD` up moving by 2 (the highest becomes
-107, still 7 bits). An encoding break, in line with v7.0.
+107, still 7 bits). An encoding break, in line with v7.0. `JNZ` (#78,
+2026-11-05) went in the same way, at 18 right after `JIZ`, every opcode from
+`CAL` up moving by 1: `TOM` = 21, `CAD` = 22, the highest 108.
 
 **Generated only when used** (pay for what you use): a program with no
 `TOM` gets no T, no W and no `TOM` pins; with no `CAD`, no C and no `CAD`

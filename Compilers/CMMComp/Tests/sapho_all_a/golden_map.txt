@@ -37,13 +37,14 @@ Heads up on line 204: a complex array index? Seriously?! Gonna truncate the real
 Heads up on line 205: variable 't' is int, but getting a float.
 Heads up on line 206: variable 't' is int, but getting a float.
 Heads up on line 207: variable 't' is int, but getting a float.
-Info on line 226: #TOAQUI marker registered (drives the cheguei pin)
-Info: 921 assembly instructions generated
+Info on line 233: #TOAQUI marker registered (drives the cheguei pin)
+Info: 935 assembly instructions generated
 Info: adding assembly macro for root square computation
 Info: adding assembly macro for exponential computation
 Info: adding assembly macro for natural-logarithm computation
 Info: 11 divisions, 5 words each for DIV/MOD and 4 for F_DIV (37 added)
 Info: 8 variables written and never read removed (36 instructions)
+Info: 1 JIZ + JMP pairs made one JNZ each
 Info: 28 variables share 9 data words (19 saved)
 Heads up: global variable 'fa' is never read, so it's out of the program and the waveform (#WAVE fa keeps it).
 Heads up: variable 'v' in function 'n7' is never read, so it's out of the program and the waveform (#WAVE v, in the function, keeps it).
@@ -56,7 +57,7 @@ Heads up: variable 'v' in function 'n1' is never read, so it's out of the progra
 Heads up: variable 'fw' in function 'main' is never read, so it's out of the program and the waveform (#WAVE fw, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
 Info: implementing interruption handling
-Info: 1001 instructions and 69 variables were found
+Info: 1014 instructions and 70 variables were found
 Info: adding data input handling
 Info: ULA resource -> int to float converter
 Info: ULA resource -> > operator for int
@@ -1099,164 +1100,179 @@ lang C+-
 856 LOD s
 857 ADD 2048
 858 SET s
-// 221: t = s ^ (s >> 16);
-859 LOD 16
-860 SHR s
-861 XOR s
-862 SET main_t
-// 222: t = t ^ (t >> 8);
-863 LOD 8
-864 SHR main_t
-865 XOR main_t
-866 SET main_t
-// 223: t = t ^ (t >> 4);
-867 LOD 4
-868 SHR main_t
-869 XOR main_t
-870 SET main_t
-// 224: out(0, t & 15);
-871 LOD 15
-872 AND main_t
-873 OUT 0
-// 225: toma(0, t & 15);                // LINK: TOM, waits for sapho_all_b
-874 LOD 15
-875 AND main_t
-876 TOM 0
+// 223: t = 0;
+859 LOD 0
+860 SET main_t
+// 224: do { t = t + 1; } while (t < 3);  if (t != 3) s = s + 8192;
+861 LOD main_t
+862 ADD 1
+863 SET main_t
+864 GRE 3
+865 JNZ __Lwh2
+866 LOD 3
+867 XOR main_t
+868 JIZ __Lif21else
+869 LOD s
+870 ADD 8192
+871 SET s
+// 228: t = s ^ (s >> 16);
+872 LOD 16
+873 SHR s
+874 XOR s
+875 SET main_t
+// 229: t = t ^ (t >> 8);
+876 LOD 8
+877 SHR main_t
+878 XOR main_t
+879 SET main_t
+// 230: t = t ^ (t >> 4);
+880 LOD 4
+881 SHR main_t
+882 XOR main_t
+883 SET main_t
+// 231: out(0, t & 15);
+884 LOD 15
+885 AND main_t
+886 OUT 0
+// 232: toma(0, t & 15);                // LINK: TOM, waits for sapho_all_b
+887 LOD 15
+888 AND main_t
+889 TOM 0
 // 67: while (1)
-877 JMP __Lwh1
+890 JMP __Lwh1
 // -3: END
-878 JMP fim
+891 JMP fim
 // 41: int twice(int v)
-879 SET twice_v
+892 SET twice_v
 // 43: return v + v;
-880 ADD twice_v
-881 RET
-// 46: int diff(int a, int b)              // a second parameter: SET_P
-882 SET_P diff_b
-883 SET diff_a
-// 48: return a - b;
-884 NEG_M diff_b
-885 ADD diff_a
-886 RET
-// 53: int n7(int v) { return v + 1; }
-887 ADD 1
-888 RET
-// 54: int n6(int v) { return n7(v) + 1; }
-889 CAL n7
-890 ADD 1
-891 RET
-// 55: int n5(int v) { return n6(v) + 1; }
-892 CAL n6
-893 ADD 1
+893 ADD twice_v
 894 RET
+// 46: int diff(int a, int b)              // a second parameter: SET_P
+895 SET_P diff_b
+896 SET diff_a
+// 48: return a - b;
+897 NEG_M diff_b
+898 ADD diff_a
+899 RET
+// 53: int n7(int v) { return v + 1; }
+900 ADD 1
+901 RET
+// 54: int n6(int v) { return n7(v) + 1; }
+902 CAL n7
+903 ADD 1
+904 RET
+// 55: int n5(int v) { return n6(v) + 1; }
+905 CAL n6
+906 ADD 1
+907 RET
 // 56: int n4(int v) { return n5(v) + 1; }
-895 CAL n5
-896 ADD 1
-897 RET
+908 CAL n5
+909 ADD 1
+910 RET
 // 57: int n3(int v) { return n4(v) + 1; }
-898 CAL n4
-899 ADD 1
-900 RET
+911 CAL n4
+912 ADD 1
+913 RET
 // 58: int n2(int v) { return n3(v) + 1; }
-901 CAL n3
-902 ADD 1
-903 RET
+914 CAL n3
+915 ADD 1
+916 RET
 // 59: int n1(int v) { return n2(v) + 1; }
-904 CAL n2
-905 ADD 1
-906 RET
+917 CAL n2
+918 ADD 1
+919 RET
 // library macros, no source line
-907 SET __sqrt_num
-908 F_ROT
-909 PSH
-910 F_DIV __sqrt_num
-911 NOP
-912 NOP
-913 F_QUO
-914 SF_ADD
-915 F_MLT 0.5
-916 PSH
-917 F_DIV __sqrt_num
-918 NOP
-919 NOP
-920 F_QUO
-921 SF_ADD
-922 F_MLT 0.5
-923 PSH
-924 F_DIV __sqrt_num
+920 SET __sqrt_num
+921 F_ROT
+922 PSH
+923 F_DIV __sqrt_num
+924 NOP
 925 NOP
-926 NOP
-927 F_QUO
-928 SF_ADD
-929 F_MLT 0.5
-930 PSH
-931 F_DIV __sqrt_num
+926 F_QUO
+927 SF_ADD
+928 F_MLT 0.5
+929 PSH
+930 F_DIV __sqrt_num
+931 NOP
 932 NOP
-933 NOP
-934 F_QUO
-935 SF_ADD
-936 F_MLT 0.5
-937 RET
-938 SET __exp_x
-939 F_MLT 1.4426950409
-940 SET __exp_q
-941 LOD 0.5
-942 F_SGN __exp_q
-943 F_ADD __exp_q
-944 F2I
-945 SET __exp_n
-946 I2F
-947 F_MLT 0.6931471806
-948 F_SU2 __exp_x
-949 SET __exp_r
-950 F_MLT 0.0013888889
-951 F_ADD 0.0083333333
-952 F_MLT __exp_r
-953 F_ADD 0.0416666667
-954 F_MLT __exp_r
-955 F_ADD 0.1666666667
-956 F_MLT __exp_r
-957 F_ADD 0.5
-958 F_MLT __exp_r
-959 F_ADD 1.0
-960 F_MLT __exp_r
-961 F_ADD 1.0
-962 F_SCL __exp_n
-963 RET
-964 SET __log_x
-965 F_LES 0.0
-966 JIZ __L_log_zero
-967 XPO_M __log_x
-968 SET __log_e
-969 NEG
-970 SET __log_ne
-971 LOD __log_x
-972 F_SCL __log_ne
-973 SET __log_m
-974 F_SU1 1.0
-975 SET __log_t1
-976 LOD __log_m
-977 F_ADD 1.0
-978 F_DIV __log_t1
-979 NOP
-980 NOP
-981 F_QUO
-982 SET __log_u
-983 F_MLT __log_u
-984 SET __log_w
-985 F_MLT 0.2222222222
-986 F_ADD 0.2857142858
-987 F_MLT __log_w
-988 F_ADD 0.4
-989 F_MLT __log_w
-990 F_ADD 0.6666666666
-991 F_MLT __log_w
-992 F_ADD 2.0
-993 F_MLT __log_u
-994 SET __log_lm
-995 I2F_M __log_e
-996 F_MLT 0.6931471806
-997 F_ADD __log_lm
-998 RET
-999 LOD 0.0
-1000 RET
+933 F_QUO
+934 SF_ADD
+935 F_MLT 0.5
+936 PSH
+937 F_DIV __sqrt_num
+938 NOP
+939 NOP
+940 F_QUO
+941 SF_ADD
+942 F_MLT 0.5
+943 PSH
+944 F_DIV __sqrt_num
+945 NOP
+946 NOP
+947 F_QUO
+948 SF_ADD
+949 F_MLT 0.5
+950 RET
+951 SET __exp_x
+952 F_MLT 1.4426950409
+953 SET __exp_q
+954 LOD 0.5
+955 F_SGN __exp_q
+956 F_ADD __exp_q
+957 F2I
+958 SET __exp_n
+959 I2F
+960 F_MLT 0.6931471806
+961 F_SU2 __exp_x
+962 SET __exp_r
+963 F_MLT 0.0013888889
+964 F_ADD 0.0083333333
+965 F_MLT __exp_r
+966 F_ADD 0.0416666667
+967 F_MLT __exp_r
+968 F_ADD 0.1666666667
+969 F_MLT __exp_r
+970 F_ADD 0.5
+971 F_MLT __exp_r
+972 F_ADD 1.0
+973 F_MLT __exp_r
+974 F_ADD 1.0
+975 F_SCL __exp_n
+976 RET
+977 SET __log_x
+978 F_LES 0.0
+979 JIZ __L_log_zero
+980 XPO_M __log_x
+981 SET __log_e
+982 NEG
+983 SET __log_ne
+984 LOD __log_x
+985 F_SCL __log_ne
+986 SET __log_m
+987 F_SU1 1.0
+988 SET __log_t1
+989 LOD __log_m
+990 F_ADD 1.0
+991 F_DIV __log_t1
+992 NOP
+993 NOP
+994 F_QUO
+995 SET __log_u
+996 F_MLT __log_u
+997 SET __log_w
+998 F_MLT 0.2222222222
+999 F_ADD 0.2857142858
+1000 F_MLT __log_w
+1001 F_ADD 0.4
+1002 F_MLT __log_w
+1003 F_ADD 0.6666666666
+1004 F_MLT __log_w
+1005 F_ADD 2.0
+1006 F_MLT __log_u
+1007 SET __log_lm
+1008 I2F_M __log_e
+1009 F_MLT 0.6931471806
+1010 F_ADD __log_lm
+1011 RET
+1012 LOD 0.0
+1013 RET
