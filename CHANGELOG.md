@@ -8,6 +8,23 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Fixed
+- **The Verilator tests pass however the MSYS2 shell was opened.** An
+  MSYS2 bash started from Git Bash has no `PATHEXT`, and without it the
+  PowerShell that `Scripts/regress.sh` starts for them refused to run
+  `verilator_bin.exe` ("Cannot run a document in the middle of a
+  pipeline"): the six Verilator tests failed. The regression now gives
+  that PowerShell Windows' default `PATHEXT` when the variable is
+  missing. PowerShell reads it once, at its start, so setting it inside
+  `run_verilator_step.ps1` did not help.
+- **The regression passes on a fresh Windows clone.** Since #119 a clone
+  holds the goldens with LF, while on Windows the compilers and `vvp`
+  write their files with CRLF: every comparison failed (217 of 343 in
+  the quick regression). A clone made before #119 kept CRLF goldens and
+  hid it. `Scripts/regress.sh` now compares ignoring the CR, which is the
+  line ending and not part of the result; `Scripts/cmm_cov.sh` already
+  did.
+
 ## [v9.2] – 2026-11-05
 
 A cmmcomp reorganized (#93) and audited (#108), smaller assembly, and one
