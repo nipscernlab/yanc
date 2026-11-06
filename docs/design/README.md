@@ -28,7 +28,7 @@ code), what was measured and what was deduced, and most end with a section
 | [cpp-iostream.md](cpp-iostream.md) | `<iostream>`, `<cstdio>`, `<cstring>` for CPPComp on the keyboard and the screen, and the overload rules they needed (v9.1) |
 | [fround1-subtraction.md](fround1-subtraction.md) | `#FROUND 1`: its subtraction is not the exact truncation the manual promised; the fix tried, its cost and accuracy measured, and why the hardware stays (2026-10-22) |
 | [vga-text.md](vga-text.md) | `myVGAText`: a VGA text screen written with `toma`, the decisions and what was measured (v9.1) |
-| [hdmi-text.md](hdmi-text.md) | `myHDMIText`: the text screen on an ADV7513 HDMI transmitter, the eleven I2C writes, the DE10-Nano example (2026-11-05, not yet on the board) |
+| [adv7513-text.md](adv7513-text.md) | `myADV7513Text`: the text screen through an ADV7513 HDMI transmitter, the eleven I2C writes, the DE10-Nano example (2026-11-05, not yet on the board) |
 | [ps2-keyboard.md](ps2-keyboard.md) | `myKeyPS2`: a PS/2 keyboard read with `cade_sync`, the decisions and what was measured (v9.0) |
 | [ip-protection.md](ip-protection.md) | handing SAPHO to Quartus or Vivado without showing its source: IEEE 1735, vendor schemes, a service (notes, parked until a partnership) |
 | [burst.md](burst.md) | a whole array through a port, one word per clock, stopping while the FIFO is full (design, not implemented) |

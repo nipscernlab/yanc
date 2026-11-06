@@ -1,10 +1,10 @@
-// The demonstration of SAPHO/myHDMIText.v on the DE10-Nano: a C++ SAPHO of
+// The demonstration of SAPHO/myADV7513Text.v on the DE10-Nano: a C++ SAPHO of
 // 8 bits writes to the HDMI screen on link 1 with toma_sync, the same words a
 // program writes to myVGAText (docs/peripherals.md). The screen is a test
 // card for the picture: the title on the first line, the 95 printable
 // characters, a line of 80 '=' that must touch both edges, a counter that
 // changes every 60 ms (simulated at 25 MHz), and a line at the bottom.
-// Built and simulated by the regress project pass HDMITEXT (Tests/HDMITEXT).
+// Built and simulated by the regress project pass ADV7513TEXT (Tests/ADV7513TEXT).
 #pragma yanc nubits 8
 
 void escreve(const char *s)
@@ -29,7 +29,7 @@ void espera()                                // 60 ms at 25 MHz (simulated)
 int main()
 {
     toma_sync(1, -128);
-    escreve("SAPHO + myHDMIText na DE10-Nano: 80 x 30 caracteres, 640 x 480 a 60 Hz");
+    escreve("SAPHO + myADV7513Text na DE10-Nano: 80 x 30 caracteres, 640 x 480 a 60 Hz");
     cursor(2, 0);
     for (int c = 32; c < 127; c++) toma_sync(1, c);
     cursor(5, 0);

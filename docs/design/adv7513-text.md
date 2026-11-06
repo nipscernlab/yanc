@@ -1,7 +1,7 @@
-# An HDMI text screen for the SAPHO: `myHDMIText`
+# A text screen through an ADV7513 HDMI transmitter: `myADV7513Text`
 
-Status: implemented 2026-11-05 (`SAPHO/myHDMIText.v`, `Scripts/hw/tb_hdmitext.v`,
-regress pass `HDMITEXT`, the DE10-Nano example in `Boards/DE10-Nano/hdmi_text/`);
+Status: implemented 2026-11-05 (`SAPHO/myADV7513Text.v`, `Scripts/hw/tb_adv7513text.v`,
+regress pass `ADV7513TEXT`, the DE10-Nano example in `Boards/DE10-Nano/hdmi_text/`);
 simulated, synthesized for the DE10-Nano, **not yet run on the board**. Marks:
 **fact** (read in code or a datasheet, or measured), **deduced** (to be
 checked), **decided** (Luciano).
@@ -36,16 +36,21 @@ Facts from his DE10-Nano project:
 
 1. **The same interface as `myVGAText`** (Luciano, 2026-11-05): the same
    toma link and words, the same `hs`, `vs`, `ativo`, `pixel`, so a program
-   that writes to the VGA screen writes to the HDMI one unchanged and the top
+   that writes to the VGA screen writes to this one unchanged and the top
    swaps the module. Two pins more, the I2C.
 2. **The leanest block that shows the screen, at the highest clock it
    allows** (Luciano): cut everything the picture does not need.
+
+The name says the chip, not HDMI (Luciano, 2026-11-06): `myVGAText` serves
+any board with a VGA output, while this block serves only an ADV7513, since
+its writes are that chip's registers, and what goes out is DVI. It was
+`myHDMIText` until then.
 
 What follows was decided in the implementation, within those two:
 
 3. **`myVGAText` is instantiated, not copied.** One font, one scan, one set
    of words for both screens; a fix to the text screen reaches both. The
-   area and the Fmax of the screen are `myVGAText`'s; what the HDMI block
+   area and the Fmax of the screen are `myVGAText`'s; what this block
    adds is the I2C.
 4. **One clock, the pixel clock, and the I2C timed by the scan's lines.**
    Weighed: keeping the board's 50 MHz for the I2C (a second clock in the
@@ -127,18 +132,18 @@ test card: the title on line 0, the 95 printable characters on lines 2 and
 on line 7 that changes every 60 ms (simulated at 25 MHz), and a line on
 the last screen line. The top adds the PLL and a reset synchronizer.
 
-**Tests.** `Scripts/hw/tb_hdmitext.v`: the block against a `myVGAText` of
+**Tests.** `Scripts/hw/tb_adv7513text.v`: the block against a `myVGAText` of
 reference fed the same words (every output equal in every cycle, the same
 screen memory, the text written); an ADV7513 played on the bus that
 decodes each transaction and checks the eleven writes in order, the
 master's SCL and SDA edges against the fast-mode limits, SDA released in
 the ACK slots, the first START no sooner than 2^WAIT_BITS lines after
 reset (262 ms at 13), nothing on the bus after the eleventh write, and all
-of it again after a second reset. `tb_hdmitext.sh` runs 8 bits with
+of it again after a second reset. `tb_adv7513text.sh` runs 8 bits with
 `LINK_SYNC` 1 and the real wait, and 32 bits with `LINK_SYNC` 0 and
 `WAIT_BITS` 11; the regress (step 4a0) runs 8 bits, `LINK_SYNC` 1 and
 `WAIT_BITS` 11. The
-regress pass `HDMITEXT` builds `hdmi_demo.cpp` and checks its test card on
+regress pass `ADV7513TEXT` builds `hdmi_demo.cpp` and checks its test card on
 the screen memory of a whole system.
 
 ## 4. What was measured
@@ -155,7 +160,7 @@ so the difference below is the I2C alone.
 
 | | ALMs | registers | memory blocks | Fmax |
 |---|---|---|---|---|
-| `myHDMIText` | 213 | 170 | 6 M10K | 149.0 MHz |
+| `myADV7513Text` | 213 | 170 | 6 M10K | 149.0 MHz |
 | of which the I2C | 20.8 | 17 | 0 | (same clock) |
 | `myVGAText` + `i2c_com` | 304 | 292 | 6 M10K | 146.6 MHz (pixel), 233.1 MHz (50 MHz) |
 | of which `i2c_com` | 110.5 | 139 | 0 | |
@@ -168,8 +173,8 @@ the two fits is one seed each, not a difference of the blocks (**deduced**:
 the paths are the same logic; no other seeds were run).
 
 **The DE10-Nano example** (`Boards/DE10-Nano/hdmi_text/`, 8-bit C++ SAPHO,
-`myHDMIText`, PLL, reset synchronizer): 272 ALMs, 262 registers, 8 M10K, no
-DSP; the SAPHO 87.8 ALMs, `myHDMIText` 182.8 (its I2C 21.0, 23 registers).
+`myADV7513Text`, PLL, reset synchronizer): 272 ALMs, 262 registers, 8 M10K, no
+DSP; the SAPHO 87.8 ALMs, `myADV7513Text` 182.8 (its I2C 21.0, 23 registers).
 Fmax 88.7 MHz for the 25.18 MHz asked; the limit is the SAPHO's data memory
 to its core, not the screen. Dênis's system, with the 32-bit C++ SAPHO of
 his keyboard demonstration, took 1,341 ALMs and 30.2 MHz; of those,
@@ -190,7 +195,7 @@ N 8, C 35), as in Dênis's project. An `altera_pll` written by hand with
 its counters unset and the clock came out at 0.877 MHz, so the example
 uses `altpll`.
 
-**Simulation.** `tb_hdmitext.sh`: 8 bits with `LINK_SYNC` 1 and the real
+**Simulation.** `tb_adv7513text.sh`: 8 bits with `LINK_SYNC` 1 and the real
 wait (first START 262.2 ms after reset, the writes over at 307.2 ms), and
 32 bits with `LINK_SYNC` 0 and `WAIT_BITS` 11, both pass. In the whole
 system the test card is on the screen 0.34 ms after reset and the counter
@@ -199,7 +204,7 @@ reaches 001 at 60.0 ms (one run of 60 ms simulated, not in the regress).
 **Mutations** (each planted in a copy of the block, `WAIT_BITS` 11): a
 wrong value (0x9D = 0x60), one write fewer, the ACK slot of the address
 driven low, a STOP whose SDA rises with SCL low, the wait halved. All five
-are caught by `tb_hdmitext.v`. A START that keeps SCL high one quarter
+are caught by `tb_adv7513text.v`. A START that keeps SCL high one quarter
 longer passed, rightly: it is legal I2C.
 
 ## 5. Not tested on the board

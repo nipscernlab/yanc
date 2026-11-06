@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-// Testbench of SAPHO/myHDMIText.v (docs/design/hdmi-text.md). Two things:
+// Testbench of SAPHO/myADV7513Text.v (docs/design/adv7513-text.md). Two things:
 //   - the screen: a myVGAText of reference takes the same reset and the same
 //     words through the toma link; every output of the block (valeu, hs, vs,
 //     ativo, pixel) must equal the reference's in every cycle, the screen
@@ -15,7 +15,7 @@
 //     chip above reports), SDA released in each ACK slot, and the first
 //     START no sooner than 2^WAIT_BITS lines after reset (200 ms or more at the
 //     real WAIT_BITS of 13). Then a second reset, and the eleven writes again.
-// Run: bash Scripts/hw/tb_hdmitext.sh
+// Run: bash Scripts/hw/tb_adv7513text.sh
 module tb;
 
 parameter NUBITS    = 8;
@@ -33,7 +33,7 @@ wire scl, sda;
 pullup (scl);
 pullup (sda);
 
-myHDMIText #(.NUBITS(NUBITS), .LINK_SYNC(LINK_SYNC), .WAIT_BITS(WAIT_BITS)) dut (
+myADV7513Text #(.NUBITS(NUBITS), .LINK_SYNC(LINK_SYNC), .WAIT_BITS(WAIT_BITS)) dut (
 	.clk(clk), .rst(rst), .toma(t), .dado(w), .valeu(valeu),
 	.hs(hs), .vs(vs), .ativo(ativo), .pixel(pixel), .scl(scl), .sda(sda));
 myVGAText #(.NUBITS(NUBITS), .LINK_SYNC(LINK_SYNC)) vga (
@@ -160,8 +160,8 @@ initial begin
 	if (ntx != 22) begin errs = errs + 1; $display("  %0d writes after the second reset, want 22", ntx); end
 	if (t_first - t_rel < wait_ns) begin
 		errs = errs + 1; $display("  second reset: first START %0.1f ms after it", (t_first - t_rel) / 1e6); end
-	if (errs == 0) $display("myHDMIText NUBITS=%0d LINK_SYNC=%0d WAIT_BITS=%0d: ok", NUBITS, LINK_SYNC, WAIT_BITS);
-	else           $display("myHDMIText NUBITS=%0d LINK_SYNC=%0d WAIT_BITS=%0d: FAIL, %0d errors", NUBITS, LINK_SYNC, WAIT_BITS, errs);
+	if (errs == 0) $display("myADV7513Text NUBITS=%0d LINK_SYNC=%0d WAIT_BITS=%0d: ok", NUBITS, LINK_SYNC, WAIT_BITS);
+	else           $display("myADV7513Text NUBITS=%0d LINK_SYNC=%0d WAIT_BITS=%0d: FAIL, %0d errors", NUBITS, LINK_SYNC, WAIT_BITS, errs);
 	$finish;
 end
 

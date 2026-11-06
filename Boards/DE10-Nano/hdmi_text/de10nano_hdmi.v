@@ -1,5 +1,5 @@
 // DE10-Nano: a SAPHO (hdmi_demo, built by yanc from hdmi_demo.cpp) writing
-// text to the HDMI output through SAPHO/myHDMIText.v on link 1, everything on
+// text to the HDMI output through SAPHO/myADV7513Text.v on link 1, everything on
 // the 25.175 MHz pixel clock that the PLL makes from the board's 50 MHz.
 // KEY[0] pressed is the reset: the screen clears, the program starts again
 // and the ADV7513 is set up again 260 ms later. Pins: de10nano_hdmi.qsf, from
@@ -37,7 +37,7 @@ hdmi_demo sapho (.clk(clk), .rst(rst), .out(out),
 
 // the screen: 80 x 30 characters, and the ADV7513's set-up over I2C
 wire hs, vs, ativo, pixel;
-myHDMIText #(.NUBITS(8), .LINK_SYNC(1)) tela (
+myADV7513Text #(.NUBITS(8), .LINK_SYNC(1)) tela (
 	.clk(clk), .rst(rst), .toma(toma_1), .dado(toma_dado), .valeu(valeu_1),
 	.hs(hs), .vs(vs), .ativo(ativo), .pixel(pixel), .scl(I2C_SCL), .sda(I2C_SDA));
 

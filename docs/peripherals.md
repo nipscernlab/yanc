@@ -11,7 +11,7 @@ them and wire them to the processor's pins. Each one has a testbench under
 | `myDCFIFO` | a buffer of words between two clocks | `out()` on one side, `in()` on the other |
 | `myKeyPS2` | a PS/2 keyboard, characters ready | `cade_sync(k)` |
 | `myVGAText` | a VGA text screen, 80 x 30 characters | `toma_sync(k, w)` |
-| `myHDMIText` | the same text screen on an ADV7513 HDMI transmitter | `toma_sync(k, w)` |
+| `myADV7513Text` | the same text screen through an ADV7513 HDMI transmitter (DVI) | `toma_sync(k, w)` |
 
 ## FIFOs: `myFIFO` and `myDCFIFO`
 
@@ -302,12 +302,15 @@ a C± and a C++ SAPHO of 8 bits, each with a keyboard and a screen, echoing
 what a simulated keyboard types, and a 32-bit C++ SAPHO that uses
 `<iostream>`. Design and decisions: [design/vga-text.md](design/vga-text.md).
 
-## Screen over HDMI: `myHDMIText`
+## Screen through an ADV7513: `myADV7513Text`
 
-The text screen of `myVGAText` on an HDMI output driven by an Analog
-Devices ADV7513, as on the DE10-Nano: the same words, the same `toma` link,
-the same pins, plus the two I2C pins with which the block sets the chip up
-after each reset. A program written for `myVGAText` runs unchanged; the top
+The text screen of `myVGAText` on the HDMI connector of a board whose
+transmitter is an Analog Devices ADV7513, as the DE10-Nano: the same words,
+the same `toma` link, the same pins, plus the two I2C pins with which the
+block sets the chip up after each reset. The block is tied to that chip:
+the writes it makes are the ADV7513's registers, and the chip sends DVI,
+picture only, with no sound and no InfoFrame. Another transmitter, or HDMI
+made inside the FPGA, needs another block. A program written for `myVGAText` runs unchanged; the top
 swaps the module and adds `scl` and `sda`. The block holds a `myVGAText`,
 so the font, the words and the scan are the same file.
 
@@ -352,11 +355,11 @@ MHz, the screen's. The DE10-Nano example with an 8-bit C++ SAPHO takes 272
 ALMs and runs at up to 88.7 MHz for the 25.18 MHz asked, the outputs to
 the ADV7513 with 14 ns of setup slack and 17.8 ns of hold slack.
 
-**Not yet checked on the board.** Simulated (`Scripts/hw/tb_hdmitext.v`:
+**Not yet checked on the board.** Simulated (`Scripts/hw/tb_adv7513text.v`:
 the screen against a `myVGAText`, the eleven writes decoded from the bus
-and timed; the regress pass `HDMITEXT`: the test card on a whole system)
+and timed; the regress pass `ADV7513TEXT`: the test card on a whole system)
 and synthesized. Design and what is open:
-[design/hdmi-text.md](design/hdmi-text.md).
+[design/adv7513-text.md](design/adv7513-text.md).
 
 ## Text from C++: `<iostream>` and `<cstdio>`
 

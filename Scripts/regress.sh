@@ -1236,16 +1236,16 @@ if [ "$CPP_ONLY" -eq 0 ]; then
         fi
     fi
 
-    # ---- 3a4. project pass HDMITEXT: myHDMIText on a whole processor -------
+    # ---- 3a4. project pass ADV7513TEXT: myADV7513Text on a whole processor ---
     # The DE10-Nano demonstration (Boards/DE10-Nano/hdmi_text/hdmi_demo.cpp,
-    # a C++ SAPHO of 8 bits on link 1, toma_sync) with SAPHO/myHDMIText.v on
+    # a C++ SAPHO of 8 bits on link 1, toma_sync) with SAPHO/myADV7513Text.v on
     # one 25 MHz clock, as the board's top wires them. The testbench reads the
     # screen memory and checks the test card the program writes
-    # (Tests/HDMITEXT/TopLevel/hdmitext_tb.v). The block alone, with its I2C:
-    # Scripts/hw/tb_hdmitext.sh (step 4a0). docs/design/hdmi-text.md.
+    # (Tests/ADV7513TEXT/TopLevel/adv7513text_tb.v). The block alone, with its I2C:
+    # Scripts/hw/tb_adv7513text.sh (step 4a0). docs/design/adv7513-text.md.
 
     if [ "$NO_SIM" -eq 0 ]; then
-        proj="HDMITEXT"
+        proj="ADV7513TEXT"
         hd="$CMM_ROOT/Tests/$proj"
         ht="$TMP_DIR/$proj"
         rm -rf "$ht"; mkdir -p "$ht"
@@ -1255,21 +1255,21 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             echo "FAIL ($proj): building hdmi_demo"; h_fail=1
         else
             cp "$ht/hdmi_demo/hdmi_demo_data.mif" "$ht/hdmi_demo/hdmi_demo_inst.mif" "$ht/hdmi_demo/pc_hdmi_demo_mem.txt" "$ht/"
-            if ! "$IVERILOG" -g2012 -s hdmitext_tb -o "$ht/h.vvp" \
+            if ! "$IVERILOG" -g2012 -s adv7513text_tb -o "$ht/h.vvp" \
                     "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" \
-                    "$HDL/core.v" "$HDL/ula.v" "$HDL/myVGAText.v" "$HDL/myHDMIText.v" \
-                    "$ht/hdmi_demo/hdmi_demo.v" "$hd/TopLevel/hdmitext_tb.v" >/dev/null 2>&1; then
+                    "$HDL/core.v" "$HDL/ula.v" "$HDL/myVGAText.v" "$HDL/myADV7513Text.v" \
+                    "$ht/hdmi_demo/hdmi_demo.v" "$hd/TopLevel/adv7513text_tb.v" >/dev/null 2>&1; then
                 echo "FAIL ($proj): iverilog exited non-zero"; h_fail=1
             else
                 vvp_capture "$proj" "$ht" "$ht/h.vvp"; h_out=$VVP_OUT
                 if [ "$(printf '%s\n' "$h_out" | grep -c ': ok$')" -ne 1 ]; then
-                    printf '%s\n' "$h_out" | grep "HDMITEXT\|screen\|counter\|I2C\|scrolled" | sed 's/^/    /'
+                    printf '%s\n' "$h_out" | grep "ADV7513TEXT\|screen\|counter\|I2C\|scrolled" | sed 's/^/    /'
                     echo "FAIL ($proj): the test card is not on the screen"; h_fail=1
                 fi
             fi
         fi
         if [ $h_fail -eq 0 ]; then
-            echo "PASS ($proj)  [C++ SAPHO, 8 bits, the DE10-Nano test card on myHDMIText]"
+            echo "PASS ($proj)  [C++ SAPHO, 8 bits, the DE10-Nano test card on myADV7513Text]"
             pass=$((pass + 1))
         else
             fail=$((fail + 1)); failed_names+=("$proj")
@@ -1682,14 +1682,14 @@ fi
 # blocks, in four formats. Both at every #FROUND level. Scripts/hw/tb_keyps2.sh
 # checks SAPHO/myKeyPS2.v alone (both layouts, two clocks, three queue sizes);
 # Scripts/hw/tb_vgatext.sh 8, SAPHO/myVGAText.v alone with an 8-bit word;
-# Scripts/hw/tb_hdmitext.sh 8:1:11, SAPHO/myHDMIText.v alone, its I2C writes
+# Scripts/hw/tb_adv7513text.sh 8:1:11, SAPHO/myADV7513Text.v alone, its I2C writes
 # after a wait four times shorter than the block's own.
 if [ "$CPP_ONLY" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
     echo ""
     echo "==> unit testbenches (ALU, keyboard, screen)"
-    for t in tb_ula tb_alu tb_keyps2 tb_vgatext tb_hdmitext; do
+    for t in tb_ula tb_alu tb_keyps2 tb_vgatext tb_adv7513text; do
         t_arg=""; [ "$t" = tb_vgatext ] && t_arg=8          # one width: about 3 minutes each
-        [ "$t" = tb_hdmitext ] && t_arg=8:1:11               # one configuration: about 2 minutes
+        [ "$t" = tb_adv7513text ] && t_arg=8:1:11               # one configuration: about 2 minutes
         if t_out=$(bash "$ROOT/Scripts/hw/$t.sh" $t_arg 2>&1); then
             echo "PASS ($t): $(printf '%s\n' "$t_out" | grep -c ': ok') configurations"
             pass=$((pass + 1))

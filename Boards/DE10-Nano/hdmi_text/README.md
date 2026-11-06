@@ -1,14 +1,14 @@
 # DE10-Nano: the SAPHO's text screen on HDMI
 
 A C++ SAPHO of 8 bits writes a test card to the HDMI output through
-`SAPHO/myHDMIText.v` (docs/peripherals.md, "Screen over HDMI"). Board:
+`SAPHO/myADV7513Text.v` (docs/peripherals.md, "Screen through an ADV7513"). Board:
 Terasic DE10-Nano, Cyclone V SE 5CSEBA6U23I7, HDMI transmitter ADV7513.
 
 | file | what it is |
 |---|---|
 | `hdmi_demo.cpp` | the program: the test card (title, the 95 printable characters, 80 `=` from edge to edge, a counter, a last line) |
-| `de10nano_hdmi.v` | the top: PLL, reset, the SAPHO, `myHDMIText`, the pins of the ADV7513 |
-| `pll_pixel.v` | 50 MHz to 25.175 MHz (`altera_pll`; Quartus reaches 25.1786 MHz) |
+| `de10nano_hdmi.v` | the top: PLL, reset, the SAPHO, `myADV7513Text`, the pins of the ADV7513 |
+| `pll_pixel.v` | 50 MHz to 25.175 MHz (`altpll`, 141/280; Quartus reaches 25.1786 MHz) |
 | `de10nano_hdmi.qsf`, `.qpf` | the Quartus project: device, files, pins |
 | `de10nano_hdmi.sdc` | the clocks, and the outputs timed against the ADV7513's setup and hold |
 
@@ -39,4 +39,4 @@ program again and sets the ADV7513 up again.
 ## Not yet checked on this board
 
 Everything here is simulated and synthesized, not run on the board: see
-docs/design/hdmi-text.md, section 5.
+docs/design/adv7513-text.md, section 5.

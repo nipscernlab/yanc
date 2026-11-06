@@ -1,11 +1,13 @@
 // ----------------------------------------------------------------------------
-// HDMI text screen written by the SAPHO with toma() --------------------------
+// Text screen through an ADV7513, written by the SAPHO with toma() ----------
 // ----------------------------------------------------------------------------
 // The text screen of myVGAText (80 x 30 characters, 640x480 at 60 Hz, the
 // same words, the same toma link, the same pins) plus the I2C writes that set
 // up an ADV7513 HDMI transmitter, as on the DE10-Nano. A program that writes
 // to myVGAText writes to this block unchanged: the top swaps the module and
-// adds the two I2C pins (docs/design/hdmi-text.md).
+// adds the two I2C pins (docs/design/adv7513-text.md). The block is tied to
+// that chip: the writes below are its registers, and it sends DVI (picture
+// only) on the HDMI connector. Another transmitter needs another block.
 //
 // The screen is myVGAText itself, instantiated below: one copy of the font,
 // the words and the scan for both blocks.
@@ -42,13 +44,13 @@
 //   assign HDMI_TX_CLK = ~clk;   (the chip latches on the rising edge: mid-pixel)
 //
 // Wiring, link k:
-//   myHDMIText hdmi (.clk(clk25), .rst(rst), .toma(toma_k), .dado(toma_dado),
+//   myADV7513Text hdmi (.clk(clk25), .rst(rst), .toma(toma_k), .dado(toma_dado),
 //       .valeu(valeu_k), .hs(hs), .vs(vs), .ativo(ativo), .pixel(pixel),
 //       .scl(I2C_SCL), .sda(I2C_SDA));
-//   with the SAPHO on clk25 too: myHDMIText #(.LINK_SYNC(1)) hdmi (...);
-// Checked by Scripts/hw/tb_hdmitext.v.
+//   with the SAPHO on clk25 too: myADV7513Text #(.LINK_SYNC(1)) hdmi (...);
+// Checked by Scripts/hw/tb_adv7513text.v.
 
-module myHDMIText
+module myADV7513Text
 #(
 	parameter NUBITS    = 32,               // width of the word toma() sends (at least 8)
 	parameter LINK_SYNC = 0,                // 1: the SAPHO on this block's clock (toma_sync)

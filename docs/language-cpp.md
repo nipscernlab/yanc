@@ -49,7 +49,7 @@ float, read an int and scale it; to write one, cast it, `out(0, (int)x)`.
 compiler warns.
 
 With a keyboard and a screen beside the processor (`myKeyPS2` and
-`myVGAText` or `myHDMIText`, see [Peripherals](peripherals.md)), a
+`myVGAText` or `myADV7513Text`, see [Peripherals](peripherals.md)), a
 program reads and writes text as on a PC:
 
 ```cpp
@@ -188,7 +188,7 @@ leaves the processor.
 ## Text on the keyboard and the screen
 
 `<iostream>` and `<cstdio>` read the keyboard block `myKeyPS2` and write
-the screen block `myVGAText`, or `myHDMIText`, which takes the same words
+the screen block `myVGAText`, or `myADV7513Text`, which takes the same words
 ([Peripherals](peripherals.md)), over two
 links. By default the keyboard is on link 0 and the screen on link 1, both
 blocks on the processor's clock. A program changes that with `#define`

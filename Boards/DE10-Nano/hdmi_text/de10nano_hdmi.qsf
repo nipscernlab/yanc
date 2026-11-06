@@ -18,7 +18,7 @@ set_global_assignment -name VERILOG_FILE ../../../SAPHO/processor.v
 set_global_assignment -name VERILOG_FILE ../../../SAPHO/core.v
 set_global_assignment -name VERILOG_FILE ../../../SAPHO/ula.v
 set_global_assignment -name VERILOG_FILE ../../../SAPHO/myVGAText.v
-set_global_assignment -name VERILOG_FILE ../../../SAPHO/myHDMIText.v
+set_global_assignment -name VERILOG_FILE ../../../SAPHO/myADV7513Text.v
 set_global_assignment -name SDC_FILE de10nano_hdmi.sdc
 set_global_assignment -name SEARCH_PATH hdmi_demo
 
