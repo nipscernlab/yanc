@@ -267,6 +267,10 @@ int  msg_error_count(void);
     M("o tamanho do array tem que ser uma expressão constante", \
       "array size must be a constant expression")
 
+#define MSG_ERR_CASE_CONST \
+    M("o rótulo do case tem que ser uma constante", \
+      "a case label must be a constant")
+
 #define MSG_ERR_TEMPLATE_ARG_CONST \
     M("o argumento do template tem que ser uma constante", \
       "template argument must be a constant")

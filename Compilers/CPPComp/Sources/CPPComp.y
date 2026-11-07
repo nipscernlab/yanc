@@ -2093,7 +2093,11 @@ selection_stmt:
 
 labeled_stmt:
       KW_CASE expr ':' stmt {
-          stmt *s = ast_stmt(S_CASE, yylineno); s->e1 = $2; s->body = $4; $$ = s;
+          /* the label is a constant, folded here: codegen compares with its
+             ival, which `-1` (a unary minus) did not have (#128) */
+          long v;
+          if (!const_eval($2, &v)) msg_error(yylineno, MSG_ERR_CASE_CONST);
+          stmt *s = ast_stmt(S_CASE, yylineno); s->e1 = ast_int_lit(v, $2->line); s->body = $4; $$ = s;
       }
     | KW_DEFAULT ':' stmt {
           stmt *s = ast_stmt(S_DEFAULT, yylineno); s->body = $3; $$ = s;
@@ -2155,9 +2159,8 @@ assignment_expr:
     | unary_expr '=' assignment_expr         { $$ = ast_assign($1, $3, yylineno); }
     | unary_expr assign_op assignment_expr   {
           /* a OP= b  ⇒  a = a OP b (for class lhs, codegen may instead dispatch
-             a user-defined operatorOP=). $1 is referenced twice — codegen treats
-             the lvalue as evaluated once; safe for simple lvalues (IDENT, ARRAY,
-             MEMBER, DEREF). */
+             a user-defined operatorOP=). $1 is referenced twice; codegen takes
+             the address of an lvalue with an effect of its own (a[k++]) once. */
           $$ = ast_assign_op($2, $1, $3, yylineno);
       }
     ;

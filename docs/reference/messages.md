@@ -229,6 +229,7 @@ value. What the common ones mean and how to get past them is in
 - error: member '<name>' takes one initializer
 - error: array field size must be constant
 - error: array size must be a constant expression
+- error: a case label must be a constant
 - error: template argument must be a constant
 - error: typedef cannot have an initializer
 - error: an array of function pointers takes a { ... } initializer

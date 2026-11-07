@@ -1055,7 +1055,16 @@ static type *infer_type(expr *e)
     case E_GENERIC: e->etype = infer_type(generic_select(e)); break;
     case E_SIZEOF_T: e->etype = t_int(); break;
     case E_SIZEOF_E: infer_type(e->a); e->etype = t_int(); break;
-    case E_TERNARY: infer_type(e->a); infer_type(e->b); infer_type(e->c); e->etype = e->b->etype; break;
+    case E_TERNARY: {
+        // the two branches meet in one type: a float if either is one, as in
+        // C++ (#128: c ? 1 : 2.5f took the int branch's type and its bits)
+        infer_type(e->a);
+        type *bt = infer_type(e->b), *ct = infer_type(e->c);
+        e->etype = (bt && ct && (type_is_float(bt) || type_is_float(ct)) &&
+                    (type_is_float(bt) || type_is_int(bt)) && (type_is_float(ct) || type_is_int(ct)))
+                 ? t_float() : bt;
+        break;
+    }
     case E_COMMA: infer_type(e->a); e->etype = infer_type(e->b); break;
     }
     return e->etype;
@@ -1688,6 +1697,23 @@ static void gen_arg(expr *arg, type *ptype)
     gen_push_arg(arg);
 }
 
+// a bitfield's value, from the address of its word in the accumulator: the
+// word shifted down, masked and, for a signed field, sign-extended
+static void emit_bitfield_read(strct_field *bf)
+{
+    emit("LDI 0");                          // word value
+    if (bf->bit_pos > 0) {                  // logical shift right by bit_pos (stack form)
+        emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHR");
+    }
+    emit("AND %ld", bf_mask(bf));
+    if (bf->ftype && bf->ftype->kind == TY_INT && bf->ftype->is_signed &&
+        bf->bit_width < g_nubits) {         // signed field: sign-extend, (v ^ s) - s
+        long s = bf_word(1ULL << (bf->bit_width - 1));
+        emit("XOR %ld", s);
+        emit("ADD %ld", -s);
+    }
+}
+
 // ---- virtual calls ---------------------------------------------------------
 
 // an expression with no call in it, nor an operator a class may overload: its
@@ -1701,6 +1727,10 @@ static int expr_calls_nothing(expr *e)
         return 1;
     case E_MEMBER: case E_PMEMBER: case E_ADDR: case E_DEREF: case E_CAST:
         return expr_calls_nothing(e->a);
+    case E_INDEX: {                               // a class's [] is a call
+        type *ta = infer_type(e->a);
+        return !(ta && ta->kind == TY_STRUCT) && expr_calls_nothing(e->a) && expr_calls_nothing(e->b);
+    }
     case E_BINOP: case E_UNOP: {
         type *t = infer_type(e);
         type *ta = e->a ? infer_type(e->a) : NULL;
@@ -1956,6 +1986,10 @@ static void gen_store(expr *lv, expr *val)
             }
             emit("S_ORR");                          // cleared | shifted
             emit("STI 0");                            // mem[&word] = result
+            // the assignment's value is the field's, not the word's (#128:
+            // y = (s.b = 5) gave 80 for b in bits 4..7)
+            emit("LOD %s", ta);
+            emit_bitfield_read(bf);
             free(ta);
             return;
         }
@@ -2336,17 +2370,7 @@ static void gen_expr(expr *e)
         strct_field *bf = member_field(e);
         if (bf && bf->is_bitfield) {
             gen_addr(e);                    // &word (gen_addr adds the word offset)
-            emit("LDI 0");                    // word value
-            if (bf->bit_pos > 0) {          // logical shift right by bit_pos (stack form)
-                emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHR");
-            }
-            emit("AND %ld", bf_mask(bf));
-            if (bf->ftype && bf->ftype->kind == TY_INT && bf->ftype->is_signed &&
-                bf->bit_width < g_nubits) {         // signed field: sign-extend, (v ^ s) - s
-                long s = bf_word(1ULL << (bf->bit_width - 1));
-                emit("XOR %ld", s);
-                emit("ADD %ld", -s);
-            }
+            emit_bitfield_read(bf);
             return;
         }
         // a field of array/struct type decays to its address (no load)
@@ -2378,6 +2402,22 @@ static void gen_expr(expr *e)
                 free(masm);
                 return;
             }
+        }
+        // `l OP= r` is `l = l OP r` with l written twice in the tree: an l
+        // with an effect of its own (a[k++], a[f()]) would run it twice
+        // (#128). Its address is taken once, into a pointer temporary, and
+        // the store and the read go through that.
+        if (e->op != OP_NONE && !expr_calls_nothing(e->a)) {
+            type *lt = infer_type(e->a);
+            char nm[32]; snprintf(nm, sizeof nm, "__cpa%d", ++label_n);
+            char *an = mangle_local(nm);
+            st_add(SK_LOCAL_VAR, nm, an, t_ptr(lt));
+            log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
+            gen_addr(e->a); emit("SET %s", an);
+            expr *at = ast_deref(ast_ident(xstrdup(nm), e->line), e->line);
+            gen_store(at, ast_binop(e->op, ast_deref(ast_ident(xstrdup(nm), e->line), e->line), e->b->b, e->line));
+            free(an);
+            return;
         }
         gen_store(e->a, e->b);
         // assignment expression yields the stored value; for v1 we leave acc
@@ -2413,8 +2453,9 @@ static void gen_expr(expr *e)
         int rf = rt && rt->kind == TY_FLOAT;
         int is_float = lf || rf;     // operate in float if EITHER operand is float
         // operand signedness (for >> and comparisons; only when not float)
-        int lhs_uns = lt && lt->kind == TY_INT && !lt->is_signed;
-        int uns_cmp = !is_float && ((lhs_uns) || (rt && rt->kind == TY_INT && !rt->is_signed));
+        // a bool promotes to int (#128: true > -1 compared without sign, 0)
+        int lhs_uns = lt && lt->kind == TY_INT && !lt->is_signed && !lt->is_bool;
+        int uns_cmp = !is_float && ((lhs_uns) || (rt && rt->kind == TY_INT && !rt->is_signed && !rt->is_bool));
 
         // unsigned comparison: map to signed order by flipping the sign bit of
         // both operands (XOR with 1<<(NUBITS-1)), then do the signed compare.
@@ -2433,30 +2474,17 @@ static void gen_expr(expr *e)
             return;
         }
 
-        // logical &&/|| as a value: short-circuit, result normalised to 0/1.
-        if (op == OP_LAND) {
-            char *lz = fresh_label("and_z");
-            char *le = fresh_label("and_e");
-            gen_expr(e->a); emit("JIZ %s", lz);   // a == 0 -> 0
-            gen_expr(e->b); emit("JIZ %s", lz);   // b == 0 -> 0
+        // logical &&/|| as a value: the branch an `if` takes (gen_bool, which
+        // short-circuits and reads a float through float_truth: #128, the raw
+        // word of 0.0f is not 0), the result 0 or 1.
+        if (op == OP_LAND || op == OP_LOR) {
+            char *lz = fresh_label("lv_z");
+            char *le = fresh_label("lv_e");
+            gen_bool(e, lz);
             emit("LOD 1"); emit("JMP %s", le);
             emit("@%s NOP", lz); emit("LOD 0");
             emit("@%s NOP", le);
             free(lz); free(le);
-            return;
-        }
-        if (op == OP_LOR) {
-            char *l1 = fresh_label("or_1");
-            char *lz = fresh_label("or_z");
-            char *le = fresh_label("or_e");
-            gen_expr(e->a); emit("JIZ %s", l1);   // a == 0 -> test b; else true
-            emit("LOD 1"); emit("JMP %s", le);
-            emit("@%s NOP", l1);
-            gen_expr(e->b); emit("JIZ %s", lz);   // b == 0 -> 0
-            emit("LOD 1"); emit("JMP %s", le);
-            emit("@%s NOP", lz); emit("LOD 0");
-            emit("@%s NOP", le);
-            free(l1); free(lz); free(le);
             return;
         }
 
@@ -2858,11 +2886,13 @@ static void gen_expr(expr *e)
     case E_TERNARY: {
         char *else_l = fresh_label("ter_else");
         char *end_l  = fresh_label("ter_end");
+        type *t = infer_type(e);                     // each branch converted to it
+        int conv = t && (type_is_float(t) || type_is_int(t));
         gen_bool(e->a, else_l);
-        gen_expr(e->b);
+        if (conv) gen_expr_to(e->b, t); else gen_expr(e->b);
         emit("JMP %s", end_l);
         emit("@%s NOP", else_l);
-        gen_expr(e->c);
+        if (conv) gen_expr_to(e->c, t); else gen_expr(e->c);
         emit("@%s NOP", end_l);
         free(else_l); free(end_l);
         return;
@@ -5196,13 +5226,16 @@ static void peephole(void)
     g_ibuf_n = w;
     // pass 3: an instruction that follows an unconditional JMP or a RET, and
     // carries no label, cannot be reached: control either falls through (it
-    // cannot, the jump took it away) or arrives at a label (it has none).
+    // cannot, the jump took it away) or arrives at a label (it has none). A
+    // directive (#array and the like) is not an instruction: it declares
+    // storage wherever it stands, and stays (#128: a local declared after a
+    // return in a switch lost its #array).
     w = 0;
     int dead = 0;
     for (int r = 0; r < g_ibuf_n; r++) {
         const char *t = g_ibuf[r].text;
         if (t[0] == '@' || g_ibuf[r].nofuse) dead = 0;     // a label makes it live again
-        if (dead) { free(g_ibuf[r].text); continue; }
+        if (dead && t[0] != '#') { free(g_ibuf[r].text); continue; }
         if (!g_ibuf[r].nofuse &&
             (!strncmp(t, "JMP ", 4) || !strcmp(t, "RET"))) dead = 1;
         g_ibuf[w++] = g_ibuf[r];
