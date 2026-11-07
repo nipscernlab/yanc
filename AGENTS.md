@@ -69,6 +69,16 @@ These come from the [nipscernlab guidelines](https://github.com/nipscernlab/.git
 - Change repository or organization settings, rulesets, secrets, workflows' permissions or collaborators.
 - Disable, skip or weaken a test, a check or a lint to make CI pass.
 - Write a fact, a number or a result it has not verified. Check it, or say it was not checked.
+- Start a long job without asking first and hearing yes (see "Ask before a long job" below).
+
+## Ask before a long job
+
+Luciano, 2026-11-07: long jobs started without warning, one after another, were holding the work up more than anything else in this repository. An agent starts a long job only after asking the person running it and hearing yes.
+
+- **A long job** is any command expected to take more than two minutes, and always: `Scripts/regress.sh` in any form (the quick one too), a fit in Quartus or Vivado, a simulation of more than a few seconds, a sanitizer sweep, a comparison with a previous binary.
+- **The question is explicit.** It is a sentence of its own that starts with "Posso rodar" (or "May I run"), names the command, says why it is needed now and how long it should take, and is the last thing in the agent's message, so that the person sees that the agent is waiting for an answer. A job mentioned in passing ("now I run the regression") is not a question.
+- **One yes covers one run.** A job that fails, is stopped or has to run again needs a new question, and so does each job of a chain: the agent does not chain long jobs so that they start on their own.
+- **This rule comes first.** Where this file says a job runs (the three commands before a push, the regression of a batch), the agent still asks before starting it. If the person says no, the agent says what stays unchecked.
 
 ## Merging a pull request
 
