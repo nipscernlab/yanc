@@ -111,6 +111,10 @@ int main(int argc, char **argv)
             return 0;
         }
         else if (argv[i][0] != '-' && !in_path) in_path = argv[i];   // the source
+        // what went wrong, said as it is (#132: both were "unknown option")
+        else if (argv[i][0] != '-') { fprintf(stderr, MSG_ERR_TWO_SOURCES, in_path, argv[i]); usage(1); }
+        else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "--output") || !strcmp(argv[i], "-I"))
+            { fprintf(stderr, MSG_ERR_OPTION_VALUE, argv[i]); usage(1); }
         else { fprintf(stderr, MSG_ERR_UNKNOWN_OPTION, argv[i]); usage(1); }
     }
     if (!in_path) usage(1);
@@ -138,9 +142,10 @@ int main(int argc, char **argv)
     g_unit = ast_unit();
     st_init();
 
+    // an error stops the run where it is found (msg_error), so a parse that
+    // returns failed for another reason only: bison out of memory
     if (yyparse() != 0) { fprintf(stderr, MSG_ERR_PARSE_FAILED); exit(2); }
 
-    if (msg_error_count() > 0) return 2;
     g_unit->prname = derive_name(in_path, "");   // the source file's name
 
     /* Output: everything in one folder, -o or ./<prname> (created, all
@@ -171,7 +176,6 @@ int main(int argc, char **argv)
     codegen(fo, g_unit, tmp_dir, text);
 
     fclose(fo);
-    if (msg_error_count() > 0) return 2;
 
     // code no path reaches leaves the program, and its hardware with it (the
     // pc_<proc>_mem.txt map and prog_log's num_ins follow)
