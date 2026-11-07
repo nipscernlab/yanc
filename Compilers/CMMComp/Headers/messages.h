@@ -43,8 +43,8 @@ void parse_lang_flag(int *argc, char **argv);
       "Error on line %d: the symbol 'i' is reserved for the imaginary part of a complex constant. Hands off!\n")
 
 #define MSG_ERR_NAME_TOO_LONG \
-    M("Erro na linha %d: esse nome é comprido demais, o máximo é %d caracteres.\n", \
-      "Error on line %d: that name is way too long, %d characters tops.\n")
+    M("Erro na linha %d: esse nome tem %d caracteres, e o máximo é %d.\n", \
+      "Error on line %d: that name has %d characters, and the most a name may have is %d.\n")
 
 #define MSG_ERR_NUGAIN_POW2 \
     M("Erro na linha %d: #NUGAIN %d não é potência de dois. norm(x) é x / NUGAIN em hardware: potência de dois vira um deslocamento; qualquer outro valor vira um divisor, o caminho crítico da ALU inteira.\n", \
