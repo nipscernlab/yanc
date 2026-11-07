@@ -34,6 +34,9 @@ program is one source file, which can `#include` others.
   `yanc -I <dir>`, then in the headers that come with YANC.
 - The processor is configured with `#pragma yanc` lines, the C++ form of the
   C± directives (see [Configuration](#configuration)).
+- A name has at most 1000 characters, as in C±. The limit leaves room for
+  the names the compiler builds from yours, such as a local's
+  `<function>_<name>`, in the Verilog and the waveform (GitHub issue #66).
 
 ## Input and output
 
@@ -151,8 +154,9 @@ tests its mantissa, because SAPHO's zero float is not an all-zero word.
   and not as free functions. An operator that returns a reference to its
   object chains: `s << a << b` calls `operator<<` on what the first returned.
 - Templates of functions and of classes, with type parameters
-  (`typename`/`class`) and `int` parameters, explicit `f<T>(...)`. No
-  specialization and no default template argument.
+  (`typename`/`class`) and `int` parameters, explicit `f<T>(...)`, at most
+  8 parameters per template. No specialization and no default template
+  argument.
 - Namespaces, nested; a qualified name and `using namespace` work. No
   anonymous `namespace {`. A namespace only groups names: every name in it
   is also global, so `std::cout` and `cout` are one object, and a program

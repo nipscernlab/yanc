@@ -24,6 +24,7 @@
 #include "../Headers/messages.h"
 #include "../Headers/cpppp.h"
 #include "../../common/asm_share.h"
+#include "../../common/xstr.h"
 
 // ---- output ----------------------------------------------------------------
 
@@ -58,7 +59,7 @@ static unit *cg_unit = NULL;            // the translation unit (for overload re
 // instantiated template clones -- a class template's methods and a function
 // template's instances -- each with a unique asm_label. Filled by
 // get_instance() / instantiate_ctmpl_methods(), emitted after @fim.
-static func *g_inst[256]; static int g_n_inst = 0;
+static func **g_inst; static int g_n_inst = 0, g_inst_cap = 0;
 // the inliner (defined further down, next to gen_expr) is also used by
 // gen_addr, which comes first in this file
 static func *func_by_label(const char *lbl);
@@ -79,13 +80,13 @@ static strct_field *cur_class_member(const char *name)
 // mangle Class::name -> "Class__name" (must match the parser's scheme)
 static char *cg_mangle_method(const char *cls, const char *name)
 {
-    char *m = malloc(strlen(cls) + strlen(name) + 3);
+    char *m = xmalloc(strlen(cls) + strlen(name) + 3);
     sprintf(m, "%s__%s", cls, name);
     return m;
 }
 
 // virtual-method bookkeeping: the polymorphic classes whose vtables we emit
-static type *poly_cls[64]; static int n_poly = 0;
+static type **poly_cls; static int n_poly = 0, poly_cap = 0;
 
 // slot of virtual method `name` in class `ct` (vtbl already includes inherited
 // slots), or -1 if `name` is not virtual.
@@ -185,7 +186,7 @@ static void assign_overload_labels(unit *u)
         for (int j = 0; j < u->n_funcs; j++)
             if (j != i && !strcmp(u->funcs[j]->name, f->name)) { dup = 1; break; }
         if (!dup) { f->asm_label = f->name; continue; }
-        char *lbl = malloc(strlen(f->name) + f->n_params + 3);
+        char *lbl = xmalloc(strlen(f->name) + f->n_params + 3);
         int k = sprintf(lbl, "%s_O", f->name);
         decl *p = f->params;
         for (int a = 0; a < f->n_params && p; a++, p = p->next) lbl[k++] = ov_code(p->dtype);
@@ -256,7 +257,7 @@ static char *method_call_label(type *cls, const char *m, expr **args, int nargs,
     if (f && f->asm_label && strcmp(f->asm_label, masm)) {
         free(masm);
         *fo = f;
-        return strdup(f->asm_label);
+        return xstrdup(f->asm_label);
     }
     return masm;
 }
@@ -337,7 +338,7 @@ static void ibuf_push(char *text, int line, int nofuse)
 {
     if (g_ibuf_n == g_ibuf_cap) {
         g_ibuf_cap = g_ibuf_cap ? g_ibuf_cap * 2 : 256;
-        g_ibuf = realloc(g_ibuf, (size_t)g_ibuf_cap * sizeof(ibuf_e));
+        g_ibuf = xrealloc(g_ibuf, (size_t)g_ibuf_cap * sizeof(ibuf_e));
     }
     g_ibuf[g_ibuf_n].text = text; g_ibuf[g_ibuf_n].line = line;
     g_ibuf[g_ibuf_n].nofuse = nofuse; g_ibuf_n++;
@@ -350,32 +351,27 @@ static void emit(const char *fmt, ...)
     va_start(ap, fmt); va_copy(ap2, ap);
     int n = vsnprintf(NULL, 0, fmt, ap);
     va_end(ap);
-    char *s = malloc((size_t)n + 1);
+    char *s = xmalloc((size_t)n + 1);
     vsnprintf(s, (size_t)n + 1, fmt, ap2);
     va_end(ap2);
     ibuf_push(s, cg_line, 0);
 }
 
 // like emit but the line is verbatim user inline asm: never peephole-fused.
-static void emit_verbatim(const char *text) { ibuf_push(strdup(text), cg_line, 1); }
+static void emit_verbatim(const char *text) { ibuf_push(xstrdup(text), cg_line, 1); }
 
 static char *fresh_label(const char *prefix)
 {
-    char buf[64];
-    snprintf(buf, sizeof(buf), "__L%s%d", prefix, ++label_n);
-    char *s = malloc(strlen(buf)+1); strcpy(s, buf); return s;
+    return xasprintf("__L%s%d", prefix, ++label_n);
 }
 
 // the local `x` of `f` is `f_x` in the .asm; a compiler temporary (its name
 // starts with `__`, which no user name may) stays under `__`: `__f_tmp3`
 static char *mangle_local(const char *name)
 {
-    if (!cur_func_name) return strdup(name);
-    size_t n = strlen(cur_func_name) + strlen(name) + 4;
-    char *r = malloc(n);
-    if (name[0] == '_' && name[1] == '_') snprintf(r, n, "__%s_%s", cur_func_name, name + 2);
-    else                                  snprintf(r, n, "%s_%s", cur_func_name, name);
-    return r;
+    if (!cur_func_name) return xstrdup(name);
+    if (name[0] == '_' && name[1] == '_') return xasprintf("__%s_%s", cur_func_name, name + 2);
+    return xasprintf("%s_%s", cur_func_name, name);
 }
 
 // ---- one name, one owner in the .asm --------------------------------------
@@ -393,11 +389,11 @@ static int      owners_n[2], owners_cap[2];
 
 static void claim(int ns, const char *name, const char *who, int line)
 {
-    char quoted[300]; snprintf(quoted, sizeof(quoted), "'%s'", name);
     if (asm_is_mnemonic(name)) {
-        if (strstr(who, quoted))     // the name as written: no need to spell it twice
-            msg_error(line, MSG_ERR_NAME_IS_MNEMONIC, who, name);
-        msg_error(line, MSG_ERR_ASM_NAME_IS_MNEMONIC, who, name);
+        char *quoted = xasprintf("'%s'", name);
+        int as_written = strstr(who, quoted) != NULL;   // no need to spell it twice
+        free(quoted);
+        msg_error(line, as_written ? MSG_ERR_NAME_IS_MNEMONIC : MSG_ERR_ASM_NAME_IS_MNEMONIC, who, name);
     }
     if (ns == NS_LABEL && strcmp(name, "global") == 0)
         msg_error(line, MSG_ERR_NAME_GLOBAL, who);
@@ -411,28 +407,27 @@ static void claim(int ns, const char *name, const char *who, int line)
     }
     if (owners_n[ns] == owners_cap[ns]) {
         owners_cap[ns] = owners_cap[ns] ? 2 * owners_cap[ns] : 256;
-        owners[ns] = realloc(owners[ns], (size_t)owners_cap[ns] * sizeof(owner_e));
+        owners[ns] = xrealloc(owners[ns], (size_t)owners_cap[ns] * sizeof(owner_e));
     }
-    owners[ns][owners_n[ns]].name = strdup(name);
-    owners[ns][owners_n[ns]].who  = strdup(who);
+    owners[ns][owners_n[ns]].name = xstrdup(name);
+    owners[ns][owners_n[ns]].who  = xstrdup(who);
     owners[ns][owners_n[ns]].reserved = (line == 0);   // the compiler's own (fim, malloc...)
     owners_n[ns]++;
 }
 
 static void claim_local(const char *aname, const char *name, int line)
 {
-    char who[512];
-    snprintf(who, sizeof(who), MSG_WHO_LOCAL, name, cur_func_name);
+    char *who = xasprintf(MSG_WHO_LOCAL, name, cur_func_name);
     claim(NS_DATA, aname, who, line);
+    free(who);
 }
 
 // a function's label (an overload's is f_O<types>), described by its source name
 static void claim_func(func *f)
 {
-    char who[512];
-    if (strcmp(f->name, f->asm_label) == 0) snprintf(who, sizeof(who), MSG_WHO_FUNC, f->name);
-    else                                    snprintf(who, sizeof(who), MSG_WHO_OVERLOAD, f->name);
+    char *who = xasprintf(strcmp(f->name, f->asm_label) == 0 ? MSG_WHO_FUNC : MSG_WHO_OVERLOAD, f->name);
     claim(NS_LABEL, f->asm_label, who, f->line);
+    free(who);
 }
 
 static void claims_reset(void)
@@ -446,16 +441,15 @@ static void claims_reset(void)
 // ---- variable-log (for asmcomp's prog_log.txt) ------------------------------
 
 typedef struct { char *func; char *var; int type_code; int size; } varlog_e;
-#define VARLOG_MAX 4096
-static varlog_e varlog[VARLOG_MAX];
-static int      varlog_n = 0;
+static varlog_e *varlog;
+static int       varlog_n = 0, varlog_cap = 0;
 
 static void log_var(const char *func, const char *var, int type_code, int size)
 {
     if (type_code == 0) return;   // ptr/struct/etc.: not published to prog_log.txt
-    if (varlog_n >= VARLOG_MAX) msg_internal("too many variables");
-    varlog[varlog_n].func = strdup(func);
-    varlog[varlog_n].var  = strdup(var);
+    XGROW(varlog, varlog_n, varlog_cap);
+    varlog[varlog_n].func = xstrdup(func);
+    varlog[varlog_n].var  = xstrdup(var);
     varlog[varlog_n].type_code = type_code;
     varlog[varlog_n].size = size;
     varlog_n++;
@@ -511,15 +505,16 @@ static int agg_fill_code(const type *t)
 // ---- loop-context stack (break/continue) -----------------------------------
 
 typedef struct { char *cont_l; char *break_l; } loop_ctx;
-#define MAX_LOOPS 32
-static loop_ctx loop_stk[MAX_LOOPS];
-static int      loop_top = 0;
+static loop_ctx *loop_stk;
+static int       loop_top = 0, loop_cap = 0;
+static int      *loop_live;                // g_live depth at each loop (for continue), loop_cap long
 
 // unified break-target stack: BOTH loops and switches push here in nesting
 // order, so `break` targets the innermost enclosing loop-or-switch (a `break`
 // inside a switch nested in a loop must leave the switch, not the loop).
-static char *brk_stk[MAX_LOOPS * 2];
-static int   brk_top = 0;
+static char **brk_stk;
+static int   *brk_live;                    // g_live depth at each break boundary
+static int    brk_top = 0, brk_cap = 0;
 
 // live class-typed locals (constructed, pending dtor) for early-exit RAII:
 // break/continue/return must run their dtors BEFORE jumping (the normal-exit
@@ -527,18 +522,27 @@ static int   brk_top = 0;
 // Parallel marks record the live depth at each loop/switch and at function entry
 // so each exit unwinds exactly the right span (LIFO).
 typedef struct { char *name; char *dtor; } live_local;
-#define MAX_LIVE 256
-static live_local g_live[MAX_LIVE];
-static int        g_live_n = 0;
-static int        brk_live[MAX_LOOPS * 2];   // g_live depth at each break boundary
-static int        loop_live[MAX_LOOPS];      // g_live depth at each loop (for continue)
+static live_local *g_live;
+static int         g_live_n = 0, g_live_cap = 0;
 
-static void  brk_push(char *b) { if (brk_top < MAX_LOOPS*2) { brk_live[brk_top] = g_live_n; brk_stk[brk_top++] = b; } }
+static void brk_push(char *b)
+{
+    if (brk_top >= brk_cap) {                  // brk_stk and brk_live grow together
+        int cap = brk_cap;
+        XGROW(brk_stk, brk_top, cap);
+        XGROW(brk_live, brk_top, brk_cap);
+    }
+    brk_live[brk_top] = g_live_n; brk_stk[brk_top++] = b;
+}
 static void  brk_pop (void)    { if (brk_top > 0) brk_top--; }
 
 static void loop_push(char *c, char *b)
 {
-    if (loop_top >= MAX_LOOPS) msg_internal("loop nesting too deep");
+    if (loop_top >= loop_cap) {                // loop_stk and loop_live grow together
+        int cap = loop_cap;
+        XGROW(loop_stk, loop_top, cap);
+        XGROW(loop_live, loop_top, loop_cap);
+    }
     loop_live[loop_top] = g_live_n;
     loop_stk[loop_top].cont_l = c; loop_stk[loop_top].break_l = b; loop_top++;
     brk_push(b);
@@ -550,18 +554,16 @@ static void loop_pop(void) { loop_top--; brk_pop(); }
 // declared up front and filled at main entry. The expression value is the
 // array's base address (C array-to-pointer decay).
 typedef struct { char *label; char *bytes; int len; } strlit;
-#define STRLIT_MAX 256
-static strlit strtab[STRLIT_MAX];
-static int    strtab_n = 0;
+static strlit *strtab;
+static int     strtab_n = 0, strtab_cap = 0;
 
 // ---- function-pointer dispatch table ---------------------------------------
 // Every address-taken function gets an integer ID = its index here. A function
 // pointer holds that ID; an indirect call sets __fp_id and CALs _dispatch, which
 // CALs the matching function. (CAL takes an immediate target, hence the table.)
-#define FPTAB_MAX 256
-static char *fptab[FPTAB_MAX];
-static int   fptab_np[FPTAB_MAX];   // its parameter count, `this` included (-1: unknown)
-static int   fptab_n = 0;
+static char **fptab;
+static int   *fptab_np;             // its parameter count, `this` included (-1: unknown)
+static int    fptab_n = 0, fptab_cap = 0;
 
 static int fp_id_of(const char *name)
 {
@@ -571,10 +573,14 @@ static int fp_id_of(const char *name)
 static void fp_add(const char *name)
 {
     if (fp_id_of(name) >= 0) return;
-    if (fptab_n >= FPTAB_MAX) msg_internal("too many address-taken functions");
+    if (fptab_n >= fptab_cap) {             // fptab and fptab_np grow together
+        int cap = fptab_cap;
+        XGROW(fptab, fptab_n, cap);
+        XGROW(fptab_np, fptab_n, fptab_cap);
+    }
     sym *s = st_find(name);
     fptab_np[fptab_n] = (s && s->kind == SK_FUNC) ? s->n_params : -1;
-    fptab[fptab_n++] = strdup(name);
+    fptab[fptab_n++] = xstrdup(name);
 }
 
 // emit the inlined function-ID dispatch (assumes __fp_id is set and the args,
@@ -585,7 +591,7 @@ static void fp_add(const char *name)
 // asm_depth needs to size the data stack (asm_share.h).
 static void emit_dispatch_chain(int np)
 {
-    int cand[FPTAB_MAX], nc = 0;
+    int *cand = xmalloc((size_t)(fptab_n + 1) * sizeof *cand), nc = 0;
     for (int i = 0; i < fptab_n; i++)
         if (np < 0 || fptab_np[i] < 0 || fptab_np[i] == np) cand[nc++] = i;
     if (nc == 0) for (int i = 0; i < fptab_n; i++) cand[nc++] = i;
@@ -599,6 +605,7 @@ static void emit_dispatch_chain(int np)
         emit("@%s NOP", skip); free(skip);
     }
     emit("@%s NOP", done); free(done);
+    free(cand);
 }
 
 // parameter count (`this` included) of the method a virtual call names: its
@@ -643,9 +650,8 @@ static void scan_strings_expr(expr *e)
 {
     if (!e) return;
     if (e->kind == E_STRING_LIT && !e->member) {
-        if (strtab_n >= STRLIT_MAX) msg_internal("too many string literals");
-        char lbl[32]; snprintf(lbl, sizeof(lbl), "__str%d", strtab_n);
-        e->member = strdup(lbl);
+        XGROW(strtab, strtab_n, strtab_cap);
+        e->member = xasprintf("__str%d", strtab_n);
         strtab[strtab_n].label = e->member;
         strtab[strtab_n].bytes = e->sval;
         strtab[strtab_n].len   = e->slen;
@@ -772,9 +778,8 @@ static void scan_heap_stmt(stmt *s)
 // collect them in a pre-pass and emit them at main's entry, like globals. The
 // stored base name is already mangled (<func>_<var>), matching declare_local.
 typedef struct { char *base; type *t; expr *init; initz *binit; int line; expr **args; int nargs; } stinit_e;
-#define MAX_STINIT 256
-static stinit_e stinits[MAX_STINIT];
-static int      n_stinit = 0;
+static stinit_e *stinits;
+static int       n_stinit = 0, stinit_cap = 0;
 
 static void collect_statics_stmt(const char *fn, stmt *s)
 {
@@ -786,9 +791,9 @@ static void collect_statics_stmt(const char *fn, stmt *s)
     for (decl *d = s->decls; d; d = d->next) {
         int n_el; type *et = array_elems(d->dtype, &n_el);
         int is_obj = et && et->kind == TY_STRUCT && et->tag;    // constructed at program start
-        if (d->sclass == SC_STATIC && (d->init || d->binit || is_obj) && n_stinit < MAX_STINIT) {
-            size_t n = strlen(fn) + strlen(d->name) + 2;
-            char *base = malloc(n); snprintf(base, n, "%s_%s", fn, d->name);
+        if (d->sclass == SC_STATIC && (d->init || d->binit || is_obj)) {
+            XGROW(stinits, n_stinit, stinit_cap);
+            char *base = xasprintf("%s_%s", fn, d->name);
             stinits[n_stinit].base  = base;
             stinits[n_stinit].t     = d->dtype;
             stinits[n_stinit].init  = d->init;
@@ -963,8 +968,8 @@ static type *infer_type(expr *e)
             if (!strcmp(fn, "__construct_at"))      { e->etype = t_void(); break; }  // synth member ctor call
             func *tm = find_template(fn);            // template call: substituted return type
             if (tm && tm->n_params == e->n_args) {
-                type *ta[8] = {0}; deduce_targs(tm, e->args, e->n_args, ta);
-                for (int i = 0; i < e->n_gtypes && i < 8; i++) ta[i] = e->gtypes[i];  // explicit args
+                type *ta[CPP_TPARAM_MAX] = {0}; deduce_targs(tm, e->args, e->n_args, ta);
+                for (int i = 0; i < e->n_gtypes && i < CPP_TPARAM_MAX; i++) ta[i] = e->gtypes[i];  // explicit args
                 e->etype = subst_type(tm->ret, ta, tm->n_tparams); break;
             }
             func *ov = resolve_overload(fn, e->args, e->n_args);
@@ -2005,7 +2010,7 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
             expr *src = args[i - first];
             sym *vs = simple_mem_var(src);
             if (vs && vs->asm_name && same_scalar(infer_type(src), plist[i]->dtype))
-                bound[i] = strdup(vs->asm_name);
+                bound[i] = xstrdup(vs->asm_name);
         }
     }
 
@@ -2031,7 +2036,7 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
     int   sv_rec       = cur_fn_recursive;
     type *sv_cls       = cur_method_class;
     const char *sv_stf = st_current_func();
-    char *keep = sv_stf ? strdup(sv_stf) : NULL;
+    char *keep = sv_stf ? xstrdup(sv_stf) : NULL;
 
     cur_func_name    = f->asm_label;
     cur_func_ret     = f->ret;
@@ -2040,14 +2045,10 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
     st_enter_func(f->asm_label);
     st_push_scope();
     for (int i = 0; i < np; i++) {
-        char nm[256];
-        if (bound[i]) snprintf(nm, sizeof(nm), "%s", bound[i]);
-        else {
-            char *m = mangle_local(plist[i]->name);
-            snprintf(nm, sizeof(nm), "%s", m); free(m);
-            claim_local(nm, plist[i]->name, f->line);
-        }
+        char *nm = bound[i] ? xstrdup(bound[i]) : mangle_local(plist[i]->name);
+        if (!bound[i]) claim_local(nm, plist[i]->name, f->line);
         st_add(SK_PARAM, plist[i]->name, nm, plist[i]->dtype);
+        free(nm);
     }
     for (int i = 0; i < np; i++) free(bound[i]);
     if (f->ret->is_ref) gen_addr(body); else gen_expr_to(body, f->ret);
@@ -3193,7 +3194,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
     if (t && t->kind == TY_ARRAY) {
         int esz = type_size_words(t->base);
         int n = t->arr_size;
-        char *done = calloc(n > 0 ? n : 1, 1);
+        char *done = xcalloc(n > 0 ? n : 1, 1);
         int cursor = 0;
         for (int k = 0; k < z->n; k++) {
             int idx = cursor;
@@ -3217,7 +3218,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
         free(done);
     } else if (t && t->kind == TY_STRUCT) {
         strct_field *f = t->fields;
-        strct_field **wr = calloc(z->n + 1, sizeof(strct_field*));
+        strct_field **wr = xcalloc(z->n + 1, sizeof(strct_field*));
         for (int k = 0; k < z->n; k++) {
             strct_field *target;
             if (z->desigs[k].kind == DESIG_INDEX)
@@ -3389,37 +3390,38 @@ static void switch_dispatch(stmt *s, const char *tmp_name)
     for (int i = 0; i < s->n_items; i++) switch_dispatch(s->items[i], tmp_name);
 }
 
+// the destructors of the class-typed locals of one declaration, last first
+static void emit_decl_dtors(decl *d)
+{
+    if (!d) return;
+    emit_decl_dtors(d->next);
+    if (!d->dtype || d->dtype->kind != TY_STRUCT || !d->dtype->tag) return;
+    char *dtor = resolve_method(d->dtype, "dtor");
+    if (dtor) {
+        char *an = mangle_local(d->name);
+        emit("LEA %s", an); emit("PSH"); emit("CAL %s", dtor);
+        free(an); free(dtor);
+    }
+}
+
 // emit destructor calls for the class-typed locals declared directly in this
-// block, in reverse declaration order (RAII at normal block exit). Note: an
-// early return/break/continue inside the block bypasses these — a known gap.
+// block, in reverse declaration order (RAII at normal block exit). An early
+// return/break/continue runs them through g_live (emit_live_dtors) instead.
 static void emit_block_dtors(stmt *block)
 {
     for (int i = block->n_items - 1; i >= 0; i--) {
         stmt *it = block->items[i];
-        if (!it || it->kind != S_DECL) continue;
-        decl *ds[32]; int n = 0;
-        for (decl *d = it->decls; d && n < 32; d = d->next) ds[n++] = d;
-        for (int j = n - 1; j >= 0; j--) {
-            decl *d = ds[j];
-            if (!d->dtype || d->dtype->kind != TY_STRUCT || !d->dtype->tag) continue;
-            char *dtor = resolve_method(d->dtype, "dtor");
-            if (dtor) {
-                char *an = mangle_local(d->name);
-                emit("LEA %s", an); emit("PSH"); emit("CAL %s", dtor);
-                free(an); free(dtor);
-            }
-        }
+        if (it && it->kind == S_DECL) emit_decl_dtors(it->decls);
     }
 }
 
 // ---- early-exit RAII: live-local tracking + dtor emission ------------------
 static void live_push(const char *mangled, const char *dtor)
 {
-    if (g_live_n < MAX_LIVE) {
-        g_live[g_live_n].name = strdup(mangled);
-        g_live[g_live_n].dtor = strdup(dtor);
-        g_live_n++;
-    }
+    XGROW(g_live, g_live_n, g_live_cap);
+    g_live[g_live_n].name = xstrdup(mangled);
+    g_live[g_live_n].dtor = xstrdup(dtor);
+    g_live_n++;
 }
 static void live_pop_to(int mark)
 {
@@ -3460,7 +3462,7 @@ static void ns_add(nameset *s, const char *n)
 {
     if (!n) return;
     for (int i = 0; i < s->n; i++) if (!strcmp(s->v[i], n)) return;
-    if (s->n == s->cap) { s->cap = s->cap ? 2 * s->cap : 16; s->v = realloc(s->v, s->cap * sizeof *s->v); }
+    if (s->n == s->cap) { s->cap = s->cap ? 2 * s->cap : 16; s->v = xrealloc(s->v, s->cap * sizeof *s->v); }
     s->v[s->n++] = n;
 }
 static int ns_has(const nameset *s, const char *n)
@@ -3567,10 +3569,13 @@ static int lih_expr_eq(expr *x, expr *y)
     if (x->kind == E_BINOP)   return x->op == y->op && lih_expr_eq(x->a, y->a) && lih_expr_eq(x->b, y->b);
     return 0;
 }
-static void lih_flatten(expr *e, expr **t, int *n)       // the terms of an ADD chain
+// the terms of an ADD chain, at most 16; *n is -1 when there are more (no hoist)
+static void lih_flatten(expr *e, expr **t, int *n)
 {
-    if (e && e->kind == E_BINOP && e->op == OP_ADD && *n < 14) { lih_flatten(e->a, t, n); lih_flatten(e->b, t, n); }
+    if (*n < 0) return;
+    if (e && e->kind == E_BINOP && e->op == OP_ADD) { lih_flatten(e->a, t, n); lih_flatten(e->b, t, n); }
     else if (*n < 16) t[(*n)++] = e;
+    else *n = -1;
 }
 
 typedef struct { const char *base; expr *inv; char *tmp; } lih_hoist;
@@ -3584,6 +3589,7 @@ static void lih_rewrite_expr(expr *e, const nameset *w)
     if (e->kind != E_INDEX || !lih_plain_var(e->a, w, TY_PTR)) return;
     expr *t[16]; int n = 0, has_op = 0;
     lih_flatten(e->b, t, &n);
+    if (n < 0) return;                         // too many terms: leave the index alone
     expr *inv = NULL, *var = NULL;
     for (int i = 0; i < n; i++) {
         if (lih_invariant(t[i], w)) { if (t[i]->kind != E_INT_LIT) has_op = 1; inv = inv ? ast_binop(OP_ADD, inv, t[i], e->line) : t[i]; }
@@ -3603,7 +3609,7 @@ static void lih_rewrite_expr(expr *e, const nameset *w)
         st_add(SK_LOCAL_VAR, nm, an, st_find(e->a->sval)->stype);
         log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
         free(an);
-        lih_h[lih_nh].base = e->a->sval; lih_h[lih_nh].inv = inv; lih_h[lih_nh].tmp = strdup(nm);
+        lih_h[lih_nh].base = e->a->sval; lih_h[lih_nh].inv = inv; lih_h[lih_nh].tmp = xstrdup(nm);
         tmp = lih_h[lih_nh++].tmp;
     }
     e->a = ast_ident((char *)tmp, e->line);
@@ -3782,9 +3788,10 @@ static void gen_stmt_inner(stmt *s)
             if (cur_func_ret && cur_func_ret->kind == TY_STRUCT) {
                 // write the struct into this function's static result block and
                 // return its address (a struct rvalue == its base address)
-                char rb[80]; snprintf(rb, sizeof(rb), "__ret_%s", cur_func_name);
+                char *rb = xasprintf("__ret_%s", cur_func_name);
                 copy_to_block(rb, s->e1, type_size_words(cur_func_ret));
                 emit("LEA %s", rb);
+                free(rb);
             } else if (cur_func_ret && cur_func_ret->is_ref) {
                 gen_addr(s->e1);   // reference return: yield the referent's address
             } else {
@@ -3824,11 +3831,10 @@ static void gen_stmt_inner(stmt *s)
         for (const char *p = t; ; p++) {
             if (*p == '\n' || *p == 0) {
                 int n = (int)(p - start);
-                if (n > 0) {
-                    char buf[512];
-                    if (n >= (int)sizeof(buf)) n = sizeof(buf) - 1;
-                    memcpy(buf, start, n); buf[n] = 0;
-                    emit_verbatim(buf);  // user inline asm: verbatim, never fused
+                if (n > 0) {             // user inline asm: verbatim, never fused
+                    char *line = xasprintf("%.*s", n, start);
+                    emit_verbatim(line);
+                    free(line);
                 }
                 if (*p == 0) break;
                 start = p + 1;
@@ -3941,11 +3947,11 @@ static void cw_put(cwords *c, int at, const char *txt)
 {
     if (at >= c->cap) {
         int nc = c->cap ? c->cap : 16; while (nc <= at) nc *= 2;
-        c->w = realloc(c->w, nc * sizeof(char *));
+        c->w = xrealloc(c->w, nc * sizeof(char *));
         for (int i = c->cap; i < nc; i++) c->w[i] = NULL;
         c->cap = nc;
     }
-    free(c->w[at]); c->w[at] = strdup(txt);
+    free(c->w[at]); c->w[at] = xstrdup(txt);
     if (at + 1 > c->n) c->n = at + 1;
 }
 
@@ -4028,7 +4034,7 @@ static void emit_arrayd(const char *name, int code, int size, cwords *c)
     const char *zero = (code == 2) ? "0.0" : "0";
     size_t len = strlen(name) + 64;
     for (int i = 0; i < c->n; i++) len += (c->w[i] ? strlen(c->w[i]) : 3) + 1;
-    char *line = malloc(len), *p = line;
+    char *line = xmalloc(len), *p = line;
     p += sprintf(p, "#arrayd %s %d %d %d", name, code, size, c->n);
     for (int i = 0; i < c->n; i++) p += sprintf(p, " %s", c->w[i] ? c->w[i] : zero);
     emit("%s", line);
@@ -4040,7 +4046,7 @@ static char *g_glob_data;     // per global: its value is in the .mif (#arrayd),
 static void emit_global_arrays(unit *u)
 {
     free(g_glob_data);
-    g_glob_data = calloc(u->n_globals + 1, 1);
+    g_glob_data = xcalloc(u->n_globals + 1, 1);
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
         if (!d->dtype) continue;
@@ -4173,8 +4179,11 @@ static void emit_function(func *f, unit *u, int is_main)
     st_enter_func(f->asm_label);
     st_push_scope();
 
-    decl *plist[64]; int np = 0;
-    for (decl *p = f->params; p && np < 64; p = p->next) plist[np++] = p;
+    int np = 0;
+    for (decl *p = f->params; p; p = p->next) np++;
+    decl **plist = xmalloc((size_t)(np + 1) * sizeof *plist);
+    np = 0;
+    for (decl *p = f->params; p; p = p->next) plist[np++] = p;
 
     if (cur_fn_recursive) {
         // frame layout: [0] = saved FP, [1..np] = params, [np+1..] = locals
@@ -4224,14 +4233,20 @@ static void emit_function(func *f, unit *u, int is_main)
 
     if (is_main) {
         if (g_any_recursive) {                                           // init the call stack, kept
-            char lst[4096]; size_t at = 0;                               // only if a recursive
-            for (int i = 0; i < u->n_funcs && at < sizeof(lst) - 1; i++) // function is reached
-                if (u->funcs[i]->is_recursive)
-                    at += snprintf(lst + at, sizeof(lst) - at, " %s",
+            // only if a recursive function is reached. asm_share reads at most
+            // 255 labels on a #IFLIVE line: past that the block is always kept.
+            char *lst = xstrdup(""); int nrec = 0;
+            for (int i = 0; i < u->n_funcs; i++)
+                if (u->funcs[i]->is_recursive) {
+                    char *more = xasprintf("%s %s", lst,
                                    u->funcs[i]->asm_label ? u->funcs[i]->asm_label : u->funcs[i]->name);
-            if (at < sizeof(lst) - 1) emit("#IFLIVE%s", lst);            // (too many: always kept)
+                    free(lst); lst = more; nrec++;
+                }
+            int guarded = nrec < 255;
+            if (guarded) emit("#IFLIVE%s", lst);
+            free(lst);
             emit("LEA __cstk"); emit("SET __sp");
-            if (at < sizeof(lst) - 1) emit("#ENDLIVE");
+            if (guarded) emit("#ENDLIVE");
         }
         if (g_uses_heap) {                                               // init the heap, kept
             emit("#IFLIVE malloc");                                      // only if malloc is reached
@@ -4251,6 +4266,7 @@ static void emit_function(func *f, unit *u, int is_main)
 
     st_pop_scope();
     st_leave_func();
+    free(plist);
     cur_func_name = NULL;
     cur_method_class = NULL;
     cur_func_ret  = NULL;
@@ -4396,7 +4412,7 @@ static void register_poly_classes(unit *u)
         if (!c || c->n_vtbl <= 0) continue;
         int seen = 0;
         for (int j = 0; j < n_poly; j++) if (poly_cls[j] == c) { seen = 1; break; }
-        if (!seen && n_poly < 64) poly_cls[n_poly++] = c;
+        if (!seen) { XGROW(poly_cls, n_poly, poly_cap); poly_cls[n_poly++] = c; }
     }
     for (int i = 0; i < n_poly; i++) {
         type *c = poly_cls[i];
@@ -4424,9 +4440,11 @@ static void emit_vtable_inits(void)
 
 static void write_prog_log(const char *tmp_dir)
 {
-    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", tmp_dir);
+    char *path = xasprintf("%s/prog_log.txt", tmp_dir);
     FILE *f = fopen(path, "w");
-    if (!f) { fprintf(stderr, MSG_ERR_TABLE_OPEN, path); return; }
+    if (!f) fprintf(stderr, MSG_ERR_TABLE_OPEN, path);
+    free(path);
+    if (!f) return;
     for (int i = 0; i < varlog_n; i++) {
         if (varlog[i].size > 0)
             fprintf(f, "%s %s %d %d\n", varlog[i].func, varlog[i].var, varlog[i].type_code, varlog[i].size);
@@ -4445,9 +4463,11 @@ static void write_prog_log(const char *tmp_dir)
 // (pp_source: its own file, macros not expanded), as cmmcomp shows the .cmm.
 static void write_src_lines(const char *tmp_dir, const char *src_text)
 {
-    char path[2048]; snprintf(path, sizeof(path), "%s/src_lines.txt", tmp_dir);
+    char *path = xasprintf("%s/src_lines.txt", tmp_dir);
     FILE *out = fopen(path, "w");
-    if (!out) { fprintf(stderr, MSG_ERR_TABLE_OPEN, path); return; }
+    if (!out) fprintf(stderr, MSG_ERR_TABLE_OPEN, path);
+    free(path);
+    if (!out) return;
 
     fputs("-1 INTERNAL\n"    , out);   // pc code -1: scaffolding (NOP, prologue)
     fputs("-2 void main();\n", out);   // pc code -2: entry call
@@ -4519,8 +4539,8 @@ static void analyze_recursion(unit *u)
 {
     int n = u->n_funcs;
     if (n <= 0) return;
-    char *adj = calloc((size_t)n * n, 1);
-    int  *ind = calloc(n, sizeof(int));
+    char *adj = xcalloc((size_t)n * n, 1);
+    int  *ind = xcalloc(n, sizeof(int));
     for (int i = 0; i < n; i++) collect_calls_stmt(u->funcs[i]->body, u, &adj[(size_t)i*n], &ind[i]);
     for (int i = 0; i < n; i++) if (ind[i])
         for (int j = 0; j < n; j++)
@@ -4541,7 +4561,7 @@ static void analyze_recursion(unit *u)
 
 // non-type template parameter values for the instance currently being emitted
 // (a class-template method clone); indexed by parameter slot k.
-static int g_subst_vals[8]; static int g_subst_nvals = 0;
+static int g_subst_vals[CPP_TPARAM_MAX]; static int g_subst_nvals = 0;
 
 static type *subst_type(type *t, type **a, int n)
 {
@@ -4564,7 +4584,7 @@ static type *subst_type(type *t, type **a, int n)
 static expr *clone_expr(expr *e, type **a, int n)
 {
     if (!e) return NULL;
-    expr *c = malloc(sizeof(expr)); *c = *e;       // shallow copy (strings shared)
+    expr *c = xmalloc(sizeof(expr)); *c = *e;       // shallow copy (strings shared)
     c->etype = NULL;                                // re-infer per instance
     // a non-type template parameter referenced in an expression is an int with a
     // sentinel value — replace it with the concrete argument for this instance.
@@ -4575,7 +4595,7 @@ static expr *clone_expr(expr *e, type **a, int n)
     c->b = clone_expr(e->b, a, n);
     c->c = clone_expr(e->c, a, n);
     if (e->n_args) {
-        c->args = malloc(sizeof(expr*) * e->n_args);
+        c->args = xmalloc(sizeof(expr*) * e->n_args);
         for (int i = 0; i < e->n_args; i++) c->args[i] = clone_expr(e->args[i], a, n);
     }
     return c;
@@ -4584,11 +4604,11 @@ static expr *clone_expr(expr *e, type **a, int n)
 static decl *clone_decl(decl *d, type **a, int n)
 {
     if (!d) return NULL;
-    decl *c = malloc(sizeof(decl)); *c = *d;
+    decl *c = xmalloc(sizeof(decl)); *c = *d;
     c->dtype = subst_type(d->dtype, a, n);
     c->init  = clone_expr(d->init, a, n);
     if (d->n_ctor_args) {
-        c->ctor_args = malloc(sizeof(expr*) * d->n_ctor_args);
+        c->ctor_args = xmalloc(sizeof(expr*) * d->n_ctor_args);
         for (int i = 0; i < d->n_ctor_args; i++) c->ctor_args[i] = clone_expr(d->ctor_args[i], a, n);
     }
     c->next = clone_decl(d->next, a, n);
@@ -4598,7 +4618,7 @@ static decl *clone_decl(decl *d, type **a, int n)
 static stmt *clone_stmt(stmt *s, type **a, int n)
 {
     if (!s) return NULL;
-    stmt *c = malloc(sizeof(stmt)); *c = *s;
+    stmt *c = xmalloc(sizeof(stmt)); *c = *s;
     c->e1 = clone_expr(s->e1, a, n);
     c->e2 = clone_expr(s->e2, a, n);
     c->e3 = clone_expr(s->e3, a, n);
@@ -4606,7 +4626,7 @@ static stmt *clone_stmt(stmt *s, type **a, int n)
     c->body2 = clone_stmt(s->body2, a, n);
     c->init_stmt = clone_stmt(s->init_stmt, a, n);
     if (s->n_items) {
-        c->items = malloc(sizeof(stmt*) * s->n_items);
+        c->items = xmalloc(sizeof(stmt*) * s->n_items);
         for (int i = 0; i < s->n_items; i++) c->items[i] = clone_stmt(s->items[i], a, n);
     }
     c->decls = clone_decl(s->decls, a, n);
@@ -4639,21 +4659,23 @@ static void deduce_targs(func *t, expr **cargs, int ncargs, type **targs)
 // get (creating if needed) the concrete instance of `t` for these argument types
 static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int nexpl)
 {
-    type *targs[8] = {0};
+    type *targs[CPP_TPARAM_MAX] = {0};
     deduce_targs(t, cargs, ncargs, targs);
-    for (int i = 0; i < nexpl && i < 8; i++) targs[i] = expl[i];   // explicit args win
-    char lbl[96]; int k = sprintf(lbl, "%s_T", t->name);
-    for (int i = 0; i < t->n_tparams && k < (int)sizeof(lbl) - 1; i++)
-        lbl[k++] = type_code(targs[i]);          // label over ALL tparams (incl. explicit-only)
+    for (int i = 0; i < nexpl && i < CPP_TPARAM_MAX; i++) targs[i] = expl[i];   // explicit args win
+    // the label: <name>_T and one type code per tparam (explicit-only ones too)
+    char *lbl = xmalloc(strlen(t->name) + 3 + (size_t)t->n_tparams);
+    int k = sprintf(lbl, "%s_T", t->name);
+    for (int i = 0; i < t->n_tparams; i++) lbl[k++] = type_code(targs[i]);
     lbl[k] = 0;
-    for (int i = 0; i < g_n_inst; i++) if (!strcmp(g_inst[i]->asm_label, lbl)) return g_inst[i];
-    func *f = malloc(sizeof(func)); *f = *t;
+    for (int i = 0; i < g_n_inst; i++)
+        if (!strcmp(g_inst[i]->asm_label, lbl)) { free(lbl); return g_inst[i]; }
+    func *f = xmalloc(sizeof(func)); *f = *t;
     f->n_tparams = 0;
     f->ret    = subst_type(t->ret, targs, t->n_tparams);
     f->params = clone_decl(t->params, targs, t->n_tparams);
     f->body   = clone_stmt(t->body, targs, t->n_tparams);
-    f->asm_label = strdup(lbl);
-    if (g_n_inst < 256) g_inst[g_n_inst++] = f;
+    f->asm_label = lbl;
+    { XGROW(g_inst, g_n_inst, g_inst_cap); g_inst[g_n_inst++] = f; }
     return f;
 }
 
@@ -4668,12 +4690,12 @@ static void instantiate_ctmpl_methods(unit *u)
         ctmpl  *ct  = ins->tmpl;
         int     plen = (int)strlen(ct->proto->tag) + 2;     // strip "Proto__"
         g_subst_nvals = ins->nvals;
-        for (int v = 0; v < ins->nvals && v < 8; v++) g_subst_vals[v] = ins->vals[v];
+        for (int v = 0; v < ins->nvals; v++) g_subst_vals[v] = ins->vals[v];
         type **ta = ins->ntargs ? ins->targs : NULL;        // type-parameter bindings
         int    nta = ins->ntargs;
         for (int m = 0; m < ct->n_methods; m++) {
             func *src = ct->methods[m];
-            func *f = malloc(sizeof(func)); *f = *src;
+            func *f = xmalloc(sizeof(func)); *f = *src;
             f->n_tparams = 0;
             f->method_of = ins->concrete;
             f->ret    = subst_type(src->ret, ta, nta);
@@ -4684,9 +4706,9 @@ static void instantiate_ctmpl_methods(unit *u)
             f->name = nm; f->asm_label = nm;
             sym *s = st_add(SK_FUNC, nm, nm, f->ret);
             s->n_params = f->n_params;
-            s->param_types = malloc(sizeof(type*) * (f->n_params > 0 ? f->n_params : 1));
+            s->param_types = xmalloc(sizeof(type*) * (f->n_params > 0 ? f->n_params : 1));
             { int i = 0; for (decl *p = f->params; p; p = p->next, i++) s->param_types[i] = p->dtype; }
-            if (g_n_inst < 256) g_inst[g_n_inst++] = f;
+            { XGROW(g_inst, g_n_inst, g_inst_cap); g_inst[g_n_inst++] = f; }
         }
         g_subst_nvals = 0;
     }
@@ -4716,7 +4738,7 @@ static char *fuse_after_psh(const char *t)
     const char *pfx = (mnem[0] == 'F' && mnem[1] == '_') ? "P" : "P_";
     const char *rest = t + mlen;             // operand part incl. leading space
     size_t n = strlen(pfx) + mlen + strlen(rest) + 1;
-    char *r = malloc(n);
+    char *r = xmalloc(n);
     snprintf(r, n, "%s%s%s", pfx, mnem, rest);
     return r;
 }
@@ -4739,7 +4761,7 @@ static char *fuse_lod_unary(const char *lod, const char *un)
     for (int i = 0; u[i].acc; i++) if (!strcmp(un, u[i].acc)) { mem = u[i].mem; break; }
     if (!mem) return NULL;
     size_t n = strlen(mem) + 1 + strlen(opnd) + 1;
-    char *r = malloc(n);
+    char *r = xmalloc(n);
     snprintf(r, n, "%s %s", mem, opnd);
     return r;
 }
@@ -4781,7 +4803,7 @@ static void peephole(void)
     // variable nobody reads still shows in the waveform, `this` never does.
     {
         int nread = 0, cap = 64;
-        char **read = malloc(cap * sizeof(char *));
+        char **read = xmalloc(cap * sizeof(char *));
         for (int r = 0; r < g_ibuf_n; r++) {           // every name read anywhere
             const char *t = g_ibuf[r].text;
             int is_set = !g_ibuf[r].nofuse && !strncmp(t, "SET ", 4);
@@ -4791,8 +4813,8 @@ static void peephole(void)
                 while (*q && *q != ' ' && *q != '\t') q++;
                 size_t len = (size_t)(q - p);
                 if (len > 5 && !strncmp(q - 5, "_this", 5) && !(is_set && p == t + 4)) {
-                    if (nread == cap) { cap *= 2; read = realloc(read, cap * sizeof(char *)); }
-                    char *nm = malloc(len + 1);
+                    if (nread == cap) { cap *= 2; read = xrealloc(read, cap * sizeof(char *)); }
+                    char *nm = xmalloc(len + 1);
                     memcpy(nm, p, len); nm[len] = 0;
                     read[nread++] = nm;
                 }
@@ -4865,7 +4887,7 @@ static void peephole(void)
             // Not SET_V (no _V_P opcode); not a labeled POP.
             if (!strcmp(g_ibuf[r].text, "POP") && !strncmp(g_ibuf[w-1].text, "SET ", 4)) {
                 const char *opnd = g_ibuf[w-1].text + 3;     // " <name>"
-                char *fused = malloc(5 + strlen(opnd) + 1);  // "SET_P" + " <name>"
+                char *fused = xmalloc(5 + strlen(opnd) + 1);  // "SET_P" + " <name>"
                 sprintf(fused, "SET_P%s", opnd);
                 free(g_ibuf[w-1].text);
                 g_ibuf[w-1].text = fused;                    // keep the SET's source line
@@ -4889,14 +4911,14 @@ static void peephole(void)
             && r + 1 < g_ibuf_n && !g_ibuf[r+1].nofuse) {
             const char *n1 = g_ibuf[r+1].text;
             if (!strcmp(n1, "LDI 0")) {
-                char *f = malloc(24); snprintf(f, 24, "LDI %d", k);
+                char *f = xmalloc(24); snprintf(f, 24, "LDI %d", k);
                 free(g_ibuf[r].text); free(g_ibuf[r+1].text);
                 g_ibuf[w] = g_ibuf[r+1]; g_ibuf[w].text = f; w++;
                 r += 1; continue;
             }
             if (r + 2 < g_ibuf_n && !g_ibuf[r+2].nofuse && n1[0] == 'P' && (n1[1] == '_' || n1[1] == 'F')
                 && !strcmp(g_ibuf[r+2].text, "STI 0")) {
-                char *f = malloc(24); snprintf(f, 24, "STI %d", k);
+                char *f = xmalloc(24); snprintf(f, 24, "STI %d", k);
                 free(g_ibuf[r].text); free(g_ibuf[r+2].text);
                 g_ibuf[w++] = g_ibuf[r+1];
                 g_ibuf[w] = g_ibuf[r+2]; g_ibuf[w].text = f; w++;
@@ -4939,7 +4961,7 @@ static void peephole(void)
         if (e > r && d < g_ibuf_n && !g_ibuf[d].nofuse) {
             size_t n = strlen(g_ibuf[d].text) + 1;
             for (int k = r; k < e; k++) n += strlen(g_ibuf[k].text) + 1;
-            char *merged = malloc(n);
+            char *merged = xmalloc(n);
             size_t at = 0;
             for (int k = r; k < e; k++) {                 // the labels, NOP dropped
                 size_t len = strlen(g_ibuf[k].text) - 4;  // without the trailing " NOP"
@@ -4997,16 +5019,16 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     // (INTERNAL): all program scaffolding before the first statement maps there.
     cg_line = -1;
     if (tmp_dir && u->prname) {
-        char path[2048];
-        snprintf(path, sizeof(path), "%s/pc_%s_mem.txt", tmp_dir, u->prname);
+        char *path = xasprintf("%s/pc_%s_mem.txt", tmp_dir, u->prname);
         f_line = fopen(path, "w");
+        free(path);
     }
 
     // file-scope symtab: globals + function signatures
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
-        { char who[512]; snprintf(who, sizeof(who), MSG_WHO_GLOBAL, d->name);
-          claim(NS_DATA, d->name, who, d->line); }
+        { char *who = xasprintf(MSG_WHO_GLOBAL, d->name);
+          claim(NS_DATA, d->name, who, d->line); free(who); }
         { sym *gs = st_add(SK_GLOBAL_VAR, d->name, d->name, d->dtype); gs->is_const = d->is_const; }
         int gw = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
         log_var("global", d->name, innermost_code(d->dtype), gw);

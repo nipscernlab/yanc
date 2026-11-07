@@ -246,7 +246,7 @@ int lex_id(const char *text)
         fatal(MSG_ERR_RESERVED_I, pctx.line_num+1);
 
     if ((int)strlen(text) > CMM_NAME_MAX)
-        fatal(MSG_ERR_NAME_TOO_LONG, pctx.line_num+1, CMM_NAME_MAX);
+        fatal(MSG_ERR_NAME_TOO_LONG, pctx.line_num+1, (int)strlen(text), CMM_NAME_MAX);
 
     int id = find_var(text);                                      // first check whether there is a global variable
     if (id != -1 && !is_local_row(id)) return id;                 // f_y is no name for f's local y

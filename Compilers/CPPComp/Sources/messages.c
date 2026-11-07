@@ -37,6 +37,11 @@ void msg_warning(int line, const char *fmt, ...)
     fputc('\n', stderr);
 }
 
+// what runs before an internal error aborts: abort skips the atexit
+// handlers, and main's removes the outputs of a failed run (#94 N)
+static void (*on_internal)(void);
+void msg_on_internal(void (*fn)(void)) { on_internal = fn; }
+
 // English only: a defect of cppcomp, for whoever maintains it (messages.h)
 void msg_internal(const char *fmt, ...)
 {
@@ -44,5 +49,8 @@ void msg_internal(const char *fmt, ...)
     fprintf(stderr, "cppcomp: internal error: ");
     va_start(ap, fmt); vfprintf(stderr, fmt, ap); va_end(ap);
     fputc('\n', stderr);
-    abort();
+    void (*fn)(void) = on_internal;
+    on_internal = NULL;                // the hook may fail too: once
+    if (fn) fn();
+    abort();                           // still an abort: the regression tells it from an error
 }

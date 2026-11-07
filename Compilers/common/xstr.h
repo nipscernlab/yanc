@@ -27,6 +27,16 @@ char *xasprintf(const char *fmt, ...)                // the formatted text
 #endif
     ;
 char *xvasprintf(const char *fmt, va_list ap);       // the same, from a va_list
+
+// XGROW(v, n, cap): makes the vector v, which holds cap elements, hold at
+// least n + 1, doubling cap. For a table filled one element at a time:
+//     XGROW(tab, tab_n, tab_cap); tab[tab_n++] = x;
+#define XGROW(v, n, cap) do {                                            \
+        if ((size_t)(n) >= (size_t)(cap)) {                              \
+            (cap) = (cap) ? 2 * (cap) : 16;                              \
+            (v) = xrealloc((v), (size_t)(cap) * sizeof *(v));            \
+        }                                                                \
+    } while (0)
 char *xgetline (FILE *f);                            // the next line, any length,
                                                      // without its \r\n; NULL at
                                                      // the end of the file; the

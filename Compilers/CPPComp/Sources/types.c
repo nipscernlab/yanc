@@ -9,21 +9,7 @@
 #include "../Headers/types.h"
 #include "../Headers/messages.h"
 #include "../Headers/config.h"
-
-static void *xcalloc(size_t n)
-{
-    void *p = calloc(1, n);
-    if (!p) msg_internal("out of memory");
-    return p;
-}
-
-static char *xstrdup(const char *s)
-{
-    if (!s) return NULL;
-    char *r = (char*)malloc(strlen(s) + 1);
-    if (!r) msg_internal("oom");
-    strcpy(r, s); return r;
-}
+#include "../../common/xstr.h"
 
 // ----------------------------------------------------------------------------
 // canonical singletons -------------------------------------------------------
@@ -31,7 +17,7 @@ static char *xstrdup(const char *s)
 
 static type *make_basic(type_kind k, int is_signed)
 {
-    type *t = (type*)xcalloc(sizeof(type));
+    type *t = (type*)xcalloc(1, sizeof(type));
     t->kind = k; t->is_signed = is_signed;
     return t;
 }
@@ -81,7 +67,7 @@ type *t_double(void) { if (!T_DOUBLE) T_DOUBLE = make_wide(TY_FLOAT, 1); return 
 
 type *t_ptr(type *to)
 {
-    type *t = (type*)xcalloc(sizeof(type));
+    type *t = (type*)xcalloc(1, sizeof(type));
     t->kind = TY_PTR; t->base = to;
     return t;
 }
@@ -95,21 +81,21 @@ type *t_ref(type *to)
 
 type *t_auto(void)
 {
-    type *t = (type*)xcalloc(sizeof(type));
+    type *t = (type*)xcalloc(1, sizeof(type));
     t->kind = TY_INT; t->is_signed = 1; t->is_auto = 1;
     return t;
 }
 
 type *t_tparam(int idx)
 {
-    type *t = (type*)xcalloc(sizeof(type));
+    type *t = (type*)xcalloc(1, sizeof(type));
     t->kind = TY_INT; t->is_signed = 1; t->tparam = idx + 1;   // int-like until substituted
     return t;
 }
 
 type *t_array(type *of, int n)
 {
-    type *t = (type*)xcalloc(sizeof(type));
+    type *t = (type*)xcalloc(1, sizeof(type));
     t->kind = TY_ARRAY; t->base = of; t->arr_size = n;
     return t;
 }
@@ -120,7 +106,7 @@ type *t_array(type *of, int n)
 
 type *t_make_struct(char *tag)
 {
-    type *t = (type*)xcalloc(sizeof(type));
+    type *t = (type*)xcalloc(1, sizeof(type));
     t->kind = TY_STRUCT;
     t->tag  = xstrdup(tag);
     t->fields = NULL;
@@ -138,7 +124,7 @@ type *t_make_union(char *tag)
 
 static strct_field *append_field(type *st, char *name, type *ft)
 {
-    strct_field *f = (strct_field*)xcalloc(sizeof(strct_field));
+    strct_field *f = (strct_field*)xcalloc(1, sizeof(strct_field));
     f->name = xstrdup(name);
     f->ftype = ft;
     f->next = NULL;
@@ -152,7 +138,7 @@ void t_struct_add_field(type *st, char *name, type *ft) { append_field(st, name,
 // insert a field at the FRONT (offset 0 after sealing) — used to place a vptr
 void t_struct_prepend_field(type *st, char *name, type *ft)
 {
-    strct_field *f = (strct_field*)xcalloc(sizeof(strct_field));
+    strct_field *f = (strct_field*)xcalloc(1, sizeof(strct_field));
     f->name = xstrdup(name); f->ftype = ft;
     f->next = st->fields;
     st->fields = f;

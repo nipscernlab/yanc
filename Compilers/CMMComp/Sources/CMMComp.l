@@ -98,7 +98,7 @@ COMEN  "//"[^\n]*
  /* object-like #define NAME body -- recorded here, expanded at the {VARIA} rule */
 "#define"               BEGIN(DEFNAME);
 <DEFNAME>{WS}           ;
-<DEFNAME>{VARIA}        { if (yyleng > CMM_NAME_MAX) fatal(MSG_ERR_NAME_TOO_LONG, pctx.line_num+1, CMM_NAME_MAX);
+<DEFNAME>{VARIA}        { if (yyleng > CMM_NAME_MAX) fatal(MSG_ERR_NAME_TOO_LONG, pctx.line_num+1, (int)yyleng, CMM_NAME_MAX);
                           free(g_def_pending); g_def_pending = xstrdup(yytext); BEGIN(DEFBODY); }
 <DEFNAME>\n             { pctx.line_num++; BEGIN(INITIAL); }
 <DEFNAME>.              BEGIN(INITIAL);

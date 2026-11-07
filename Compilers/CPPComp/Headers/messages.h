@@ -20,6 +20,7 @@ void msg_set_file(const char *name);
 void msg_error    (int line, const char *fmt, ...);    // prints and exits(1)
 void msg_warning  (int line, const char *fmt, ...);
 void msg_internal (const char *fmt, ...);              // compiler-internal bug; abort
+void msg_on_internal(void (*fn)(void));                // runs before msg_internal aborts
 int  msg_error_count(void);
 
 // ============================================================================
@@ -308,6 +309,14 @@ int  msg_error_count(void);
 
 // the lexer (CPPComp.l) -------------------------------------------------------
 
+#define MSG_ERR_NAME_TOO_LONG \
+    M("esse nome tem %d caracteres, e o máximo é %d", \
+      "that name has %d characters, and the most a name may have is %d")
+
+#define MSG_ERR_TOO_MANY_TPARAMS \
+    M("um template tem no máximo %d parâmetros", \
+      "a template has at most %d parameters")
+
 #define MSG_ERR_RESERVED_DUNDER \
     M("'%s': um nome com '__' é reservado (o C++ os guarda para o compilador, e o YANC os usa no assembly)", \
       "'%s': a name with '__' in it is reserved (C++ keeps them for the compiler, and YANC uses them in the assembly)")
@@ -372,14 +381,6 @@ int  msg_error_count(void);
     M("cppcomp: não achei o #include <%s>\n", \
       "cppcomp: can't find #include <%s>\n")
 
-#define MSG_ERR_IFDEF_DEEP \
-    M("cppcomp: #ifdef aninhado fundo demais\n", \
-      "cppcomp: #ifdef nesting too deep\n")
-
-#define MSG_ERR_IF_DEEP \
-    M("cppcomp: #if aninhado fundo demais\n", \
-      "cppcomp: #if nesting too deep\n")
-
 #define MSG_ERR_STRAY_ELIF \
     M("cppcomp: #elif sem #if\n", \
       "cppcomp: stray #elif\n")
@@ -391,10 +392,6 @@ int  msg_error_count(void);
 #define MSG_ERR_STRAY_ENDIF \
     M("cppcomp: #endif sem #if\n", \
       "cppcomp: stray #endif\n")
-
-#define MSG_ERR_TOO_MANY_I \
-    M("cppcomp: pastas -I demais\n", \
-      "cppcomp: too many -I dirs\n")
 
 // pieces put into the messages above: who owns a name in the assembly ---------
 

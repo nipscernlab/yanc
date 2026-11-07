@@ -22,40 +22,33 @@
 
 #include "../Headers/cpppp.h"
 #include "../Headers/messages.h"
+#include "../../common/xstr.h"
 #include "../../common/exe_dir.h"
 
-#define MAX_INCDIRS 32
-static const char *incdirs[MAX_INCDIRS];
-static int         n_incdirs = 0;
+static const char **incdirs;           // the -I folders, then the YANC headers
+static int          n_incdirs = 0, incdirs_cap = 0;
 
 // files marked `#pragma once`: canonical paths to skip on any later #include.
-#define MAX_ONCE 1024
-static char *once_paths[MAX_ONCE];
+static char **once_paths;               // the files a #pragma once closed
 static int   n_once = 0;
 
 // canonicalise a path so the same file reached via different #include spellings
 // compares equal (absolute, forward slashes, lowercased — Windows is
 // case-insensitive). Falls back to the input on failure.
-static void path_canon(const char *in, char *out, size_t sz)
+static char *path_canon(const char *in)
 {
 #ifdef _WIN32
-    char tmp[2048];
-    if (_fullpath(tmp, in, sizeof(tmp))) {
-        size_t i = 0;
-        for (; tmp[i] && i < sz - 1; i++) {
-            char c = tmp[i] == '\\' ? '/' : (char)tolower((unsigned char)tmp[i]);
-            out[i] = c;
-        }
-        out[i] = 0;
-        return;
+    char *full = _fullpath(NULL, in, 0);   // NULL: the C library allocates it
+    if (full) {
+        for (char *c = full; *c; c++) *c = *c == '\\' ? '/' : (char)tolower((unsigned char)*c);
+        char *r = xstrdup(full); free(full);
+        return r;
     }
 #else
-    // realpath may write up to PATH_MAX bytes; let glibc allocate the buffer
-    // (realpath(in, NULL), POSIX.1-2008) instead of risking a fixed-size one.
-    char *rp = realpath(in, NULL);
-    if (rp) { snprintf(out, sz, "%s", rp); free(rp); return; }
+    char *rp = realpath(in, NULL);         // NULL: allocated (POSIX.1-2008)
+    if (rp) { char *r = xstrdup(rp); free(rp); return r; }
 #endif
-    snprintf(out, sz, "%s", in);
+    return xstrdup(in);
 }
 
 static int once_seen(const char *canon)
@@ -65,31 +58,41 @@ static int once_seen(const char *canon)
 }
 static void once_mark(const char *canon)
 {
-    if (once_seen(canon) || n_once >= MAX_ONCE) return;
-    once_paths[n_once++] = strdup(canon);
+    if (once_seen(canon)) return;
+    once_paths = xrealloc(once_paths, (size_t)(n_once + 1) * sizeof *once_paths);
+    once_paths[n_once++] = xstrdup(canon);
 }
 
-#define MAX_MPARAMS 32
 typedef struct macro {
     char *name;
     char *body;
     int   is_func;                 // 1 = function-like macro
     int   is_variadic;             // 1 = trailing `...` (use __VA_ARGS__ in body)
-    char *params[MAX_MPARAMS];
+    char **params;
     int   n_params;                // named params (excludes `...`)
     struct macro *next;
 } macro;
 static macro *macros = NULL;
 
-static macro *macro_find(const char *name)
+// the name of n characters at s is `name`
+static int name_is(const char *s, size_t n, const char *name)
 {
-    for (macro *m = macros; m; m = m->next) if (strcmp(m->name, name) == 0) return m;
+    return strlen(name) == n && strncmp(s, name, n) == 0;
+}
+
+// the macro named by the n characters at s, without copying them
+static macro *macro_find_n(const char *s, size_t n)
+{
+    for (macro *m = macros; m; m = m->next) if (name_is(s, n, m->name)) return m;
     return NULL;
 }
+
+static macro *macro_find(const char *name) { return macro_find_n(name, strlen(name)); }
 
 static void macro_free_params(macro *m)
 {
     for (int i = 0; i < m->n_params; i++) free(m->params[i]);
+    free(m->params); m->params = NULL;
     m->n_params = 0; m->is_func = 0; m->is_variadic = 0;
 }
 
@@ -97,8 +100,8 @@ static macro *macro_get_or_new(const char *name)
 {
     macro *m = macro_find(name);
     if (m) { free(m->body); m->body = NULL; macro_free_params(m); return m; }
-    m = calloc(1, sizeof(macro));
-    m->name = strdup(name);
+    m = xcalloc(1, sizeof(macro));
+    m->name = xstrdup(name);
     m->next = macros;
     macros = m;
     return m;
@@ -107,18 +110,19 @@ static macro *macro_get_or_new(const char *name)
 static void macro_define(const char *name, const char *body)
 {
     macro *m = macro_get_or_new(name);
-    m->body = strdup(body ? body : "");
+    m->body = xstrdup(body ? body : "");
     m->is_func = 0;
 }
 
 static void macro_define_func(const char *name, char **params, int np, int variadic, const char *body)
 {
     macro *m = macro_get_or_new(name);
-    m->body = strdup(body ? body : "");
+    m->body = xstrdup(body ? body : "");
     m->is_func = 1;
     m->is_variadic = variadic;
     m->n_params = np;
-    for (int i = 0; i < np; i++) m->params[i] = strdup(params[i]);
+    m->params = xmalloc((size_t)(np + 1) * sizeof *m->params);
+    for (int i = 0; i < np; i++) m->params[i] = xstrdup(params[i]);
 }
 
 static void macro_undef(const char *name)
@@ -135,16 +139,21 @@ static void macro_undef(const char *name)
     }
 }
 
-static const char *macro_lookup(const char *name)
-{
-    macro *m = macro_find(name);
-    return m ? (m->body ? m->body : "") : NULL;
-}
+static int *cond_stk;                  // 1 where this #if level is taking its lines
+static int *cond_seen_true;            // 1 where a branch of this level was taken
+static int  cond_n = 0, cond_cap = 0;
 
-#define MAX_COND 64
-static int cond_stk[MAX_COND];
-static int cond_seen_true[MAX_COND];
-static int cond_n = 0;
+static void cond_push(int active)
+{
+    if (cond_n >= cond_cap) {          // cond_stk and cond_seen_true grow together
+        int cap = cond_cap;
+        XGROW(cond_stk, cond_n, cap);
+        XGROW(cond_seen_true, cond_n, cond_cap);
+    }
+    cond_stk[cond_n] = active;
+    cond_seen_true[cond_n] = active;
+    cond_n++;
+}
 
 static int cond_active(void)
 {
@@ -158,15 +167,24 @@ static int is_ident_cont (char c) { return isalnum((unsigned char)c) || c == '_'
 // ---- growable string buffer ------------------------------------------------
 
 typedef struct { char *p; size_t len, cap; } sbuf;
-static void sb_init(sbuf *b) { b->cap = 64; b->p = malloc(b->cap); b->p[0] = 0; b->len = 0; }
+static void sb_init(sbuf *b) { b->cap = 64; b->p = xmalloc(b->cap); b->p[0] = 0; b->len = 0; }
 static void sb_putc(sbuf *b, char c) {
-    if (b->len + 2 >= b->cap) { b->cap *= 2; b->p = realloc(b->p, b->cap); }
+    if (b->len + 2 >= b->cap) { b->cap *= 2; b->p = xrealloc(b->p, b->cap); }
     b->p[b->len++] = c; b->p[b->len] = 0;
 }
 static void sb_puts(sbuf *b, const char *s) { while (*s) sb_putc(b, *s++); }
 static void sb_putn(sbuf *b, const char *s, size_t n) { for (size_t i = 0; i < n; i++) sb_putc(b, s[i]); }
 
-static char *dupn(const char *s, size_t n) { char *r = malloc(n + 1); memcpy(r, s, n); r[n] = 0; return r; }
+static char *dupn(const char *s, size_t n) { char *r = xmalloc(n + 1); memcpy(r, s, n); r[n] = 0; return r; }
+
+// the identifier at s, of any length, in a block of its own; *n gets its length
+static char *take_ident(const char *s, size_t *n)
+{
+    size_t k = 0;
+    while (is_ident_cont(s[k])) k++;
+    *n = k;
+    return dupn(s, k);
+}
 
 // trim leading/trailing whitespace, returning a fresh string
 static char *dup_trim(const char *s, size_t n)
@@ -199,7 +217,14 @@ static void sb_rstrip(sbuf *b) {                      // drop trailing spaces/ta
     while (b->len > 0 && (b->p[b->len-1] == ' ' || b->p[b->len-1] == '\t')) b->p[--b->len] = 0;
 }
 
-#define IS_VA(id) (strcmp((id), "__VA_ARGS__") == 0)
+#define IS_VA(s, n) name_is((s), (n), "__VA_ARGS__")
+
+// the parameter of m named by the n characters at s, or -1
+static int param_index(const macro *m, const char *s, size_t n)
+{
+    for (int i = 0; i < m->n_params; i++) if (name_is(s, n, m->params[i])) return i;
+    return -1;
+}
 
 // substitute call args into a function-macro body. Handles # (stringize),
 // ## (token paste), and __VA_ARGS__ for variadic macros, plus the common
@@ -208,13 +233,13 @@ static void sb_rstrip(sbuf *b) {                      // drop trailing spaces/ta
 // argument is macro-expanded first.
 static char *macro_subst(macro *m, char **args, int na)
 {
-    char *eargs[MAX_MPARAMS];
-    for (int i = 0; i < na && i < MAX_MPARAMS; i++) eargs[i] = expand_str(args[i], 1);
+    char **eargs = xmalloc((size_t)(na + 1) * sizeof *eargs);
+    for (int i = 0; i < na; i++) eargs[i] = expand_str(args[i], 1);
 
     // build the variadic tail (raw and expanded), joined with ", "
     sbuf vr; sb_init(&vr); sbuf ve; sb_init(&ve);
     if (m->is_variadic) {
-        for (int i = m->n_params; i < na && i < MAX_MPARAMS; i++) {
+        for (int i = m->n_params; i < na; i++) {
             if (i > m->n_params) { sb_puts(&vr, ", "); sb_puts(&ve, ", "); }
             sb_puts(&vr, args[i]); sb_puts(&ve, eargs[i]);
         }
@@ -237,12 +262,10 @@ static char *macro_subst(macro *m, char **args, int na)
             const char *q = b + 1; while (*q == ' ' || *q == '\t') q++;
             if (is_ident_start(*q)) {
                 const char *is = q; while (is_ident_cont(*q)) q++;
-                char id[256]; size_t l = q - is, cl = l < sizeof(id)-1 ? l : sizeof(id)-1;
-                memcpy(id, is, cl); id[cl] = 0;
-                int pi = -1;
-                for (int i = 0; i < m->n_params; i++) if (strcmp(id, m->params[i]) == 0) { pi = i; break; }
+                size_t l = q - is;
+                int pi = param_index(m, is, l);
                 if (pi >= 0)               { sb_stringize(&out, pi < na ? args[pi] : ""); b = q; prev_paste = 0; continue; }
-                if (m->is_variadic && IS_VA(id)) { sb_stringize(&out, vr.p);              b = q; prev_paste = 0; continue; }
+                if (m->is_variadic && IS_VA(is, l)) { sb_stringize(&out, vr.p);              b = q; prev_paste = 0; continue; }
             }
             sb_putc(&out, '#'); b++; continue;       // stray # -> literal
         }
@@ -265,15 +288,12 @@ static char *macro_subst(macro *m, char **args, int na)
         if (is_ident_start(*b)) {
             const char *s = b; while (is_ident_cont(*b)) b++;
             size_t l = b - s;
-            char id[256]; size_t cl = l < sizeof(id)-1 ? l : sizeof(id)-1;
-            memcpy(id, s, cl); id[cl] = 0;
             const char *q = b; while (*q == ' ' || *q == '\t') q++;
             int next_paste = (*q == '#' && q[1] == '#');
             int raw = prev_paste || next_paste;      // operands of ## are unexpanded
-            int pi = -1;
-            for (int i = 0; i < m->n_params; i++) if (strcmp(id, m->params[i]) == 0) { pi = i; break; }
+            int pi = param_index(m, s, l);
             if (pi >= 0)                     sb_puts(&out, pi < na ? (raw ? args[pi] : eargs[pi]) : "");
-            else if (m->is_variadic && IS_VA(id)) sb_puts(&out, raw ? vr.p : ve.p);
+            else if (m->is_variadic && IS_VA(s, l)) sb_puts(&out, raw ? vr.p : ve.p);
             else                             sb_putn(&out, s, l);
             prev_paste = 0;
             continue;
@@ -282,7 +302,8 @@ static char *macro_subst(macro *m, char **args, int na)
         sb_putc(&out, c);
         if (c != ' ' && c != '\t') prev_paste = 0;
     }
-    for (int i = 0; i < na && i < MAX_MPARAMS; i++) free(eargs[i]);
+    for (int i = 0; i < na; i++) free(eargs[i]);
+    free(eargs);
     free(vr.p); free(ve.p);
     return out.p;
 }
@@ -304,25 +325,25 @@ static char *expand_str(const char *src, int depth)
         if (is_ident_start(*p)) {
             const char *s = p; while (is_ident_cont(*p)) p++;
             size_t idlen = p - s;
-            char id[256]; size_t cl = idlen < sizeof(id)-1 ? idlen : sizeof(id)-1;
-            memcpy(id, s, cl); id[cl] = 0;
-            macro *m = macro_find(id);
+            macro *m = macro_find_n(s, idlen);
             if (m && m->is_func) {
                 const char *q = p; while (*q == ' ' || *q == '\t') q++;
                 if (*q == '(') {
                     q++;                               // consume '('
-                    char *args[MAX_MPARAMS]; int na = 0;
+                    char **args = NULL; int na = 0, args_cap = 0;
                     int dep = 1; const char *as = q;
                     while (*q && dep > 0) {
                         if (*q == '(') dep++;
                         else if (*q == ')') { dep--; if (dep == 0) break; }
                         else if (*q == ',' && dep == 1) {
-                            if (na < MAX_MPARAMS) args[na++] = dup_trim(as, q - as);
+                            XGROW(args, na, args_cap);
+                            args[na++] = dup_trim(as, q - as);
                             as = q + 1;
                         }
                         q++;
                     }
-                    if (na < MAX_MPARAMS) args[na++] = dup_trim(as, q - as);
+                    XGROW(args, na, args_cap);
+                    args[na++] = dup_trim(as, q - as);
                     if (*q == ')') q++;
                     // FOO() with a 0-param macro: drop the single empty arg
                     if (m->n_params == 0 && na == 1 && args[0][0] == 0) { free(args[0]); na = 0; }
@@ -331,6 +352,7 @@ static char *expand_str(const char *src, int depth)
                     sb_puts(&out, rec);
                     free(rec); free(subst);
                     for (int i = 0; i < na; i++) free(args[i]);
+                    free(args);
                     p = q;
                     continue;
                 }
@@ -367,11 +389,10 @@ static char *resolve_defined(const char *line)
                 while (*p == ' ' || *p == '\t') p++;
                 int paren = 0;
                 if (*p == '(') { paren = 1; p++; while (*p == ' ' || *p == '\t') p++; }
-                char nm[128]; int j = 0;
-                while (is_ident_cont(*p) && j < (int)sizeof(nm)-1) nm[j++] = *p++;
-                nm[j] = 0;
+                const char *nm = p; while (is_ident_cont(*p)) p++;
+                macro *dm = macro_find_n(nm, (size_t)(p - nm));
                 if (paren) { while (*p == ' ' || *p == '\t') p++; if (*p == ')') p++; }
-                sb_putc(&out, macro_find(nm) ? '1' : '0');
+                sb_putc(&out, dm ? '1' : '0');
             } else {
                 sb_putn(&out, s, p - s);
             }
@@ -475,12 +496,12 @@ static void pp_emit(const char *s, const char *file, int line, const char *src)
         if (at_bol) {
             if (map_n == map_cap) {
                 map_cap  = map_cap ? 2 * map_cap : 1024;
-                map_file = realloc(map_file, map_cap * sizeof *map_file);
-                map_line = realloc(map_line, map_cap * sizeof *map_line);
-                map_src  = realloc(map_src , map_cap * sizeof *map_src );
+                map_file = xrealloc(map_file, map_cap * sizeof *map_file);
+                map_line = xrealloc(map_line, map_cap * sizeof *map_line);
+                map_src  = xrealloc(map_src , map_cap * sizeof *map_src );
             }
             map_file[map_n] = file; map_line[map_n] = line;
-            map_src [map_n] = strdup(src);
+            map_src [map_n] = xstrdup(src);
             map_n++;
             at_bol = 0;
         }
@@ -493,32 +514,38 @@ static int depth = 0;
 
 static void process_file(const char *path);
 
-static FILE *open_include(const char *name, const char *ref_dir, char *resolved, size_t rsz)
+// the path an #include of `name` opens: in ref_dir first (the "..." form),
+// then in each -I folder; NULL if none has it
+static char *find_include(const char *name, const char *ref_dir)
 {
-    char path[2048];
-    if (ref_dir) {
-        snprintf(path, sizeof(path), "%s/%s", ref_dir, name);
+    for (int i = ref_dir ? -1 : 0; i < n_incdirs; i++) {
+        char *path = xasprintf("%s/%s", i < 0 ? ref_dir : incdirs[i], name);
         FILE *f = fopen(path, "r");
-        if (f) { snprintf(resolved, rsz, "%s", path); return f; }
-    }
-    for (int i = 0; i < n_incdirs; i++) {
-        snprintf(path, sizeof(path), "%s/%s", incdirs[i], name);
-        FILE *f = fopen(path, "r");
-        if (f) { snprintf(resolved, rsz, "%s", path); return f; }
+        if (f) { fclose(f); return path; }
+        free(path);
     }
     return NULL;
 }
 
-static void dirname_of(const char *path, char *out, size_t sz)
+// the folder of path ("." for a bare file name)
+static char *dirname_of(const char *path)
 {
     const char *last = path;
     for (const char *p = path; *p; p++) if (*p == '/' || *p == '\\') last = p;
-    if (last == path) snprintf(out, sz, ".");
-    else {
-        size_t L = last - path;
-        if (L >= sz) L = sz - 1;
-        memcpy(out, path, L); out[L] = 0;
+    return last == path ? xstrdup(".") : dupn(path, (size_t)(last - path));
+}
+
+// an #include of target: the file, unless a #pragma once closed it
+static void include_file(const char *target, const char *ref_dir)
+{
+    char *resolved = find_include(target, ref_dir);
+    if (!resolved) {
+        fprintf(stderr, ref_dir ? MSG_ERR_INCLUDE_QUOTE : MSG_ERR_INCLUDE_ANGLE, target);
+        exit(1);
     }
+    char *canon = path_canon(resolved);
+    if (!once_seen(canon)) process_file(resolved);
+    free(canon); free(resolved);
 }
 
 // drops the comments of a directive line, `// ...` and `/* ... */`, outside
@@ -554,17 +581,19 @@ static void process_file(const char *path)
     if (depth > 32) { fprintf(stderr, MSG_ERR_INCLUDE_DEEP); exit(1); }
     depth++;
 
-    char dir[2048]; dirname_of(path, dir, sizeof(dir));
+    char *dir = dirname_of(path);
 
     FILE *fp = fopen(path, "r");
     if (!fp) { fprintf(stderr, MSG_ERR_CANT_OPEN, path); exit(1); }
-    const char *file = strdup(path);     // the map keeps it
+    const char *file = xstrdup(path);     // the map keeps it
     int ln = 0;
 
-    char line[4096];
-    while (fgets(line, sizeof(line), fp)) {
+    char *raw, *line = NULL;
+    while ((raw = xgetline(fp)) != NULL) {          // a line of any length, ended
+        free(line);                                 // with '\n' even at the end of a
+        line = xasprintf("%s\n", raw); free(raw);   // file that has none
         ln++;
-        char *orig = strdup(line);
+        char *orig = xstrdup(line);
         char *t = trim_in_place(orig);
 
         if (t[0] == '#') {
@@ -576,27 +605,12 @@ static void process_file(const char *path)
             if (strncmp(p, "include", 7) == 0 && (p[7] == ' ' || p[7] == '\t' || p[7] == '"' || p[7] == '<')) {
                 if (!cond_active()) { free(orig); continue; }
                 p += 7; while (*p == ' ' || *p == '\t') p++;
-                char target[1024]; target[0] = 0;
-                if (*p == '"') {
-                    p++; int i = 0;
-                    while (*p && *p != '"' && i < (int)sizeof(target)-1) target[i++] = *p++;
-                    target[i] = 0;
-                    char resolved[2048];
-                    FILE *inc = open_include(target, dir, resolved, sizeof(resolved));
-                    if (!inc) { fprintf(stderr, MSG_ERR_INCLUDE_QUOTE, target); exit(1); }
-                    fclose(inc);
-                    char canon[2048]; path_canon(resolved, canon, sizeof(canon));
-                    if (!once_seen(canon)) process_file(resolved);
-                } else if (*p == '<') {
-                    p++; int i = 0;
-                    while (*p && *p != '>' && i < (int)sizeof(target)-1) target[i++] = *p++;
-                    target[i] = 0;
-                    char resolved[2048];
-                    FILE *inc = open_include(target, NULL, resolved, sizeof(resolved));
-                    if (!inc) { fprintf(stderr, MSG_ERR_INCLUDE_ANGLE, target); exit(1); }
-                    fclose(inc);
-                    char canon[2048]; path_canon(resolved, canon, sizeof(canon));
-                    if (!once_seen(canon)) process_file(resolved);
+                if (*p == '"' || *p == '<') {     // "..." looks in this file's folder first
+                    char close = *p == '"' ? '"' : '>';
+                    const char *t = ++p; while (*p && *p != close) p++;
+                    char *target = dupn(t, (size_t)(p - t));
+                    include_file(target, close == '"' ? dir : NULL);
+                    free(target);
                 }
                 free(orig); continue;
             }
@@ -605,13 +619,11 @@ static void process_file(const char *path)
             if (strncmp(p, "define", 6) == 0 && (p[6] == ' ' || p[6] == '\t')) {
                 if (!cond_active()) { free(orig); continue; }
                 p += 6; while (*p == ' ' || *p == '\t') p++;
-                char name[128]; int i = 0;
-                while ((isalnum((unsigned char)*p) || *p == '_') && i < (int)sizeof(name)-1) name[i++] = *p++;
-                name[i] = 0;
+                size_t n; char *name = take_ident(p, &n); p += n;
                 if (*p == '(') {
                     // function-like: '(' must be glued to the name (no space)
                     p++;
-                    char *params[MAX_MPARAMS]; int np = 0; int variadic = 0;
+                    char **params = NULL; int np = 0, params_cap = 0, variadic = 0;
                     while (*p && *p != ')') {
                         while (*p == ' ' || *p == '\t') p++;
                         if (*p == '.' && p[1] == '.' && p[2] == '.') {  // C99 `...`
@@ -619,10 +631,9 @@ static void process_file(const char *path)
                             while (*p == ' ' || *p == '\t') p++;
                             break;
                         }
-                        char pn[64]; int j = 0;
-                        while ((isalnum((unsigned char)*p) || *p == '_') && j < (int)sizeof(pn)-1) pn[j++] = *p++;
-                        pn[j] = 0;
-                        if (j > 0 && np < MAX_MPARAMS) params[np++] = strdup(pn);
+                        size_t pl; char *pn = take_ident(p, &pl); p += pl;
+                        if (pl > 0) { XGROW(params, np, params_cap); params[np++] = pn; }
+                        else free(pn);
                         while (*p == ' ' || *p == '\t') p++;
                         if (*p == ',') p++;
                     }
@@ -630,10 +641,12 @@ static void process_file(const char *path)
                     while (*p == ' ' || *p == '\t') p++;
                     macro_define_func(name, params, np, variadic, p);
                     for (int k = 0; k < np; k++) free(params[k]);
+                    free(params);
                 } else {
                     while (*p == ' ' || *p == '\t') p++;
                     macro_define(name, p);
                 }
+                free(name);
                 free(orig); continue;
             }
 
@@ -641,10 +654,9 @@ static void process_file(const char *path)
             if (strncmp(p, "undef", 5) == 0 && (p[5] == ' ' || p[5] == '\t')) {
                 if (!cond_active()) { free(orig); continue; }
                 p += 5; while (*p == ' ' || *p == '\t') p++;
-                char name[128]; int i = 0;
-                while ((isalnum((unsigned char)*p) || *p == '_') && i < (int)sizeof(name)-1) name[i++] = *p++;
-                name[i] = 0;
+                size_t n; char *name = take_ident(p, &n);
                 macro_undef(name);
+                free(name);
                 free(orig); continue;
             }
 
@@ -654,15 +666,10 @@ static void process_file(const char *path)
             if (is_ifdef || is_ifndef) {
                 p += is_ifndef ? 6 : 5;
                 while (*p == ' ' || *p == '\t') p++;
-                char name[128]; int i = 0;
-                while ((isalnum((unsigned char)*p) || *p == '_') && i < (int)sizeof(name)-1) name[i++] = *p++;
-                name[i] = 0;
-                int defined = macro_lookup(name) != NULL;
+                const char *nm = p; while (is_ident_cont(*p)) p++;
+                int defined = macro_find_n(nm, (size_t)(p - nm)) != NULL;
                 int active = is_ifndef ? !defined : defined;
-                if (cond_n >= MAX_COND) { fprintf(stderr, MSG_ERR_IFDEF_DEEP); exit(1); }
-                cond_stk[cond_n] = active;
-                cond_seen_true[cond_n] = active;
-                cond_n++;
+                cond_push(active);
                 free(orig); continue;
             }
 
@@ -670,10 +677,7 @@ static void process_file(const char *path)
             if (strncmp(p, "if", 2) == 0 && (p[2] == ' ' || p[2] == '\t' || p[2] == '(')) {
                 p += 2;
                 int active = eval_if(p);
-                if (cond_n >= MAX_COND) { fprintf(stderr, MSG_ERR_IF_DEEP); exit(1); }
-                cond_stk[cond_n] = active;
-                cond_seen_true[cond_n] = active;
-                cond_n++;
+                cond_push(active);
                 free(orig); continue;
             }
 
@@ -711,8 +715,9 @@ static void process_file(const char *path)
                 const char *q = p + 6; while (*q == ' ' || *q == '\t') q++;
                 if (strncmp(q, "once", 4) == 0 && (q[4] == 0 || isspace((unsigned char)q[4]))) {
                     if (cond_active()) {
-                        char canon[2048]; path_canon(path, canon, sizeof(canon));
+                        char *canon = path_canon(path);
                         once_mark(canon);
+                        free(canon);
                     }
                     free(orig); continue;          // don't emit `#pragma once`
                 }
@@ -744,6 +749,8 @@ static void process_file(const char *path)
         }
         free(orig);
     }
+    free(line);
+    free(dir);
 
     fclose(fp);
     depth--;
@@ -751,8 +758,8 @@ static void process_file(const char *path)
 
 void pp_add_incdir(const char *dir)
 {
-    if (n_incdirs < MAX_INCDIRS) incdirs[n_incdirs++] = dir;
-    else { fprintf(stderr, MSG_ERR_TOO_MANY_I); exit(1); }
+    XGROW(incdirs, n_incdirs, incdirs_cap);
+    incdirs[n_incdirs++] = dir;
 }
 
 const char *pp_run(const char *in_path)
