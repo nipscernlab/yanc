@@ -40,11 +40,18 @@ tags consumed by Aurora.
 - **cppcomp takes names of up to 1000 characters, as cmmcomp (#66).** A
   longer name stops it with a message that says its length and the limit;
   before, it went through unchecked, and a parameter name over about 250
-  characters was cut short without a word. cppcomp no longer keeps a name
-  in a buffer of fixed size, and every allocation goes through
-  `Compilers/common/xstr.c`, as in asmcomp and cmmcomp: its own copies of
-  `xstrdup` and `xcalloc`, in four files, are gone. Test `test97` takes
-  names of 1000 characters through the whole chain.
+  characters was cut short without a word, a function template of 140
+  crashed cppcomp, a function of 120 that returns a struct gave a wrong
+  result, and a `#define` or macro parameter over 127 or 63 was cut.
+  cppcomp no longer keeps a name in a buffer of fixed size, in the code
+  generator, the parser or the preprocessor, and every allocation goes
+  through `Compilers/common/xstr.c`, as in asmcomp and cmmcomp: its own
+  copies of `xstrdup` and `xcalloc`, in four files, are gone. The
+  preprocessor also reads a line of any length (one over 4095 characters
+  counted as two and moved every line number after it) and takes a header
+  with no newline at its end (its last line swallowed the next line of the
+  file that included it). Test `test97` takes names of 1000 characters
+  through the whole chain.
 
 ### Fixed
 - **The Verilator tests pass however the MSYS2 shell was opened.** An

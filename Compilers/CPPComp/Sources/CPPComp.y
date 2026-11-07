@@ -562,19 +562,22 @@ static char ct_type_code(type *t)
 // array sizes. The two passes are orthogonal on the proto's field types.
 static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *isval, int n)
 {
-    char suffix[64]; int p = 0;
-    p += snprintf(suffix + p, sizeof(suffix) - p, "_T");
-    for (int i = 0; i < n && p < (int)sizeof(suffix) - 16; i++) {
-        if (isval[i]) p += snprintf(suffix + p, sizeof(suffix) - p, "%s%d", i ? "_" : "", vals[i]);
-        else          suffix[p++] = ct_type_code(targs[i]);
+    // the instance's name: <Name>_T, then a type code or a value per argument
+    char *suffix = xstrdup("_T");
+    for (int i = 0; i < n; i++) {
+        char *more = isval[i] ? xasprintf("%s%s%d", suffix, i ? "_" : "", vals[i])
+                              : xasprintf("%s%c", suffix, ct_type_code(targs[i]));
+        free(suffix); suffix = more;
     }
-    suffix[p] = 0;
-    char tag[128]; snprintf(tag, sizeof(tag), "%s%s", ct->name, suffix);
+    char *tag = xasprintf("%s%s", ct->name, suffix);
 
     sym *ex = st_find(tag);
-    if (ex && ex->kind == SK_TYPEDEF) return ex->stype;   // already instantiated
+    if (ex && ex->kind == SK_TYPEDEF) {                    // already instantiated
+        free(suffix); free(tag);
+        return ex->stype;
+    }
 
-    type *c = t_make_struct(xstrdup(tag));
+    type *c = t_make_struct(tag);
     c->base_class = ct->proto->base_class;
     c->n_vtbl = ct->proto->n_vtbl;
     c->has_ctor = ct->proto->has_ctor;
@@ -588,11 +591,11 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
         t_struct_find(c, f->name)->inherited = f->inherited;
     }
     t_struct_seal(c, seal_bits());
-    st_add_tag(xstrdup(tag), c);
-    st_add_typedef(xstrdup(tag), c);
+    st_add_tag(tag, c);
+    st_add_typedef(tag, c);
 
     ctinst *ins = xcalloc(1, sizeof(ctinst));
-    ins->tmpl = ct; ins->concrete = c; ins->suffix = xstrdup(suffix);
+    ins->tmpl = ct; ins->concrete = c; ins->suffix = suffix;
     ins->nvals  = n; ins->ntargs = n;          // total parameter count; isval[] distinguishes
     for (int i = 0; i < n && i < 8; i++) {
         ins->vals[i]  = isval[i] ? vals[i]  : 0;
@@ -600,6 +603,7 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
     }
     g_unit->ctinsts = xrealloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
     g_unit->ctinsts[g_unit->n_ctinsts++] = ins;
+    free(tag);                     // the struct and the symbols keep their own copies
     return c;
 }
 

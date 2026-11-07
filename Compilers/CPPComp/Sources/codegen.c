@@ -362,9 +362,7 @@ static void emit_verbatim(const char *text) { ibuf_push(xstrdup(text), cg_line, 
 
 static char *fresh_label(const char *prefix)
 {
-    char buf[64];
-    snprintf(buf, sizeof(buf), "__L%s%d", prefix, ++label_n);
-    char *s = xmalloc(strlen(buf)+1); strcpy(s, buf); return s;
+    return xasprintf("__L%s%d", prefix, ++label_n);
 }
 
 // the local `x` of `f` is `f_x` in the .asm; a compiler temporary (its name
@@ -3775,9 +3773,10 @@ static void gen_stmt_inner(stmt *s)
             if (cur_func_ret && cur_func_ret->kind == TY_STRUCT) {
                 // write the struct into this function's static result block and
                 // return its address (a struct rvalue == its base address)
-                char rb[80]; snprintf(rb, sizeof(rb), "__ret_%s", cur_func_name);
+                char *rb = xasprintf("__ret_%s", cur_func_name);
                 copy_to_block(rb, s->e1, type_size_words(cur_func_ret));
                 emit("LEA %s", rb);
+                free(rb);
             } else if (cur_func_ret && cur_func_ret->is_ref) {
                 gen_addr(s->e1);   // reference return: yield the referent's address
             } else {
@@ -3817,11 +3816,10 @@ static void gen_stmt_inner(stmt *s)
         for (const char *p = t; ; p++) {
             if (*p == '\n' || *p == 0) {
                 int n = (int)(p - start);
-                if (n > 0) {
-                    char buf[512];
-                    if (n >= (int)sizeof(buf)) n = sizeof(buf) - 1;
-                    memcpy(buf, start, n); buf[n] = 0;
-                    emit_verbatim(buf);  // user inline asm: verbatim, never fused
+                if (n > 0) {             // user inline asm: verbatim, never fused
+                    char *line = xasprintf("%.*s", n, start);
+                    emit_verbatim(line);
+                    free(line);
                 }
                 if (*p == 0) break;
                 start = p + 1;
@@ -4217,14 +4215,20 @@ static void emit_function(func *f, unit *u, int is_main)
 
     if (is_main) {
         if (g_any_recursive) {                                           // init the call stack, kept
-            char lst[4096]; size_t at = 0;                               // only if a recursive
-            for (int i = 0; i < u->n_funcs && at < sizeof(lst) - 1; i++) // function is reached
-                if (u->funcs[i]->is_recursive)
-                    at += snprintf(lst + at, sizeof(lst) - at, " %s",
+            // only if a recursive function is reached. asm_share reads at most
+            // 255 labels on a #IFLIVE line: past that the block is always kept.
+            char *lst = xstrdup(""); int nrec = 0;
+            for (int i = 0; i < u->n_funcs; i++)
+                if (u->funcs[i]->is_recursive) {
+                    char *more = xasprintf("%s %s", lst,
                                    u->funcs[i]->asm_label ? u->funcs[i]->asm_label : u->funcs[i]->name);
-            if (at < sizeof(lst) - 1) emit("#IFLIVE%s", lst);            // (too many: always kept)
+                    free(lst); lst = more; nrec++;
+                }
+            int guarded = nrec < 255;
+            if (guarded) emit("#IFLIVE%s", lst);
+            free(lst);
             emit("LEA __cstk"); emit("SET __sp");
-            if (at < sizeof(lst) - 1) emit("#ENDLIVE");
+            if (guarded) emit("#ENDLIVE");
         }
         if (g_uses_heap) {                                               // init the heap, kept
             emit("#IFLIVE malloc");                                      // only if malloc is reached
@@ -4417,9 +4421,11 @@ static void emit_vtable_inits(void)
 
 static void write_prog_log(const char *tmp_dir)
 {
-    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", tmp_dir);
+    char *path = xasprintf("%s/prog_log.txt", tmp_dir);
     FILE *f = fopen(path, "w");
-    if (!f) { fprintf(stderr, MSG_ERR_TABLE_OPEN, path); return; }
+    if (!f) fprintf(stderr, MSG_ERR_TABLE_OPEN, path);
+    free(path);
+    if (!f) return;
     for (int i = 0; i < varlog_n; i++) {
         if (varlog[i].size > 0)
             fprintf(f, "%s %s %d %d\n", varlog[i].func, varlog[i].var, varlog[i].type_code, varlog[i].size);
@@ -4438,9 +4444,11 @@ static void write_prog_log(const char *tmp_dir)
 // (pp_source: its own file, macros not expanded), as cmmcomp shows the .cmm.
 static void write_src_lines(const char *tmp_dir, const char *src_text)
 {
-    char path[2048]; snprintf(path, sizeof(path), "%s/src_lines.txt", tmp_dir);
+    char *path = xasprintf("%s/src_lines.txt", tmp_dir);
     FILE *out = fopen(path, "w");
-    if (!out) { fprintf(stderr, MSG_ERR_TABLE_OPEN, path); return; }
+    if (!out) fprintf(stderr, MSG_ERR_TABLE_OPEN, path);
+    free(path);
+    if (!out) return;
 
     fputs("-1 INTERNAL\n"    , out);   // pc code -1: scaffolding (NOP, prologue)
     fputs("-2 void main();\n", out);   // pc code -2: entry call
@@ -4635,17 +4643,19 @@ static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int ne
     type *targs[8] = {0};
     deduce_targs(t, cargs, ncargs, targs);
     for (int i = 0; i < nexpl && i < 8; i++) targs[i] = expl[i];   // explicit args win
-    char lbl[96]; int k = sprintf(lbl, "%s_T", t->name);
-    for (int i = 0; i < t->n_tparams && k < (int)sizeof(lbl) - 1; i++)
-        lbl[k++] = type_code(targs[i]);          // label over ALL tparams (incl. explicit-only)
+    // the label: <name>_T and one type code per tparam (explicit-only ones too)
+    char *lbl = xmalloc(strlen(t->name) + 3 + (size_t)t->n_tparams);
+    int k = sprintf(lbl, "%s_T", t->name);
+    for (int i = 0; i < t->n_tparams; i++) lbl[k++] = type_code(targs[i]);
     lbl[k] = 0;
-    for (int i = 0; i < g_n_inst; i++) if (!strcmp(g_inst[i]->asm_label, lbl)) return g_inst[i];
+    for (int i = 0; i < g_n_inst; i++)
+        if (!strcmp(g_inst[i]->asm_label, lbl)) { free(lbl); return g_inst[i]; }
     func *f = xmalloc(sizeof(func)); *f = *t;
     f->n_tparams = 0;
     f->ret    = subst_type(t->ret, targs, t->n_tparams);
     f->params = clone_decl(t->params, targs, t->n_tparams);
     f->body   = clone_stmt(t->body, targs, t->n_tparams);
-    f->asm_label = xstrdup(lbl);
+    f->asm_label = lbl;
     if (g_n_inst < 256) g_inst[g_n_inst++] = f;
     return f;
 }
@@ -4990,16 +5000,16 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     // (INTERNAL): all program scaffolding before the first statement maps there.
     cg_line = -1;
     if (tmp_dir && u->prname) {
-        char path[2048];
-        snprintf(path, sizeof(path), "%s/pc_%s_mem.txt", tmp_dir, u->prname);
+        char *path = xasprintf("%s/pc_%s_mem.txt", tmp_dir, u->prname);
         f_line = fopen(path, "w");
+        free(path);
     }
 
     // file-scope symtab: globals + function signatures
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
-        { char who[512]; snprintf(who, sizeof(who), MSG_WHO_GLOBAL, d->name);
-          claim(NS_DATA, d->name, who, d->line); }
+        { char *who = xasprintf(MSG_WHO_GLOBAL, d->name);
+          claim(NS_DATA, d->name, who, d->line); free(who); }
         { sym *gs = st_add(SK_GLOBAL_VAR, d->name, d->name, d->dtype); gs->is_const = d->is_const; }
         int gw = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
         log_var("global", d->name, innermost_code(d->dtype), gw);
