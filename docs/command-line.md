@@ -53,7 +53,8 @@ initialisation) are looked for in the `.asm`'s own folder.
 The processor takes the source file's name: `filtro.cmm` makes the processor
 `filtro`, its Verilog `filtro.v` and its module `filtro`. The name has to be
 a valid Verilog module name (letters, digits and `_`, not starting with a
-digit, not a Verilog keyword); for another name, rename the file.
+digit or with `__`, not a Verilog keyword); for another name, rename the
+file.
 
 ## What lands where
 

@@ -1,0 +1,2 @@
+this line is a warning on purpose
+unknown #pragma yanc setting 'nosuch'

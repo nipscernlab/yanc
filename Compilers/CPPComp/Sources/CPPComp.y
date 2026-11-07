@@ -1568,15 +1568,38 @@ field_declarator:
 
 enum_specifier:
       KW_ENUM '{' { enum_counter = 0; } enum_list '}'              { $$ = t_int(); }
-    | KW_ENUM IDENT '{' { enum_counter = 0; } enum_list '}'        { $$ = t_int(); free($2); }
+    | KW_ENUM IDENT enum_base '{' {                     /* the enum's name is a type, as */
+          st_add_typedef($2, t_int()); enum_counter = 0;  /* in C++: `Color c = GREEN;` (#131) */
+      } enum_list '}'                                              { $$ = t_int(); free($2); }
     | KW_ENUM IDENT                                                { $$ = t_int(); free($2); }
-    | KW_ENUM KW_CLASS IDENT '{' { enum_counter = 0; cur_enum_prefix = $3; } enum_list '}' {
+    | KW_ENUM TYPEDEF_NAME                                         { $$ = t_int(); free($2); }
+    | KW_ENUM KW_CLASS IDENT enum_base '{' { enum_counter = 0; cur_enum_prefix = $3; } enum_list '}' {
           /* scoped enum: enumerators are E__name, accessed as E::name; E is a type */
           st_add_typedef($3, t_int());
           cur_enum_prefix = NULL;
           $$ = t_int(); free($3);
       }
     ;
+
+/* the underlying type, `enum E : int`: every enum is one word, so it is read
+   and dropped */
+enum_base:
+      /* empty */
+    | ':' enum_int_type
+    ;
+
+/* the integer types an enum may name as its base: int, unsigned long, a
+   typedef such as uint8_t (base_type would take a struct with its body, which
+   the enum's own '{' makes ambiguous). In a struct, `enum E : 3;` could also
+   be an unnamed bitfield: bison shifts, so it is read as a base, as
+   `class C : Base` already is. */
+enum_int_type:
+      enum_int_word
+    | TYPEDEF_NAME                        { free($1); }
+    | enum_int_type enum_int_word
+    ;
+
+enum_int_word: KW_INT | KW_CHAR | KW_SHORT | KW_LONG | KW_UNSIGNED | KW_SIGNED | KW_BOOL ;
 
 enum_list:
       enum_item
@@ -1588,9 +1611,11 @@ enum_item:
           char *nm = cur_enum_prefix ? mangle_method(cur_enum_prefix, $1) : xstrdup($1);
           st_add_enum(nm, enum_counter++); free(nm); free($1);
       }
-    | IDENT '=' INT_LIT {
+    | IDENT '=' conditional_expr {        /* any constant: -1, A + 1, 1 << 3 */
+          long v;
+          if (!const_eval($3, &v)) msg_error(yylineno, MSG_ERR_ENUM_CONST, $1);
           char *nm = cur_enum_prefix ? mangle_method(cur_enum_prefix, $1) : xstrdup($1);
-          enum_counter = $3; st_add_enum(nm, enum_counter++); free(nm); free($1);
+          enum_counter = v; st_add_enum(nm, enum_counter++); free(nm); free($1);
       }
     ;
 
@@ -1971,6 +1996,9 @@ param_list:
 
 non_empty_param_list:
       param_declarator                       { $$.head = $1; $$.n = 1; }
+    | non_empty_param_list ',' TOK_ELLIPSIS {
+          msg_error(yylineno, MSG_ERR_VARIADIC);
+      }
     | non_empty_param_list ',' param_declarator {
           decl *d = $1.head; while (d->next) d = d->next; d->next = $3;
           $$.head = $1.head; $$.n = $1.n + 1;

@@ -276,6 +276,14 @@ void msg_on_internal(void (*fn)(void));                // runs before msg_intern
     M("o rótulo do case tem que ser uma constante", \
       "a case label must be a constant")
 
+#define MSG_ERR_ENUM_CONST \
+    M("o valor de '%s' no enum tem que ser uma constante", \
+      "the value of '%s' in the enum must be a constant")
+
+#define MSG_ERR_VARIADIC \
+    M("função variádica (f(int n, ...)) não existe no C++ do YANC", \
+      "a variadic function (f(int n, ...)) does not exist in YANC's C++")
+
 #define MSG_ERR_TEMPLATE_ARG_CONST \
     M("o argumento do template tem que ser uma constante", \
       "template argument must be a constant")

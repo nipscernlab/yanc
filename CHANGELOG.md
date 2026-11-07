@@ -28,6 +28,18 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **cppcomp: enums as C++ has them, and `<limits>` on any float (#134).**
+  An enum's name is a type (`Color c = GREEN;`), a value may be any
+  constant (`= -1`, `= A + 1`), and an underlying type (`enum class E :
+  unsigned`) is read. A variadic function says so instead of "syntax
+  error". `numeric_limits<float>::max()` and `min()` are measured, not the
+  constants 1e30 and 1e-30, which a 16-bit float cannot hold: with `#pragma
+  yanc nubits 16` the header did not even assemble. `max()` and
+  `infinity()` are now the largest float, 1.4e45 at the default widths.
+  New tests cover what compiled and nothing ran (test108: `goto`,
+  `static_assert`, the casts, `##`, `__VA_ARGS__`, `#pragma once`,
+  `#warning`; test109: the `#pragma yanc` settings on a 16-bit processor;
+  test110: the enums) and eight refusals the manual promises.
 - **cppcomp tidied (#133).** One helper makes a compiler temporary
   (`new_temp_as`), one ranks how arguments fit an overload (`args_fit`),
   and `new` calls a constructor as every other object creation does. The

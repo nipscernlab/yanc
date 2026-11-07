@@ -87,7 +87,7 @@ See [Text on the keyboard and the screen](#text-on-the-keyboard-and-the-screen).
 | `double`, `long double` | the same 32-bit float, with a warning |
 | pointers, references | one word; a pointer counts in words, and `p + n` steps `n` elements of the type it points to |
 | arrays | up to 8 dimensions; `int t[N] "file.txt";` initialises one from a file, as in C± |
-| `enum`, `enum class` | the values are integer literals (`enum E { A = 1 }`); `= -1`, `= A + 1` and an underlying type (`enum class E : int`) are not accepted |
+| `enum`, `enum class` | the name is a type (`Color c = GREEN;`); a value is any integer constant (`= -1`, `= A + 1`, `= 1 << 3`); an underlying type (`enum class E : unsigned`) is accepted, and every enum is one word |
 | `struct`, `class`, `union`, bitfields | as in C++ |
 | `auto` | for a local with an initializer, and in a range-for |
 
@@ -190,7 +190,7 @@ size is fixed.
 | `<iostream>` | `std::cout`, `std::cin` on the screen and the keyboard: [below](#text-on-the-keyboard-and-the-screen) |
 | `<cstdio>` | `putchar`, `puts`, `fputs`, `fputc`, `putc`, `getchar`, `fgetc`, `getc`, `fgets`, with `stdin`, `stdout`, `stderr`: [below](#text-on-the-keyboard-and-the-screen) |
 | `<cstdint>`, `<cstddef>` | the integer types, `size_t`, `ptrdiff_t` |
-| `<limits>` | `std::numeric_limits<T>`, with `infinity()` = 1e30 |
+| `<limits>` | `std::numeric_limits<T>`; a float's `max()` and `min()` are measured, so they follow `nbmant` and `nbexpo` (1.4e45 and 1.2e-32 at the default widths), and `infinity()` is `max()` |
 | `<bit>` | `std::bit_cast` |
 
 There is no `<string>`, `<algorithm>`, `<memory>` or `<utility>`. A header
@@ -289,8 +289,8 @@ exist in C± only) are errors.
 Exceptions (`try`, `catch`, `throw`), `typeid` and RTTI, `friend`,
 `decltype`, multiple inheritance, variadic functions, lambdas inside a
 function or with captures, template specialization and default template
-arguments, `std::string`, file streams, `printf`, `enum` values that are not plain
-literals, and more than one source file (use `#include`). Most of these
-stop the compiler with "syntax error" at the line. GitHub issue #43 keeps
+arguments, `std::string`, file streams, `printf`, and more than one source
+file (use `#include`). Most of these stop the compiler with "syntax error"
+at the line; a variadic function has its own message. GitHub issue #43 keeps
 the list of the forms not accepted yet, and issue #31 the functions of
 C±'s library that C++ lacks (`fin`, `fout`, `sin` and the rest).

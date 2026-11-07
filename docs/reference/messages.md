@@ -229,6 +229,8 @@ value. What the common ones mean and how to get past them is in
 - error: array field size must be constant
 - error: array size must be a constant expression
 - error: a case label must be a constant
+- error: the value of '<name>' in the enum must be a constant
+- error: a variadic function (f(int n, ...)) does not exist in YANC's C++
 - error: template argument must be a constant
 - error: typedef cannot have an initializer
 - error: an array of function pointers takes a { ... } initializer
