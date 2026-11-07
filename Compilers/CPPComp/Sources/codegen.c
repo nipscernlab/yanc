@@ -44,6 +44,7 @@ static int   g_uses_u2f  = 0;    // an unsigned -> float conversion was emitted 
 static int   g_uses_f2u  = 0;    // a float -> unsigned conversion was emitted -> emit f2u
 static int   g_nbmant    = 23;   // mantissa width (a float is zero iff its mantissa is)
 static int   g_any_recursive = 0; // some function needs stack frames
+static int   g_tmpl_recursive = 0; // a recursive template: its instances, made later, need them
 static int   g_uses_heap = 0;    // malloc/free/new/delete used -> emit heap runtime
 #ifndef CFG_HEAPSZ
 #define CFG_HEAPSZ 2048
@@ -1290,9 +1291,14 @@ static void gen_addr(expr *e)
             else emit("LOD %s", s->asm_name);
             return;
         }
-        // frame local/param of a recursive function: address is __fp + offset
+        // frame local/param of a recursive function: address is __fp + offset;
+        // an array or struct parameter's slot holds the object's address, as
+        // its word does below (#128: f(P p, int n) read p from the slot itself)
         if (s->is_frame) {
             emit("LOD __fp"); if (s->frame_off) emit("ADD %d", s->frame_off);
+            if (s->kind == SK_PARAM && s->stype &&
+                (s->stype->kind == TY_ARRAY || s->stype->kind == TY_STRUCT))
+                emit("LDI 0");
             return;
         }
         // array/struct params hold the address of the object, so loading the
@@ -2120,9 +2126,16 @@ static void gen_expr(expr *e)
             emit("LOD %d", id);
             return;
         }
-        // frame scalar/pointer local: load mem[__fp + off] (arrays/structs in a
-        // recursive function are rejected at declaration time)
-        if (s->is_frame) { gen_addr(e); emit("LDI 0"); return; }
+        // frame scalar/pointer local: load mem[__fp + off] (array/struct locals
+        // of a recursive function are refused at their declaration). An array
+        // or struct parameter's value is its object's address: gen_addr's
+        if (s->is_frame) {
+            gen_addr(e);
+            if (!(s->kind == SK_PARAM && s->stype &&
+                  (s->stype->kind == TY_ARRAY || s->stype->kind == TY_STRUCT)))
+                emit("LDI 0");
+            return;
+        }
         if (s->stype && s->stype->kind == TY_ARRAY) {
             // array decays to base address
             if (s->kind == SK_PARAM) emit("LOD %s", s->asm_name);
@@ -4273,7 +4286,7 @@ static void emit_function(func *f, unit *u, int is_main)
                                    u->funcs[i]->asm_label ? u->funcs[i]->asm_label : u->funcs[i]->name);
                     free(lst); lst = more; nrec++;
                 }
-            int guarded = nrec < 255;
+            int guarded = nrec < 255 && !g_tmpl_recursive;
             if (guarded) emit("#IFLIVE%s", lst);
             free(lst);
             emit("LEA __cstk"); emit("SET __sp");
@@ -4523,7 +4536,50 @@ static void write_src_lines(const char *tmp_dir, const char *src_text)
 // Edges: a direct call F->G; an indirect (function-pointer) call in F adds an
 // edge F->A for EVERY address-taken function A (conservative: an fp could call
 // any of them). Non-recursive functions keep fast fixed-address locals.
-static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect)
+// the name a method has in its class (`sum` for Node__sum); a free function's
+// own name. Calls through an object or an operator are matched on it.
+static const char *short_name(const func *f)
+{
+    if (f->method_of && f->method_of->tag) {
+        size_t n = strlen(f->method_of->tag);
+        if (!strncmp(f->name, f->method_of->tag, n) && f->name[n] == '_' && f->name[n + 1] == '_')
+            return f->name + n + 2;
+    }
+    return f->name;
+}
+
+// an edge to every function of the unit named `name` (each overload), or,
+// with methods_only, to every method whose own name is `name` in any class:
+// a call through an object or an operator may reach any of them, and a
+// method marked recursive that is not only costs it a stack frame
+static int calls_named(unit *u, char *row, const char *name, int methods_only)
+{
+    int hit = 0;
+    if (!name) return 0;
+    for (int j = 0; j < u->n_funcs; j++) {
+        const func *g = u->funcs[j];
+        if (methods_only ? (g->method_of && !strcmp(short_name(g), name)) : !strcmp(g->name, name))
+            { row[j] = 1; hit = 1; }
+    }
+    return hit;
+}
+
+// a class object built or ended here: its constructors and its destructor
+static void calls_lifetime(unit *u, char *row, type *t)
+{
+    while (t && t->kind == TY_ARRAY) t = t->base;
+    if (!t || t->kind != TY_STRUCT || !t->tag) return;
+    for (int j = 0; j < u->n_funcs; j++) {
+        const func *g = u->funcs[j];
+        if (g->method_of == t && (!strcmp(short_name(g), "ctor") || !strcmp(short_name(g), "copyctor")
+                                  || !strcmp(short_name(g), "dtor")))
+            row[j] = 1;
+    }
+}
+
+// Every call a function body can make (#128: before, only a direct call to a
+// free function by name, and only the first overload of that name):
+static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect, const func *in)
 {
     if (!e) return;
     // `delete p` dispatches p's (possibly virtual) destructor — an indirect call
@@ -4531,39 +4587,83 @@ static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect)
     // tree dtor doing `delete child`). Treat it like an indirect call so such a
     // dtor is detected as recursive and gets a stack frame (its `this` must not
     // live at a fixed address that a nested dtor invocation would clobber).
-    if (e->kind == E_DELETE) { *indirect = 1; collect_calls_expr(e->a, u, row, indirect); return; }
+    if (e->kind == E_DELETE) { *indirect = 1; calls_named(u, row, "dtor", 1); }
     if (e->kind == E_CALL) {
         if (e->a && e->a->kind == E_IDENT) {
-            int hit = 0;
-            for (int j = 0; j < u->n_funcs; j++)
-                if (strcmp(u->funcs[j]->name, e->a->sval) == 0) { row[j] = 1; hit = 1; break; }
+            int hit = calls_named(u, row, e->a->sval, 0);          // every overload
+            if (in && in->method_of)                               // a sibling method, unqualified
+                hit |= calls_named(u, row, e->a->sval, 1);
             if (!hit && e->a->sval && strcmp(e->a->sval, "in") && strcmp(e->a->sval, "out")
                      && strcmp(e->a->sval, "toma") && strcmp(e->a->sval, "toma_sync") && !is_cade_name(e->a->sval))
                 *indirect = 1;                 // a variable holding a function id
+        } else if (e->a && (e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER)) {
+            calls_named(u, row, e->a->member, 1);                  // obj.m(), p->m()
+            *indirect = 1;                                         // a virtual m dispatches
+            collect_calls_expr(e->a->a, u, row, indirect, in);
         } else {
             *indirect = 1;
-            collect_calls_expr(e->a, u, row, indirect);
+            collect_calls_expr(e->a, u, row, indirect, in);
         }
-        for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect);
+        for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect, in);
         return;
     }
-    collect_calls_expr(e->a, u, row, indirect);
-    collect_calls_expr(e->b, u, row, indirect);
-    collect_calls_expr(e->c, u, row, indirect);
-    for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect);
+    // an operator a class overloads is a call to its method
+    if (e->kind == E_BINOP) {
+        calls_named(u, row, op_method_name(e->op), 1);
+        calls_named(u, row, op_compound_method_name(e->op), 1);
+    }
+    if (e->kind == E_UNOP)   calls_named(u, row, op_unary_method_name(e->op), 1);
+    if (e->kind == E_INDEX)  calls_named(u, row, "op_index", 1);
+    if (e->kind == E_ASSIGN) calls_named(u, row, "op_assign", 1);
+    if (e->kind == E_NEW || e->kind == E_TEMPOBJ || e->kind == E_COMPOUND) calls_lifetime(u, row, e->target_t);
+    collect_calls_expr(e->a, u, row, indirect, in);
+    collect_calls_expr(e->b, u, row, indirect, in);
+    collect_calls_expr(e->c, u, row, indirect, in);
+    for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect, in);
 }
 
-static void collect_calls_stmt(stmt *s, unit *u, char *row, int *indirect)
+static void collect_calls_stmt(stmt *s, unit *u, char *row, int *indirect, const func *in)
 {
     if (!s) return;
-    collect_calls_expr(s->e1, u, row, indirect);
-    collect_calls_expr(s->e2, u, row, indirect);
-    collect_calls_expr(s->e3, u, row, indirect);
-    collect_calls_stmt(s->body, u, row, indirect);
-    collect_calls_stmt(s->body2, u, row, indirect);
-    collect_calls_stmt(s->init_stmt, u, row, indirect);
-    for (int i = 0; i < s->n_items; i++) collect_calls_stmt(s->items[i], u, row, indirect);
-    for (decl *d = s->decls; d; d = d->next) collect_calls_expr(d->init, u, row, indirect);
+    collect_calls_expr(s->e1, u, row, indirect, in);
+    collect_calls_expr(s->e2, u, row, indirect, in);
+    collect_calls_expr(s->e3, u, row, indirect, in);
+    collect_calls_stmt(s->body, u, row, indirect, in);
+    collect_calls_stmt(s->body2, u, row, indirect, in);
+    collect_calls_stmt(s->init_stmt, u, row, indirect, in);
+    for (int i = 0; i < s->n_items; i++) collect_calls_stmt(s->items[i], u, row, indirect, in);
+    for (decl *d = s->decls; d; d = d->next) {
+        collect_calls_expr(d->init, u, row, indirect, in);
+        for (int i = 0; i < d->n_ctor_args; i++) collect_calls_expr(d->ctor_args[i], u, row, indirect, in);
+        calls_lifetime(u, row, d->dtype);                         // built here, ended at the block's end
+    }
+}
+
+// a body that calls `name`, as a plain call or through an object (obj.name(),
+// p->name()): how a template instance, made after analyze_recursion, learns
+// that it is recursive (#128)
+static int expr_calls(const expr *e, const char *name)
+{
+    if (!e) return 0;
+    if (e->kind == E_CALL && e->a &&
+        ((e->a->kind == E_IDENT && e->a->sval && !strcmp(e->a->sval, name)) ||
+         ((e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER) && e->a->member && !strcmp(e->a->member, name))))
+        return 1;
+    if (expr_calls(e->a, name) || expr_calls(e->b, name) || expr_calls(e->c, name)) return 1;
+    for (int i = 0; i < e->n_args; i++) if (expr_calls(e->args[i], name)) return 1;
+    return 0;
+}
+static int stmt_calls(const stmt *s, const char *name)
+{
+    if (!s) return 0;
+    if (expr_calls(s->e1, name) || expr_calls(s->e2, name) || expr_calls(s->e3, name)) return 1;
+    if (stmt_calls(s->body, name) || stmt_calls(s->body2, name) || stmt_calls(s->init_stmt, name)) return 1;
+    for (int i = 0; i < s->n_items; i++) if (stmt_calls(s->items[i], name)) return 1;
+    for (const decl *d = s->decls; d; d = d->next) {
+        if (expr_calls(d->init, name)) return 1;
+        for (int i = 0; i < d->n_ctor_args; i++) if (expr_calls(d->ctor_args[i], name)) return 1;
+    }
+    return 0;
 }
 
 static void analyze_recursion(unit *u)
@@ -4572,7 +4672,16 @@ static void analyze_recursion(unit *u)
     if (n <= 0) return;
     char *adj = xcalloc((size_t)n * n, 1);
     int  *ind = xcalloc(n, sizeof(int));
-    for (int i = 0; i < n; i++) collect_calls_stmt(u->funcs[i]->body, u, &adj[(size_t)i*n], &ind[i]);
+    for (int i = 0; i < n; i++) {
+        func *f = u->funcs[i];
+        collect_calls_stmt(f->body, u, &adj[(size_t)i*n], &ind[i], f);
+        // a constructor also constructs the members and the base, and a
+        // destructor ends them: the struct's fields are its lifetimes
+        if (f->method_of && (!strcmp(short_name(f), "ctor") || !strcmp(short_name(f), "copyctor")
+                             || !strcmp(short_name(f), "dtor")))
+            for (strct_field *fd = f->method_of->fields; fd; fd = fd->next)
+                calls_lifetime(u, &adj[(size_t)i*n], fd->ftype);
+    }
     for (int i = 0; i < n; i++) if (ind[i])
         for (int j = 0; j < n; j++)
             if (fp_id_of(u->funcs[j]->name) >= 0) adj[(size_t)i*n + j] = 1;
@@ -4705,6 +4814,7 @@ static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int ne
     f->ret    = subst_type(t->ret, targs, t->n_tparams);
     f->params = clone_decl(t->params, targs, t->n_tparams);
     f->body   = clone_stmt(t->body, targs, t->n_tparams);
+    f->is_recursive = stmt_calls(f->body, t->name);   // fact(n - 1) is this instance
     f->asm_label = lbl;
     { XGROW(g_inst, g_n_inst, g_inst_cap); g_inst[g_n_inst++] = f; }
     return f;
@@ -4733,6 +4843,7 @@ static void instantiate_ctmpl_methods(unit *u)
             f->params = clone_decl(src->params, ta, nta);
             if (f->params) f->params->dtype = t_ptr(ins->concrete);   // retype `this`
             f->body   = clone_stmt(src->body, ta, nta);
+            f->is_recursive = stmt_calls(f->body, src->name + plen);   // next->sum()
             char *nm  = cg_mangle_method(ins->concrete->tag, src->name + plen);
             f->name = nm; f->asm_label = nm;
             sym *s = st_add(SK_FUNC, nm, nm, f->ret);
@@ -5102,6 +5213,20 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     analyze_recursion(u);
     g_any_recursive = 0;
     for (int i = 0; i < u->n_funcs; i++) if (u->funcs[i]->is_recursive) g_any_recursive = 1;
+    // a template that calls itself: its instances are made while main is
+    // generated, after the call stack's setup is written, so it is set up
+    // whatever is reached (get_instance marks each instance, #128)
+    g_tmpl_recursive = 0;
+    for (int i = 0; i < u->n_templates; i++)
+        if (stmt_calls(u->templates[i]->body, u->templates[i]->name)) g_tmpl_recursive = 1;
+    for (int i = 0; i < u->n_ctmpls; i++) {
+        ctmpl *ct = u->ctmpls[i];
+        int plen = (int)strlen(ct->proto->tag) + 2;
+        for (int m = 0; m < ct->n_methods; m++)
+            if ((int)strlen(ct->methods[m]->name) > plen &&
+                stmt_calls(ct->methods[m]->body, ct->methods[m]->name + plen)) g_tmpl_recursive = 1;
+    }
+    if (g_tmpl_recursive) g_any_recursive = 1;
 
     emit_header(u);
     emit_global_arrays(u);
