@@ -519,7 +519,8 @@ same program and the prototype's `SAPHO/`, the option off and on:
 
 ### 7.5 Step 4b, the inner product (2026-10-25)
 
-The same prototype with `DOT` (decision 4): opcode 108, decoded as `LOD`
+The same prototype with `DOT` (decision 4): opcode 108 (taken since by the
+renumbering of `JNZ`, #78: a prototype built now takes the next free number), decoded as `LOD`
 (it reads N), waiting in place by `pc_self` as `TOM`/`CAD` do, and in
 `core.v` a controller (`arr_dot`) that reads a[k] on the array memory's
 port A and b[k] on port B, one pair per clock, into MAC A (W = 2M+8): first

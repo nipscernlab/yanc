@@ -6,6 +6,7 @@ Info: adding assembly macro for root square computation
 Info: 4 divisions, 5 words each for DIV/MOD and 4 for F_DIV (12 added)
 Info: 5 variables written and never read removed (7 instructions)
 Info: 3 instructions computing a value never read removed
+Info: 1 JIZ + JMP pairs made one JNZ each
 Info: 13 variables share 7 data words (6 saved)
 Heads up: global variable 'switch_exp' is never read, so it's out of the program and the waveform (#WAVE switch_exp keeps it).
 Heads up: global variable 'g' is never read, so it's out of the program and the waveform (#WAVE g keeps it).
@@ -14,7 +15,7 @@ Heads up: variable 'y' in function 'main' is never read, so it's out of the prog
 Heads up: variable 's' in function 'main' is never read, so it's out of the program and the waveform (#WAVE s, in the function, keeps it).
 Heads up: variable 'r' in function 'main' is never read, so it's out of the program and the waveform (#WAVE r, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 100 instructions and 22 variables were found
+Info: 99 instructions and 22 variables were found
 Info: ULA resource -> integer adder
 Info: ULA resource -> < operator for int
 Info: adding data output handling
@@ -125,48 +126,47 @@ lang C+-
 // 47: switch (k)
 58 LOD main_k
 59 ADD -3
-60 JIZ __sw_body_1_1
-61 JMP __sw_body_1_2
+60 JNZ __sw_body_1_2
 // 49: case 3: switch_exp = 1; break;
-62 LOD 1
-63 JMP __switch_end_1
+61 LOD 1
+62 JMP __switch_end_1
 // 52: out(0, sw_body_1_1);
-64 LOD sw_body_1_1
-65 OUT 0
+63 LOD sw_body_1_1
+64 OUT 0
 // 53: out(0, fim);
-66 LOD fim
-67 OUT 0
+65 LOD fim
+66 OUT 0
 // -3: END
-68 JMP fim
+67 JMP fim
 // library macros, no source line
-69 SET __sqrt_num
-70 F_ROT
-71 PSH
-72 F_DIV __sqrt_num
+68 SET __sqrt_num
+69 F_ROT
+70 PSH
+71 F_DIV __sqrt_num
+72 NOP
 73 NOP
-74 NOP
-75 F_QUO
-76 SF_ADD
-77 F_MLT 0.5
-78 PSH
-79 F_DIV __sqrt_num
+74 F_QUO
+75 SF_ADD
+76 F_MLT 0.5
+77 PSH
+78 F_DIV __sqrt_num
+79 NOP
 80 NOP
-81 NOP
-82 F_QUO
-83 SF_ADD
-84 F_MLT 0.5
-85 PSH
-86 F_DIV __sqrt_num
+81 F_QUO
+82 SF_ADD
+83 F_MLT 0.5
+84 PSH
+85 F_DIV __sqrt_num
+86 NOP
 87 NOP
-88 NOP
-89 F_QUO
-90 SF_ADD
-91 F_MLT 0.5
-92 PSH
-93 F_DIV __sqrt_num
+88 F_QUO
+89 SF_ADD
+90 F_MLT 0.5
+91 PSH
+92 F_DIV __sqrt_num
+93 NOP
 94 NOP
-95 NOP
-96 F_QUO
-97 SF_ADD
-98 F_MLT 0.5
-99 RET
+95 F_QUO
+96 SF_ADD
+97 F_MLT 0.5
+98 RET

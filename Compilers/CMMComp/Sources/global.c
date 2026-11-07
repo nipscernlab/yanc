@@ -283,6 +283,10 @@ void parse_end(char *d_proc)
 	int  tail = asm_tail(asm_file, pc_file);
 	if  (tail > 0) ectx.num_ins -= tail;
 
+	// JIZ x; JMP y; @x is JNZ y (#78): last, after every pass that removes instructions
+	int  jnz = asm_jnz(asm_file, pc_file);
+	if  (jnz > 0) ectx.num_ins -= jnz;
+
 	// variables that are never alive at the same time share a data word ------
 
 	asm_share(asm_file);

@@ -18,6 +18,25 @@ tags consumed by Aurora.
   DE10-Nano (top, PLL, `.qsf`, `.sdc`, a C++ program that writes a test
   card). Tested by `Scripts/hw/tb_adv7513text.sh` and the regress pass
   `ADV7513TEXT`; not yet run on the board (docs/design/adv7513-text.md).
+- **`JNZ`, jump if the accumulator is not zero (#78).** The bottom of a
+  loop tested at the bottom, `JIZ x; JMP y` with `x` right after the
+  `JMP`, is now one `JNZ y`: one word less, and one instruction less
+  executed on each turn.
+  cmmcomp and cppcomp write it as their last pass, and `SAPHO/core.v`
+  builds the jump only when the program uses it (parameter `JNZ`). In
+  the regression's C± programs, 158 pairs in 16 programs became a `JNZ`
+  (95 in `dirac_shapes`).
+
+### Changed
+- **Opcodes 18 and up moved one place.** `JNZ` takes 18, next to `JIZ`
+  (17), so the jumps stay together; `CAL` is now 19 and every opcode
+  after it is one more than before, up to `S_SRS` at 108. Take
+  `SAPHO/` and asmcomp from the same release: a `.mif` assembled by an
+  older asmcomp runs as a different program on this `SAPHO/`.
+- **Every mnemonic is three letters, with any prefix or suffix after an
+  underline** (`F_ADD`, `LDI_V`, `SET_P`). `Scripts/check_isa.py`
+  checks it on `Compilers/common/isa.tsv`; the table already followed
+  it.
 
 ### Fixed
 - **The Verilator tests pass however the MSYS2 shell was opened.** An

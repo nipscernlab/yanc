@@ -28,7 +28,7 @@ Info: ULA resource -> float-point divider (not recomended for high frequency opp
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> root-square approximation for float
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 19% of the Assembly Instruction Set
+Info: using 18% of the Assembly Instruction Set
 Info: using 27% of the ULA operations
 Sweet: the processor is good to go.
 ## variables

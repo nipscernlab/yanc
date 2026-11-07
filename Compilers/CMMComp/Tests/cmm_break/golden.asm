@@ -61,8 +61,7 @@ OUT 0
 LOD 1
 SET main_k
 ADD -1
-JIZ __sw_body_1_1
-JMP __sw_body_1_2
+JNZ __sw_body_1_2
 @__sw_body_1_1 LOD 0
 SET main_n
 @__Lwh6 LOD 2
@@ -85,8 +84,7 @@ OUT 0
 SET main_k
 @__Lwh7 LOD main_k
 ADD -1
-JIZ __sw_body_2_1
-JMP __sw_body_2_2
+JNZ __sw_body_2_2
 @__sw_body_2_1 LOD 61
 OUT 0
 JMP __switch_end_2

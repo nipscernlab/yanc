@@ -21,8 +21,7 @@ STI_V P 16
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld0e
-JMP __Ld0
+JNZ __Ld0
 @__Ld0e LOD -20
 SET __dk1_main
 @__Ld1 P_LOD 1000.0
@@ -30,8 +29,7 @@ STI_V P 20
 LOD __dk1_main
 ADD 5
 SET __dk1_main
-JIZ __Ld1e
-JMP __Ld1
+JNZ __Ld1
 @__Ld1e LOD -4
 SET __dk0_main
 @__Ld2 P_LOD 0.0
@@ -39,8 +37,7 @@ STI_V w 4
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld2e
-JMP __Ld2
+JNZ __Ld2
 @__Ld2e LOD 0
 SET main_j
 @__Lwh1top LOD_V x 2
@@ -92,8 +89,7 @@ OUT 0
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld3e
-JMP __Ld3
+JNZ __Ld3
 @__Ld3e LOD main_j
 ADD 1
 SET main_j
@@ -113,8 +109,7 @@ SF_ADD
 P_LOD __dk0_rls_update
 ADD 1
 SET __dk0_rls_update
-JIZ __Ld4e
-JMP __Ld4
+JNZ __Ld4
 @__Ld4e POP
 F_SU2 rls_update_d
 SET rls_update_e
@@ -138,8 +133,7 @@ SF_ADD
 P_LOD __dk1_rls_update
 ADD 1
 SET __dk1_rls_update
-JIZ __Ld6e
-JMP __Ld6
+JNZ __Ld6
 @__Ld6e POP
 STI_V rls_update_Px 4
 LOD __dd2_rls_update
@@ -148,8 +142,7 @@ SET __dd2_rls_update
 LOD __dk0_rls_update
 ADD 4
 SET __dk0_rls_update
-JIZ __Ld5e
-JMP __Ld5
+JNZ __Ld5
 @__Ld5e LOD x
 F_MLT rls_update_Px
 P_LOD -3
@@ -162,8 +155,7 @@ SF_ADD
 P_LOD __dk0_rls_update
 ADD 1
 SET __dk0_rls_update
-JIZ __Ld7e
-JMP __Ld7
+JNZ __Ld7
 @__Ld7e POP
 F_ADD 0.99
 F_DIV 1.0
@@ -181,8 +173,7 @@ STI_V rls_update_K 4
 LOD __dk0_rls_update
 ADD 1
 SET __dk0_rls_update
-JIZ __Ld8e
-JMP __Ld8
+JNZ __Ld8
 @__Ld8e LOD -4
 SET __dk0_rls_update
 @__Ld9 PSH
@@ -195,8 +186,7 @@ STI_V w 4
 LOD __dk0_rls_update
 ADD 1
 SET __dk0_rls_update
-JIZ __Ld9e
-JMP __Ld9
+JNZ __Ld9
 @__Ld9e LOD -4
 SET __dd3_rls_update
 LOD -16
@@ -217,16 +207,14 @@ STI_V P 20
 LOD __dk1_rls_update
 ADD 1
 SET __dk1_rls_update
-JIZ __Ld11e
-JMP __Ld11
+JNZ __Ld11
 @__Ld11e LOD __dd3_rls_update
 ADD 1
 SET __dd3_rls_update
 LOD __dk0_rls_update
 ADD 4
 SET __dk0_rls_update
-JIZ __Ld10e
-JMP __Ld10
+JNZ __Ld10
 @__Ld10e LOD -16
 SET __dk0_rls_update
 @__Ld12 PSH
@@ -236,6 +224,5 @@ STI_V P 16
 LOD __dk0_rls_update
 ADD 1
 SET __dk0_rls_update
-JIZ __Ld12e
-JMP __Ld12
+JNZ __Ld12
 @__Ld12e RET

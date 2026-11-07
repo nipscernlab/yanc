@@ -1,14 +1,15 @@
 ## messages
 Info: 26 assembly instructions generated
+Info: 3 JIZ + JMP pairs made one JNZ each
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 26 instructions and 5 variables were found
+Info: 23 instructions and 5 variables were found
 Info: adding data input handling
 Info: ULA resource -> < operator for int
 Info: adding data output handling
 Info: ULA resource -> > operator for int
 Info: ULA resource -> integer adder
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 7% of the Assembly Instruction Set
+Info: using 8% of the Assembly Instruction Set
 Info: using 8% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
@@ -22,30 +23,27 @@ lang C+-
 2 SET main_a
 // 16: if (a > 2) ; else out(0, 7);
 3 LES 2
-4 JIZ __Lif1else
-5 JMP __Lif1end
-6 LOD 7
-7 OUT 0
+4 JNZ __Lif1end
+5 LOD 7
+6 OUT 0
 // 17: while (a < 0) ;
-8 LOD main_a
-9 GRE 0
-10 JIZ __Lwh1end
-11 JMP __Lwh1
+7 LOD main_a
+8 GRE 0
+9 JNZ __Lwh1
 // 19: while (a < 0) { }
-12 LOD main_a
-13 GRE 0
-14 JIZ __Lwh2end
-15 JMP __Lwh2
+10 LOD main_a
+11 GRE 0
+12 JNZ __Lwh2
 // 20: for (a = 0; a < 2; a = a + 1) ;
-16 LOD 0
+13 LOD 0
+14 SET main_a
+15 LOD main_a
+16 ADD 1
 17 SET main_a
-18 LOD main_a
-19 ADD 1
-20 SET main_a
-21 LES 1
-22 JIZ __Lwh3
+18 LES 1
+19 JIZ __Lwh3
 // 21: out(0, a);
-23 LOD main_a
-24 OUT 0
+20 LOD main_a
+21 OUT 0
 // -3: END
-25 JMP fim
+22 JMP fim

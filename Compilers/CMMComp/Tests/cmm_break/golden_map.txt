@@ -1,14 +1,15 @@
 ## messages
 Info: 97 assembly instructions generated
+Info: 2 JIZ + JMP pairs made one JNZ each
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 97 instructions and 20 variables were found
+Info: 95 instructions and 20 variables were found
 Info: ULA resource -> ^ operator
 Info: adding data output handling
 Info: ULA resource -> integer adder
 Info: ULA resource -> < operator for int
 Info: ULA resource -> integer multiplier
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 7% of the Assembly Instruction Set
+Info: using 8% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
@@ -84,56 +85,54 @@ lang C+-
 54 SET main_k
 // 47: switch (k) {
 55 ADD -1
-56 JIZ __sw_body_1_1
-57 JMP __sw_body_1_2
+56 JNZ __sw_body_1_2
 // 49: for (n = 0; n < 5; n = n + 1) { if (n == 2) break; out(0, 50 + n); }
-58 LOD 0
-59 SET main_n
-60 LOD 2
-61 XOR main_n
-62 JIZ __Lwh6end
-63 LOD 50
-64 ADD main_n
-65 OUT 0
-66 LOD main_n
-67 ADD 1
-68 SET main_n
-69 LES 4
-70 JIZ __Lwh6
+57 LOD 0
+58 SET main_n
+59 LOD 2
+60 XOR main_n
+61 JIZ __Lwh6end
+62 LOD 50
+63 ADD main_n
+64 OUT 0
+65 LOD main_n
+66 ADD 1
+67 SET main_n
+68 LES 4
+69 JIZ __Lwh6
 // 50: out(0, 59);
-71 LOD 59
-72 OUT 0
+70 LOD 59
+71 OUT 0
 // 51: break;
-73 JMP __switch_end_1
+72 JMP __switch_end_1
 // 52: default: out(0, 99);
-74 LOD 99
-75 OUT 0
+73 LOD 99
+74 OUT 0
 // 57: for (k = 0; k < 3; k = k + 1)
-76 LOD 0
-77 SET main_k
+75 LOD 0
+76 SET main_k
 // 59: switch (k) {
-78 LOD main_k
-79 ADD -1
-80 JIZ __sw_body_2_1
-81 JMP __sw_body_2_2
+77 LOD main_k
+78 ADD -1
+79 JNZ __sw_body_2_2
 // 60: case 1: out(0, 61); break;
-82 LOD 61
-83 OUT 0
-84 JMP __switch_end_2
+80 LOD 61
+81 OUT 0
+82 JMP __switch_end_2
 // 61: default: out(0, 69);
-85 LOD 69
-86 OUT 0
+83 LOD 69
+84 OUT 0
 // 63: out(0, 70 + k);
-87 LOD 70
-88 ADD main_k
-89 OUT 0
+85 LOD 70
+86 ADD main_k
+87 OUT 0
 // 57: for (k = 0; k < 3; k = k + 1)
-90 LOD main_k
-91 ADD 1
-92 SET main_k
-93 LES 2
-94 JIZ __Lwh7
+88 LOD main_k
+89 ADD 1
+90 SET main_k
+91 LES 2
+92 JIZ __Lwh7
 // 26: while (1)
-95 JMP __Lwh1
+93 JMP __Lwh1
 // -3: END
-96 JMP fim
+94 JMP fim

@@ -37,7 +37,7 @@ Info: ULA resource -> > operator for float
 Info: ULA resource -> < operator for float
 Info: ULA resource -> ~ operator
 Info: stack depths from the program: SDEPTH 2, NDSTAC 7
-Info: using 60% of the Assembly Instruction Set
+Info: using 59% of the Assembly Instruction Set
 Info: using 72% of the ULA operations
 Sweet: the processor is good to go.
 ## variables

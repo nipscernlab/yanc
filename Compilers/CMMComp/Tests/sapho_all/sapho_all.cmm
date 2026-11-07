@@ -215,6 +215,13 @@ void main()
         t = (x * 2) - ((y * 2) - ((x * 3) - ((y * 3) - ((x * 4) - ((y * 4) - ((x * 5) - (y * 5)))))));
         if (t != 14 * (x - y)) s = s + 2048;
 
+        // ---- a loop tested at the bottom: its JIZ + JMP are one JNZ (#78).
+        // Checked, not summed, as the stacks above: three turns leave t = 3.
+        // The check shares the loop's line, so the line after it has no if:
+        // wave_map.py --selftest moves the JNZ there and must notice.
+        t = 0;
+        do { t = t + 1; } while (t < 3);  if (t != 3) s = s + 8192;
+
         // fold the 32 bits of s into 4 (four LEDs): XOR of its eight nibbles,
         // so a wrong bit anywhere in s changes what the LEDs show
         t = s ^ (s >> 16);

@@ -5,11 +5,12 @@ Heads up on line 79: variable 'iv' is int, but getting a float.
 Info: 453 assembly instructions generated
 Info: 6 divisions, 5 words each for DIV/MOD and 4 for F_DIV (24 added)
 Info: 2 variables written and never read removed (7 instructions)
+Info: 2 JIZ + JMP pairs made one JNZ each
 Info: 18 variables share 11 data words (7 saved)
 Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
 Heads up: variable 'k' in function 'main' is never read, so it's out of the program and the waveform (#WAVE k, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 470 instructions and 37 variables were found
+Info: 468 instructions and 37 variables were found
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> integer divider (not recomended for high frequency opperation)
 Info: ULA resource -> integer adder
@@ -28,7 +29,7 @@ Info: ULA resource -> & operator
 Info: ULA resource -> << operator
 Info: adding array handling
 Info: stack depths from the program: SDEPTH 2, NDSTAC 4
-Info: using 24% of the Assembly Instruction Set
+Info: using 25% of the Assembly Instruction Set
 Info: using 41% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
@@ -556,25 +557,23 @@ lang C+-
 447 LOD __dk0_main
 448 ADD 1
 449 SET __dk0_main
-450 JIZ __Ld0e
-451 JMP __Ld0
-452 LOD_V iv 1
-453 OUT 0
+450 JNZ __Ld0
+451 LOD_V iv 1
+452 OUT 0
 // 80: fv # q|0>; fout(0, fv[1]);
-454 LOD 0
-455 MLT main_q
-456 SET __dhi1_main
-457 LOD -3
-458 SET __dk0_main
-459 P_I2F_M __dhi1_main
-460 STI_V fv 3
-461 LOD __dk0_main
-462 ADD 1
-463 SET __dk0_main
-464 JIZ __Ld1e
-465 JMP __Ld1
-466 LOD_V fv 1
-467 F2I
-468 OUT 0
+453 LOD 0
+454 MLT main_q
+455 SET __dhi1_main
+456 LOD -3
+457 SET __dk0_main
+458 P_I2F_M __dhi1_main
+459 STI_V fv 3
+460 LOD __dk0_main
+461 ADD 1
+462 SET __dk0_main
+463 JNZ __Ld1
+464 LOD_V fv 1
+465 F2I
+466 OUT 0
 // -3: END
-469 JMP fim
+467 JMP fim

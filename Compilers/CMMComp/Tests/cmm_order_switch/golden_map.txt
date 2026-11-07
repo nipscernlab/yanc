@@ -4,9 +4,10 @@ Heads up on line 41: case index came out float! Gonna truncate it.
 Heads up on line 48: case index came out comp! Gonna truncate the real part.
 Info: 88 assembly instructions generated
 Info: 1 unreachable instructions removed
+Info: 2 JIZ + JMP pairs made one JNZ each
 Info: 8 variables share 2 data words (6 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 87 instructions and 32 variables were found
+Info: 85 instructions and 32 variables were found
 Info: ULA resource -> integer adder
 Info: ULA resource -> integer multiplier
 Info: adding array handling
@@ -17,7 +18,7 @@ Info: ULA resource -> < operator for int
 Info: ULA resource -> int to float converter
 Info: ULA resource -> == operator
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 15% of the Assembly Instruction Set
+Info: using 16% of the Assembly Instruction Set
 Info: using 19% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
@@ -104,39 +105,37 @@ lang C+-
 56 SET __switch_exp
 57 I2F_M __switch_exp
 58 EQU 1.5
-59 JIZ __sw_disp_2_1
-60 JMP __sw_body_2_1
-61 I2F_M __switch_exp
-62 EQU 2.0
-63 JIZ __sw_body_2_3
-64 JMP __sw_body_2_2
+59 JNZ __sw_body_2_1
+60 I2F_M __switch_exp
+61 EQU 2.0
+62 JIZ __sw_body_2_3
+63 JMP __sw_body_2_2
 // 42: case 1.5: out(0, 15); break;
-65 LOD 15
-66 OUT 0
-67 JMP __switch_end_2
+64 LOD 15
+65 OUT 0
+66 JMP __switch_end_2
 // 43: case 2.0: out(0, 2);  break;
-68 LOD 2
-69 OUT 0
-70 JMP __switch_end_2
+67 LOD 2
+68 OUT 0
+69 JMP __switch_end_2
 // 44: default:  out(0, 99);
-71 LOD 99
-72 OUT 0
+70 LOD 99
+71 OUT 0
 // 47: z = 3.5+1i;
-73 LOD 3.5
-74 SET main_z
-75 LOD 1.0
-76 SET main_z_i
+72 LOD 3.5
+73 SET main_z
+74 LOD 1.0
+75 SET main_z_i
 // 48: switch (z) {
-77 F2I_M main_z
-78 ADD -3
-79 JIZ __sw_body_3_1
-80 JMP __sw_body_3_2
+76 F2I_M main_z
+77 ADD -3
+78 JNZ __sw_body_3_2
 // 49: case 3:  out(0, 3); break;
-81 LOD 3
-82 OUT 0
-83 JMP fim
+79 LOD 3
+80 OUT 0
+81 JMP fim
 // 50: default: out(0, 99);
-84 LOD 99
-85 OUT 0
+82 LOD 99
+83 OUT 0
 // -3: END
-86 JMP fim
+84 JMP fim

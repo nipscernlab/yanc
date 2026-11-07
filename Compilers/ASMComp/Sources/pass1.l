@@ -66,6 +66,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    "JMP"   p1_opcode(19); // unconditional jump
    "JIZ"   p1_opcode(19); // jump if acc is zero
+   "JNZ"   p1_opcode(19); // jump if acc is not zero
 
    "CAL"   p1_opcode(19); // subroutine call
    "RET"   p1_opcode( 0); // subroutine return

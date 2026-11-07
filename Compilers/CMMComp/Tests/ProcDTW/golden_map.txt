@@ -17,7 +17,7 @@ Info: ULA resource -> && operator
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> integer absolute operation
 Info: stack depths from the program: SDEPTH 2, NDSTAC 4
-Info: using 18% of the Assembly Instruction Set
+Info: using 17% of the Assembly Instruction Set
 Info: using 22% of the ULA operations
 Heads up: input port 0 isn't being used. Burning hardware for nothing!
 Sweet: the processor is good to go.
