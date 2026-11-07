@@ -69,6 +69,27 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **cppcomp: programs that compiled and computed a wrong result (#128).**
+  The cppcomp audit of 2026-11-07 found them; each is now right and
+  checked by a test (test99 to test104):
+  - names: a local of an inner block or of a `for` that hides an outer
+    one, a parameter or local that hides a member, a member hidden by a
+    global in a method's fast paths, and an inlined method that saw the
+    caller's locals;
+  - recursion through a method, an operator, a constructor or a
+    destructor, a recursive function template, and a struct passed by
+    value to a recursive function;
+  - a virtual call inside the argument of another, a virtual call with a
+    default argument, an object copy that took the source's vtable,
+    `delete` of a null pointer, the destructors of an array of objects,
+    and a static local reached from a global initializer;
+  - `a[k++] += x`, a ternary of an int and a float, `&&` and `||` of a
+    float as a value, a `bool` compared with a negative int, the value of
+    an assignment to a bitfield, `case -1:`, a local declared after a
+    `return` in a `case`, and `~` of an unsigned value;
+  - a macro argument with a comma inside a string, an apostrophe in a
+    comment that stopped macro expansion, `vector<struct>::resize`,
+    `numeric_limits<int>` and `sqrt` of a large or small argument.
 - **The Verilator tests pass however the MSYS2 shell was opened.** An
   MSYS2 bash started from Git Bash has no `PATHEXT`, and without it the
   PowerShell that `Scripts/regress.sh` starts for them refused to run

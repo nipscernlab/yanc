@@ -934,7 +934,10 @@ static type *infer_type(expr *e)
     }
     case E_UNOP: {
         type *t = infer_type(e->a);
-        if (e->op == OP_LNOT || e->op == OP_BNOT) e->etype = t_int();
+        if (e->op == OP_LNOT) e->etype = t_int();
+        else if (e->op == OP_BNOT)                // ~ keeps an unsigned operand unsigned:
+            e->etype = (t && t->kind == TY_INT && !t->is_signed && !t->is_bool)
+                     ? t_uint() : t_int();        // ~0u >> 1 shifts in a zero (#128)
         else e->etype = t;
         break;
     }

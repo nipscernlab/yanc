@@ -1,28 +1,32 @@
 #pragma once
-// CPPComp <limits>: minimal `std::numeric_limits<T>` for the YANC float
-// target. YANC floats have NBMANT=23 / NBEXPO=8 bit-sizes matching IEEE-754
-// single but the encoding is NOT bit-compatible and there is NO infinity
-// pattern (no NaN, no inf). The closest substitute is the largest
-// representable finite float: max exponent + max mantissa.
-//
-// On IEEE-754 single this is ~3.4e38f; on YANC it is the same order of
-// magnitude (the exponent field has 8 bits with some bias). 1.0e30f is a
-// safely-representable, comfortably-large value that's strictly less than
-// the float max — the user code only needs it as an "initial worst case"
-// seed in optimization loops (e.g. `prev_obj = infinity()`).
-//
-// Note (see [[yanc-float-format]]): we cannot synthesize IEEE infinity bit
-// patterns; only float literals processed by the assembler are safe. So
-// `infinity()` here returns a finite-but-huge float, not a true infinity.
+// CPPComp <limits>: a minimal `std::numeric_limits<T>`. The SAPHO float is
+// not IEEE 754 (docs/floating-point.md): it has no infinity and no NaN, and
+// its magnitudes run from about 1.2e-32 to about 1.4e45 at the default
+// widths. infinity() and max() of a float return 1.0e30f, a finite value
+// far from the edge that serves as a "worst case" seed in a minimum search
+// (`best = numeric_limits<float>::infinity()`); min() returns 1.0e-30f.
 
+// An integer T is told from a float by (T)0.5f == (T)0, since there is no
+// template specialization: its limits come from the word, whatever #NUBITS
+// is (#128: max() of an int was the float 1e30 converted).
 namespace std {
     template<class T>
     class numeric_limits {
     public:
-        static T infinity() { return (T)1.0e30f; }   // largest practical seed
-        static T max()      { return (T)1.0e30f; }
-        static T min()      { return (T)1.0e-30f; }
-        static T epsilon()  { return (T)1.0e-7f; }
-        static T lowest()   { return (T)-1.0e30f; }
+        // (T)0.5f == (T)0 tells an integer T; it is written out in each method,
+        // since a static method here cannot call a sibling unqualified (#131)
+        static T infinity() { if ((T)0.5f == (T)0) return (T)0;   // as C++ gives an int
+                              return (T)1.0e30f; }                // no infinity: a large seed
+        static T max()      { if ((T)0.5f == (T)0) return (T)(~0u >> 1);       // 2^(NUBITS-1) - 1
+                              return (T)1.0e30f; }
+        static T min()      { if ((T)0.5f == (T)0) return (T)(~(~0u >> 1));    // -2^(NUBITS-1)
+                              return (T)1.0e-30f; }
+        static T lowest()   { if ((T)0.5f == (T)0) return (T)(~(~0u >> 1));
+                              return (T)-1.0e30f; }
+        // the gap between 1 and the next float: measured, so it follows #NBMANT
+        static T epsilon()  { if ((T)0.5f == (T)0) return (T)0;
+                              T e = (T)1.0f;
+                              while ((T)1.0f + e * (T)0.5f != (T)1.0f) e = e * (T)0.5f;
+                              return e; }
     };
 }

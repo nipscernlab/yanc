@@ -5,12 +5,18 @@ namespace std {
     inline float fabs(float x) { return x < 0.0f ? -x : x; }
     inline float fabsf(float x) { return x < 0.0f ? -x : x; }
 
-    // Newton-Raphson square root: g <- (g + x/g)/2. Converges quadratically.
+    // Square root: x = m * s * s with m in [1, 4), by powers of 4, then
+    // Newton-Raphson on m, g <- (g + m/g)/2, from 1.5, which six steps take to
+    // the last bit. Without the reduction, 24 steps from x fell short above
+    // about 1e13 and below 1e-13 (#128: sqrt(1e20) gave 5.96e12).
     inline float sqrt(float x) {
         if (x <= 0.0f) return 0.0f;
-        float g = x < 1.0f ? 1.0f : x;          // seed >= 1 so it converges down
-        for (int i = 0; i < 24; i = i + 1) g = 0.5f * (g + x / g);
-        return g;
+        float s = 1.0f;
+        while (x >= 4.0f) { x = x * 0.25f; s = s * 2.0f; }
+        while (x <  1.0f) { x = x * 4.0f;  s = s * 0.5f; }
+        float g = 1.5f;
+        for (int i = 0; i < 6; i = i + 1) g = 0.5f * (g + x / g);
+        return g * s;
     }
     inline float sqrtf(float x) { return sqrt(x); }
 
