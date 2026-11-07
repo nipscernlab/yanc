@@ -661,135 +661,88 @@ static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int ne
 static type *subst_type(type *t, type **a, int n);
 static void  deduce_targs(func *t, expr **cargs, int ncargs, type **targs);
 
-// ---- string-literal pre-scan (assigns each "..." a global label) -----------
+// ---- pre-scan ------------------------------------------------------------------
+// Before any code is emitted, one walk of every body and initializer that can
+// be emitted finds what the header has to declare: each string literal gets its
+// global label, each function used as a value (not as the callee of a direct
+// call) its dispatch slot, and new, delete, malloc or free bring the heap
+// runtime. A function template's instances are clones of its scanned body, so
+// they share its labels (#129: three walks, and none went into a template).
 
-static void scan_strings_stmt(stmt *s);
-static void scan_strings_initz(initz *z);
+static void prescan_stmt(stmt *s);
+static void prescan_initz(initz *z);
 
-static void scan_strings_expr(expr *e)
+static void prescan_expr(expr *e)
 {
     if (!e) return;
-    if (e->kind == E_STRING_LIT && !e->member) {
-        XGROW(strtab, strtab_n, strtab_cap);
-        e->member = xasprintf("__str%d", strtab_n);
-        strtab[strtab_n].label = e->member;
-        strtab[strtab_n].bytes = e->sval;
-        strtab[strtab_n].len   = e->slen;
-        strtab_n++;
-    }
-    if (e->kind == E_COMPOUND) { scan_strings_initz(e->cinit); return; }
-    scan_strings_expr(e->a);
-    scan_strings_expr(e->b);
-    scan_strings_expr(e->c);
-    for (int i = 0; i < e->n_args; i++) scan_strings_expr(e->args[i]);
-}
-
-static void scan_strings_initz(initz *z)
-{
-    if (!z) return;
-    if (!z->is_list) { scan_strings_expr(z->e); return; }
-    for (int i = 0; i < z->n; i++) scan_strings_initz(z->items[i]);
-}
-
-static void scan_strings_stmt(stmt *s)
-{
-    if (!s) return;
-    scan_strings_expr(s->e1); scan_strings_expr(s->e2); scan_strings_expr(s->e3);
-    scan_strings_stmt(s->body); scan_strings_stmt(s->body2); scan_strings_stmt(s->init_stmt);
-    for (int i = 0; i < s->n_items; i++) scan_strings_stmt(s->items[i]);
-    for (decl *d = s->decls; d; d = d->next) {
-        scan_strings_expr(d->init);
-        scan_strings_initz(d->binit);
-    }
-}
-
-// ---- address-taken-function pre-scan ---------------------------------------
-// Any function name used as a value (not as the immediate callee of a direct
-// call) is address-taken and needs a dispatch-table slot.
-
-static void scan_fp_stmt(stmt *s);
-static void scan_fp_initz(initz *z);
-
-static void scan_fp_expr(expr *e)
-{
-    if (!e) return;
-    if (e->kind == E_COMPOUND) { scan_fp_initz(e->cinit); return; }
-    if (e->kind == E_CALL) {
-        // a direct call's callee (a plain function name) is NOT address-taken
-        if (e->a && e->a->kind == E_IDENT) {
-            sym *s = st_find(e->a->sval);
-            if (!s || s->kind != SK_FUNC) scan_fp_expr(e->a);   // indirect target var
-        } else {
-            scan_fp_expr(e->a);
+    switch (e->kind) {
+    case E_STRING_LIT:
+        if (!e->member) {
+            XGROW(strtab, strtab_n, strtab_cap);
+            e->member = xasprintf("__str%d", strtab_n);
+            strtab[strtab_n].label = e->member;
+            strtab[strtab_n].bytes = e->sval;
+            strtab[strtab_n].len   = e->slen;
+            strtab_n++;
         }
-        for (int i = 0; i < e->n_args; i++) scan_fp_expr(e->args[i]);
+        break;
+    case E_COMPOUND:
+        prescan_initz(e->cinit);
         return;
-    }
-    if (e->kind == E_IDENT) {
+    case E_NEW: case E_DELETE:
+        g_uses_heap = 1;
+        break;
+    case E_IDENT: {
         sym *s = st_find(e->sval);
         if (s && s->kind == SK_FUNC) fp_add(e->sval);
         return;
     }
-    scan_fp_expr(e->a); scan_fp_expr(e->b); scan_fp_expr(e->c);
-    for (int i = 0; i < e->n_args; i++) scan_fp_expr(e->args[i]);
+    case E_CALL:
+        if (e->a && e->a->kind == E_IDENT) {             // a direct call's callee is not
+            sym *s = st_find(e->a->sval);                // address-taken; a variable is
+            if (!strcmp(e->a->sval, "malloc") || !strcmp(e->a->sval, "free")) g_uses_heap = 1;
+            if (!s || s->kind != SK_FUNC) prescan_expr(e->a);
+            prescan_expr(e->b); prescan_expr(e->c);
+            for (int i = 0; i < e->n_args; i++) prescan_expr(e->args[i]);
+            return;
+        }
+        break;
+    default:
+        break;
+    }
+    prescan_expr(e->a); prescan_expr(e->b); prescan_expr(e->c);
+    for (int i = 0; i < e->n_args; i++) prescan_expr(e->args[i]);
 }
 
-static void scan_fp_initz(initz *z)
+static void prescan_initz(initz *z)
 {
     if (!z) return;
-    if (!z->is_list) { scan_fp_expr(z->e); return; }
-    for (int i = 0; i < z->n; i++) scan_fp_initz(z->items[i]);
+    if (!z->is_list) { prescan_expr(z->e); return; }
+    for (int i = 0; i < z->n; i++) prescan_initz(z->items[i]);
 }
 
-static void scan_fp_stmt(stmt *s)
+static void prescan_decl(decl *d)
+{
+    prescan_expr(d->init);                               // a default argument too
+    prescan_initz(d->binit);
+    for (int i = 0; i < d->n_ctor_args; i++) prescan_expr(d->ctor_args[i]);
+}
+
+static void prescan_decls(decl *d) { for (; d; d = d->next) prescan_decl(d); }
+
+static void prescan_stmt(stmt *s)
 {
     if (!s) return;
-    scan_fp_expr(s->e1); scan_fp_expr(s->e2); scan_fp_expr(s->e3);
-    scan_fp_stmt(s->body); scan_fp_stmt(s->body2); scan_fp_stmt(s->init_stmt);
-    for (int i = 0; i < s->n_items; i++) scan_fp_stmt(s->items[i]);
-    for (decl *d = s->decls; d; d = d->next) {
-        scan_fp_expr(d->init);
-        scan_fp_initz(d->binit);
-    }
+    prescan_expr(s->e1); prescan_expr(s->e2); prescan_expr(s->e3);
+    prescan_stmt(s->body); prescan_stmt(s->body2); prescan_stmt(s->init_stmt);
+    for (int i = 0; i < s->n_items; i++) prescan_stmt(s->items[i]);
+    prescan_decls(s->decls);
 }
 
-// ---- heap-usage pre-scan ---------------------------------------------------
-// new/delete desugar to malloc/free calls, so spotting a call to either (in any
-// function body or initializer) tells us to declare __heap and emit the runtime
-// — this must be known before the header is emitted, hence a pre-pass.
-
-static void scan_heap_stmt(stmt *s);
-static void scan_heap_initz(initz *z);
-
-static void scan_heap_expr(expr *e)
+static void prescan_func(func *f)
 {
-    if (!e) return;
-    if (e->kind == E_COMPOUND) { scan_heap_initz(e->cinit); return; }
-    if (e->kind == E_NEW || e->kind == E_DELETE) g_uses_heap = 1;
-    if (e->kind == E_CALL && e->a && e->a->kind == E_IDENT &&
-        (!strcmp(e->a->sval, "malloc") || !strcmp(e->a->sval, "free")))
-        g_uses_heap = 1;
-    scan_heap_expr(e->a); scan_heap_expr(e->b); scan_heap_expr(e->c);
-    for (int i = 0; i < e->n_args; i++) scan_heap_expr(e->args[i]);
-}
-
-static void scan_heap_initz(initz *z)
-{
-    if (!z) return;
-    if (!z->is_list) { scan_heap_expr(z->e); return; }
-    for (int i = 0; i < z->n; i++) scan_heap_initz(z->items[i]);
-}
-
-static void scan_heap_stmt(stmt *s)
-{
-    if (!s) return;
-    scan_heap_expr(s->e1); scan_heap_expr(s->e2); scan_heap_expr(s->e3);
-    scan_heap_stmt(s->body); scan_heap_stmt(s->body2); scan_heap_stmt(s->init_stmt);
-    for (int i = 0; i < s->n_items; i++) scan_heap_stmt(s->items[i]);
-    for (decl *d = s->decls; d; d = d->next) {
-        scan_heap_expr(d->init);
-        scan_heap_initz(d->binit);
-    }
+    prescan_decls(f->params);
+    prescan_stmt(f->body);
 }
 
 // ---- static-local initializers ---------------------------------------------
@@ -2737,6 +2690,10 @@ static void gen_expr(expr *e)
     }
 
     case E_NEW: {
+        // a new that finds no memory ends the program, as an uncaught
+        // std::bad_alloc does (#129: it went on, and wrote the object from
+        // address 0): malloc of the words on the data stack, then JIZ fim
+        #define NEW_MALLOC() do { emit("PSH"); emit("CAL malloc"); emit("JIZ fim"); } while (0)
         type *t = e->target_t;
         int words = type_size_words(t);
         char *nd = e->a ? dtor_label(t) : NULL;
@@ -2746,7 +2703,7 @@ static void gen_expr(expr *e)
             gen_expr(e->a); emit("SET %s", nv);
             if (words != 1) { emit("PSH"); emit("LOD %d", words); emit("S_MLT"); }
             emit("ADD 1");
-            emit("PSH"); emit("CAL malloc"); emit("SET %s", pv);
+            NEW_MALLOC(); emit("SET %s", pv);
             emit("LOD %s", pv); emit("PSH"); emit("LOD %s", nv); emit("STI 0");   // mem[pv] = n
             emit("LOD %s", pv); emit("ADD 1"); emit("SET %s", pv);                 // the array
             objaddr a = { 1, pv };
@@ -2759,7 +2716,7 @@ static void gen_expr(expr *e)
             char *nv = new_temp("nwn"), *pv = new_temp("nwp");
             gen_expr(e->a); emit("SET %s", nv);
             if (words != 1) { emit("PSH"); emit("LOD %d", words); emit("S_MLT"); }
-            emit("PSH"); emit("CAL malloc"); emit("SET %s", pv);
+            NEW_MALLOC(); emit("SET %s", pv);
             objaddr a = { 1, pv };
             emit_construct_n(t, a, 0, nv);
             emit("LOD %s", pv);                                   // result: the array
@@ -2769,10 +2726,10 @@ static void gen_expr(expr *e)
         if (e->a) {                                   // new T[n] -> malloc(n*words)
             gen_expr(e->a);
             if (words != 1) { emit("PSH"); emit("LOD %d", words); emit("S_MLT"); }
-            emit("PSH"); emit("CAL malloc");
+            NEW_MALLOC();
             return;
         }
-        emit("LOD %d", words); emit("PSH"); emit("CAL malloc");   // acc = ptr
+        emit("LOD %d", words); NEW_MALLOC();                       // acc = ptr
         int poly = (t->kind == TY_STRUCT && t->n_vtbl > 0);
         func *cf = (t->kind == TY_STRUCT && t->tag) ? resolve_ctor(t, e->args, e->n_args) : NULL;
         int has_ctor = cf != NULL;
@@ -2796,6 +2753,7 @@ static void gen_expr(expr *e)
             emit("LOD __new_p");                                   // acc = result
         }
         return;
+        #undef NEW_MALLOC
     }
     case E_TEMPOBJ: {
         // T(args): build a hidden stack temporary, run its ctor, yield its address.
@@ -4421,6 +4379,11 @@ static void emit_function(func *f, unit *u, int is_main)
         emit("LOD __sp"); emit("PSH"); emit("LOD __fp"); emit("STI 0");      // mem[SP] = FP
         emit("LOD __sp"); emit("SET __fp");                                // FP = SP
         emit("LOD __sp"); emit("ADD %d", f->frame_size); emit("SET __sp"); // SP += frame_size
+        // a frame past the end of __cstk ends the program, as a stack overflow
+        // ends a C++ program (#129: it wrote over the memory next to it)
+        int ok = ++label_n;
+        emit("PSH"); emit("LOD __cstk_end"); emit("S_GRE");                // SP > end
+        emit("JIZ __Lcs%d", ok); emit("JMP fim"); emit("@__Lcs%d NOP", ok);
         for (int i = np - 1; i >= 0; i--) {                                // args -> frame slots
             sym *sy = st_find(plist[i]->name);
             emit("POP"); emit("SET __argv");
@@ -4449,6 +4412,7 @@ static void emit_function(func *f, unit *u, int is_main)
             if (guarded) emit("#IFLIVE%s", lst);
             free(lst);
             emit("LEA __cstk"); emit("SET __sp");
+            emit("ADD %d", CSTK_SIZE); emit("SET __cstk_end");
             if (guarded) emit("#ENDLIVE");
         }
         if (g_uses_heap) {                                               // init the heap, kept
@@ -5425,22 +5389,19 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
         claim_func(u->funcs[i]);
     instantiate_ctmpl_methods(u);   // clone class-template methods per instance
 
-    // pre-scan every function body and global initialiser for string literals
-    // and address-taken functions before any codegen emits a reference.
+    // pre-scan what can be emitted: the functions, the function templates,
+    // the class-template methods just cloned, and the global initializers
     g_uses_heap = 0;
     for (int i = 0; i < u->n_funcs; i++) {
-        scan_strings_stmt(u->funcs[i]->body);
-        scan_fp_stmt(u->funcs[i]->body);
-        scan_heap_stmt(u->funcs[i]->body);
+        prescan_func(u->funcs[i]);
         collect_statics_stmt(u->funcs[i]->asm_label, u->funcs[i]->body);
     }
-    for (int i = 0; i < u->n_globals; i++) {
-        scan_strings_expr(u->globals[i]->init);
-        scan_fp_expr(u->globals[i]->init);
-        scan_heap_expr(u->globals[i]->init);
-        scan_strings_initz(u->globals[i]->binit);
-        scan_fp_initz(u->globals[i]->binit);
+    for (int i = 0; i < u->n_templates; i++) prescan_func(u->templates[i]);
+    for (int i = 0; i < g_n_inst; i++) {
+        prescan_func(g_inst[i]);
+        collect_statics_stmt(g_inst[i]->asm_label, g_inst[i]->body);
     }
+    for (int i = 0; i < u->n_globals; i++) prescan_decl(u->globals[i]);
 
     register_poly_classes(u);   // address-take virtual impls before recursion analysis
 

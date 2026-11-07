@@ -118,6 +118,18 @@ tags consumed by Aurora.
   2 to 32, `nugain` a power of two. An array with a ninth dimension is
   an error instead of losing it (#129). Tested by test105 and fifteen
   NegTests.
+- **cppcomp: templates, a full heap and a deep recursion (#129).** A
+  string literal inside a template stopped cppcomp with an internal
+  error, and a `new` used only in a template left `malloc` without its
+  label, so the program hung: the pre-scans that find them skipped the
+  templates. They are one walk now, which goes into function templates
+  and class-template methods too. A `new` that finds the 2048-word heap
+  full ends the program, as an uncaught `std::bad_alloc` does, instead of
+  writing the object from address 0; so does a recursive call whose
+  frame does not fit the 1024-word call stack, instead of writing over
+  the memory next to it. Tested by test106 and test107. A recursion
+  deeper than 128 calls still overflows the processor's own return
+  stack, which nothing checks (#138).
 - **The Verilator tests pass however the MSYS2 shell was opened.** An
   MSYS2 bash started from Git Bash has no `PATHEXT`, and without it the
   PowerShell that `Scripts/regress.sh` starts for them refused to run
