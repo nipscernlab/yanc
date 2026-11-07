@@ -130,7 +130,13 @@ tests its mantissa, because SAPHO's zero float is not an all-zero word.
   apart (`f('A')` calls `f(char)`), `'A'` is a `char`, `true` a `bool`, and
   a reference parameter (`int&`) matches by the type it refers to.
 - **Recursion works**: a function that can reach itself gets a stack frame
-  on a 1024-word call stack, built only when the program has one. Inside a
+  on a 1024-word call stack, built only when the program has one. A call
+  whose frame does not fit ends the program, as a stack overflow ends a C++
+  program, instead of writing over the memory next to the stack. The
+  processor's own return and data stacks are 128 deep in a program with
+  recursion (`#pragma yanc sdepth` and `ndstac` give more), and a recursion
+  deeper than that overflows them with no check; the simulation shows it on
+  `fl_full` (GitHub issue #138). Inside a
   recursive function a local cannot be an array or a struct; the compiler
   says so. Functions that do not recurse keep their locals at fixed
   addresses, as in C±.
@@ -168,8 +174,10 @@ tests its mantissa, because SAPHO's zero float is not an all-zero word.
 
 `new`, `new[]`, `delete`, `delete[]`, and `malloc(nwords)` / `free(p)`
 (sizes in words). They share a heap of 2048 words, which the processor
-gets only when the program allocates; when it is full, the allocation
-returns 0. The heap's size is fixed.
+gets only when the program allocates. When it is full, `malloc` returns 0,
+and a `new` ends the program, as an uncaught `std::bad_alloc` does (`new`
+never returns 0, so code may use what it gives without a test). The heap's
+size is fixed.
 
 ## The standard headers
 
