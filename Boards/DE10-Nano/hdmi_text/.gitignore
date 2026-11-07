@@ -1,0 +1,12 @@
+# what yanc and Quartus write here
+hdmi_demo/
+db/
+incremental_db/
+output_files/
+qdb/
+tmp-clearbox/
+*.qws
+*.qdf
+*.rpt
+*.summary
+c5_pin_model_dump.txt
