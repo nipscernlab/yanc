@@ -21,7 +21,7 @@ Info: ULA resource -> base-2 exponent extraction of float
 Info: ULA resource -> integer negative operation
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 18% of the Assembly Instruction Set
+Info: using 17% of the Assembly Instruction Set
 Info: using 27% of the ULA operations
 Sweet: the processor is good to go.
 ## variables

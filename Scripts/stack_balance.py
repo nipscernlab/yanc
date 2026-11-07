@@ -75,7 +75,7 @@ def check(path):
             nxt = []
             if x["flow"] == "jmp":
                 nxt = [(lab[opnd], d)]
-            elif x["flow"] == "jz":
+            elif x["flow"] == "cond":
                 nxt = [(lab[opnd], d), (i + 1, d)]
             elif x["flow"] == "call":
                 _, cnet = walk(lab[opnd], stack_of_calls + (entry,))

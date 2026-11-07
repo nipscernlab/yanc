@@ -70,8 +70,7 @@ F2I_M main_f
 SET __switch_exp
 I2F_M __switch_exp
 EQU 1.5
-JIZ __sw_disp_2_1
-JMP __sw_body_2_1
+JNZ __sw_body_2_1
 @__sw_disp_2_1 I2F_M __switch_exp
 EQU 2.0
 JIZ __sw_body_2_3
@@ -90,8 +89,7 @@ LOD 1.0
 SET main_z_i
 F2I_M main_z
 ADD -3
-JIZ __sw_body_3_1
-JMP __sw_body_3_2
+JNZ __sw_body_3_2
 @__sw_body_3_1 LOD 3
 OUT 0
 JMP fim

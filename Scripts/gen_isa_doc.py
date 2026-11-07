@@ -67,7 +67,7 @@ OTHER = {
     'INN': 'a = input port x (int)', 'F_INN': 'a = input port x (float)',
     'P_INN': 'push a; a = input port x', 'PF_INN': 'push a; a = input port x (float)',
     'OUT': 'output port x = a',
-    'JMP': 'go to x', 'JIZ': 'go to x when a is 0', 'CAL': 'call x (the return address is pushed on the subroutine stack)',
+    'JMP': 'go to x', 'JIZ': 'go to x when a is 0', 'JNZ': 'go to x when a is not 0', 'CAL': 'call x (the return address is pushed on the subroutine stack)',
     'RET': 'return to the address the last CAL pushed',
     'TOM': 'offer a on link x; wait here until the partner takes it',
     'CAD': 'wait here until link x offers a word; a = that word',
@@ -81,15 +81,15 @@ OTHER = {
 FAMILIES = [
     ('Memory and stack',      lambda op: op <= 10),
     ('Input and output',      lambda op: 11 <= op <= 15),
-    ('Flow control and links', lambda op: 16 <= op <= 21),
-    ('Integer arithmetic',    lambda op: 22 <= op <= 31),
-    ('Float arithmetic',      lambda op: 32 <= op <= 45),
-    ('Integer unary',         lambda op: 46 <= op <= 63),
-    ('Float unary',           lambda op: 64 <= op <= 75),
-    ('Conversions',           lambda op: 76 <= op <= 81),
-    ('Logic',                 lambda op: 82 <= op <= 91),
-    ('Comparisons',           lambda op: 92 <= op <= 101),
-    ('Shifts',                lambda op: 102 <= op <= 107),
+    ('Flow control and links', lambda op: 16 <= op <= 22),
+    ('Integer arithmetic',    lambda op: 23 <= op <= 32),
+    ('Float arithmetic',      lambda op: 33 <= op <= 46),
+    ('Integer unary',         lambda op: 47 <= op <= 64),
+    ('Float unary',           lambda op: 65 <= op <= 76),
+    ('Conversions',           lambda op: 77 <= op <= 82),
+    ('Logic',                 lambda op: 83 <= op <= 92),
+    ('Comparisons',           lambda op: 93 <= op <= 102),
+    ('Shifts',                lambda op: 103 <= op <= 108),
 ]
 
 def read_rows(path):
@@ -151,7 +151,7 @@ def render(rows):
     w('uses. An integer division takes five words, `DIV k; NOP; NOP; NOP; QUO`')
     w('(also `MOD`/`REM`), a float division four, `F_DIV k; NOP; NOP; F_QUO`:')
     w('the compilers write it that way, because the dividers take five and four')
-    w('cycles. A `JIZ`, `LDI` or `ILI` right after an operation whose result goes through the')
+    w('cycles. A `JIZ`, `JNZ`, `LDI` or `ILI` right after an operation whose result goes through the')
     w('float normaliser (`F_ADD`, `F_SU1`, `F_SU2`, `F_MLT`, `F_DIV`/`F_QUO`,')
     w('`F_ROT`, `I2F`, `I2F_M`, `F_INN` and their stack, `P_` and `_V` forms) gets')
     w('a `NOP` before it: the jump and the read index take the arithmetic unit')
@@ -167,6 +167,9 @@ def render(rows):
     w('data word named (`r`, `w`, `base_r`/`base_w` an unknown word of the array')
     w('named, `addr` its address only).')
     w('')
+    lost = [r['mn'] for r in rows if not any(test(r['op']) for _, test in FAMILIES)]
+    if lost:                       # a row in no family would leave the page silently
+        sys.exit(f"gen_isa_doc: no family in FAMILIES for {', '.join(lost)}")
     for title, test in FAMILIES:
         fam = [r for r in rows if test(r['op'])]
         if not fam:

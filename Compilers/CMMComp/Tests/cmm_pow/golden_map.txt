@@ -20,7 +20,7 @@ Info: ULA resource -> float-point sign computation (standard library)
 Info: ULA resource -> float scale by a power of two (2^k)
 Info: ULA resource -> base-2 exponent extraction of float
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 20% of the Assembly Instruction Set
+Info: using 19% of the Assembly Instruction Set
 Info: using 30% of the ULA operations
 Sweet: the processor is good to go.
 ## variables

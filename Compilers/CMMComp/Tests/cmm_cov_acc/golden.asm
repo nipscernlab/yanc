@@ -463,8 +463,7 @@ STI_V iv 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld0e
-JMP __Ld0
+JNZ __Ld0
 @__Ld0e LOD_V iv 1
 OUT 0
 LOD 0
@@ -477,8 +476,7 @@ STI_V fv 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld1e
-JMP __Ld1
+JNZ __Ld1
 @__Ld1e LOD_V fv 1
 F2I
 OUT 0

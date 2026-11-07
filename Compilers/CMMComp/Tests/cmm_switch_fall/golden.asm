@@ -28,8 +28,7 @@ JIZ __sw_body_2_1
 ADD -1
 JIZ __sw_body_2_2
 ADD -1
-JIZ __sw_body_2_3
-JMP __sw_body_2_4
+JNZ __sw_body_2_4
 @__sw_body_2_1 @__sw_body_2_2 @__sw_body_2_3 LOD 33
 OUT 0
 JMP __switch_end_2

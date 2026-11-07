@@ -1,11 +1,12 @@
 ## messages
 Info: 44 assembly instructions generated
+Info: 3 JIZ + JMP pairs made one JNZ each
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 44 instructions and 16 variables were found
+Info: 41 instructions and 16 variables were found
 Info: ULA resource -> integer adder
 Info: adding data output handling
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
-Info: using 4% of the Assembly Instruction Set
+Info: using 5% of the Assembly Instruction Set
 Info: using 2% of the ULA operations
 Sweet: the processor is good to go.
 ## variables
@@ -30,47 +31,44 @@ lang C+-
 // 41: switch (b) {
 11 LOD main_b
 12 ADD -2
-13 JIZ __sw_body_2_1
-14 JMP __sw_body_2_2
+13 JNZ __sw_body_2_2
 // 42: case 2: out(0, 12); break;
-15 LOD 12
-16 OUT 0
-17 JMP __switch_end_2
+14 LOD 12
+15 OUT 0
+16 JMP __switch_end_2
 // 43: default: out(0, 19);
-18 LOD 19
-19 OUT 0
+17 LOD 19
+18 OUT 0
 // 45: out(0, 100); break;
-20 LOD 100
-21 OUT 0
-22 JMP __switch_end_1
+19 LOD 100
+20 OUT 0
+21 JMP __switch_end_1
 // 46: case 2: out(0, 200); break;
-23 LOD 200
-24 OUT 0
-25 JMP __switch_end_1
+22 LOD 200
+23 OUT 0
+24 JMP __switch_end_1
 // 47: default: out(0, 99);
-26 LOD 99
-27 OUT 0
+25 LOD 99
+26 OUT 0
 // 50: a = 5;
-28 LOD 5
-29 SET main_a
+27 LOD 5
+28 SET main_a
 // 51: switch (a) {
-30 ADD -5
-31 JIZ __sw_body_3_1
-32 JMP __sw_body_3_2
+29 ADD -5
+30 JNZ __sw_body_3_2
 // 53: if (a) break;    // exits the switch, NOT the while
-33 LOD main_a
-34 JIZ __Lif1else
-35 JMP __switch_end_3
+31 LOD main_a
+32 JNZ __switch_end_3
 // 54: out(0, 999);     // skipped
-36 LOD 999
-37 OUT 0
+33 LOD 999
+34 OUT 0
 // 55: default: out(0, 888);
-38 LOD 888
-39 OUT 0
+35 LOD 888
+36 OUT 0
 // 57: out(0, 50);              // runs every iteration
-40 LOD 50
-41 OUT 0
+37 LOD 50
+38 OUT 0
 // 36: while (1)
-42 JMP __Lwh1
+39 JMP __Lwh1
 // -3: END
-43 JMP fim
+40 JMP fim

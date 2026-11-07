@@ -20,7 +20,7 @@ Info: adding array handling
 Info: adding bit-reverse array index (FFT)
 Info: ULA resource -> float-point adder
 Info: stack depths from the program: SDEPTH 2, NDSTAC 4
-Info: using 18% of the Assembly Instruction Set
+Info: using 17% of the Assembly Instruction Set
 Info: using 16% of the ULA operations
 Sweet: the processor is good to go.
 ## variables

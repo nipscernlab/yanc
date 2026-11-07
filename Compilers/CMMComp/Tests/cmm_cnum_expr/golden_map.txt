@@ -14,7 +14,7 @@ Info: ULA resource -> < operator for int
 Info: ULA resource -> float to int converter
 Info: adding data output handling
 Info: stack depths from the program: SDEPTH 2, NDSTAC 3
-Info: using 17% of the Assembly Instruction Set
+Info: using 16% of the Assembly Instruction Set
 Info: using 19% of the ULA operations
 Sweet: the processor is good to go.
 ## variables

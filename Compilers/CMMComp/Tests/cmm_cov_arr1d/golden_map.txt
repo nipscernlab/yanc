@@ -114,7 +114,7 @@ Info: ULA resource -> float-point multiplier
 Info: ULA resource -> int to float converter
 Info: adding bit-reverse array index (FFT)
 Info: stack depths from the program: SDEPTH 2, NDSTAC 4
-Info: using 20% of the Assembly Instruction Set
+Info: using 19% of the Assembly Instruction Set
 Info: using 13% of the ULA operations
 Sweet: the processor is good to go.
 ## variables

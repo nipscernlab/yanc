@@ -80,8 +80,7 @@ SET __dd11_main
 LOD __dk2_main
 ADD 1
 SET __dk2_main
-JIZ __Ld2e
-JMP __Ld2
+JNZ __Ld2
 @__Ld2e POP
 P_LOD __dk1_main
 LDI_V Q 3
@@ -103,8 +102,7 @@ SET __dd12_main
 LOD __dk3_main
 ADD 1
 SET __dk3_main
-JIZ __Ld3e
-JMP __Ld3
+JNZ __Ld3
 @__Ld3e POP
 SF_ADD
 P_LOD __dk1_main
@@ -127,8 +125,7 @@ SET __dd13_main
 LOD __dk4_main
 ADD 1
 SET __dk4_main
-JIZ __Ld4e
-JMP __Ld4
+JNZ __Ld4
 @__Ld4e POP
 SF_ADD
 P_LOD __dk1_main
@@ -151,24 +148,21 @@ SET __dd14_main
 LOD __dk5_main
 ADD 1
 SET __dk5_main
-JIZ __Ld5e
-JMP __Ld5
+JNZ __Ld5
 @__Ld5e POP
 SF_ADD
 STI_V main_C 12
 LOD __dk1_main
 ADD 1
 SET __dk1_main
-JIZ __Ld1e
-JMP __Ld1
+JNZ __Ld1
 @__Ld1e LOD __dd10_main
 ADD 3
 SET __dd10_main
 LOD __dk0_main
 ADD 4
 SET __dk0_main
-JIZ __Ld0e
-JMP __Ld0
+JNZ __Ld0
 @__Ld0e LOD 0
 SET main_r
 @__Lwh2 LOD 0

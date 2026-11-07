@@ -56,8 +56,8 @@ the top level.
 
 ## 3. Instructions
 
-`TOM k` and `CAD k` (opcodes 20 and 21, unchanged): the operand is the link
-number. Each is still a jump to itself until link k lets it through.
+`TOM k` and `CAD k` (opcodes 20 and 21 then, 21 and 22 since `JNZ` took 18,
+#78): the operand is the link number. Each is still a jump to itself until link k lets it through.
 
 **Fact:** today the operand is the instruction's own address and the
 prefetch uses it as the jump target (`core.v`, `instr_fetch`: `instr_addr =

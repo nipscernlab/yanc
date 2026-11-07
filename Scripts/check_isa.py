@@ -15,7 +15,7 @@ literal, which is the part that stays true when the HDL is edited:
   2. with the same opcode and the same operand class,
   3. the opcodes form a gap-free range starting at 0,
   4. mnemonics that share an opcode differ only in operand class,
-  5. core.v's OP_JMP/OP_JIZ/OP_CAL/OP_RET are the table's JMP/JIZ/CAL/RET,
+  5. core.v's OP_JMP/OP_JIZ/OP_JNZ/OP_CAL/OP_RET/OP_TOM/OP_CAD are the table's,
   6. every row's effect columns follow the naming convention (prefix P_/PF_
      pushes, S_/SF_ pops, suffix _M reads the operand from memory, _V is its
      base with a constant offset) and agree with the operand class,
@@ -24,7 +24,10 @@ literal, which is the part that stays true when the HDL is edited:
   8. every row of instr_dec.v's decode table (`generate if ((NAME) != 0)`) carries its
      mnemonic's opcode, and every decoded mnemonic of the table has a row,
   9. asmcomp's usage totals (ISA_PARAMS, ULA_BLOCKS in opcodes.c) are the
-     number of opcode parameters in ASMComp.l and of ALU blocks in opcodes.c.
+     number of opcode parameters in ASMComp.l and of ALU blocks in opcodes.c,
+ 10. every mnemonic is a three-character name, with at most a prefix
+     (P_, F_, PF_, S_, SF_) and a suffix (_M, _V, _P), each after or before an
+     underscore: JIZ, F_ADD, P_NEG_M, SF_MLT, LDI_V.
 
 It does NOT verify what each row of instr_dec.v does (its ALU operation and
 control lines) nor ula.v: that is execution, the instruction-set simulator of
@@ -40,7 +43,9 @@ CLASS_OF_STATE = {0: 'none', 18: 'data', 19: 'code', 20: 'in',
                   21: 'out', 22: 'offset', 24: 'lea',
                   28: 'data',   # 28: LDI/ILI/STI/ISI, a data name or a raw base number
                   29: 'link'}   # 29: TOM/CAD, the link number
-FLOW = ('JMP', 'JIZ', 'CAL', 'RET', 'TOM', 'CAD')
+FLOW = ('JMP', 'JIZ', 'JNZ', 'CAL', 'RET', 'TOM', 'CAD')
+NAME_PREFIX = ('P', 'F', 'PF', 'S', 'SF')   # rule 10: what may stand before the core
+NAME_SUFFIX = ('M', 'V', 'P')               # and after it (SET_P: SET and POP)
 
 
 effects = {}          # mnemonic -> (acc, stack, opnd, flow, io), filled by read_table
@@ -101,7 +106,8 @@ IRREGULAR = {
     'PF_INN': ('rw', 'push', '-', '-', 'in'),
     'OUT':   ('r', '-', '-', '-', 'out'),
     'JMP':   ('-', '-', '-', 'jmp', '-'),
-    'JIZ':   ('r', '-', '-', 'jz', '-'),
+    'JIZ':   ('r', '-', '-', 'cond', '-'),
+    'JNZ':   ('r', '-', '-', 'cond', '-'),
     'CAL':   ('-', '-', '-', 'call', '-'),
     'RET':   ('-', '-', '-', 'ret', '-'),
     'NOP':   ('-', '-', '-', '-', '-'),
@@ -180,7 +186,7 @@ def read_lexer(path):
 def read_core_flow(path):
     """core.v: its flow-control opcode localparams, name -> value."""
     text = open(path, encoding='utf-8', errors='replace').read()
-    return {m.group(1): int(m.group(2)) for m in re.finditer(r"\bOP_(JMP|JIZ|CAL|RET|TOM|CAD)\s*=\s*(\d+)", text)}
+    return {m.group(1): int(m.group(2)) for m in re.finditer(r"\bOP_(JMP|JIZ|JNZ|CAL|RET|TOM|CAD)\s*=\s*(\d+)", text)}
 
 
 # a row of instr_dec.v: generate if ((NAME) != 0) ... (opcode == 7'dN) ? {6'dALU, ...}
@@ -248,9 +254,12 @@ def main():
             bad.append(f'the table is missing {m}')
         elif got.get(m) != table[m][0]:
             bad.append(f'core.v has OP_{m} = {got.get(m)}, the table puts {m} at {table[m][0]}')
-    for m in FLOW:
-        if m in table and table[m][0] >= 32:
-            bad.append(f'{m} is opcode {table[m][0]}: keep flow control below 32')
+    # an opcode must fit the 7 bits of the instruction word (NBITS_OPC in
+    # asmcomp's eval.c, NBOPCO in SAPHO/): core.v compares the flow opcodes
+    # NBOPCO bits wide, so any number that fits is safe there
+    for m, (op, _) in table.items():
+        if op >= 128:
+            bad.append(f'{m} is opcode {op}: it does not fit the 7-bit opcode field')
 
     # 8: instr_dec.v's decode table
     rows = read_decoder(dec_p)
@@ -345,6 +354,18 @@ def main():
             bad.append(f'{mn}: in ASMComp.l but not in pass1.l (the first pass would not count it)')
         for mn in sorted(app_mn - asm_mn):
             bad.append(f'{mn}: in pass1.l but not in ASMComp.l')
+
+    # 10: three characters at the core of every name
+    for mn in sorted(table):
+        parts = mn.split('_')
+        while len(parts) > 1 and parts[0] in NAME_PREFIX:
+            parts = parts[1:]
+        while len(parts) > 1 and parts[-1] in NAME_SUFFIX:
+            parts = parts[:-1]
+        if len(parts) != 1 or not re.fullmatch(r'[A-Z][A-Z0-9]{2}', parts[0]):
+            bad.append(f'{mn}: a mnemonic is three characters, with only the '
+                       f'prefixes {"/".join(NAME_PREFIX)} and the suffixes '
+                       f'{"/".join(NAME_SUFFIX)} around them')
 
     # 9: the totals asmcomp's usage report divides by
     opc_p = os.path.join(root, 'Compilers', 'ASMComp', 'Sources', 'opcodes.c')

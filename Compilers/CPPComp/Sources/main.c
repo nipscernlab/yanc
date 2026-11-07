@@ -185,11 +185,15 @@ int main(int argc, char **argv)
         // an argument the called function never reads is not computed
         int noarg = asm_callarg(outp, pc);
         if (noarg > 0) lower_num_ins(tmp_dir, noarg);
+        // JIZ x; JMP y; @x is JNZ y (#78): last, after every pass that removes instructions
+        int jnz = asm_jnz(outp, pc);
+        if (jnz > 0) lower_num_ins(tmp_dir, jnz);
     } else {
         asm_reach(outp, NULL);
         asm_divseq(outp, NULL);
         asm_unread(outp, NULL, NULL, NULL);
         asm_callarg(outp, NULL);
+        asm_jnz(outp, NULL);
     }
 
     // scalars never alive together share one data word (#SHARE lines ahead of

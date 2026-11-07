@@ -272,7 +272,7 @@ class Program:
                     bad.append(("order", a, f"line {s} after line {prev}"))
                 if s in seen and prev != s and not back_ok and self.start(prev) > s:
                     bad.append(("together", a, f"line {s} again after line {prev}"))
-                if mn in ("JMP", "JIZ"):
+                if mn in ("JMP", "JIZ", "JNZ"):
                     for pre, kw in JUMP_FAMILY:
                         if arg.startswith(pre):
                             if not re.search(r"\b(" + kw + r"|break|continue|if|switch|case|default)\b", st):
@@ -280,7 +280,7 @@ class Program:
                             break
             prev = s
             seen.add(s)
-            if mn in ("JMP", "JIZ", "RET", "CAL"):
+            if mn in ("JMP", "JIZ", "JNZ", "RET", "CAL"):
                 prev, seen = None, set()
         return bad
 
@@ -335,7 +335,7 @@ def selftest(prog):
                 if edge:
                     m[a] = g(s, step)
             cases.append((f"the {which} instruction of every line on {way}", m))
-        for mn in ("LOD", "SET", "OUT", "JMP", "JIZ", "CAL"):
+        for mn in ("LOD", "SET", "OUT", "JMP", "JIZ", "JNZ", "CAL"):
             m = [g(s, step) if s > 0 and prog.trad[a].split()[0] == mn else s for a, s in enumerate(line)]
             cases.append((f"every {mn} on {way}", m))
     mid = n // 2

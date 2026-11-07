@@ -130,8 +130,7 @@ ADD main_k
 SET main_s
 @__Lwh5cont LOD main_k
 GRE 4
-JIZ __Lwh5end
-JMP __Lwh5
+JNZ __Lwh5
 @__Lwh5end LOD main_s
 OUT 0
 LOD 3
@@ -228,8 +227,7 @@ ADD main_k
 SET main_s
 @__Lwh10cont LOD main_k
 GRE 4
-JIZ __Lwh10end
-JMP __Lwh10
+JNZ __Lwh10
 @__Lwh10end LOD main_s
 OUT 0
 LOD 0
@@ -253,8 +251,7 @@ LOD main_n2
 SET __switch_exp
 I2F_M __switch_exp
 EQU 1.5
-JIZ __sw_disp_2_1
-JMP __sw_body_2_1
+JNZ __sw_body_2_1
 @__sw_disp_2_1 I2F_M __switch_exp
 EQU 2.0
 JIZ __switch_end_2
@@ -272,8 +269,7 @@ LOD main_n2
 SET __switch_exp
 I2F_M __switch_exp
 EQU 1.5
-JIZ __sw_disp_3_1
-JMP __sw_body_3_1
+JNZ __sw_body_3_1
 @__sw_disp_3_1 I2F_M __switch_exp
 EQU 3.0
 JIZ __switch_end_3
@@ -323,8 +319,7 @@ STI_V fv3 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld0e
-JMP __Ld0
+JNZ __Ld0
 @__Ld0e LOD_V fv3 0
 F_MLT 4.0
 F2I
@@ -342,8 +337,7 @@ STI_V fv3 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld1e
-JMP __Ld1
+JNZ __Ld1
 @__Ld1e LOD_V fv3 1
 F_MLT 4.0
 F2I
@@ -357,8 +351,7 @@ STI_V iv3 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld2e
-JMP __Ld2
+JNZ __Ld2
 @__Ld2e LOD_V iv3 2
 OUT 0
 LOD fa1
@@ -402,8 +395,7 @@ STI_V fv3 3
 LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld3e
-JMP __Ld3
+JNZ __Ld3
 @__Ld3e LOD_V fv3 2
 F_MLT 4.0
 F2I
@@ -423,8 +415,7 @@ SF_ADD
 P_LOD __dk0_main
 ADD 1
 SET __dk0_main
-JIZ __Ld4e
-JMP __Ld4
+JNZ __Ld4
 @__Ld4e POP
 SF_ADD
 F_MLT 4.0

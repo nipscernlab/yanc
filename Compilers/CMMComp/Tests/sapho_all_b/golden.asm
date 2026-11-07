@@ -898,7 +898,20 @@ JIZ __Lif21else
 LOD s
 ADD 2048
 SET s
-@__Lif21else LOD 16
+@__Lif21else LOD 0
+SET main_t
+@__Lwh2 LOD main_t
+ADD 1
+SET main_t
+GRE 3
+JNZ __Lwh2
+@__Lwh2end LOD 3
+XOR main_t
+JIZ __Lif22else
+LOD s
+ADD 8192
+SET s
+@__Lif22else LOD 16
 SHR s
 XOR s
 SET main_t
