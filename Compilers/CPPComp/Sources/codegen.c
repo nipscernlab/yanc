@@ -70,10 +70,18 @@ static type *infer_type(expr *e);       // (also forward-declared below; needed 
 // inside a method, an unqualified name that isn't a local/param but IS a data
 // member of the enclosing class resolves to `this->member`. Returns the field
 // (and tells the caller to address it relative to the `this` param).
+// a local or a parameter of the current function, in any block that is open:
+// it hides a member of the same name, as in C++ (a global does not)
+static int names_a_local(const char *name)
+{
+    sym *s = st_find(name);
+    return s && (s->kind == SK_LOCAL_VAR || s->kind == SK_PARAM);
+}
+
 static strct_field *cur_class_member(const char *name)
 {
     if (!cur_method_class) return NULL;
-    if (st_find_local(name)) return NULL;     // a local/param shadows a member
+    if (names_a_local(name)) return NULL;     // a local/param shadows a member
     return t_struct_find(cur_method_class, name);
 }
 
@@ -102,7 +110,7 @@ static int vtbl_slot(type *ct, const char *name)
 // a local). Returns that global's symbol, or NULL.
 static sym *cur_class_static(const char *name)
 {
-    if (!cur_method_class || st_find_local(name)) return NULL;
+    if (!cur_method_class || names_a_local(name)) return NULL;
     for (int i = 0; i < cur_method_class->n_statics; i++)
         if (!strcmp(cur_method_class->statics[i], name)) {
             char *gn = cg_mangle_method(cur_method_class->tag, name);
@@ -110,6 +118,15 @@ static sym *cur_class_static(const char *name)
             return s;
         }
     return NULL;
+}
+
+// the variable a plain name means here, for the fast paths that load it by
+// name: NULL when, inside a method, it names a member or a class static,
+// which the general path reaches through `this` (#128)
+static sym *var_sym(const char *name)
+{
+    if (cur_class_member(name) || cur_class_static(name)) return NULL;
+    return st_find(name);
 }
 
 // if `member` is a static data member of struct type `t`, return its global
@@ -1323,7 +1340,7 @@ static void gen_addr(expr *e)
         // variable: `base; ADD idx` (the memory-operand form) where the stack
         // path took PSH, the index load and S_ADD
         if (elem_sz == 1 && e->b && (e->b->kind == E_INT_LIT || e->b->kind == E_IDENT)) {
-            sym *r = e->b->kind == E_IDENT ? st_find(e->b->sval) : NULL;
+            sym *r = e->b->kind == E_IDENT ? var_sym(e->b->sval) : NULL;
             int ok = e->b->kind == E_INT_LIT ||
                      (r && (r->kind == SK_LOCAL_VAR || r->kind == SK_PARAM || r->kind == SK_GLOBAL_VAR) &&
                       !r->is_frame && r->stype && r->stype->kind == TY_INT && !r->stype->is_ref);
@@ -1839,7 +1856,7 @@ static void gen_store(expr *lv, expr *val)
     }
     // fast path: simple scalar IDENT
     if (lv->kind == E_IDENT) {
-        sym *s = st_find(lv->sval);
+        sym *s = var_sym(lv->sval);
         if (s && !s->is_frame && s->stype && !s->stype->is_ref &&
             s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
             g_cade_ok = 1;                    // x = cade(); is allowed here
@@ -1850,7 +1867,7 @@ static void gen_store(expr *lv, expr *val)
     }
     // fast path: regular array element with constant base
     if (lv->kind == E_INDEX && lv->a->kind == E_IDENT) {
-        sym *s = st_find(lv->a->sval);
+        sym *s = var_sym(lv->a->sval);
         if (s && s->stype && s->stype->kind == TY_ARRAY && s->kind != SK_PARAM) {
             type *bt = s->stype;
             int elem_sz = type_size_words(bt->base);
@@ -2043,6 +2060,7 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
     cur_fn_recursive = 0;
     cur_method_class = f->method_of;
     st_enter_func(f->asm_label);
+    int floor = st_hide_scopes();          // the caller's locals are not the callee's (#128)
     st_push_scope();
     for (int i = 0; i < np; i++) {
         char *nm = bound[i] ? xstrdup(bound[i]) : mangle_local(plist[i]->name);
@@ -2053,6 +2071,7 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
     for (int i = 0; i < np; i++) free(bound[i]);
     if (f->ret->is_ref) gen_addr(body); else gen_expr_to(body, f->ret);
     st_pop_scope();
+    st_restore_floor(floor);
 
     cur_func_name    = sv_fn;
     cur_func_ret     = sv_ret;
@@ -2180,7 +2199,7 @@ static void gen_expr(expr *e)
         type *bt = infer_type(e->a);
         if (bt && bt->kind == TY_ARRAY && type_size_words(bt->base) == 1
             && e->a->kind == E_IDENT) {
-            sym *s = st_find(e->a->sval);
+            sym *s = var_sym(e->a->sval);
             if (s && s->kind != SK_PARAM) {
                 // constant index -> LOD_V base k (offset baked in) instead of
                 // computing the index and an indirect LDI.
@@ -2347,7 +2366,7 @@ static void gen_expr(expr *e)
         const char *opnd = NULL; char litb[32]; long lit = 0; int is_lit = 0;
         cfold_node(e->b);                     // FL - 1 -> 28: then the literal memory form
         if (mem_form_op && e->b->kind == E_IDENT && lf == rf) {   // mem-form needs matching types
-            sym *r = st_find(e->b->sval);
+            sym *r = var_sym(e->b->sval);
             // not a reference: its word holds the referent's address, and the
             // memory form would operate on that address (z + r gave z + &x)
             if (r && !r->is_frame && r->stype && !r->stype->is_ref &&
@@ -2384,7 +2403,7 @@ static void gen_expr(expr *e)
         if ((op == OP_ADD || op == OP_MUL) && lf == rf &&
             e->b->kind == E_INDEX && e->b->a->kind == E_IDENT &&
             e->b->b->kind == E_INT_LIT && e->b->b->ival >= 0) {
-            sym *r = st_find(e->b->a->sval);
+            sym *r = var_sym(e->b->a->sval);
             if (r && r->kind != SK_PARAM && r->stype && r->stype->kind == TY_ARRAY
                 && type_size_words(r->stype->base) == 1) {
                 gen_expr(e->a);
@@ -2480,7 +2499,7 @@ static void gen_expr(expr *e)
         int delta = (e->kind == E_PREDEC) ? -step : step;
         // fast path: simple scalar identifier
         if (lv->kind == E_IDENT) {
-            sym *s = st_find(lv->sval);
+            sym *s = var_sym(lv->sval);
             if (s && !s->is_frame && s->stype && !s->stype->is_ref &&   // a reference steps its referent
                 s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
                 emit("LOD %s", s->asm_name);
@@ -2511,7 +2530,7 @@ static void gen_expr(expr *e)
         int delta = (e->kind == E_POSTDEC) ? -step : step;
         // fast path: simple scalar identifier
         if (lv->kind == E_IDENT) {
-            sym *s = st_find(lv->sval);
+            sym *s = var_sym(lv->sval);
             if (s && !s->is_frame && s->stype && !s->stype->is_ref &&   // a reference steps its referent
                 s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
                 emit("LOD %s", s->asm_name);
@@ -3312,12 +3331,22 @@ static void declare_local(decl *d)
         return;
     }
 
-    char *aname = mangle_local(d->name);
+    // a local of an inner block that hides one of an outer block (or a
+    // parameter) needs a word of its own: <name>__<n>, which no user name can
+    // be (#128). The waveform shows it under that name.
+    static int shadow_seq = 0;
+    char *own = NULL;
+    sym *outer = st_find(d->name);
+    if (outer && (outer->kind == SK_LOCAL_VAR || outer->kind == SK_PARAM) && !st_find_local(d->name))
+        own = xasprintf("%s__%d", d->name, ++shadow_seq);
+    const char *lname = own ? own : d->name;
+    char *aname = mangle_local(lname);
     claim_local(aname, d->name, d->line);
     { sym *ls = st_add(SK_LOCAL_VAR, d->name, aname, d->dtype); ls->is_const = d->is_const; }
     int arr_words = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
-    log_var(cur_func_name ? cur_func_name : "global", d->name,
+    log_var(cur_func_name ? cur_func_name : "global", lname,
             innermost_code(d->dtype), arr_words);
+    free(own);
     // A `static` local keeps fixed storage, but its initialiser runs HERE, the
     // first time control reaches the declaration, under its `__once` guard.
     int is_static = (d->sclass == SC_STATIC);
@@ -3397,11 +3426,11 @@ static void emit_decl_dtors(decl *d)
     emit_decl_dtors(d->next);
     if (!d->dtype || d->dtype->kind != TY_STRUCT || !d->dtype->tag) return;
     char *dtor = resolve_method(d->dtype, "dtor");
-    if (dtor) {
-        char *an = mangle_local(d->name);
-        emit("LEA %s", an); emit("PSH"); emit("CAL %s", dtor);
-        free(an); free(dtor);
+    sym *ls = st_find(d->name);                // this block's own, still in scope
+    if (dtor && ls && ls->asm_name) {
+        emit("LEA %s", ls->asm_name); emit("PSH"); emit("CAL %s", dtor);
     }
+    free(dtor);
 }
 
 // emit destructor calls for the class-typed locals declared directly in this
@@ -3688,7 +3717,9 @@ static void gen_stmt_inner(stmt *s)
             // track constructed class locals so an early exit can run their dtors
             if (d->dtype && d->dtype->kind == TY_STRUCT && d->dtype->tag) {
                 char *dt = resolve_method(d->dtype, "dtor");
-                if (dt) { char *an = mangle_local(d->name); live_push(an, dt); free(an); free(dt); }
+                sym *ls = st_find(d->name);       // the word declare_local gave it
+                if (dt && ls && ls->asm_name) live_push(ls->asm_name, dt);
+                free(dt);
             }
         }
         return;

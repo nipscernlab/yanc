@@ -54,6 +54,8 @@ sym  *st_find_tag(const char *tag);
 
 sym  *st_find       (const char *name);
 sym  *st_find_local (const char *name);
+int   st_hide_scopes  (void);          // hide the open scopes (inline expansion); returns
+void  st_restore_floor(int old);       // what st_restore_floor takes back
 
 void  st_push_scope (void);
 void  st_pop_scope  (void);
