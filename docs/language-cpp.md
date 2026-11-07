@@ -243,12 +243,18 @@ functions), `std::string` and `std::getline(cin, s)`, `setw`,
 
 ## The preprocessor
 
-`#include "..."` and `<...>`, `#define` with or without arguments (variadic
-macros, `#` and `##`), `#undef`, `#if`/`#elif`/`#else`/`#endif` with
-`defined`, `#ifdef`/`#ifndef`, `#pragma once`, `#error` (stops) and
-`#warning`. A line cannot continue onto the next with a backslash, and there
-are no predefined macros (`__FILE__`, `__cplusplus`). `yanc -S` keeps the
-assembly; `cppcomp -E file.cpp` prints the preprocessed source.
+`#include "..."` and `<...>` (or a macro that gives one of them), `#define`
+with or without arguments (variadic macros, `#` and `##`), `#undef`,
+`#if`/`#elif`/`#else`/`#endif` with `defined`, `#ifdef`/`#ifndef`,
+`#pragma once`, `#error` (stops) and `#warning`. Any other directive is an
+error, and so is an `#if` left open at the end of its file. `#if` computes
+in 64 bits, as C does, but every value is signed (`-1 > 0u` is false), and
+`true` is 1. A comment may span lines anywhere, a macro call may span lines,
+and a macro is not expanded again inside its own expansion. A line cannot
+continue onto the next with a backslash, a function-like macro's name and
+its `(` must be on the same line, and there are no predefined macros
+(`__FILE__`, `__cplusplus`). `yanc -S` keeps the assembly; `cppcomp -E
+file.cpp` prints the preprocessed source, without its comments.
 
 ## Configuration
 
@@ -263,7 +269,10 @@ assembly; `cppcomp -E file.cpp` prints the preprocessed source.
 | `nugain` | C±'s `norm()` divisor; C++ has no `norm()`, so it changes nothing | 128 |
 | `ndstac`, `sdepth` | the data and call stack depths | worked out from the program |
 
-An unknown setting gives a warning. `#pragma yanc prname` (the name is the
+The value is a whole number: `nubits` goes from 2 to 32, `nbmant` and
+`nbexpo` from 1 to 30, `nugain` is a power of two, and the others are at
+least 1. An unknown setting gives a warning, and any other `#pragma` is
+ignored. `#pragma yanc prname` (the name is the
 file's), `fftsiz` and `itradd` (bit-reversed addressing and interrupts
 exist in C± only) are errors.
 

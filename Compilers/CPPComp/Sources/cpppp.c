@@ -4,15 +4,21 @@
 // cppcomp's first step, as cpp is gcc's: pp_run() turns the source into one
 // text, kept in memory, with a map from each of its lines back to the file and
 // line it came from (the messages point there). `cppcomp -E` prints the text.
-// Handles:
+// Each line is read with its comments already replaced by a space (a /* ... */
+// may span lines), and a call of a function-like macro may go on over the
+// next lines. Handles:
 //   #include "name"          (relative to current file + -I paths)
 //   #include <name>          (-I paths, then the Header/ folder next to the tool)
+//   #include NAME            (a macro that gives one of the two forms above)
 //   #define NAME body        (object- and function-like macros, incl.
 //                             variadic `...`/__VA_ARGS__, # stringize, ## paste)
 //   #undef NAME
-//   #ifdef NAME / #ifndef NAME / #else / #endif
+//   #if / #elif / #ifdef / #ifndef / #else / #endif
 //   #pragma once             (skip the file on any later #include)
-//   #pragma yanc ...         (passed through verbatim)
+//   #pragma ...              (passed on, as `#pragma <rest>`, to the lexer)
+//   #error / #warning
+// Any other directive is an error. A macro is not expanded again inside its
+// own expansion (#define x x+1 gives x+1), as in C.
 // ----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -31,6 +37,7 @@
 static const char *pp_at_file = NULL;
 static int         pp_at_line = 0;
 
+static MSG_FMT(1, 2) MSG_NORET void pp_fail(const char *fmt, ...);
 static void pp_fail(const char *fmt, ...)
 {
     va_list ap;
@@ -86,6 +93,7 @@ typedef struct macro {
     int   is_variadic;             // 1 = trailing `...` (use __VA_ARGS__ in body)
     char **params;
     int   n_params;                // named params (excludes `...`)
+    int   busy;                    // being expanded: its name inside stays as it is
     struct macro *next;
 } macro;
 static macro *macros = NULL;
@@ -155,26 +163,31 @@ static void macro_undef(const char *name)
     }
 }
 
-static int *cond_stk;                  // 1 where this #if level is taking its lines
-static int *cond_seen_true;            // 1 where a branch of this level was taken
-static int  cond_n = 0, cond_cap = 0;
-
-static void cond_push(int active)
-{
-    if (cond_n >= cond_cap) {          // cond_stk and cond_seen_true grow together
-        int cap = cond_cap;
-        XGROW(cond_stk, cond_n, cap);
-        XGROW(cond_seen_true, cond_n, cond_cap);
-    }
-    cond_stk[cond_n] = active;
-    cond_seen_true[cond_n] = active;
-    cond_n++;
-}
+// one level of #if: an open #if, #ifdef or #ifndef and its branches
+typedef struct {
+    int         taking;                // its lines are being taken
+    int         taken;                 // a branch of it was taken, or none may be
+    int         had_else;              // its #else was seen
+    const char *file;                  // where it was opened, for "no #endif"
+    int         line;
+    const char *kind;                  // "if", "ifdef" or "ifndef"
+} cond_level;
+static cond_level *conds;
+static int         cond_n = 0, cond_cap = 0;
 
 static int cond_active(void)
 {
-    for (int i = 0; i < cond_n; i++) if (!cond_stk[i]) return 0;
+    for (int i = 0; i < cond_n; i++) if (!conds[i].taking) return 0;
     return 1;
+}
+
+// opens a level; inside a group being skipped no branch of it may be taken
+static void cond_push(int taking, const char *kind)
+{
+    int outer = cond_active();
+    XGROW(conds, cond_n, cond_cap);
+    conds[cond_n++] = (cond_level){ outer && taking, !outer || taking, 0,
+                                    pp_at_file, pp_at_line, kind };
 }
 
 static int is_ident_start(char c) { return isalpha((unsigned char)c) || c == '_'; }
@@ -210,7 +223,7 @@ static char *dup_trim(const char *s, size_t n)
     return dupn(s, n);
 }
 
-static char *expand_str(const char *src, int depth);
+static char *expand_str(const char *src);
 
 // append the string-literal form of `raw` to out: wrap in quotes, collapse
 // internal whitespace runs to one space, escape embedded " and \ (C `#`).
@@ -250,7 +263,7 @@ static int param_index(const macro *m, const char *s, size_t n)
 static char *macro_subst(macro *m, char **args, int na)
 {
     char **eargs = xmalloc((size_t)(na + 1) * sizeof *eargs);
-    for (int i = 0; i < na; i++) eargs[i] = expand_str(args[i], 1);
+    for (int i = 0; i < na; i++) eargs[i] = expand_str(args[i]);
 
     // build the variadic tail (raw and expanded), joined with ", "
     sbuf vr; sb_init(&vr); sbuf ve; sb_init(&ve);
@@ -324,7 +337,6 @@ static char *macro_subst(macro *m, char **args, int na)
     return out.p;
 }
 
-// fully expand object- and function-like macros in src; returns malloc'd result
 // past the string or char literal that starts at p (its closing quote
 // included; a backslash escapes the next character)
 static const char *skip_literal(const char *p)
@@ -334,19 +346,77 @@ static const char *skip_literal(const char *p)
     return *p ? p + 1 : p;
 }
 
-// past the comment that starts at p: // to the end of the line, /* to its */
-static const char *skip_comment(const char *p)
+// past the number that starts at p (a digit): its letters (0x1F, 1e5, 10u) are
+// not names a macro could replace
+static const char *skip_number(const char *p)
 {
-    if (p[1] == '/') return p + strlen(p);
-    const char *e = strstr(p + 2, "*/");
-    return e ? e + 2 : p + strlen(p);
+    while (is_ident_cont(*p) || *p == '.') p++;
+    return p;
 }
 
-static char *expand_str(const char *src, int depth)
+int pp_escape(const char **pp)
+{
+    const char *p = *pp;
+    int v;
+    switch (*p) {
+        case 'n':  v = '\n'; p++; break;
+        case 't':  v = '\t'; p++; break;
+        case 'r':  v = '\r'; p++; break;
+        case 'a':  v = '\a'; p++; break;
+        case 'b':  v = '\b'; p++; break;
+        case 'f':  v = '\f'; p++; break;
+        case 'v':  v = '\v'; p++; break;
+        case '\\': case '\'': case '"': case '?': v = *p++; break;
+        case 'x':                                   // \x and any number of hex digits
+            if (!isxdigit((unsigned char)p[1])) return PP_ESC_BAD;
+            v = 0;
+            for (p++; isxdigit((unsigned char)*p); p++) {
+                if (v <= 0xFF) v = v * 16 + (isdigit((unsigned char)*p) ? *p - '0' : tolower((unsigned char)*p) - 'a' + 10);
+            }
+            break;
+        default:
+            if (*p < '0' || *p > '7') return PP_ESC_BAD;
+            v = 0;                                  // \ and one to three octal digits
+            for (int k = 0; k < 3 && *p >= '0' && *p <= '7'; k++) v = v * 8 + (*p++ - '0');
+    }
+    *pp = p;
+    return v > 0xFF ? PP_ESC_RANGE : v;
+}
+
+// the arguments of a call of m, from the '(' at *pp to its ')', which *pp ends
+// past; their number must be the macro's
+static char **macro_args(const macro *m, const char **pp, int *nargs)
+{
+    char **args = NULL; int na = 0, cap = 0, dep = 1;
+    const char *q = *pp + 1, *as = q;
+    for (;; q++) {
+        if (*q == 0) pp_fail(MSG_ERR_MACRO_OPEN, m->name);
+        if (*q == '"' || *q == '\'') { q = skip_literal(q) - 1; continue; }   // a comma in
+        if (*q == '(') dep++;                                                 // "a,b" is text (#128)
+        else if (*q == ')' && --dep == 0) break;
+        else if (*q == ',' && dep == 1) {
+            XGROW(args, na, cap);
+            args[na++] = dup_trim(as, (size_t)(q - as));
+            as = q + 1;
+        }
+    }
+    XGROW(args, na, cap);
+    args[na++] = dup_trim(as, (size_t)(q - as));
+    *pp = q + 1;
+    // F() with a macro of no parameter: no argument, not one empty
+    if (m->n_params == 0 && na == 1 && args[0][0] == 0) { free(args[0]); na = 0; }
+    if (m->is_variadic ? na < m->n_params : na != m->n_params)
+        pp_fail(m->is_variadic ? MSG_ERR_MACRO_ARGS_MIN : MSG_ERR_MACRO_ARGS, m->name, m->n_params, na);
+    *nargs = na;
+    return args;
+}
+
+// src with its macros expanded, in a new block. A macro being expanded is
+// busy: its name in its own expansion is left as it is, as C does, so
+// `#define x x+1` gives x+1 and `#define A A A` gives A A.
+static char *expand_str(const char *src)
 {
     sbuf out; sb_init(&out);
-    if (depth > 64) { sb_puts(&out, src); return out.p; }   // recursion guard
-
     const char *p = src;
     while (*p) {
         if (*p == '"' || *p == '\'') {                      // a literal is copied as it is
@@ -354,167 +424,274 @@ static char *expand_str(const char *src, int depth)
             sb_putn(&out, p, (size_t)(e - p)); p = e;
             continue;
         }
-        if (*p == '/' && (p[1] == '/' || p[1] == '*')) {     // so is a comment: an apostrophe
-            const char *e = skip_comment(p);               // in one is not a char literal (#128)
+        if (isdigit((unsigned char)*p)) {                    // so is a number
+            const char *e = skip_number(p);
             sb_putn(&out, p, (size_t)(e - p)); p = e;
             continue;
         }
-        if (is_ident_start(*p)) {
-            const char *s = p; while (is_ident_cont(*p)) p++;
-            size_t idlen = p - s;
-            macro *m = macro_find_n(s, idlen);
-            if (m && m->is_func) {
-                const char *q = p; while (*q == ' ' || *q == '\t') q++;
-                if (*q == '(') {
-                    q++;                               // consume '('
-                    char **args = NULL; int na = 0, args_cap = 0;
-                    int dep = 1; const char *as = q;
-                    while (*q && dep > 0) {
-                        if (*q == '"' || *q == '\'') { q = skip_literal(q); continue; }   // a comma in
-                        if (*q == '(') dep++;                                           // "a,b" is text (#128)
-                        else if (*q == ')') { dep--; if (dep == 0) break; }
-                        else if (*q == ',' && dep == 1) {
-                            XGROW(args, na, args_cap);
-                            args[na++] = dup_trim(as, q - as);
-                            as = q + 1;
-                        }
-                        q++;
-                    }
-                    XGROW(args, na, args_cap);
-                    args[na++] = dup_trim(as, q - as);
-                    if (*q == ')') q++;
-                    // FOO() with a 0-param macro: drop the single empty arg
-                    if (m->n_params == 0 && na == 1 && args[0][0] == 0) { free(args[0]); na = 0; }
-                    char *subst = macro_subst(m, args, na);
-                    char *rec   = expand_str(subst, depth + 1);
-                    sb_puts(&out, rec);
-                    free(rec); free(subst);
-                    for (int i = 0; i < na; i++) free(args[i]);
-                    free(args);
-                    p = q;
-                    continue;
-                }
-                sb_putn(&out, s, idlen);               // func macro name without '(' — literal
-                continue;
-            }
-            if (m) {                                    // object-like
-                char *rec = expand_str(m->body ? m->body : "", depth + 1);
-                sb_puts(&out, rec); free(rec);
-                continue;
-            }
-            sb_putn(&out, s, idlen);
+        if (!is_ident_start(*p)) { sb_putc(&out, *p++); continue; }
+
+        const char *s = p; while (is_ident_cont(*p)) p++;
+        size_t idlen = (size_t)(p - s);
+        macro *m = macro_find_n(s, idlen);
+        const char *q = p; while (*q == ' ' || *q == '\t') q++;
+        if (!m || m->busy || (m->is_func && *q != '(')) {    // a name, or a function-like
+            sb_putn(&out, s, idlen);                          // macro's name with no call
             continue;
         }
-        sb_putc(&out, *p++);
+        char *body;
+        if (m->is_func) {
+            int na; char **args = macro_args(m, &q, &na);
+            body = macro_subst(m, args, na);
+            for (int i = 0; i < na; i++) free(args[i]);
+            free(args);
+            p = q;
+        } else {
+            body = xstrdup(m->body ? m->body : "");
+        }
+        m->busy = 1;
+        char *rec = expand_str(body);
+        m->busy = 0;
+        sb_puts(&out, rec);
+        free(rec); free(body);
     }
     return out.p;
 }
 
 // ---- #if constant-expression evaluator -------------------------------------
-// Evaluates a preprocessor constant expression to a long. `defined X` /
-// `defined(X)` are resolved first, then macros are expanded, then a standard
-// C integer-expression grammar is parsed. Identifiers left over after expansion
-// evaluate to 0 (per the C standard).
+// Evaluates a preprocessor constant expression in 64 bits, as C's intmax_t
+// (`long` has 32 bits on Windows, which made 0xFFFFFFFF equal 0x7FFFFFFF).
+// `defined X` / `defined(X)` are resolved first, then macros are expanded,
+// then a C integer-expression grammar is parsed. A name left over after the
+// expansion is 0, except `true`, which C++ makes 1. Numbers are read as the
+// lexer reads them (010 is 8). Every value is signed: C would make -1 > 0u
+// true, and here it is false. Anything the grammar does not take is an error.
+
+typedef long long ppv;
+#define PPWRAP(a, op, b) ((ppv)((unsigned long long)(a) op (unsigned long long)(b)))   // no signed overflow
+
+static MSG_NORET void pp_bad(const char *at)
+{
+    if (*at) pp_fail(MSG_ERR_IF_EXPR, at);
+    pp_fail(MSG_ERR_IF_END);
+}
 
 static char *resolve_defined(const char *line)
 {
     sbuf out; sb_init(&out);
     const char *p = line;
     while (*p) {
-        if (is_ident_start(*p)) {
-            const char *s = p; while (is_ident_cont(*p)) p++;
-            if ((p - s) == 7 && strncmp(s, "defined", 7) == 0) {
-                while (*p == ' ' || *p == '\t') p++;
-                int paren = 0;
-                if (*p == '(') { paren = 1; p++; while (*p == ' ' || *p == '\t') p++; }
-                const char *nm = p; while (is_ident_cont(*p)) p++;
-                macro *dm = macro_find_n(nm, (size_t)(p - nm));
-                if (paren) { while (*p == ' ' || *p == '\t') p++; if (*p == ')') p++; }
-                sb_putc(&out, dm ? '1' : '0');
-            } else {
-                sb_putn(&out, s, p - s);
-            }
+        if (*p == '"' || *p == '\'') {
+            const char *e = skip_literal(p);
+            sb_putn(&out, p, (size_t)(e - p)); p = e;
             continue;
         }
-        sb_putc(&out, *p++);
+        if (!is_ident_start(*p)) { sb_putc(&out, *p++); continue; }
+        const char *s = p; while (is_ident_cont(*p)) p++;
+        if (!name_is(s, (size_t)(p - s), "defined")) { sb_putn(&out, s, (size_t)(p - s)); continue; }
+        while (*p == ' ' || *p == '\t') p++;
+        int paren = *p == '(';
+        if (paren) { p++; while (*p == ' ' || *p == '\t') p++; }
+        const char *nm = p; while (is_ident_cont(*p)) p++;
+        if (p == nm || !is_ident_start(*nm)) pp_bad(nm);
+        macro *dm = macro_find_n(nm, (size_t)(p - nm));
+        if (paren) {
+            while (*p == ' ' || *p == '\t') p++;
+            if (*p != ')') pp_bad(p);
+            p++;
+        }
+        sb_putc(&out, dm ? '1' : '0');
     }
     return out.p;
 }
 
-static long pp_expr(const char **pp);
+static ppv  pp_expr(const char **pp);
 static void pp_ws(const char **pp) { while (**pp == ' ' || **pp == '\t') (*pp)++; }
 
-static long pp_primary(const char **pp)
+// an integer literal: 0x hex, 0 octal, else decimal, and a suffix u, l or ll
+static ppv pp_number(const char **pp)
 {
-    pp_ws(pp);
-    char c = **pp;
-    if (c == '(') { (*pp)++; long v = pp_expr(pp); pp_ws(pp); if (**pp == ')') (*pp)++; return v; }
-    if (c == '\'') {                      // char constant
-        (*pp)++;
-        long v;
-        if (**pp == '\\') { (*pp)++; char e = **pp; (*pp)++;
-            v = (e=='n')?'\n':(e=='t')?'\t':(e=='r')?'\r':(e=='0')?0:e; }
-        else { v = (unsigned char)**pp; (*pp)++; }
-        if (**pp == '\'') (*pp)++;
-        return v;
+    const char *s = *pp, *p = s;
+    int base = p[0] != '0' ? 10 : (p[1] == 'x' || p[1] == 'X') ? 16 : 8;
+    if (base == 16) { p += 2; if (!isxdigit((unsigned char)*p)) pp_bad(s); }
+    unsigned long long v = 0;
+    for (;; p++) {
+        int d = isdigit((unsigned char)*p) ? *p - '0'
+              : base == 16 && isxdigit((unsigned char)*p) ? tolower((unsigned char)*p) - 'a' + 10 : -1;
+        if (d < 0) break;
+        if (d >= base) pp_fail(MSG_ERR_OCTAL, dupn(s, (size_t)(skip_number(s) - s)));
+        if (v > (~0ULL - (unsigned)d) / (unsigned)base) pp_bad(s);   // past 64 bits
+        v = v * (unsigned)base + (unsigned)d;
     }
-    if (isdigit((unsigned char)c)) {
-        char *end; long v;
-        if (c == '0' && ((*pp)[1] == 'x' || (*pp)[1] == 'X')) v = strtol(*pp, &end, 16);
-        else                                                 v = strtol(*pp, &end, 10);
-        *pp = end;
-        while (**pp=='u'||**pp=='U'||**pp=='l'||**pp=='L') (*pp)++;   // ignore suffixes
-        return v;
-    }
-    if (is_ident_start(c)) { while (is_ident_cont(**pp)) (*pp)++; return 0; }  // undefined -> 0
-    return 0;
+    if (*p == 'u' || *p == 'U') p++;
+    if ((*p == 'l' && p[1] == 'l') || (*p == 'L' && p[1] == 'L')) p += 2;
+    else if (*p == 'l' || *p == 'L') p++;
+    if (p[-1] != 'u' && p[-1] != 'U' && (*p == 'u' || *p == 'U')) p++;
+    if (is_ident_cont(*p) || *p == '.') pp_bad(s);           // 1.5, 1uuu: not an integer
+    *pp = p;
+    return (ppv)v;
 }
 
-static long pp_unary(const char **pp)
+static ppv pp_primary(const char **pp)
+{
+    pp_ws(pp);
+    const char *s = *pp;
+    if (*s == '(') {
+        (*pp)++;
+        ppv v = pp_expr(pp);
+        pp_ws(pp);
+        if (**pp != ')') pp_bad(*pp);
+        (*pp)++;
+        return v;
+    }
+    if (*s == '\'') {                     // a char constant, with the lexer's escapes
+        const char *p = s + 1;
+        int v;
+        if (*p == '\\') { p++; v = pp_escape(&p); if (v < 0) pp_bad(s); }
+        else if (*p && *p != '\'') v = (unsigned char)*p++;
+        else pp_bad(s);
+        if (*p != '\'') pp_bad(s);
+        *pp = p + 1;
+        return v;
+    }
+    if (isdigit((unsigned char)*s)) return pp_number(pp);
+    if (is_ident_start(*s)) {
+        while (is_ident_cont(**pp)) (*pp)++;
+        return name_is(s, (size_t)(*pp - s), "true");
+    }
+    pp_bad(s);
+}
+
+static ppv pp_unary(const char **pp)
 {
     pp_ws(pp);
     if (**pp == '!') { (*pp)++; return !pp_unary(pp); }
     if (**pp == '~') { (*pp)++; return ~pp_unary(pp); }
-    if (**pp == '-') { (*pp)++; return -pp_unary(pp); }
-    if (**pp == '+') { (*pp)++; return  pp_unary(pp); }
+    if (**pp == '-') { (*pp)++; return PPWRAP(0, -, pp_unary(pp)); }
+    if (**pp == '+') { (*pp)++; return pp_unary(pp); }
     return pp_primary(pp);
 }
-static long pp_mul(const char **pp){ long v=pp_unary(pp); for(;;){ pp_ws(pp); char c=**pp;
-    if(c=='*'){(*pp)++; v*=pp_unary(pp);} else if(c=='/'){(*pp)++; long d=pp_unary(pp); v = d?v/d:0;}
-    else if(c=='%'){(*pp)++; long d=pp_unary(pp); v = d?v%d:0;} else break;} return v; }
-static long pp_add(const char **pp){ long v=pp_mul(pp); for(;;){ pp_ws(pp); char c=**pp;
-    if(c=='+'){(*pp)++; v+=pp_mul(pp);} else if(c=='-'){(*pp)++; v-=pp_mul(pp);} else break;} return v; }
-static long pp_shift(const char **pp){ long v=pp_add(pp); for(;;){ pp_ws(pp);
-    if(**pp=='<'&&(*pp)[1]=='<'){(*pp)+=2; v<<=pp_add(pp);} else if(**pp=='>'&&(*pp)[1]=='>'){(*pp)+=2; v>>=pp_add(pp);} else break;} return v; }
-static long pp_rel(const char **pp){ long v=pp_shift(pp); for(;;){ pp_ws(pp);
-    if(**pp=='<'&&(*pp)[1]=='='){(*pp)+=2; v=(v<=pp_shift(pp));}
-    else if(**pp=='>'&&(*pp)[1]=='='){(*pp)+=2; v=(v>=pp_shift(pp));}
-    else if(**pp=='<'){(*pp)++; v=(v<pp_shift(pp));}
-    else if(**pp=='>'){(*pp)++; v=(v>pp_shift(pp));} else break;} return v; }
-static long pp_eq(const char **pp){ long v=pp_rel(pp); for(;;){ pp_ws(pp);
-    if(**pp=='='&&(*pp)[1]=='='){(*pp)+=2; v=(v==pp_rel(pp));}
-    else if(**pp=='!'&&(*pp)[1]=='='){(*pp)+=2; v=(v!=pp_rel(pp));} else break;} return v; }
-static long pp_band(const char **pp){ long v=pp_eq(pp); for(;;){ pp_ws(pp);
-    if(**pp=='&'&&(*pp)[1]!='&'){(*pp)++; v&=pp_eq(pp);} else break;} return v; }
-static long pp_bxor(const char **pp){ long v=pp_band(pp); for(;;){ pp_ws(pp);
-    if(**pp=='^'){(*pp)++; v^=pp_band(pp);} else break;} return v; }
-static long pp_bor(const char **pp){ long v=pp_bxor(pp); for(;;){ pp_ws(pp);
-    if(**pp=='|'&&(*pp)[1]!='|'){(*pp)++; v|=pp_bxor(pp);} else break;} return v; }
-static long pp_land(const char **pp){ long v=pp_bor(pp); for(;;){ pp_ws(pp);
-    if(**pp=='&'&&(*pp)[1]=='&'){(*pp)+=2; long r=pp_bor(pp); v=(v&&r);} else break;} return v; }
-static long pp_lor(const char **pp){ long v=pp_land(pp); for(;;){ pp_ws(pp);
-    if(**pp=='|'&&(*pp)[1]=='|'){(*pp)+=2; long r=pp_land(pp); v=(v||r);} else break;} return v; }
-static long pp_expr(const char **pp){ long c=pp_lor(pp); pp_ws(pp);
-    if(**pp=='?'){(*pp)++; long a=pp_expr(pp); pp_ws(pp); if(**pp==':')(*pp)++; long b=pp_expr(pp); return c?a:b;}
-    return c; }
+
+static ppv pp_mul(const char **pp)
+{
+    ppv v = pp_unary(pp);
+    for (;;) {
+        pp_ws(pp);
+        char c = **pp;
+        if (c != '*' && c != '/' && c != '%') return v;
+        (*pp)++;
+        ppv d = pp_unary(pp);
+        if (c == '*') { v = PPWRAP(v, *, d); continue; }
+        if (d == 0) pp_fail(MSG_ERR_IF_DIV0);
+        if (d == -1) v = c == '/' ? PPWRAP(0, -, v) : 0;     // LLONG_MIN / -1 overflows
+        else         v = c == '/' ? v / d : v % d;
+    }
+}
+
+static ppv pp_add(const char **pp)
+{
+    ppv v = pp_mul(pp);
+    for (;;) {
+        pp_ws(pp);
+        if      (**pp == '+') { (*pp)++; v = PPWRAP(v, +, pp_mul(pp)); }
+        else if (**pp == '-') { (*pp)++; v = PPWRAP(v, -, pp_mul(pp)); }
+        else return v;
+    }
+}
+
+// a shift by less than 0 or more than 63 gives what shifting one bit at a
+// time would: 0, or the sign for >>
+static ppv pp_shift(const char **pp)
+{
+    ppv v = pp_add(pp);
+    for (;;) {
+        pp_ws(pp);
+        int left = **pp == '<' && (*pp)[1] == '<', right = **pp == '>' && (*pp)[1] == '>';
+        if (!left && !right) return v;
+        *pp += 2;
+        ppv n = pp_add(pp);
+        if (n < 0 || n > 63) v = left ? 0 : v < 0 ? -1 : 0;
+        else                 v = left ? PPWRAP(v, <<, n) : v >> n;
+    }
+}
+
+static ppv pp_rel(const char **pp)
+{
+    ppv v = pp_shift(pp);
+    for (;;) {
+        pp_ws(pp);
+        if      (**pp == '<' && (*pp)[1] == '=') { *pp += 2; v = v <= pp_shift(pp); }
+        else if (**pp == '>' && (*pp)[1] == '=') { *pp += 2; v = v >= pp_shift(pp); }
+        else if (**pp == '<' && (*pp)[1] != '<') { (*pp)++; v = v <  pp_shift(pp); }
+        else if (**pp == '>' && (*pp)[1] != '>') { (*pp)++; v = v >  pp_shift(pp); }
+        else return v;
+    }
+}
+
+static ppv pp_eq(const char **pp)
+{
+    ppv v = pp_rel(pp);
+    for (;;) {
+        pp_ws(pp);
+        if      (**pp == '=' && (*pp)[1] == '=') { *pp += 2; v = v == pp_rel(pp); }
+        else if (**pp == '!' && (*pp)[1] == '=') { *pp += 2; v = v != pp_rel(pp); }
+        else return v;
+    }
+}
+
+static ppv pp_band(const char **pp)
+{
+    ppv v = pp_eq(pp);
+    for (;;) { pp_ws(pp); if (**pp != '&' || (*pp)[1] == '&') return v; (*pp)++; v &= pp_eq(pp); }
+}
+
+static ppv pp_bxor(const char **pp)
+{
+    ppv v = pp_band(pp);
+    for (;;) { pp_ws(pp); if (**pp != '^') return v; (*pp)++; v ^= pp_band(pp); }
+}
+
+static ppv pp_bor(const char **pp)
+{
+    ppv v = pp_bxor(pp);
+    for (;;) { pp_ws(pp); if (**pp != '|' || (*pp)[1] == '|') return v; (*pp)++; v |= pp_bxor(pp); }
+}
+
+static ppv pp_land(const char **pp)
+{
+    ppv v = pp_bor(pp);
+    for (;;) { pp_ws(pp); if (**pp != '&' || (*pp)[1] != '&') return v; *pp += 2; ppv r = pp_bor(pp); v = v && r; }
+}
+
+static ppv pp_lor(const char **pp)
+{
+    ppv v = pp_land(pp);
+    for (;;) { pp_ws(pp); if (**pp != '|' || (*pp)[1] != '|') return v; *pp += 2; ppv r = pp_land(pp); v = v || r; }
+}
+
+static ppv pp_expr(const char **pp)
+{
+    ppv c = pp_lor(pp);
+    pp_ws(pp);
+    if (**pp != '?') return c;
+    (*pp)++;
+    ppv a = pp_expr(pp);
+    pp_ws(pp);
+    if (**pp != ':') pp_bad(*pp);
+    (*pp)++;
+    ppv b = pp_expr(pp);
+    return c ? a : b;
+}
 
 // evaluate a full `#if` / `#elif` expression line
 static int eval_if(const char *text)
 {
     char *d = resolve_defined(text);
-    char *x = expand_str(d, 0);
+    char *x = expand_str(d);
     const char *cur = x;
-    long v = pp_expr(&cur);
+    ppv v = pp_expr(&cur);
+    pp_ws(&cur);
+    if (*cur) pp_bad(cur);
     free(d); free(x);
     return v != 0;
 }
@@ -547,8 +724,6 @@ static void pp_emit(const char *s, const char *file, int line, const char *src)
         if (*s == '\n') at_bol = 1;
     }
 }
-
-static int depth = 0;
 
 static void process_file(const char *path);
 
@@ -585,24 +760,91 @@ static void include_file(const char *target, const char *ref_dir)
     free(canon); free(resolved);
 }
 
-// drops the comments of a directive line, `// ...` and `/* ... */`, outside
-// string and character literals, and the blanks they leave at the end (C
-// removes comments before it reads a directive: `#define K 5 // five` is 5)
-static void strip_comments(char *s)
+// ---- reading a file ----------------------------------------------------------
+// A file is read line by line, each line with its comments replaced by a
+// space, as C does before it reads a directive or a token: a /* ... */ may
+// span lines (an #include inside one is not read), and the lexer sees no
+// comment.
+
+typedef struct {
+    FILE       *fp;
+    const char *file;                  // its path, kept by the line map
+    int         ln;                    // the line just read
+    int         in_comment;            // inside a /* ... */ that began on comment_line
+    int         comment_line;
+    char       *orig;                  // the line as written, with its '\n'
+    char       *text;                  // the line without comments, with its '\n'
+} reader;
+
+// the line s, without its '\n', with each comment replaced by one space
+static char *strip_comments(const char *s, reader *r)
 {
-    char q = 0;
-    for (char *c = s; *c; c++) {
-        if (q) { if (*c == '\\' && c[1]) c++; else if (*c == q) q = 0; continue; }
-        if (*c == '"' || *c == '\'') { q = *c; continue; }
-        if (c[0] == '/' && c[1] == '/') { *c = 0; break; }
-        if (c[0] == '/' && c[1] == '*') {
-            char *e = strstr(c + 2, "*/");
-            if (!e) { *c = 0; break; }
-            memmove(c, " ", 1); memmove(c + 1, e + 2, strlen(e + 2) + 1);
+    sbuf b; sb_init(&b);
+    while (*s) {
+        if (r->in_comment) {
+            const char *e = strstr(s, "*/");
+            if (!e) break;                                 // the comment goes on
+            s = e + 2; r->in_comment = 0;
+            continue;
         }
+        if (*s == '"' || *s == '\'') {
+            const char *e = skip_literal(s);
+            sb_putn(&b, s, (size_t)(e - s)); s = e;
+            continue;
+        }
+        if (s[0] == '/' && s[1] == '/') break;
+        if (s[0] == '/' && s[1] == '*') {
+            sb_putc(&b, ' ');
+            r->in_comment = 1; r->comment_line = r->ln;
+            s += 2;
+            continue;
+        }
+        sb_putc(&b, *s++);
     }
-    int L = (int)strlen(s);
-    while (L > 0 && (s[L-1] == ' ' || s[L-1] == '\t')) s[--L] = 0;
+    sb_rstrip(&b);
+    sb_putc(&b, '\n');
+    return b.p;
+}
+
+// reads the next line into r->orig and r->text; 0 at the end of the file
+static int reader_next(reader *r)
+{
+    free(r->orig); free(r->text);
+    r->orig = r->text = NULL;
+    char *raw = xgetline(r->fp);               // a line of any length, ended with
+    if (!raw) return 0;                        // '\n' even at the end of a file that has none
+    r->ln++;
+    pp_at_line = r->ln;
+    const char *s = raw;
+    if (r->ln == 1 && strncmp(s, "\xEF\xBB\xBF", 3) == 0) s += 3;   // the UTF-8 mark Windows editors write
+    r->orig = xasprintf("%s\n", s);
+    r->text = strip_comments(s, r);
+    free(raw);
+    return 1;
+}
+
+// a call of a function-like macro that the text opens and does not close:
+// its arguments go on in the next line
+static int call_open(const char *p)
+{
+    while (*p) {
+        if (*p == '"' || *p == '\'') { p = skip_literal(p); continue; }
+        if (isdigit((unsigned char)*p)) { p = skip_number(p); continue; }
+        if (!is_ident_start(*p)) { p++; continue; }
+        const char *s = p; while (is_ident_cont(*p)) p++;
+        macro *m = macro_find_n(s, (size_t)(p - s));
+        const char *q = p; while (*q == ' ' || *q == '\t') q++;
+        if (!m || !m->is_func || *q != '(') continue;
+        int dep = 0;
+        for (; *q; q++) {
+            if (*q == '"' || *q == '\'') { q = skip_literal(q) - 1; continue; }
+            if (*q == '(') dep++;
+            else if (*q == ')' && --dep == 0) break;
+        }
+        if (!*q) return 1;
+        p = q + 1;
+    }
+    return 0;
 }
 
 static char *trim_in_place(char *s)
@@ -613,187 +855,179 @@ static char *trim_in_place(char *s)
     return s;
 }
 
+// ---- directives --------------------------------------------------------------
+
+// the level of #if an #elif, #else or #endif of this file closes; stray is
+// the message for one with no #if open in the file
+static cond_level *cond_top(const char *stray, int cond_base)
+{
+    if (cond_n <= cond_base) pp_fail("%s", stray);
+    return &conds[cond_n - 1];
+}
+
+// #include "name", <name>, or a macro that gives one of them
+static void do_include(const char *p, const char *dir)
+{
+    char *x = NULL;
+    if (*p != '"' && *p != '<') { x = expand_str(p); p = trim_in_place(x); }
+    if (*p != '"' && *p != '<') pp_fail(MSG_ERR_INCLUDE_FORM);
+    char close = *p == '"' ? '"' : '>';
+    const char *t = ++p; while (*p && *p != close) p++;
+    if (*p != close || *trim_in_place((char *)p + 1)) pp_fail(MSG_ERR_INCLUDE_FORM);
+    char *target = dupn(t, (size_t)(p - t));
+    include_file(target, close == '"' ? dir : NULL);   // "..." looks in this file's folder first
+    free(target); free(x);
+}
+
+// #define NAME body, or NAME(params) body with the '(' glued to the name
+static void do_define(const char *p)
+{
+    size_t n; char *name = take_ident(p, &n);
+    if (n == 0 || !is_ident_start(*name)) pp_fail(MSG_ERR_DIRECTIVE_NAME, "define");
+    p += n;
+    if (*p != '(') {
+        while (*p == ' ' || *p == '\t') p++;
+        macro_define(name, p);
+        free(name);
+        return;
+    }
+    p++;
+    char **params = NULL; int np = 0, params_cap = 0, variadic = 0;
+    while (*p && *p != ')') {
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '.' && p[1] == '.' && p[2] == '.') {  // C99 `...`
+            p += 3; variadic = 1;
+            while (*p == ' ' || *p == '\t') p++;
+            break;
+        }
+        size_t pl; char *pn = take_ident(p, &pl); p += pl;
+        if (pl > 0) { XGROW(params, np, params_cap); params[np++] = pn; }
+        else free(pn);
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == ',') p++;
+        else if (*p != ')') break;
+    }
+    if (*p != ')') pp_fail(MSG_ERR_MACRO_PARAMS, name);
+    p++;
+    while (*p == ' ' || *p == '\t') p++;
+    macro_define_func(name, params, np, variadic, p);
+    for (int k = 0; k < np; k++) free(params[k]);
+    free(params);
+    free(name);
+}
+
+// one directive: p is the line past its '#', without comments; cond_base is
+// the number of #if levels open when the file began
+static void directive(char *p, const char *path, const char *dir, int cond_base)
+{
+    p = trim_in_place(p);
+    size_t n; char *name = take_ident(p, &n);
+    p += n;
+    while (*p == ' ' || *p == '\t') p++;
+
+    // the conditionals are read even in a group being skipped, to find its end
+    if (!strcmp(name, "if") || !strcmp(name, "ifdef") || !strcmp(name, "ifndef")) {
+        int taking = 0;
+        if (cond_active()) {                       // a skipped group's #if is not evaluated
+            if (name[2] == 0) taking = eval_if(p);
+            else {
+                size_t l; char *nm = take_ident(p, &l);
+                if (l == 0 || !is_ident_start(*nm)) pp_fail(MSG_ERR_DIRECTIVE_NAME, name);
+                taking = (macro_find(nm) != NULL) == (name[2] == 'd');
+                free(nm);
+            }
+        }
+        cond_push(taking, name[2] == 0 ? "if" : name[2] == 'd' ? "ifdef" : "ifndef");
+    } else if (!strcmp(name, "elif")) {
+        cond_level *c = cond_top(MSG_ERR_STRAY_ELIF, cond_base);
+        if (c->had_else) pp_fail(MSG_ERR_AFTER_ELSE, name);
+        if (c->taken) c->taking = 0;               // an earlier branch already won
+        else { c->taking = eval_if(p); c->taken = c->taking; }
+    } else if (!strcmp(name, "else")) {
+        cond_level *c = cond_top(MSG_ERR_STRAY_ELSE, cond_base);
+        if (c->had_else) pp_fail(MSG_ERR_AFTER_ELSE, name);
+        c->taking = !c->taken;
+        c->taken = c->had_else = 1;
+    } else if (!strcmp(name, "endif")) {
+        cond_top(MSG_ERR_STRAY_ENDIF, cond_base);
+        cond_n--;
+    } else if (!cond_active()) {
+        ;                                          // nothing else is read in a skipped group
+    } else if (!strcmp(name, "include")) {
+        do_include(p, dir);
+    } else if (!strcmp(name, "define")) {
+        do_define(p);
+    } else if (!strcmp(name, "undef")) {
+        size_t l; char *nm = take_ident(p, &l);
+        if (l == 0 || !is_ident_start(*nm)) pp_fail(MSG_ERR_DIRECTIVE_NAME, name);
+        macro_undef(nm);
+        free(nm);
+    } else if (!strcmp(name, "pragma")) {
+        if (!strncmp(p, "once", 4) && (p[4] == 0 || isspace((unsigned char)p[4]))) {
+            char *canon = path_canon(path);
+            once_mark(canon);
+            free(canon);
+        } else {                                   // #pragma yanc and the others: the lexer's
+            char *t = xasprintf("#pragma %s\n", p);
+            pp_emit(t, pp_at_file, pp_at_line, t);
+            free(t);
+        }
+    } else if (!strcmp(name, "error") || !strcmp(name, "warning")) {
+        int err = name[0] == 'e';
+        fprintf(stderr, "%s:%d: %s: #%s %s\n", pp_at_file, pp_at_line,
+                err ? MSG_WORD_ERROR : MSG_WORD_WARNING, name, p);
+        if (err) exit(1);
+    } else if (n > 0 || *p) {                      // a lone '#' is the null directive
+        pp_fail(MSG_ERR_DIRECTIVE_UNKNOWN, n > 0 ? name : p);
+    }
+    free(name);
+}
+
+static int depth = 0;
+
 static void process_file(const char *path)
 {
     if (depth > 32) pp_fail(MSG_ERR_INCLUDE_DEEP);
     depth++;
 
+    reader r = { 0 };
+    r.fp = fopen(path, "r");
+    if (!r.fp) pp_fail(MSG_ERR_CANT_OPEN, path);
+    r.file = xstrdup(path);                   // the map keeps it
     char *dir = dirname_of(path);
-
-    FILE *fp = fopen(path, "r");
-    if (!fp) pp_fail(MSG_ERR_CANT_OPEN, path);
-    const char *file = xstrdup(path);     // the map keeps it
-    int ln = 0;
-    const char *sv_file = pp_at_file;     // the includer's place, back at the end
+    const char *sv_file = pp_at_file;          // the includer's place, back at the end
     int         sv_line = pp_at_line;
+    int         cond_base = cond_n;            // an #if is closed in the file that opens it
+    pp_at_file = r.file;
 
-    char *raw, *line = NULL;
-    while ((raw = xgetline(fp)) != NULL) {          // a line of any length, ended
-        free(line);                                 // with '\n' even at the end of a
-        line = xasprintf("%s\n", raw); free(raw);   // file that has none
-        ln++;
-        pp_at_file = file; pp_at_line = ln;
-        char *orig = xstrdup(line);
-        char *t = trim_in_place(orig);
+    while (reader_next(&r)) {
+        char *t = r.text;
+        while (*t == ' ' || *t == '\t') t++;
+        if (*t == '#') { directive(t + 1, path, dir, cond_base); continue; }
+        if (!cond_active()) continue;
 
-        if (t[0] == '#') {
-            char *p = t + 1;
-            while (*p == ' ' || *p == '\t') p++;
-            strip_comments(p);
-
-            // ---- #include ----
-            if (strncmp(p, "include", 7) == 0 && (p[7] == ' ' || p[7] == '\t' || p[7] == '"' || p[7] == '<')) {
-                if (!cond_active()) { free(orig); continue; }
-                p += 7; while (*p == ' ' || *p == '\t') p++;
-                if (*p == '"' || *p == '<') {     // "..." looks in this file's folder first
-                    char close = *p == '"' ? '"' : '>';
-                    const char *t = ++p; while (*p && *p != close) p++;
-                    char *target = dupn(t, (size_t)(p - t));
-                    include_file(target, close == '"' ? dir : NULL);
-                    free(target);
-                }
-                free(orig); continue;
-            }
-
-            // ---- #define (object-like or function-like) ----
-            if (strncmp(p, "define", 6) == 0 && (p[6] == ' ' || p[6] == '\t')) {
-                if (!cond_active()) { free(orig); continue; }
-                p += 6; while (*p == ' ' || *p == '\t') p++;
-                size_t n; char *name = take_ident(p, &n); p += n;
-                if (*p == '(') {
-                    // function-like: '(' must be glued to the name (no space)
-                    p++;
-                    char **params = NULL; int np = 0, params_cap = 0, variadic = 0;
-                    while (*p && *p != ')') {
-                        while (*p == ' ' || *p == '\t') p++;
-                        if (*p == '.' && p[1] == '.' && p[2] == '.') {  // C99 `...`
-                            p += 3; variadic = 1;
-                            while (*p == ' ' || *p == '\t') p++;
-                            break;
-                        }
-                        size_t pl; char *pn = take_ident(p, &pl); p += pl;
-                        if (pl > 0) { XGROW(params, np, params_cap); params[np++] = pn; }
-                        else free(pn);
-                        while (*p == ' ' || *p == '\t') p++;
-                        if (*p == ',') p++;
-                    }
-                    if (*p == ')') p++;
-                    while (*p == ' ' || *p == '\t') p++;
-                    macro_define_func(name, params, np, variadic, p);
-                    for (int k = 0; k < np; k++) free(params[k]);
-                    free(params);
-                } else {
-                    while (*p == ' ' || *p == '\t') p++;
-                    macro_define(name, p);
-                }
-                free(name);
-                free(orig); continue;
-            }
-
-            // ---- #undef ----
-            if (strncmp(p, "undef", 5) == 0 && (p[5] == ' ' || p[5] == '\t')) {
-                if (!cond_active()) { free(orig); continue; }
-                p += 5; while (*p == ' ' || *p == '\t') p++;
-                size_t n; char *name = take_ident(p, &n);
-                macro_undef(name);
-                free(name);
-                free(orig); continue;
-            }
-
-            // ---- #ifdef / #ifndef ----
-            int is_ifdef  = (strncmp(p, "ifdef",  5) == 0 && (p[5] == ' ' || p[5] == '\t'));
-            int is_ifndef = (strncmp(p, "ifndef", 6) == 0 && (p[6] == ' ' || p[6] == '\t'));
-            if (is_ifdef || is_ifndef) {
-                p += is_ifndef ? 6 : 5;
-                while (*p == ' ' || *p == '\t') p++;
-                const char *nm = p; while (is_ident_cont(*p)) p++;
-                int defined = macro_find_n(nm, (size_t)(p - nm)) != NULL;
-                int active = is_ifndef ? !defined : defined;
-                cond_push(active);
-                free(orig); continue;
-            }
-
-            // ---- #if <expr> ----
-            if (strncmp(p, "if", 2) == 0 && (p[2] == ' ' || p[2] == '\t' || p[2] == '(')) {
-                p += 2;
-                int active = eval_if(p);
-                cond_push(active);
-                free(orig); continue;
-            }
-
-            // ---- #elif <expr> ----
-            if (strncmp(p, "elif", 4) == 0 && (p[4] == ' ' || p[4] == '\t' || p[4] == '(')) {
-                if (cond_n == 0) pp_fail(MSG_ERR_STRAY_ELIF);
-                p += 4;
-                if (cond_seen_true[cond_n-1]) {
-                    cond_stk[cond_n-1] = 0;          // an earlier branch already won
-                } else {
-                    int active = eval_if(p);
-                    cond_stk[cond_n-1] = active;
-                    if (active) cond_seen_true[cond_n-1] = 1;
-                }
-                free(orig); continue;
-            }
-
-            // ---- #else ----
-            if (strcmp(p, "else") == 0 || strncmp(p, "else ", 5) == 0 || strncmp(p, "else\t", 5) == 0) {
-                if (cond_n == 0) pp_fail(MSG_ERR_STRAY_ELSE);
-                cond_stk[cond_n-1] = !cond_seen_true[cond_n-1];
-                cond_seen_true[cond_n-1] = 1;
-                free(orig); continue;
-            }
-
-            // ---- #endif ----
-            if (strcmp(p, "endif") == 0 || strncmp(p, "endif ", 6) == 0 || strncmp(p, "endif\t", 6) == 0) {
-                if (cond_n == 0) pp_fail(MSG_ERR_STRAY_ENDIF);
-                cond_n--;
-                free(orig); continue;
-            }
-
-            // ---- #pragma once (consumed) / others (passthrough, e.g. yanc) ----
-            if (strncmp(p, "pragma", 6) == 0) {
-                const char *q = p + 6; while (*q == ' ' || *q == '\t') q++;
-                if (strncmp(q, "once", 4) == 0 && (q[4] == 0 || isspace((unsigned char)q[4]))) {
-                    if (cond_active()) {
-                        char *canon = path_canon(path);
-                        once_mark(canon);
-                        free(canon);
-                    }
-                    free(orig); continue;          // don't emit `#pragma once`
-                }
-                if (cond_active()) pp_emit(line, file, ln, line);   // e.g. #pragma yanc
-                free(orig); continue;
-            }
-
-            // ---- #error stops here; #warning only says so ----
-            if ((strncmp(p, "error", 5) == 0 || strncmp(p, "warning", 7) == 0) &&
-                (p[p[0] == 'e' ? 5 : 7] == 0 || isspace((unsigned char)p[p[0] == 'e' ? 5 : 7]))) {
-                if (cond_active()) {
-                    int err = p[0] == 'e';
-                    const char *msg = p + (err ? 5 : 7); while (*msg == ' ' || *msg == '\t') msg++;
-                    fprintf(stderr, "%s:%d: %s: #%s %s\n", file, ln, err ? MSG_WORD_ERROR : MSG_WORD_WARNING, err ? "error" : "warning", msg);
-                    if (err) exit(1);
-                }
-                free(orig); continue;
-            }
-
-            // ---- unknown directive: pass through ----
-            if (cond_active()) pp_emit(line, file, ln, line);
-            free(orig); continue;
+        int   ln   = r.ln;
+        char *src  = xstrdup(r.orig);
+        char *code = xstrdup(r.text);
+        while (call_open(code) && reader_next(&r)) {   // the call goes on in the next line
+            code[strlen(code) - 1] = ' ';
+            char *j = xasprintf("%s%s", code, r.text);
+            free(code); code = j;
         }
-
-        if (cond_active()) {
-            char *expanded = expand_str(line, 0);
-            pp_emit(expanded, file, ln, line);
-            free(expanded);
-        }
-        free(orig);
+        pp_at_line = ln;
+        char *expanded = expand_str(code);
+        pp_emit(expanded, r.file, ln, src);
+        free(expanded); free(code); free(src);
     }
-    free(line);
+    if (r.in_comment) { pp_at_line = r.comment_line; pp_fail(MSG_ERR_COMMENT_OPEN); }
+    if (cond_n > cond_base) {
+        cond_level *c = &conds[cond_n - 1];
+        pp_at_file = c->file; pp_at_line = c->line;
+        pp_fail(MSG_ERR_IF_OPEN, c->kind);
+    }
     free(dir);
+    fclose(r.fp);
     pp_at_file = sv_file; pp_at_line = sv_line;
-
-    fclose(fp);
     depth--;
 }
 

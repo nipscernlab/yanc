@@ -26,3 +26,18 @@ include_missing.cpp|include_missing.cpp:3: error: can't find #include "nope.h"
 no_main.cpp|no_main.cpp: error: program has no main() function
 const_assign.cpp|assignment to const 'k'
 const_incr.cpp|assignment to const 'j'
+pp_unknown_directive.cpp|pp_unknown_directive.cpp:2: error: #defne is not a directive
+pp_macro_args.cpp|pp_macro_args.cpp:5: error: macro 'MAX' takes 2 arguments, and the call passes 1
+pp_macro_open.cpp|pp_macro_open.cpp:5: error: the call of macro 'ADD' has no ')'
+pp_if_open.cpp|pp_if_open.cpp:3: error: this #if has no #endif in its file
+pp_else_twice.cpp|pp_else_twice.cpp:4: error: #else after the #else of the same #if
+pp_comment_open.cpp|pp_comment_open.cpp:3: error: this /* comment has no */
+pp_if_quote.cpp|pp_if_quote.cpp:2: error: invalid #if expression at ''a'
+pp_hash_in_code.cpp|pp_hash_in_code.cpp:4: error: unexpected character '#'
+lex_escape.cpp|lex_escape.cpp:2: error: '\q' is not a C++ escape
+lex_int_big.cpp|error: '99999999999999999999999' does not fit the 32-bit word
+lex_suffix.cpp|error: '1uuu' is not a number: a C++ number ends in u, l or ll
+pragma_nubits_value.cpp|#pragma yanc nubits takes a whole number, and 'abc' is not one
+pragma_nubits_range.cpp|#pragma yanc nubits 100 is out of range, 2 to 32
+pragma_itradd_novalue.cpp|#pragma yanc itradd does nothing in C++
+array_dims.cpp|array_dims.cpp:2: error: an array has at most 8 dimensions

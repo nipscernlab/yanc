@@ -624,6 +624,10 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
     return c;
 }
 
+// one more dimension on the dimlist l: past CPP_DIM_MAX is an error, not a
+// dimension dropped (#129)
+#define DIM_ADD(l, v) do {                                                          if ((l).n >= CPP_DIM_MAX) msg_error(yylineno, MSG_ERR_TOO_MANY_DIMS, CPP_DIM_MAX);         (l).dims[(l).n++] = (v);                                                } while (0)
+
 // wrap base type with N levels of pointer
 static type *apply_pointers(type *base, int stars) { while (stars-- > 0) base = t_ptr(base); return base; }
 
@@ -859,7 +863,7 @@ static type *class_close(void)
     struct { type **ts; expr **es; int n; } galist;
     struct { stmt **arr; int n; } slist;
     struct { decl  *head; int n; } dlist;
-    struct { int dims[8]; int n; } dimlist;
+    struct { int dims[CPP_DIM_MAX]; int n; } dimlist;
     struct { type **arr; int n; } talist;
     /* mixed template-arg list: each slot is either a type (targs[k] != NULL,
        isval[k] == 0) or a value (targs[k] == NULL, vals[k] = const, isval[k]==1). */
@@ -1602,7 +1606,7 @@ pointers:
 /* zero or more [N] suffixes, in source order (row-major). n==0 means scalar. */
 array_suffix:
       /* empty */                 { $$.n = 0; }
-    | array_suffix '[' ']'        { $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = 0;        }  /* unsized — params only */
+    | array_suffix '[' ']'        { $$ = $1; DIM_ADD($$, 0);        }  /* unsized — params only */
     | array_suffix '[' { $<typ>$ = cur_base; } conditional_expr ']' {
           /* A sizeof(T) / cast / new in the size expression reduces its own
              base_type and clobbers the global cur_base that the enclosing
@@ -1614,7 +1618,7 @@ array_suffix:
           cur_base = $<typ>3;
           long v;
           if (!const_eval($4, &v)) msg_error(yylineno, MSG_ERR_ARRAY_SIZE_CONST);
-          $$ = $1; if ($$.n < 8) $$.dims[$$.n++] = (int)v;   /* enum/macro/sizeof/arith ok */
+          $$ = $1; DIM_ADD($$, (int)v);   /* enum/macro/sizeof/arith ok */
       }
     ;
 

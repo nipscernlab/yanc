@@ -350,6 +350,46 @@ void msg_on_internal(void (*fn)(void));                // runs before msg_intern
     M("'%s': um número que começa com 0 é octal, e não tem 8 nem 9", \
       "'%s': a number starting with 0 is octal, and has no 8 or 9")
 
+#define MSG_ERR_INT_TOO_BIG \
+    M("'%s' não cabe na palavra de %d bits", \
+      "'%s' does not fit the %d-bit word")
+
+#define MSG_ERR_NUM_SUFFIX \
+    M("'%s' não é um número: um número do C++ termina em u, l ou ll", \
+      "'%s' is not a number: a C++ number ends in u, l or ll")
+
+#define MSG_ERR_BAD_ESCAPE \
+    M("'\\%c' não é um escape do C++", \
+      "'\\%c' is not a C++ escape")
+
+#define MSG_ERR_ESCAPE_RANGE \
+    M("um escape de %s passa de 255, o maior char", \
+      "an escape in %s is past 255, the largest char")
+
+#define MSG_ERR_PRAGMA_KEY \
+    M("#pragma yanc pede um ajuste e um valor", \
+      "#pragma yanc takes a setting and a value")
+
+#define MSG_ERR_PRAGMA_VALUE \
+    M("#pragma yanc %s pede um número inteiro, e '%s' não é", \
+      "#pragma yanc %s takes a whole number, and '%s' is not one")
+
+#define MSG_ERR_PRAGMA_RANGE \
+    M("#pragma yanc %s %ld está fora da faixa, de %d a %d", \
+      "#pragma yanc %s %ld is out of range, %d to %d")
+
+#define MSG_ERR_PRAGMA_MIN \
+    M("#pragma yanc %s %ld está fora da faixa: o menor é %d", \
+      "#pragma yanc %s %ld is out of range: the least is %d")
+
+#define MSG_ERR_PRAGMA_POW2 \
+    M("#pragma yanc nugain %ld não é potência de dois", \
+      "#pragma yanc nugain %ld is not a power of two")
+
+#define MSG_ERR_TOO_MANY_DIMS \
+    M("um array tem no máximo %d dimensões", \
+      "an array has at most %d dimensions")
+
 #define MSG_ERR_BAD_CHAR \
     M("caractere inesperado '%c' (0x%02x)", \
       "unexpected character '%c' (0x%02x)")
@@ -409,6 +449,58 @@ void msg_on_internal(void (*fn)(void));                // runs before msg_intern
 #define MSG_ERR_STRAY_ENDIF \
     M("#endif sem #if", \
       "#endif without #if")
+
+#define MSG_ERR_AFTER_ELSE \
+    M("#%s depois do #else do mesmo #if", \
+      "#%s after the #else of the same #if")
+
+#define MSG_ERR_IF_OPEN \
+    M("este #%s não tem #endif no seu arquivo", \
+      "this #%s has no #endif in its file")
+
+#define MSG_ERR_COMMENT_OPEN \
+    M("este comentário /* não tem */", \
+      "this /* comment has no */")
+
+#define MSG_ERR_DIRECTIVE_UNKNOWN \
+    M("#%s não é uma diretiva", \
+      "#%s is not a directive")
+
+#define MSG_ERR_DIRECTIVE_NAME \
+    M("#%s precisa do nome de uma macro", \
+      "#%s needs a macro name")
+
+#define MSG_ERR_INCLUDE_FORM \
+    M("o #include pede \"arquivo\" ou <arquivo>", \
+      "#include takes \"file\" or <file>")
+
+#define MSG_ERR_MACRO_PARAMS \
+    M("os parâmetros da macro '%s' não fecham com ')'", \
+      "the parameters of macro '%s' do not end with ')'")
+
+#define MSG_ERR_MACRO_ARGS \
+    M("a macro '%s' recebe %d argumentos, e a chamada passa %d", \
+      "macro '%s' takes %d arguments, and the call passes %d")
+
+#define MSG_ERR_MACRO_ARGS_MIN \
+    M("a macro '%s' recebe pelo menos %d argumentos, e a chamada passa %d", \
+      "macro '%s' takes at least %d arguments, and the call passes %d")
+
+#define MSG_ERR_MACRO_OPEN \
+    M("a chamada da macro '%s' não fecha com ')'", \
+      "the call of macro '%s' has no ')'")
+
+#define MSG_ERR_IF_EXPR \
+    M("expressão de #if inválida em '%s'", \
+      "invalid #if expression at '%s'")
+
+#define MSG_ERR_IF_END \
+    M("a expressão de #if termina antes da hora", \
+      "the #if expression ends too soon")
+
+#define MSG_ERR_IF_DIV0 \
+    M("divisão por zero no #if", \
+      "division by zero in #if")
 
 // pieces put into the messages above: who owns a name in the assembly ---------
 

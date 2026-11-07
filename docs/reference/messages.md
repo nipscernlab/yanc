@@ -246,6 +246,16 @@ value. What the common ones mean and how to get past them is in
 - error: #pragma yanc fftsiz does nothing in C++ (the bit-reversed addressing is C± only); delete the line
 - error: #pragma yanc itradd does nothing in C++ (interrupts are C± only); delete the line
 - error: '<name>': a number starting with 0 is octal, and has no 8 or 9
+- error: '<name>' does not fit the <n>-bit word
+- error: '<name>' is not a number: a C++ number ends in u, l or ll
+- error: '\<c>' is not a C++ escape
+- error: an escape in <name> is past 255, the largest char
+- error: #pragma yanc takes a setting and a value
+- error: #pragma yanc <name> takes a whole number, and '<name>' is not one
+- error: #pragma yanc <name> <n> is out of range, <n> to <n>
+- error: #pragma yanc <name> <n> is out of range: the least is <n>
+- error: #pragma yanc nugain <n> is not a power of two
+- error: an array has at most <n> dimensions
 - error: unexpected character '<c>' (0x<hex>)
 - error: one processor at a time: '<name>' and '<name>' are two sources
 - error: '<name>' needs a value after it
@@ -260,6 +270,19 @@ value. What the common ones mean and how to get past them is in
 - error: #elif without #if
 - error: #else without #if
 - error: #endif without #if
+- error: #<name> after the #else of the same #if
+- error: this #<name> has no #endif in its file
+- error: this /\* comment has no \*/
+- error: #<name> is not a directive
+- error: #<name> needs a macro name
+- error: #include takes "file" or <file>
+- error: the parameters of macro '<name>' do not end with ')'
+- error: macro '<name>' takes <n> arguments, and the call passes <n>
+- error: macro '<name>' takes at least <n> arguments, and the call passes <n>
+- error: the call of macro '<name>' has no ')'
+- error: invalid #if expression at '<name>'
+- error: the #if expression ends too soon
+- error: division by zero in #if
 - error: syntax error
 - error: memory exhausted
 
