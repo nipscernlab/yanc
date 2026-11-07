@@ -8,6 +8,17 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+### Added
+- **`myADV7513Text`, the text screen through an ADV7513 HDMI transmitter.** `SAPHO/myADV7513Text.v` is
+  `myVGAText` (the same words, `toma` link and pins) plus the I2C writes
+  that set up an ADV7513 HDMI transmitter after each reset, so a program
+  written for the VGA screen runs unchanged. One clock, the pixel clock:
+  the I2C is timed by the scan's lines, eleven writes, no state machine.
+  `Boards/DE10-Nano/hdmi_text/` is a whole Quartus project for the
+  DE10-Nano (top, PLL, `.qsf`, `.sdc`, a C++ program that writes a test
+  card). Tested by `Scripts/hw/tb_adv7513text.sh` and the regress pass
+  `ADV7513TEXT`; not yet run on the board (docs/design/adv7513-text.md).
+
 ### Fixed
 - **The Verilator tests pass however the MSYS2 shell was opened.** An
   MSYS2 bash started from Git Bash has no `PATHEXT`, and without it the
