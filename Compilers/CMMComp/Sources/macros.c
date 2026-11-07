@@ -45,23 +45,23 @@ static void fcat2end(const char *n_read, const char *n_write)
 
 // local variables ------------------------------------------------------------
 
-int fatan = 0; // whether the arctangent macro is needed
-int fsqrt = 0; // whether the square-root macro is needed
-int fsin  = 0; // whether the sine macro is needed
-int ftan  = 0; // whether the tangent macro is needed
-int fexp  = 0; // whether the exponential macro is needed
-int flog  = 0; // whether the natural-logarithm macro is needed
+static int use_fatan = 0; // whether the arctangent macro is needed
+static int use_fsqrt = 0; // whether the square-root macro is needed
+static int use_fsin  = 0; // whether the sine macro is needed
+static int use_ftan  = 0; // whether the tangent macro is needed
+static int use_fexp  = 0; // whether the exponential macro is needed
+static int use_flog  = 0; // whether the natural-logarithm macro is needed
 
 // adds a flag for a predefined macro -----------------------------------------
 
 void mac_add(const char *name)
 {
-         if (strcmp(name, "fsqrt") == 0) fsqrt = 1; // square root
-    else if (strcmp(name, "fatan") == 0) fatan = 1; // arctangent
-    else if (strcmp(name, "fsin" ) == 0) fsin  = 1; // sine
-    else if (strcmp(name, "ftan" ) == 0) ftan  = 1; // tangent
-    else if (strcmp(name, "fexp" ) == 0) fexp  = 1; // exponential
-    else if (strcmp(name, "flog" ) == 0) flog  = 1; // natural logarithm
+         if (strcmp(name, "fsqrt") == 0) use_fsqrt = 1; // square root
+    else if (strcmp(name, "fatan") == 0) use_fatan = 1; // arctangent
+    else if (strcmp(name, "fsin" ) == 0) use_fsin  = 1; // sine
+    else if (strcmp(name, "ftan" ) == 0) use_ftan  = 1; // tangent
+    else if (strcmp(name, "fexp" ) == 0) use_fexp  = 1; // exponential
+    else if (strcmp(name, "flog" ) == 0) use_flog  = 1; // natural logarithm
 }
 
 // appends the macro file `file` of the Macros folder to the .asm
@@ -78,41 +78,41 @@ void mac_copy(char *fasm)
 {
     // bail out if there is nothing to do -------------------------------------
 
-    if (!(fsqrt || fatan || fsin || ftan || fexp || flog)) return;
+    if (!(use_fsqrt || use_fatan || use_fsin || use_ftan || use_fexp || use_flog)) return;
 
     // copy what is needed at the end of the asm ------------------------------
 
-    if (fsqrt)
+    if (use_fsqrt)
     {
         warn(MSG_INFO_SQRT_MACRO);
         mac_cat("float_sqrt.asm", fasm);
     }
 
-    if (fatan)
+    if (use_fatan)
     {
         warn(MSG_INFO_ATAN_MACRO);
         mac_cat("float_atan.asm", fasm);
     }
 
-    if (fsin)
+    if (use_fsin)
     {
         warn(MSG_INFO_SIN_MACRO);
         mac_cat("float_sin.asm", fasm);
     }
 
-    if (ftan)
+    if (use_ftan)
     {
         warn(MSG_INFO_TAN_MACRO);
         mac_cat("float_tan.asm", fasm);
     }
 
-    if (fexp)
+    if (use_fexp)
     {
         warn(MSG_INFO_EXP_MACRO);
         mac_cat("float_exp.asm", fasm);
     }
 
-    if (flog)
+    if (use_flog)
     {
         warn(MSG_INFO_LOG_MACRO);
         mac_cat("float_log.asm", fasm);
