@@ -15,7 +15,7 @@ value. What the common ones mean and how to get past them is in
 - Error: yo, where's the main() function?
 - Error: couldn't open the file '<name>' for the life of me!!
 - Error on line <n>: the symbol 'i' is reserved for the imaginary part of a complex constant. Hands off!
-- Error on line <n>: that name is way too long, <n> characters tops.
+- Error on line <n>: that name has <n> characters, and the most a name may have is <n>.
 - Error on line <n>: #NUGAIN <n> is not a power of two. norm(x) is x / NUGAIN in hardware: a power of two becomes a shift; anything else becomes a divider, the critical path of the whole ALU.
 - Error on line <n>: #NUBITS <n> is out of range. A SAPHO word has 2 to 32 bits.
 - Error on line <n>: #FFTSIZ <n> is out of range. v[k) reverses 1 to 30 low bits of the index.
@@ -240,6 +240,7 @@ value. What the common ones mean and how to get past them is in
 - error: qualified id '<name>::~<name>' is not a destructor
 - error: out-of-class dtor for unknown class '<name>'
 - error: that name has <n> characters, and the most a name may have is <n>
+- error: a template has at most <n> parameters
 - error: '<name>': a name with '\_\_' in it is reserved (C++ keeps them for the compiler, and YANC uses them in the assembly)
 - error: #pragma yanc prname is gone: the processor takes the name of the file (filtro.cpp becomes the processor filtro); delete the line and, for another name, rename the file
 - error: #pragma yanc fftsiz does nothing in C++ (the bit-reversed addressing is C± only); delete the line
@@ -254,12 +255,9 @@ value. What the common ones mean and how to get past them is in
 - error: cannot open '<name>'
 - error: can't find #include "<name>"
 - error: can't find #include <<name>>
-- error: #ifdef nesting too deep
-- error: #if nesting too deep
 - error: stray #elif
 - error: stray #else
 - error: stray #endif
-- error: too many -I dirs
 - error: syntax error
 - error: memory exhausted
 

@@ -35,6 +35,10 @@
 // this, and iverilog takes identifiers of up to 16382 characters.
 #define CPP_NAME_MAX 1000
 
+// the most parameters a template may have (issue #129): the instance tables
+// (ctinst, the codegen's type arguments) hold this many
+#define CPP_TPARAM_MAX 8
+
 #include "../../yanc_version.h"   // YANC_VERSION, shared with the driver and the other compilers
 
 #endif

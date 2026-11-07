@@ -59,7 +59,7 @@ static unit *cg_unit = NULL;            // the translation unit (for overload re
 // instantiated template clones -- a class template's methods and a function
 // template's instances -- each with a unique asm_label. Filled by
 // get_instance() / instantiate_ctmpl_methods(), emitted after @fim.
-static func *g_inst[256]; static int g_n_inst = 0;
+static func **g_inst; static int g_n_inst = 0, g_inst_cap = 0;
 // the inliner (defined further down, next to gen_expr) is also used by
 // gen_addr, which comes first in this file
 static func *func_by_label(const char *lbl);
@@ -86,7 +86,7 @@ static char *cg_mangle_method(const char *cls, const char *name)
 }
 
 // virtual-method bookkeeping: the polymorphic classes whose vtables we emit
-static type *poly_cls[64]; static int n_poly = 0;
+static type **poly_cls; static int n_poly = 0, poly_cap = 0;
 
 // slot of virtual method `name` in class `ct` (vtbl already includes inherited
 // slots), or -1 if `name` is not virtual.
@@ -441,14 +441,13 @@ static void claims_reset(void)
 // ---- variable-log (for asmcomp's prog_log.txt) ------------------------------
 
 typedef struct { char *func; char *var; int type_code; int size; } varlog_e;
-#define VARLOG_MAX 4096
-static varlog_e varlog[VARLOG_MAX];
-static int      varlog_n = 0;
+static varlog_e *varlog;
+static int       varlog_n = 0, varlog_cap = 0;
 
 static void log_var(const char *func, const char *var, int type_code, int size)
 {
     if (type_code == 0) return;   // ptr/struct/etc.: not published to prog_log.txt
-    if (varlog_n >= VARLOG_MAX) msg_internal("too many variables");
+    XGROW(varlog, varlog_n, varlog_cap);
     varlog[varlog_n].func = xstrdup(func);
     varlog[varlog_n].var  = xstrdup(var);
     varlog[varlog_n].type_code = type_code;
@@ -506,15 +505,16 @@ static int agg_fill_code(const type *t)
 // ---- loop-context stack (break/continue) -----------------------------------
 
 typedef struct { char *cont_l; char *break_l; } loop_ctx;
-#define MAX_LOOPS 32
-static loop_ctx loop_stk[MAX_LOOPS];
-static int      loop_top = 0;
+static loop_ctx *loop_stk;
+static int       loop_top = 0, loop_cap = 0;
+static int      *loop_live;                // g_live depth at each loop (for continue), loop_cap long
 
 // unified break-target stack: BOTH loops and switches push here in nesting
 // order, so `break` targets the innermost enclosing loop-or-switch (a `break`
 // inside a switch nested in a loop must leave the switch, not the loop).
-static char *brk_stk[MAX_LOOPS * 2];
-static int   brk_top = 0;
+static char **brk_stk;
+static int   *brk_live;                    // g_live depth at each break boundary
+static int    brk_top = 0, brk_cap = 0;
 
 // live class-typed locals (constructed, pending dtor) for early-exit RAII:
 // break/continue/return must run their dtors BEFORE jumping (the normal-exit
@@ -522,18 +522,27 @@ static int   brk_top = 0;
 // Parallel marks record the live depth at each loop/switch and at function entry
 // so each exit unwinds exactly the right span (LIFO).
 typedef struct { char *name; char *dtor; } live_local;
-#define MAX_LIVE 256
-static live_local g_live[MAX_LIVE];
-static int        g_live_n = 0;
-static int        brk_live[MAX_LOOPS * 2];   // g_live depth at each break boundary
-static int        loop_live[MAX_LOOPS];      // g_live depth at each loop (for continue)
+static live_local *g_live;
+static int         g_live_n = 0, g_live_cap = 0;
 
-static void  brk_push(char *b) { if (brk_top < MAX_LOOPS*2) { brk_live[brk_top] = g_live_n; brk_stk[brk_top++] = b; } }
+static void brk_push(char *b)
+{
+    if (brk_top >= brk_cap) {                  // brk_stk and brk_live grow together
+        int cap = brk_cap;
+        XGROW(brk_stk, brk_top, cap);
+        XGROW(brk_live, brk_top, brk_cap);
+    }
+    brk_live[brk_top] = g_live_n; brk_stk[brk_top++] = b;
+}
 static void  brk_pop (void)    { if (brk_top > 0) brk_top--; }
 
 static void loop_push(char *c, char *b)
 {
-    if (loop_top >= MAX_LOOPS) msg_internal("loop nesting too deep");
+    if (loop_top >= loop_cap) {                // loop_stk and loop_live grow together
+        int cap = loop_cap;
+        XGROW(loop_stk, loop_top, cap);
+        XGROW(loop_live, loop_top, loop_cap);
+    }
     loop_live[loop_top] = g_live_n;
     loop_stk[loop_top].cont_l = c; loop_stk[loop_top].break_l = b; loop_top++;
     brk_push(b);
@@ -545,18 +554,16 @@ static void loop_pop(void) { loop_top--; brk_pop(); }
 // declared up front and filled at main entry. The expression value is the
 // array's base address (C array-to-pointer decay).
 typedef struct { char *label; char *bytes; int len; } strlit;
-#define STRLIT_MAX 256
-static strlit strtab[STRLIT_MAX];
-static int    strtab_n = 0;
+static strlit *strtab;
+static int     strtab_n = 0, strtab_cap = 0;
 
 // ---- function-pointer dispatch table ---------------------------------------
 // Every address-taken function gets an integer ID = its index here. A function
 // pointer holds that ID; an indirect call sets __fp_id and CALs _dispatch, which
 // CALs the matching function. (CAL takes an immediate target, hence the table.)
-#define FPTAB_MAX 256
-static char *fptab[FPTAB_MAX];
-static int   fptab_np[FPTAB_MAX];   // its parameter count, `this` included (-1: unknown)
-static int   fptab_n = 0;
+static char **fptab;
+static int   *fptab_np;             // its parameter count, `this` included (-1: unknown)
+static int    fptab_n = 0, fptab_cap = 0;
 
 static int fp_id_of(const char *name)
 {
@@ -566,7 +573,11 @@ static int fp_id_of(const char *name)
 static void fp_add(const char *name)
 {
     if (fp_id_of(name) >= 0) return;
-    if (fptab_n >= FPTAB_MAX) msg_internal("too many address-taken functions");
+    if (fptab_n >= fptab_cap) {             // fptab and fptab_np grow together
+        int cap = fptab_cap;
+        XGROW(fptab, fptab_n, cap);
+        XGROW(fptab_np, fptab_n, fptab_cap);
+    }
     sym *s = st_find(name);
     fptab_np[fptab_n] = (s && s->kind == SK_FUNC) ? s->n_params : -1;
     fptab[fptab_n++] = xstrdup(name);
@@ -580,7 +591,7 @@ static void fp_add(const char *name)
 // asm_depth needs to size the data stack (asm_share.h).
 static void emit_dispatch_chain(int np)
 {
-    int cand[FPTAB_MAX], nc = 0;
+    int *cand = xmalloc((size_t)(fptab_n + 1) * sizeof *cand), nc = 0;
     for (int i = 0; i < fptab_n; i++)
         if (np < 0 || fptab_np[i] < 0 || fptab_np[i] == np) cand[nc++] = i;
     if (nc == 0) for (int i = 0; i < fptab_n; i++) cand[nc++] = i;
@@ -594,6 +605,7 @@ static void emit_dispatch_chain(int np)
         emit("@%s NOP", skip); free(skip);
     }
     emit("@%s NOP", done); free(done);
+    free(cand);
 }
 
 // parameter count (`this` included) of the method a virtual call names: its
@@ -638,9 +650,8 @@ static void scan_strings_expr(expr *e)
 {
     if (!e) return;
     if (e->kind == E_STRING_LIT && !e->member) {
-        if (strtab_n >= STRLIT_MAX) msg_internal("too many string literals");
-        char lbl[32]; snprintf(lbl, sizeof(lbl), "__str%d", strtab_n);
-        e->member = xstrdup(lbl);
+        XGROW(strtab, strtab_n, strtab_cap);
+        e->member = xasprintf("__str%d", strtab_n);
         strtab[strtab_n].label = e->member;
         strtab[strtab_n].bytes = e->sval;
         strtab[strtab_n].len   = e->slen;
@@ -767,9 +778,8 @@ static void scan_heap_stmt(stmt *s)
 // collect them in a pre-pass and emit them at main's entry, like globals. The
 // stored base name is already mangled (<func>_<var>), matching declare_local.
 typedef struct { char *base; type *t; expr *init; initz *binit; int line; expr **args; int nargs; } stinit_e;
-#define MAX_STINIT 256
-static stinit_e stinits[MAX_STINIT];
-static int      n_stinit = 0;
+static stinit_e *stinits;
+static int       n_stinit = 0, stinit_cap = 0;
 
 static void collect_statics_stmt(const char *fn, stmt *s)
 {
@@ -781,9 +791,9 @@ static void collect_statics_stmt(const char *fn, stmt *s)
     for (decl *d = s->decls; d; d = d->next) {
         int n_el; type *et = array_elems(d->dtype, &n_el);
         int is_obj = et && et->kind == TY_STRUCT && et->tag;    // constructed at program start
-        if (d->sclass == SC_STATIC && (d->init || d->binit || is_obj) && n_stinit < MAX_STINIT) {
-            size_t n = strlen(fn) + strlen(d->name) + 2;
-            char *base = xmalloc(n); snprintf(base, n, "%s_%s", fn, d->name);
+        if (d->sclass == SC_STATIC && (d->init || d->binit || is_obj)) {
+            XGROW(stinits, n_stinit, stinit_cap);
+            char *base = xasprintf("%s_%s", fn, d->name);
             stinits[n_stinit].base  = base;
             stinits[n_stinit].t     = d->dtype;
             stinits[n_stinit].init  = d->init;
@@ -958,8 +968,8 @@ static type *infer_type(expr *e)
             if (!strcmp(fn, "__construct_at"))      { e->etype = t_void(); break; }  // synth member ctor call
             func *tm = find_template(fn);            // template call: substituted return type
             if (tm && tm->n_params == e->n_args) {
-                type *ta[8] = {0}; deduce_targs(tm, e->args, e->n_args, ta);
-                for (int i = 0; i < e->n_gtypes && i < 8; i++) ta[i] = e->gtypes[i];  // explicit args
+                type *ta[CPP_TPARAM_MAX] = {0}; deduce_targs(tm, e->args, e->n_args, ta);
+                for (int i = 0; i < e->n_gtypes && i < CPP_TPARAM_MAX; i++) ta[i] = e->gtypes[i];  // explicit args
                 e->etype = subst_type(tm->ret, ta, tm->n_tparams); break;
             }
             func *ov = resolve_overload(fn, e->args, e->n_args);
@@ -3380,37 +3390,38 @@ static void switch_dispatch(stmt *s, const char *tmp_name)
     for (int i = 0; i < s->n_items; i++) switch_dispatch(s->items[i], tmp_name);
 }
 
+// the destructors of the class-typed locals of one declaration, last first
+static void emit_decl_dtors(decl *d)
+{
+    if (!d) return;
+    emit_decl_dtors(d->next);
+    if (!d->dtype || d->dtype->kind != TY_STRUCT || !d->dtype->tag) return;
+    char *dtor = resolve_method(d->dtype, "dtor");
+    if (dtor) {
+        char *an = mangle_local(d->name);
+        emit("LEA %s", an); emit("PSH"); emit("CAL %s", dtor);
+        free(an); free(dtor);
+    }
+}
+
 // emit destructor calls for the class-typed locals declared directly in this
-// block, in reverse declaration order (RAII at normal block exit). Note: an
-// early return/break/continue inside the block bypasses these — a known gap.
+// block, in reverse declaration order (RAII at normal block exit). An early
+// return/break/continue runs them through g_live (emit_live_dtors) instead.
 static void emit_block_dtors(stmt *block)
 {
     for (int i = block->n_items - 1; i >= 0; i--) {
         stmt *it = block->items[i];
-        if (!it || it->kind != S_DECL) continue;
-        decl *ds[32]; int n = 0;
-        for (decl *d = it->decls; d && n < 32; d = d->next) ds[n++] = d;
-        for (int j = n - 1; j >= 0; j--) {
-            decl *d = ds[j];
-            if (!d->dtype || d->dtype->kind != TY_STRUCT || !d->dtype->tag) continue;
-            char *dtor = resolve_method(d->dtype, "dtor");
-            if (dtor) {
-                char *an = mangle_local(d->name);
-                emit("LEA %s", an); emit("PSH"); emit("CAL %s", dtor);
-                free(an); free(dtor);
-            }
-        }
+        if (it && it->kind == S_DECL) emit_decl_dtors(it->decls);
     }
 }
 
 // ---- early-exit RAII: live-local tracking + dtor emission ------------------
 static void live_push(const char *mangled, const char *dtor)
 {
-    if (g_live_n < MAX_LIVE) {
-        g_live[g_live_n].name = xstrdup(mangled);
-        g_live[g_live_n].dtor = xstrdup(dtor);
-        g_live_n++;
-    }
+    XGROW(g_live, g_live_n, g_live_cap);
+    g_live[g_live_n].name = xstrdup(mangled);
+    g_live[g_live_n].dtor = xstrdup(dtor);
+    g_live_n++;
 }
 static void live_pop_to(int mark)
 {
@@ -3558,10 +3569,13 @@ static int lih_expr_eq(expr *x, expr *y)
     if (x->kind == E_BINOP)   return x->op == y->op && lih_expr_eq(x->a, y->a) && lih_expr_eq(x->b, y->b);
     return 0;
 }
-static void lih_flatten(expr *e, expr **t, int *n)       // the terms of an ADD chain
+// the terms of an ADD chain, at most 16; *n is -1 when there are more (no hoist)
+static void lih_flatten(expr *e, expr **t, int *n)
 {
-    if (e && e->kind == E_BINOP && e->op == OP_ADD && *n < 14) { lih_flatten(e->a, t, n); lih_flatten(e->b, t, n); }
+    if (*n < 0) return;
+    if (e && e->kind == E_BINOP && e->op == OP_ADD) { lih_flatten(e->a, t, n); lih_flatten(e->b, t, n); }
     else if (*n < 16) t[(*n)++] = e;
+    else *n = -1;
 }
 
 typedef struct { const char *base; expr *inv; char *tmp; } lih_hoist;
@@ -3575,6 +3589,7 @@ static void lih_rewrite_expr(expr *e, const nameset *w)
     if (e->kind != E_INDEX || !lih_plain_var(e->a, w, TY_PTR)) return;
     expr *t[16]; int n = 0, has_op = 0;
     lih_flatten(e->b, t, &n);
+    if (n < 0) return;                         // too many terms: leave the index alone
     expr *inv = NULL, *var = NULL;
     for (int i = 0; i < n; i++) {
         if (lih_invariant(t[i], w)) { if (t[i]->kind != E_INT_LIT) has_op = 1; inv = inv ? ast_binop(OP_ADD, inv, t[i], e->line) : t[i]; }
@@ -4164,8 +4179,11 @@ static void emit_function(func *f, unit *u, int is_main)
     st_enter_func(f->asm_label);
     st_push_scope();
 
-    decl *plist[64]; int np = 0;
-    for (decl *p = f->params; p && np < 64; p = p->next) plist[np++] = p;
+    int np = 0;
+    for (decl *p = f->params; p; p = p->next) np++;
+    decl **plist = xmalloc((size_t)(np + 1) * sizeof *plist);
+    np = 0;
+    for (decl *p = f->params; p; p = p->next) plist[np++] = p;
 
     if (cur_fn_recursive) {
         // frame layout: [0] = saved FP, [1..np] = params, [np+1..] = locals
@@ -4248,6 +4266,7 @@ static void emit_function(func *f, unit *u, int is_main)
 
     st_pop_scope();
     st_leave_func();
+    free(plist);
     cur_func_name = NULL;
     cur_method_class = NULL;
     cur_func_ret  = NULL;
@@ -4393,7 +4412,7 @@ static void register_poly_classes(unit *u)
         if (!c || c->n_vtbl <= 0) continue;
         int seen = 0;
         for (int j = 0; j < n_poly; j++) if (poly_cls[j] == c) { seen = 1; break; }
-        if (!seen && n_poly < 64) poly_cls[n_poly++] = c;
+        if (!seen) { XGROW(poly_cls, n_poly, poly_cap); poly_cls[n_poly++] = c; }
     }
     for (int i = 0; i < n_poly; i++) {
         type *c = poly_cls[i];
@@ -4542,7 +4561,7 @@ static void analyze_recursion(unit *u)
 
 // non-type template parameter values for the instance currently being emitted
 // (a class-template method clone); indexed by parameter slot k.
-static int g_subst_vals[8]; static int g_subst_nvals = 0;
+static int g_subst_vals[CPP_TPARAM_MAX]; static int g_subst_nvals = 0;
 
 static type *subst_type(type *t, type **a, int n)
 {
@@ -4640,9 +4659,9 @@ static void deduce_targs(func *t, expr **cargs, int ncargs, type **targs)
 // get (creating if needed) the concrete instance of `t` for these argument types
 static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int nexpl)
 {
-    type *targs[8] = {0};
+    type *targs[CPP_TPARAM_MAX] = {0};
     deduce_targs(t, cargs, ncargs, targs);
-    for (int i = 0; i < nexpl && i < 8; i++) targs[i] = expl[i];   // explicit args win
+    for (int i = 0; i < nexpl && i < CPP_TPARAM_MAX; i++) targs[i] = expl[i];   // explicit args win
     // the label: <name>_T and one type code per tparam (explicit-only ones too)
     char *lbl = xmalloc(strlen(t->name) + 3 + (size_t)t->n_tparams);
     int k = sprintf(lbl, "%s_T", t->name);
@@ -4656,7 +4675,7 @@ static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int ne
     f->params = clone_decl(t->params, targs, t->n_tparams);
     f->body   = clone_stmt(t->body, targs, t->n_tparams);
     f->asm_label = lbl;
-    if (g_n_inst < 256) g_inst[g_n_inst++] = f;
+    { XGROW(g_inst, g_n_inst, g_inst_cap); g_inst[g_n_inst++] = f; }
     return f;
 }
 
@@ -4671,7 +4690,7 @@ static void instantiate_ctmpl_methods(unit *u)
         ctmpl  *ct  = ins->tmpl;
         int     plen = (int)strlen(ct->proto->tag) + 2;     // strip "Proto__"
         g_subst_nvals = ins->nvals;
-        for (int v = 0; v < ins->nvals && v < 8; v++) g_subst_vals[v] = ins->vals[v];
+        for (int v = 0; v < ins->nvals; v++) g_subst_vals[v] = ins->vals[v];
         type **ta = ins->ntargs ? ins->targs : NULL;        // type-parameter bindings
         int    nta = ins->ntargs;
         for (int m = 0; m < ct->n_methods; m++) {
@@ -4689,7 +4708,7 @@ static void instantiate_ctmpl_methods(unit *u)
             s->n_params = f->n_params;
             s->param_types = xmalloc(sizeof(type*) * (f->n_params > 0 ? f->n_params : 1));
             { int i = 0; for (decl *p = f->params; p; p = p->next, i++) s->param_types[i] = p->dtype; }
-            if (g_n_inst < 256) g_inst[g_n_inst++] = f;
+            { XGROW(g_inst, g_n_inst, g_inst_cap); g_inst[g_n_inst++] = f; }
         }
         g_subst_nvals = 0;
     }

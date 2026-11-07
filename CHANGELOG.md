@@ -52,6 +52,21 @@ tags consumed by Aurora.
   with no newline at its end (its last line swallowed the next line of the
   file that included it). Test `test97` takes names of 1000 characters
   through the whole chain.
+- **cppcomp has no table of fixed size left (#129).** Past 256 string
+  literals, 4096 locals, 256 function pointers, 32 nested loops or 64
+  nested scopes it stopped with an internal error in English; past 256
+  template instances, 64 polymorphic classes, 256 static initializers or
+  live objects, 64 parameters, 32 member initializers, 16 nested structs or
+  classes, 32 macro parameters or arguments, 64 nested `#if` or 32 `-I`
+  folders it dropped the rest without a word, or wrote past the table.
+  Each table now grows (`XGROW`, `Compilers/common/xstr.h`). The one limit
+  left is a rule of the language with its message: a template has at most
+  8 parameters (`CPP_TPARAM_MAX`). An index of more than 16 terms is left
+  as written instead of losing terms when its address is hoisted. An
+  internal error now removes the outputs before it aborts, as an error
+  does. Test `test98` passes each old limit.
+- **The name-length message is the same in both compilers**: "that name
+  has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
 - **The Verilator tests pass however the MSYS2 shell was opened.** An

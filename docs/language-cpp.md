@@ -154,8 +154,9 @@ tests its mantissa, because SAPHO's zero float is not an all-zero word.
   and not as free functions. An operator that returns a reference to its
   object chains: `s << a << b` calls `operator<<` on what the first returned.
 - Templates of functions and of classes, with type parameters
-  (`typename`/`class`) and `int` parameters, explicit `f<T>(...)`. No
-  specialization and no default template argument.
+  (`typename`/`class`) and `int` parameters, explicit `f<T>(...)`, at most
+  8 parameters per template. No specialization and no default template
+  argument.
 - Namespaces, nested; a qualified name and `using namespace` work. No
   anonymous `namespace {`. A namespace only groups names: every name in it
   is also global, so `std::cout` and `cout` are one object, and a program

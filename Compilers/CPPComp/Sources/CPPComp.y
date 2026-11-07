@@ -81,20 +81,29 @@ static void params_reset(void) { param_head = param_tail = NULL; param_count = 0
 // staged "current base type" used by declarators after `base_type` is reduced
 static type *cur_base = NULL;
 // stack of structs/unions currently being assembled (supports nested inline defs)
-static type *cur_struct_stk[16];
-static int   cur_struct_sp = 0;
-static type *cur_struct = NULL;            // == top of the stack (or NULL)
-static void cur_struct_push(type *t) { cur_struct_stk[cur_struct_sp++] = cur_struct; cur_struct = t; }
+static type **cur_struct_stk;
+static int    cur_struct_sp = 0, cur_struct_cap = 0;
+static type  *cur_struct = NULL;           // == top of the stack (or NULL)
+static void cur_struct_push(type *t)
+{
+    XGROW(cur_struct_stk, cur_struct_sp, cur_struct_cap);
+    cur_struct_stk[cur_struct_sp++] = cur_struct; cur_struct = t;
+}
 static void cur_struct_pop (void)    { cur_struct = cur_struct_stk[--cur_struct_sp]; }
 // the class whose body we are currently parsing (for `this` + method mangling)
 static type *cur_class = NULL;
 // constructor member-initializer list, lowered to `member = expr` statements
 // prepended to the ctor body
-static stmt *g_ctor_inits[32];
-static int   g_n_ctor_inits = 0;
-static int   g_ctor_base_named = 0;   // the member-init list constructs the base itself
-static char *g_ctor_members[32];      // member objects the member-init list constructs itself
-static int   g_n_ctor_members = 0;
+static stmt **g_ctor_inits;
+static int    g_n_ctor_inits = 0, g_ctor_inits_cap = 0;
+static int    g_ctor_base_named = 0;  // the member-init list constructs the base itself
+static char **g_ctor_members;         // member objects the member-init list constructs itself
+static int    g_n_ctor_members = 0, g_ctor_members_cap = 0;
+static void ctor_init_add(stmt *s)
+{
+    XGROW(g_ctor_inits, g_n_ctor_inits, g_ctor_inits_cap);
+    g_ctor_inits[g_n_ctor_inits++] = s;
+}
 // mangle a method name: Class::name -> "Class__name" (asm-level symbol)
 static char *mangle_method(const char *cls, const char *name)
 {
@@ -107,11 +116,12 @@ static char *mangle_method(const char *cls, const char *name)
 // so the parser can accept explicit template arguments `name<T...>(args)` without
 // the `<` colliding with the comparison operator (a template name is never the
 // operand of `<`). Registered when a function template is defined.
-static char *g_tmpl_names[256];
-static int   g_n_tmpl_names = 0;
+static char **g_tmpl_names;
+static int    g_n_tmpl_names = 0, g_tmpl_names_cap = 0;
 static void tmpl_name_register(const char *n) {
     for (int i = 0; i < g_n_tmpl_names; i++) if (!strcmp(g_tmpl_names[i], n)) return;
-    if (g_n_tmpl_names < 256) g_tmpl_names[g_n_tmpl_names++] = xstrdup(n);
+    XGROW(g_tmpl_names, g_n_tmpl_names, g_tmpl_names_cap);
+    g_tmpl_names[g_n_tmpl_names++] = xstrdup(n);
 }
 int tmpl_name_is(const char *n) {   // consulted by the lexer (classify_ident)
     for (int i = 0; i < g_n_tmpl_names; i++) if (!strcmp(g_tmpl_names[i], n)) return 1;
@@ -347,7 +357,7 @@ static void inject_default_member_inits(type *cls)
             args[1] = ast_int_lit(nwords, yylineno);
             s->e1 = ast_call(ast_ident(xstrdup("__zerofill"), yylineno), args, 2, yylineno);
         }
-        if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
+        ctor_init_add(s);
     }
 }
 
@@ -407,10 +417,17 @@ static void add_vmethod(type *cls, const char *name)
 static int   g_in_template = 0;
 static int   g_tparam_n = 0;
 // non-type template parameter tracking (for real class-template monomorphization)
-static int   g_tparam_isval[16];   // per param: 1 = non-type (value) parameter
+static int   g_tparam_isval[CPP_TPARAM_MAX];   // per param: 1 = non-type (value) parameter
 static int   g_ct_nontype = 0;     // current template has >=1 non-type parameter
-static func *g_ctm[128];           // methods collected for the current class template
-static int   g_n_ctm = 0;
+static func **g_ctm;               // methods collected for the current class template
+static int    g_n_ctm = 0, g_ctm_cap = 0;
+static void ctm_add(func *f) { XGROW(g_ctm, g_n_ctm, g_ctm_cap); g_ctm[g_n_ctm++] = f; }
+// the next template parameter: the language takes at most CPP_TPARAM_MAX
+static int tparam_next(void)
+{
+    if (g_tparam_n >= CPP_TPARAM_MAX) msg_error(yylineno, MSG_ERR_TOO_MANY_TPARAMS, CPP_TPARAM_MAX);
+    return g_tparam_n++;
+}
 
 // finalize a method into a free function tagged with its class.
 static void method_finish(type *ret, const char *name, stmt *body)
@@ -423,7 +440,7 @@ static void method_finish(type *ret, const char *name, stmt *body)
     // type-parameter template is ALSO emitted erased so a bare use `Vector v;`
     // (no explicit <T>) keeps working as before.
     if (g_in_template) {
-        if (g_n_ctm < 128) g_ctm[g_n_ctm++] = f;
+        ctm_add(f);
         if (!g_ct_nontype) unit_add_func(f);
     } else {
         unit_add_func(f);
@@ -463,7 +480,7 @@ static void static_method_finish(type *ret, const char *name, stmt *body)
     func *f = ast_func(ret, mangle_method(cur_class->tag, name), param_head, param_count, body, yylineno);
     /* method_of intentionally NULL: this is a static -- looks/acts like a free fn */
     if (g_in_template) {
-        if (g_n_ctm < 128) g_ctm[g_n_ctm++] = f;
+        ctm_add(f);
         if (!g_ct_nontype) unit_add_func(f);
     } else {
         unit_add_func(f);
@@ -597,7 +614,7 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
     ctinst *ins = xcalloc(1, sizeof(ctinst));
     ins->tmpl = ct; ins->concrete = c; ins->suffix = suffix;
     ins->nvals  = n; ins->ntargs = n;          // total parameter count; isval[] distinguishes
-    for (int i = 0; i < n && i < 8; i++) {
+    for (int i = 0; i < n; i++) {
         ins->vals[i]  = isval[i] ? vals[i]  : 0;
         ins->targs[i] = isval[i] ? NULL     : targs[i];
     }
@@ -745,8 +762,8 @@ static void check_static_assert(expr *cond, const char *msg, int line)
 // A class body: `class Tag : Base { ... }`, or the same with `struct`, which
 // C++ tells apart only by the default access (not enforced here). A struct may
 // be defined inside a class, so the enclosing class is saved and restored.
-static type *cur_class_stk[16];
-static int   cur_class_sp = 0;
+static type **cur_class_stk;
+static int    cur_class_sp = 0, cur_class_cap = 0;
 
 static void class_open(char *tag, type *base)
 {
@@ -754,6 +771,7 @@ static void class_open(char *tag, type *base)
     cur_struct_push(t);
     st_add_tag(tag, t);
     st_add_typedef(tag, t);             // bare class name usable as a type
+    XGROW(cur_class_stk, cur_class_sp, cur_class_cap);
     cur_class_stk[cur_class_sp++] = cur_class;
     cur_class = t;
     if (base) {                         // single inheritance: lay the base first
@@ -814,7 +832,7 @@ static type *class_close(void)
     if (g_in_template && cur_class_sp == 0) {
         ctmpl *ct = xcalloc(1, sizeof(ctmpl));
         ct->name = xstrdup(done->tag); ct->proto = done; ct->n_tparams = g_tparam_n;
-        for (int i = 0; i < g_tparam_n && i < 8; i++) ct->isval[i] = g_tparam_isval[i];
+        for (int i = 0; i < g_tparam_n; i++) ct->isval[i] = g_tparam_isval[i];
         ct->n_methods = g_n_ctm;
         ct->methods = xmalloc(sizeof(func*) * (g_n_ctm ? g_n_ctm : 1));
         for (int i = 0; i < g_n_ctm; i++) ct->methods[i] = g_ctm[i];
@@ -845,7 +863,7 @@ static type *class_close(void)
     struct { type **arr; int n; } talist;
     /* mixed template-arg list: each slot is either a type (targs[k] != NULL,
        isval[k] == 0) or a value (targs[k] == NULL, vals[k] = const, isval[k]==1). */
-    struct { type *targs[8]; int vals[8]; int isval[8]; int n; } mxlist;
+    struct { type *targs[CPP_TPARAM_MAX]; int vals[CPP_TPARAM_MAX]; int isval[CPP_TPARAM_MAX]; int n; } mxlist;
 }
 
 %token <ival>  INT_LIT CHAR_LIT
@@ -933,7 +951,7 @@ external_decl:
    templates stay type-erased: the placeholder behaves as one machine word. */
 template_prefix:
       KW_TEMPLATE '<' { g_tparam_n = 0; g_ct_nontype = 0; g_n_ctm = 0;
-                        for (int i = 0; i < 16; i++) g_tparam_isval[i] = 0; }
+                        for (int i = 0; i < CPP_TPARAM_MAX; i++) g_tparam_isval[i] = 0; }
       tparam_list '>' { g_in_template = 1; }
     ;
 tparam_list:
@@ -941,14 +959,15 @@ tparam_list:
     | tparam_list ',' tparam
     ;
 tparam:    /* IDENT first time; TYPEDEF_NAME if this param name was used before */
-      KW_TYPENAME IDENT         { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
-    | KW_CLASS    IDENT         { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
-    | KW_TYPENAME TYPEDEF_NAME  { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
-    | KW_CLASS    TYPEDEF_NAME  { st_add_typedef($2, t_tparam(g_tparam_n++)); free($2); }
+      KW_TYPENAME IDENT         { st_add_typedef($2, t_tparam(tparam_next())); free($2); }
+    | KW_CLASS    IDENT         { st_add_typedef($2, t_tparam(tparam_next())); free($2); }
+    | KW_TYPENAME TYPEDEF_NAME  { st_add_typedef($2, t_tparam(tparam_next())); free($2); }
+    | KW_CLASS    TYPEDEF_NAME  { st_add_typedef($2, t_tparam(tparam_next())); free($2); }
     | KW_INT IDENT              {   /* non-type parameter: N is an int constant
                                        referenced via the NTP_BASE sentinel */
-          st_add_enum($2, NTP_BASE + g_tparam_n);
-          g_tparam_isval[g_tparam_n] = 1; g_ct_nontype = 1; g_tparam_n++;
+          int k = tparam_next();
+          st_add_enum($2, NTP_BASE + k);
+          g_tparam_isval[k] = 1; g_ct_nontype = 1;
           free($2);
       }
     ;
@@ -1294,13 +1313,14 @@ mem_init:
               a[0] = ast_ident(xstrdup($1), yylineno);
               for (int i = 0; i < $3.n; i++) a[i + 1] = $3.arr[i];
               s->e1 = ast_call(ast_ident(xstrdup("__construct_at"), yylineno), a, $3.n + 1, yylineno);
-              if (g_n_ctor_members < 32) g_ctor_members[g_n_ctor_members++] = xstrdup($1);
+              XGROW(g_ctor_members, g_n_ctor_members, g_ctor_members_cap);
+              g_ctor_members[g_n_ctor_members++] = xstrdup($1);
           } else {
               if ($3.n > 1) msg_error(yylineno, MSG_ERR_MEMBER_ONE_INIT, $1);
               s->e1 = ast_assign(ast_ident($1, yylineno),
                                  $3.n ? $3.arr[0] : ast_int_lit(0, yylineno), yylineno);
           }
-          if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
+          ctor_init_add(s);
       }
     | TYPEDEF_NAME '(' argument_list ')' {
           /* base-class init: `Base(args)` -> Base__ctor(this, args); a base
@@ -1314,7 +1334,7 @@ mem_init:
               for (int i = 0; i < $3.n; i++) a[i + 1] = $3.arr[i];
               expr *call = ast_call(ast_ident(mangle_method($1, "ctor"), yylineno), a, $3.n + 1, yylineno);
               stmt *s = ast_stmt(S_EXPR, yylineno); s->e1 = call;
-              if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
+              ctor_init_add(s);
               g_ctor_base_named = 1;
               free($1);
           }
@@ -1633,12 +1653,11 @@ ct_mixed_arg_list:
       ct_mixed_arg                            { $$ = $1; }
     | ct_mixed_arg_list ',' ct_mixed_arg      {
           $$ = $1;
-          if ($$.n < 8) {
-              $$.targs[$$.n] = $3.targs[0];
-              $$.vals [$$.n] = $3.vals [0];
-              $$.isval[$$.n] = $3.isval[0];
-              $$.n++;
-          }
+          if ($$.n >= CPP_TPARAM_MAX) msg_error(yylineno, MSG_ERR_TOO_MANY_TPARAMS, CPP_TPARAM_MAX);
+          $$.targs[$$.n] = $3.targs[0];
+          $$.vals [$$.n] = $3.vals [0];
+          $$.isval[$$.n] = $3.isval[0];
+          $$.n++;
       }
     ;
 

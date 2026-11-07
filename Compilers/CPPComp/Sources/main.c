@@ -31,20 +31,22 @@
  * "num_ins" line, already written by codegen, drops by as much (a negative
  * `gone` raises it: asm_divseq's added words). */
 static void lower_num_ins(const char *tmp_dir, int gone) {
-    char path[2048]; snprintf(path, sizeof(path), "%s/prog_log.txt", tmp_dir);
+    char *path = xasprintf("%s/prog_log.txt", tmp_dir);
     FILE *f = fopen(path, "r");
-    if (!f) return;
-    char *text = NULL; size_t len = 0, cap = 0; char line[1024];
-    while (fgets(line, sizeof(line), f)) {
+    if (!f) { free(path); return; }
+    char *text = NULL, *line; size_t len = 0, cap = 0;
+    while ((line = xgetline(f)) != NULL) {
         int v;
-        if (sscanf(line, "num_ins %d", &v) == 1) snprintf(line, sizeof(line), "num_ins %d\n", v - gone);
-        size_t k = strlen(line);
+        char *out = sscanf(line, "num_ins %d", &v) == 1 ? xasprintf("num_ins %d\n", v - gone)
+                                                         : xasprintf("%s\n", line);
+        size_t k = strlen(out);
         if (len + k + 1 > cap) { cap = 2 * (len + k + 1); text = xrealloc(text, cap); }
-        memcpy(text + len, line, k + 1); len += k;
+        memcpy(text + len, out, k + 1); len += k;
+        free(out); free(line);
     }
     fclose(f);
     if ((f = fopen(path, "w"))) { if (text) fputs(text, f); fclose(f); }
-    free(text);
+    free(text); free(path);
 }
 
 /* The files of this processor in its output folder. A run that stops on an
@@ -161,6 +163,7 @@ int main(int argc, char **argv)
             snprintf(out_files[i], n, fmt[i], out_dir, g_unit->prname);
         }
         atexit(remove_outputs);
+        msg_on_internal(remove_outputs);   // abort skips atexit
     }
     FILE *fo = fopen(outp, "w");
     if (!fo) { fprintf(stderr, MSG_ERR_CANT_WRITE, outp); exit(1); }
@@ -173,7 +176,7 @@ int main(int argc, char **argv)
     // code no path reaches leaves the program, and its hardware with it (the
     // pc_<proc>_mem.txt map and prog_log's num_ins follow)
     if (tmp_dir) {
-        char pc[2048]; snprintf(pc, sizeof(pc), "%s/pc_%s_mem.txt", tmp_dir, g_unit->prname);
+        char *pc = xasprintf("%s/pc_%s_mem.txt", tmp_dir, g_unit->prname);
         int gone = asm_reach(outp, pc);
         if (gone > 0) lower_num_ins(tmp_dir, gone);
         // every division becomes `<div> x; NOP...; <read>` (the dividers take
@@ -189,6 +192,7 @@ int main(int argc, char **argv)
         // JIZ x; JMP y; @x is JNZ y (#78): last, after every pass that removes instructions
         int jnz = asm_jnz(outp, pc);
         if (jnz > 0) lower_num_ins(tmp_dir, jnz);
+        free(pc);
     } else {
         asm_reach(outp, NULL);
         asm_divseq(outp, NULL);
@@ -203,8 +207,9 @@ int main(int argc, char **argv)
 
     // the folder of the source, where asmcomp reads the user's own files
     // (input_N.txt, cade_k.txt)
-    char log[2048]; snprintf(log, sizeof(log), "%s/prog_log.txt", tmp_dir);
+    char *log = xasprintf("%s/prog_log.txt", tmp_dir);
     FILE *fl = fopen(log, "a");
+    free(log);
     if (fl) {
         char *src = dir_of(in_path);
         if (src) fprintf(fl, "srcdir %s\n", src);
