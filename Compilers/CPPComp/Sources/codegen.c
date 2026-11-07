@@ -44,6 +44,7 @@ static int   g_uses_u2f  = 0;    // an unsigned -> float conversion was emitted 
 static int   g_uses_f2u  = 0;    // a float -> unsigned conversion was emitted -> emit f2u
 static int   g_nbmant    = 23;   // mantissa width (a float is zero iff its mantissa is)
 static int   g_any_recursive = 0; // some function needs stack frames
+static int   g_tmpl_recursive = 0; // a recursive template: its instances, made later, need them
 static int   g_uses_heap = 0;    // malloc/free/new/delete used -> emit heap runtime
 #ifndef CFG_HEAPSZ
 #define CFG_HEAPSZ 2048
@@ -70,10 +71,18 @@ static type *infer_type(expr *e);       // (also forward-declared below; needed 
 // inside a method, an unqualified name that isn't a local/param but IS a data
 // member of the enclosing class resolves to `this->member`. Returns the field
 // (and tells the caller to address it relative to the `this` param).
+// a local or a parameter of the current function, in any block that is open:
+// it hides a member of the same name, as in C++ (a global does not)
+static int names_a_local(const char *name)
+{
+    sym *s = st_find(name);
+    return s && (s->kind == SK_LOCAL_VAR || s->kind == SK_PARAM);
+}
+
 static strct_field *cur_class_member(const char *name)
 {
     if (!cur_method_class) return NULL;
-    if (st_find_local(name)) return NULL;     // a local/param shadows a member
+    if (names_a_local(name)) return NULL;     // a local/param shadows a member
     return t_struct_find(cur_method_class, name);
 }
 
@@ -102,7 +111,7 @@ static int vtbl_slot(type *ct, const char *name)
 // a local). Returns that global's symbol, or NULL.
 static sym *cur_class_static(const char *name)
 {
-    if (!cur_method_class || st_find_local(name)) return NULL;
+    if (!cur_method_class || names_a_local(name)) return NULL;
     for (int i = 0; i < cur_method_class->n_statics; i++)
         if (!strcmp(cur_method_class->statics[i], name)) {
             char *gn = cg_mangle_method(cur_method_class->tag, name);
@@ -110,6 +119,15 @@ static sym *cur_class_static(const char *name)
             return s;
         }
     return NULL;
+}
+
+// the variable a plain name means here, for the fast paths that load it by
+// name: NULL when, inside a method, it names a member or a class static,
+// which the general path reaches through `this` (#128)
+static sym *var_sym(const char *name)
+{
+    if (cur_class_member(name) || cur_class_static(name)) return NULL;
+    return st_find(name);
 }
 
 // if `member` is a static data member of struct type `t`, return its global
@@ -521,7 +539,7 @@ static int    brk_top = 0, brk_cap = 0;
 // emit_block_dtors sits after the jump in the .asm, so it is skipped at runtime).
 // Parallel marks record the live depth at each loop/switch and at function entry
 // so each exit unwinds exactly the right span (LIFO).
-typedef struct { char *name; char *dtor; } live_local;
+typedef struct { char *name; char *dtor; int n; int words; } live_local;   // n objects of `words` (an array: n > 1)
 static live_local *g_live;
 static int         g_live_n = 0, g_live_cap = 0;
 
@@ -628,6 +646,8 @@ static void emit_initz(const char *base, int off, type *t, initz *z);
 static void emit_fn_return(void);
 static void gen_addr (expr *e);
 static void gen_arg  (expr *arg, type *ptype);
+static char *new_temp(const char *prefix);
+static void emit_dtors_at(const char *name, const char *dtor, int n, int words);
 static type *array_elems(type *t, int *n);
 static void gen_store(expr *lv, expr *val);
 static void gen_stmt (stmt *s);
@@ -914,7 +934,10 @@ static type *infer_type(expr *e)
     }
     case E_UNOP: {
         type *t = infer_type(e->a);
-        if (e->op == OP_LNOT || e->op == OP_BNOT) e->etype = t_int();
+        if (e->op == OP_LNOT) e->etype = t_int();
+        else if (e->op == OP_BNOT)                // ~ keeps an unsigned operand unsigned:
+            e->etype = (t && t->kind == TY_INT && !t->is_signed && !t->is_bool)
+                     ? t_uint() : t_int();        // ~0u >> 1 shifts in a zero (#128)
         else e->etype = t;
         break;
     }
@@ -1035,7 +1058,16 @@ static type *infer_type(expr *e)
     case E_GENERIC: e->etype = infer_type(generic_select(e)); break;
     case E_SIZEOF_T: e->etype = t_int(); break;
     case E_SIZEOF_E: infer_type(e->a); e->etype = t_int(); break;
-    case E_TERNARY: infer_type(e->a); infer_type(e->b); infer_type(e->c); e->etype = e->b->etype; break;
+    case E_TERNARY: {
+        // the two branches meet in one type: a float if either is one, as in
+        // C++ (#128: c ? 1 : 2.5f took the int branch's type and its bits)
+        infer_type(e->a);
+        type *bt = infer_type(e->b), *ct = infer_type(e->c);
+        e->etype = (bt && ct && (type_is_float(bt) || type_is_float(ct)) &&
+                    (type_is_float(bt) || type_is_int(bt)) && (type_is_float(ct) || type_is_int(ct)))
+                 ? t_float() : bt;
+        break;
+    }
     case E_COMMA: infer_type(e->a); e->etype = infer_type(e->b); break;
     }
     return e->etype;
@@ -1273,9 +1305,14 @@ static void gen_addr(expr *e)
             else emit("LOD %s", s->asm_name);
             return;
         }
-        // frame local/param of a recursive function: address is __fp + offset
+        // frame local/param of a recursive function: address is __fp + offset;
+        // an array or struct parameter's slot holds the object's address, as
+        // its word does below (#128: f(P p, int n) read p from the slot itself)
         if (s->is_frame) {
             emit("LOD __fp"); if (s->frame_off) emit("ADD %d", s->frame_off);
+            if (s->kind == SK_PARAM && s->stype &&
+                (s->stype->kind == TY_ARRAY || s->stype->kind == TY_STRUCT))
+                emit("LDI 0");
             return;
         }
         // array/struct params hold the address of the object, so loading the
@@ -1323,7 +1360,7 @@ static void gen_addr(expr *e)
         // variable: `base; ADD idx` (the memory-operand form) where the stack
         // path took PSH, the index load and S_ADD
         if (elem_sz == 1 && e->b && (e->b->kind == E_INT_LIT || e->b->kind == E_IDENT)) {
-            sym *r = e->b->kind == E_IDENT ? st_find(e->b->sval) : NULL;
+            sym *r = e->b->kind == E_IDENT ? var_sym(e->b->sval) : NULL;
             int ok = e->b->kind == E_INT_LIT ||
                      (r && (r->kind == SK_LOCAL_VAR || r->kind == SK_PARAM || r->kind == SK_GLOBAL_VAR) &&
                       !r->is_frame && r->stype && r->stype->kind == TY_INT && !r->stype->is_ref);
@@ -1574,23 +1611,28 @@ static void gen_expr_to(expr *e, type *want)
 // (freshly allocated) address temporaries.
 static void gen_struct_copy(expr *dest, expr *src, int nwords)
 {
-    char dn[32], sn[32];
-    snprintf(dn, sizeof(dn), "__scd%d", ++label_n);
-    snprintf(sn, sizeof(sn), "__scs%d", ++label_n);
-    char *dt = mangle_local(dn), *st = mangle_local(sn);
-    const char *fn = cur_func_name ? cur_func_name : "global";
-    st_add(SK_LOCAL_VAR, dn, dt, t_int()); log_var(fn, dn, 1, 0);
-    st_add(SK_LOCAL_VAR, sn, st, t_int()); log_var(fn, sn, 1, 0);
-
+    char *dt = new_temp("scd"), *st = new_temp("scs");
     gen_expr(src);  emit("SET %s", st);     // st = &src
     gen_addr(dest); emit("SET %s", dt);     // dt = &dest
-    for (int i = 0; i < nwords; i++) {
+    // an object keeps its own vptr: assigning a derived object to a base one
+    // copies the fields only (#128: the copy took D's vtable into a B)
+    type *t = infer_type(dest);
+    int first = (t && t->kind == TY_STRUCT && t->n_vtbl > 0) ? 1 : 0;
+    for (int i = first; i < nwords; i++) {
         emit("LOD %s", dt); if (i) emit("ADD %d", i); emit("PSH");
         emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDI 0");
         emit("STI 0");
     }
     emit("LOD %s", dt);                      // result = &dest
     free(dt); free(st);
+}
+
+// a new object of class t at the named block `dest`, copied from another:
+// its vptr is its own class's, whatever the source's was (slicing, #128)
+static void set_block_vptr(const char *dest, type *t)
+{
+    if (!t || t->kind != TY_STRUCT || t->n_vtbl <= 0 || !t->tag) return;
+    emit("LEA %s", dest); emit("PSH"); emit("LEA __vt_%s", t->tag); emit("STI 0");
 }
 
 // copy n words from src (which evaluates to a base address) into the named
@@ -1656,6 +1698,120 @@ static void gen_arg(expr *arg, type *ptype)
         return;
     }
     gen_push_arg(arg);
+}
+
+// a bitfield's value, from the address of its word in the accumulator: the
+// word shifted down, masked and, for a signed field, sign-extended
+static void emit_bitfield_read(strct_field *bf)
+{
+    emit("LDI 0");                          // word value
+    if (bf->bit_pos > 0) {                  // logical shift right by bit_pos (stack form)
+        emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHR");
+    }
+    emit("AND %ld", bf_mask(bf));
+    if (bf->ftype && bf->ftype->kind == TY_INT && bf->ftype->is_signed &&
+        bf->bit_width < g_nubits) {         // signed field: sign-extend, (v ^ s) - s
+        long s = bf_word(1ULL << (bf->bit_width - 1));
+        emit("XOR %ld", s);
+        emit("ADD %ld", -s);
+    }
+}
+
+// ---- virtual calls ---------------------------------------------------------
+
+// an expression with no call in it, nor an operator a class may overload: its
+// evaluation cannot run code that sets __fp_id
+static int expr_calls_nothing(expr *e)
+{
+    if (!e) return 1;
+    switch (e->kind) {
+    case E_INT_LIT: case E_FLOAT_LIT: case E_CHAR_LIT: case E_STRING_LIT: case E_IDENT:
+    case E_SIZEOF_T: case E_SIZEOF_E:
+        return 1;
+    case E_MEMBER: case E_PMEMBER: case E_ADDR: case E_DEREF: case E_CAST:
+        return expr_calls_nothing(e->a);
+    case E_INDEX: {                               // a class's [] is a call
+        type *ta = infer_type(e->a);
+        return !(ta && ta->kind == TY_STRUCT) && expr_calls_nothing(e->a) && expr_calls_nothing(e->b);
+    }
+    case E_BINOP: case E_UNOP: {
+        type *t = infer_type(e);
+        type *ta = e->a ? infer_type(e->a) : NULL;
+        if ((t && t->kind == TY_STRUCT) || (ta && ta->kind == TY_STRUCT)) return 0;
+        return expr_calls_nothing(e->a) && expr_calls_nothing(e->b);
+    }
+    default:
+        return 0;
+    }
+}
+
+// an object expression that can be evaluated twice: a name, `this`, a member
+// of one, through . or ->
+static int expr_reevaluable(expr *e)
+{
+    if (!e) return 0;
+    if (e->kind == E_IDENT) return 1;
+    if (e->kind == E_MEMBER || e->kind == E_PMEMBER) return expr_reevaluable(e->a);
+    return 0;
+}
+
+// the function a label names, to read its parameters' default arguments
+static func *func_of_label(const char *label)
+{
+    if (!label) return NULL;
+    for (int i = 0; i < cg_unit->n_funcs; i++)
+        if (cg_unit->funcs[i]->asm_label && !strcmp(cg_unit->funcs[i]->asm_label, label)) return cg_unit->funcs[i];
+    for (int i = 0; i < g_n_inst; i++)
+        if (g_inst[i]->asm_label && !strcmp(g_inst[i]->asm_label, label)) return g_inst[i];
+    return NULL;
+}
+
+// `this` of a virtual call: obj (by . or ->), or the method's own when obj is NULL
+static void gen_vcall_this(expr *obj, int arrow)
+{
+    if (!obj) gen_load_this();
+    else if (arrow) gen_expr(obj);
+    else gen_addr(obj);
+}
+
+// A virtual call: fid = mem[mem[this] + slot], then the dispatch chain. The
+// arguments are pushed after `this`, the defaults of the ones not written
+// too (the chain picks the targets by their full parameter count). The fid
+// is read AFTER the arguments when one of them may call code that sets
+// __fp_id itself (#128: p->f(p->g(5)) called g twice): from `this`
+// evaluated again, or from a temporary when the object cannot be.
+static void gen_virtual_call(expr *obj, int arrow, type *ct, const char *member, int vslot,
+                             const char *masm, sym *ms, expr **args, int n_args)
+{
+    int late = 0;
+    for (int i = 0; i < n_args; i++) if (!expr_calls_nothing(args[i])) late = 1;
+    char *keep = NULL;
+    gen_vcall_this(obj, arrow);
+    if (late && obj && !expr_reevaluable(obj)) { keep = new_temp("vthis"); emit("SET %s", keep); }
+    emit("PSH");                                      // this -> arg 0 (kept on the stack)
+    if (!late) {
+        emit("LDI 0");                                // acc = vptr = mem[this]
+        if (vslot) emit("ADD %d", vslot);
+        emit("LDI 0");                                // acc = fid = mem[vptr+slot]
+        emit("SET __fp_id");
+    }
+    func *fd = func_of_label(masm);                   // its parameters, `this` first
+    decl *p = fd && fd->params ? fd->params->next : NULL;
+    for (int i = 0; i < n_args; i++) {
+        type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
+        gen_arg(args[i], pt);
+        if (p) p = p->next;
+    }
+    for (; p && p->init; p = p->next) gen_arg(p->init, p->dtype);   // default arguments
+    if (late) {
+        if (keep) emit("LOD %s", keep); else gen_vcall_this(obj, arrow);
+        emit("LDI 0");
+        if (vslot) emit("ADD %d", vslot);
+        emit("LDI 0");
+        emit("SET __fp_id");
+        free(keep);
+    }
+    emit_dispatch_chain(vcall_np(ct, member, ms, n_args));
 }
 
 // ---- object construction ---------------------------------------------------
@@ -1833,13 +1989,17 @@ static void gen_store(expr *lv, expr *val)
             }
             emit("S_ORR");                          // cleared | shifted
             emit("STI 0");                            // mem[&word] = result
+            // the assignment's value is the field's, not the word's (#128:
+            // y = (s.b = 5) gave 80 for b in bits 4..7)
+            emit("LOD %s", ta);
+            emit_bitfield_read(bf);
             free(ta);
             return;
         }
     }
     // fast path: simple scalar IDENT
     if (lv->kind == E_IDENT) {
-        sym *s = st_find(lv->sval);
+        sym *s = var_sym(lv->sval);
         if (s && !s->is_frame && s->stype && !s->stype->is_ref &&
             s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
             g_cade_ok = 1;                    // x = cade(); is allowed here
@@ -1850,7 +2010,7 @@ static void gen_store(expr *lv, expr *val)
     }
     // fast path: regular array element with constant base
     if (lv->kind == E_INDEX && lv->a->kind == E_IDENT) {
-        sym *s = st_find(lv->a->sval);
+        sym *s = var_sym(lv->a->sval);
         if (s && s->stype && s->stype->kind == TY_ARRAY && s->kind != SK_PARAM) {
             type *bt = s->stype;
             int elem_sz = type_size_words(bt->base);
@@ -2043,6 +2203,7 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
     cur_fn_recursive = 0;
     cur_method_class = f->method_of;
     st_enter_func(f->asm_label);
+    int floor = st_hide_scopes();          // the caller's locals are not the callee's (#128)
     st_push_scope();
     for (int i = 0; i < np; i++) {
         char *nm = bound[i] ? xstrdup(bound[i]) : mangle_local(plist[i]->name);
@@ -2053,6 +2214,7 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
     for (int i = 0; i < np; i++) free(bound[i]);
     if (f->ret->is_ref) gen_addr(body); else gen_expr_to(body, f->ret);
     st_pop_scope();
+    st_restore_floor(floor);
 
     cur_func_name    = sv_fn;
     cur_func_ret     = sv_ret;
@@ -2101,9 +2263,16 @@ static void gen_expr(expr *e)
             emit("LOD %d", id);
             return;
         }
-        // frame scalar/pointer local: load mem[__fp + off] (arrays/structs in a
-        // recursive function are rejected at declaration time)
-        if (s->is_frame) { gen_addr(e); emit("LDI 0"); return; }
+        // frame scalar/pointer local: load mem[__fp + off] (array/struct locals
+        // of a recursive function are refused at their declaration). An array
+        // or struct parameter's value is its object's address: gen_addr's
+        if (s->is_frame) {
+            gen_addr(e);
+            if (!(s->kind == SK_PARAM && s->stype &&
+                  (s->stype->kind == TY_ARRAY || s->stype->kind == TY_STRUCT)))
+                emit("LDI 0");
+            return;
+        }
         if (s->stype && s->stype->kind == TY_ARRAY) {
             // array decays to base address
             if (s->kind == SK_PARAM) emit("LOD %s", s->asm_name);
@@ -2180,7 +2349,7 @@ static void gen_expr(expr *e)
         type *bt = infer_type(e->a);
         if (bt && bt->kind == TY_ARRAY && type_size_words(bt->base) == 1
             && e->a->kind == E_IDENT) {
-            sym *s = st_find(e->a->sval);
+            sym *s = var_sym(e->a->sval);
             if (s && s->kind != SK_PARAM) {
                 // constant index -> LOD_V base k (offset baked in) instead of
                 // computing the index and an indirect LDI.
@@ -2204,17 +2373,7 @@ static void gen_expr(expr *e)
         strct_field *bf = member_field(e);
         if (bf && bf->is_bitfield) {
             gen_addr(e);                    // &word (gen_addr adds the word offset)
-            emit("LDI 0");                    // word value
-            if (bf->bit_pos > 0) {          // logical shift right by bit_pos (stack form)
-                emit("PSH"); emit("LOD %d", bf->bit_pos); emit("S_SHR");
-            }
-            emit("AND %ld", bf_mask(bf));
-            if (bf->ftype && bf->ftype->kind == TY_INT && bf->ftype->is_signed &&
-                bf->bit_width < g_nubits) {         // signed field: sign-extend, (v ^ s) - s
-                long s = bf_word(1ULL << (bf->bit_width - 1));
-                emit("XOR %ld", s);
-                emit("ADD %ld", -s);
-            }
+            emit_bitfield_read(bf);
             return;
         }
         // a field of array/struct type decays to its address (no load)
@@ -2246,6 +2405,22 @@ static void gen_expr(expr *e)
                 free(masm);
                 return;
             }
+        }
+        // `l OP= r` is `l = l OP r` with l written twice in the tree: an l
+        // with an effect of its own (a[k++], a[f()]) would run it twice
+        // (#128). Its address is taken once, into a pointer temporary, and
+        // the store and the read go through that.
+        if (e->op != OP_NONE && !expr_calls_nothing(e->a)) {
+            type *lt = infer_type(e->a);
+            char nm[32]; snprintf(nm, sizeof nm, "__cpa%d", ++label_n);
+            char *an = mangle_local(nm);
+            st_add(SK_LOCAL_VAR, nm, an, t_ptr(lt));
+            log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
+            gen_addr(e->a); emit("SET %s", an);
+            expr *at = ast_deref(ast_ident(xstrdup(nm), e->line), e->line);
+            gen_store(at, ast_binop(e->op, ast_deref(ast_ident(xstrdup(nm), e->line), e->line), e->b->b, e->line));
+            free(an);
+            return;
         }
         gen_store(e->a, e->b);
         // assignment expression yields the stored value; for v1 we leave acc
@@ -2281,8 +2456,9 @@ static void gen_expr(expr *e)
         int rf = rt && rt->kind == TY_FLOAT;
         int is_float = lf || rf;     // operate in float if EITHER operand is float
         // operand signedness (for >> and comparisons; only when not float)
-        int lhs_uns = lt && lt->kind == TY_INT && !lt->is_signed;
-        int uns_cmp = !is_float && ((lhs_uns) || (rt && rt->kind == TY_INT && !rt->is_signed));
+        // a bool promotes to int (#128: true > -1 compared without sign, 0)
+        int lhs_uns = lt && lt->kind == TY_INT && !lt->is_signed && !lt->is_bool;
+        int uns_cmp = !is_float && ((lhs_uns) || (rt && rt->kind == TY_INT && !rt->is_signed && !rt->is_bool));
 
         // unsigned comparison: map to signed order by flipping the sign bit of
         // both operands (XOR with 1<<(NUBITS-1)), then do the signed compare.
@@ -2301,30 +2477,17 @@ static void gen_expr(expr *e)
             return;
         }
 
-        // logical &&/|| as a value: short-circuit, result normalised to 0/1.
-        if (op == OP_LAND) {
-            char *lz = fresh_label("and_z");
-            char *le = fresh_label("and_e");
-            gen_expr(e->a); emit("JIZ %s", lz);   // a == 0 -> 0
-            gen_expr(e->b); emit("JIZ %s", lz);   // b == 0 -> 0
+        // logical &&/|| as a value: the branch an `if` takes (gen_bool, which
+        // short-circuits and reads a float through float_truth: #128, the raw
+        // word of 0.0f is not 0), the result 0 or 1.
+        if (op == OP_LAND || op == OP_LOR) {
+            char *lz = fresh_label("lv_z");
+            char *le = fresh_label("lv_e");
+            gen_bool(e, lz);
             emit("LOD 1"); emit("JMP %s", le);
             emit("@%s NOP", lz); emit("LOD 0");
             emit("@%s NOP", le);
             free(lz); free(le);
-            return;
-        }
-        if (op == OP_LOR) {
-            char *l1 = fresh_label("or_1");
-            char *lz = fresh_label("or_z");
-            char *le = fresh_label("or_e");
-            gen_expr(e->a); emit("JIZ %s", l1);   // a == 0 -> test b; else true
-            emit("LOD 1"); emit("JMP %s", le);
-            emit("@%s NOP", l1);
-            gen_expr(e->b); emit("JIZ %s", lz);   // b == 0 -> 0
-            emit("LOD 1"); emit("JMP %s", le);
-            emit("@%s NOP", lz); emit("LOD 0");
-            emit("@%s NOP", le);
-            free(l1); free(lz); free(le);
             return;
         }
 
@@ -2347,7 +2510,7 @@ static void gen_expr(expr *e)
         const char *opnd = NULL; char litb[32]; long lit = 0; int is_lit = 0;
         cfold_node(e->b);                     // FL - 1 -> 28: then the literal memory form
         if (mem_form_op && e->b->kind == E_IDENT && lf == rf) {   // mem-form needs matching types
-            sym *r = st_find(e->b->sval);
+            sym *r = var_sym(e->b->sval);
             // not a reference: its word holds the referent's address, and the
             // memory form would operate on that address (z + r gave z + &x)
             if (r && !r->is_frame && r->stype && !r->stype->is_ref &&
@@ -2384,7 +2547,7 @@ static void gen_expr(expr *e)
         if ((op == OP_ADD || op == OP_MUL) && lf == rf &&
             e->b->kind == E_INDEX && e->b->a->kind == E_IDENT &&
             e->b->b->kind == E_INT_LIT && e->b->b->ival >= 0) {
-            sym *r = st_find(e->b->a->sval);
+            sym *r = var_sym(e->b->a->sval);
             if (r && r->kind != SK_PARAM && r->stype && r->stype->kind == TY_ARRAY
                 && type_size_words(r->stype->base) == 1) {
                 gen_expr(e->a);
@@ -2480,7 +2643,7 @@ static void gen_expr(expr *e)
         int delta = (e->kind == E_PREDEC) ? -step : step;
         // fast path: simple scalar identifier
         if (lv->kind == E_IDENT) {
-            sym *s = st_find(lv->sval);
+            sym *s = var_sym(lv->sval);
             if (s && !s->is_frame && s->stype && !s->stype->is_ref &&   // a reference steps its referent
                 s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
                 emit("LOD %s", s->asm_name);
@@ -2511,7 +2674,7 @@ static void gen_expr(expr *e)
         int delta = (e->kind == E_POSTDEC) ? -step : step;
         // fast path: simple scalar identifier
         if (lv->kind == E_IDENT) {
-            sym *s = st_find(lv->sval);
+            sym *s = var_sym(lv->sval);
             if (s && !s->is_frame && s->stype && !s->stype->is_ref &&   // a reference steps its referent
                 s->stype->kind != TY_ARRAY && s->stype->kind != TY_STRUCT) {
                 emit("LOD %s", s->asm_name);
@@ -2654,6 +2817,7 @@ static void gen_expr(expr *e)
             int words = type_size_words(t), id = ++label_n;      // n is the word before the
             char *dp = new_temp("dlp"), *dn = new_temp("dln");   // array (new[] put it there);
             gen_expr(e->a); emit("SET %s", dp);                  // destroy n..1, last first
+            emit("JIZ __Ldl_e%d_null", id);                      // delete[] of null: nothing (#128)
             emit("LOD %s", dp); emit("ADD -1"); emit("LDI 0"); emit("SET %s", dn);
             emit("@__Ldl_t%d NOP", id);
             emit("LOD %s", dn); emit("JIZ __Ldl_e%d", id);
@@ -2664,6 +2828,7 @@ static void gen_expr(expr *e)
             emit("JMP __Ldl_t%d", id);
             emit("@__Ldl_e%d NOP", id);
             emit("LOD %s", dp); emit("ADD -1"); emit("PSH"); emit("CAL free");   // the whole block
+            emit("@__Ldl_e%d_null NOP", id);
             free(ad); free(dp); free(dn);
             return;
         }
@@ -2681,6 +2846,8 @@ static void gen_expr(expr *e)
         // stale member and free the wrong object (a double-free). So keep one
         // copy on the data stack for free() across the dtor call.
         gen_expr(e->a);
+        char *skip = fresh_label("del_null");       // delete of null does nothing: no
+        emit("JIZ %s", skip);                       // destructor runs (#128)
         if (dslot >= 0 || dtor) {
             emit("PSH");                            // copy kept for free()
             emit("PSH");                            // copy consumed as the dtor's `this`
@@ -2695,6 +2862,7 @@ static void gen_expr(expr *e)
         } else {
             emit("PSH"); emit("CAL free");
         }
+        emit("@%s NOP", skip); free(skip);
         return;
     }
 
@@ -2721,11 +2889,13 @@ static void gen_expr(expr *e)
     case E_TERNARY: {
         char *else_l = fresh_label("ter_else");
         char *end_l  = fresh_label("ter_end");
+        type *t = infer_type(e);                     // each branch converted to it
+        int conv = t && (type_is_float(t) || type_is_int(t));
         gen_bool(e->a, else_l);
-        gen_expr(e->b);
+        if (conv) gen_expr_to(e->b, t); else gen_expr(e->b);
         emit("JMP %s", end_l);
         emit("@%s NOP", else_l);
-        gen_expr(e->c);
+        if (conv) gen_expr_to(e->c, t); else gen_expr(e->c);
         emit("@%s NOP", end_l);
         free(else_l); free(end_l);
         return;
@@ -2749,18 +2919,8 @@ static void gen_expr(expr *e)
             if (!masm && vslot < 0) msg_error(e->line, MSG_ERR_NO_METHOD, e->a->member, ct->tag);
             sym *ms = masm ? st_find(masm) : NULL;
             if (vslot >= 0) {
-                // virtual dispatch: fid = mem[mem[this] + slot], then indirect-call
-                if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // acc = this
-                emit("PSH");                                  // this -> arg 0 (kept on stack)
-                emit("LDI 0");                                  // acc = vptr = mem[this]
-                if (vslot) emit("ADD %d", vslot);
-                emit("LDI 0");                                  // acc = fid = mem[vptr+slot]
-                emit("SET __fp_id");
-                for (int i = 0; i < e->n_args; i++) {
-                    type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
-                    gen_arg(e->args[i], pt);
-                }
-                emit_dispatch_chain(vcall_np(ct, e->a->member, ms, e->n_args));
+                gen_virtual_call(obj, e->a->kind == E_PMEMBER, ct, e->a->member, vslot,
+                                 masm, ms, e->args, e->n_args);
                 free(masm);
                 return;
             }
@@ -2993,16 +3153,8 @@ static void gen_expr(expr *e)
                 if (masm || vslot >= 0) {
                     sym *ms = masm ? st_find(masm) : NULL;
                     if (vslot >= 0) {
-                        gen_load_this(); emit("PSH");        // this -> arg 0
-                        emit("LDI 0");                          // acc = vptr = mem[this]
-                        if (vslot) emit("ADD %d", vslot);
-                        emit("LDI 0");                          // acc = fid = mem[vptr+slot]
-                        emit("SET __fp_id");
-                        for (int i = 0; i < e->n_args; i++) {
-                            type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
-                            gen_arg(e->args[i], pt);
-                        }
-                        emit_dispatch_chain(vcall_np(cur_method_class, fn, ms, e->n_args));
+                        gen_virtual_call(NULL, 0, cur_method_class, fn, vslot,
+                                         masm, ms, e->args, e->n_args);
                         free(masm);
                         return;
                     }
@@ -3312,12 +3464,22 @@ static void declare_local(decl *d)
         return;
     }
 
-    char *aname = mangle_local(d->name);
+    // a local of an inner block that hides one of an outer block (or a
+    // parameter) needs a word of its own: <name>__<n>, which no user name can
+    // be (#128). The waveform shows it under that name.
+    static int shadow_seq = 0;
+    char *own = NULL;
+    sym *outer = st_find(d->name);
+    if (outer && (outer->kind == SK_LOCAL_VAR || outer->kind == SK_PARAM) && !st_find_local(d->name))
+        own = xasprintf("%s__%d", d->name, ++shadow_seq);
+    const char *lname = own ? own : d->name;
+    char *aname = mangle_local(lname);
     claim_local(aname, d->name, d->line);
     { sym *ls = st_add(SK_LOCAL_VAR, d->name, aname, d->dtype); ls->is_const = d->is_const; }
     int arr_words = (d->dtype && d->dtype->kind == TY_ARRAY) ? type_size_words(d->dtype) : 0;
-    log_var(cur_func_name ? cur_func_name : "global", d->name,
+    log_var(cur_func_name ? cur_func_name : "global", lname,
             innermost_code(d->dtype), arr_words);
+    free(own);
     // A `static` local keeps fixed storage, but its initialiser runs HERE, the
     // first time control reaches the declaration, under its `__once` guard.
     int is_static = (d->sclass == SC_STATIC);
@@ -3341,11 +3503,11 @@ static void declare_local(decl *d)
         emit("#array %s %d %d", aname, agg_fill_code(d->dtype), type_size_words(d->dtype));
         type *ct = d->dtype;
         if (st_done && d->binit)   emit_initz(aname, 0, d->dtype, d->binit);
-        else if (st_done && d->init) copy_to_block(aname, d->init, type_size_words(d->dtype));
+        else if (st_done && d->init) { copy_to_block(aname, d->init, type_size_words(d->dtype)); set_block_vptr(aname, ct); }
         else if (st_done)          emit_construct_decl(ct, aname, d->ctor_args, d->n_ctor_args);
         else if (is_static)     { /* storage only, nothing to run */ }
         else if (d->binit)      { g_initz_fill = 1; emit_initz(aname, 0, d->dtype, d->binit); g_initz_fill = 0; }
-        else if (d->init)       copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
+        else if (d->init)     { copy_to_block(aname, d->init, type_size_words(d->dtype)); set_block_vptr(aname, ct); } // = struct expr
         else if (d->vinit)      emit_value_init(aname, d->dtype);                         // T v{}; / T v = {};
         else if (ct->tag) emit_construct_decl(ct, aname, d->ctor_args, d->n_ctor_args);
     } else if (d->init && (!is_static || st_done)) {
@@ -3391,17 +3553,26 @@ static void switch_dispatch(stmt *s, const char *tmp_name)
 }
 
 // the destructors of the class-typed locals of one declaration, last first
+// the objects a declaration makes: n of class *cls (an array of objects: n > 1)
+static int decl_objects(decl *d, type **cls)
+{
+    int n = 1;
+    type *et = d->dtype && d->dtype->kind == TY_ARRAY ? array_elems(d->dtype, &n) : d->dtype;
+    if (!et || et->kind != TY_STRUCT || !et->tag || n < 1) return 0;
+    *cls = et;
+    return n;
+}
+
 static void emit_decl_dtors(decl *d)
 {
     if (!d) return;
     emit_decl_dtors(d->next);
-    if (!d->dtype || d->dtype->kind != TY_STRUCT || !d->dtype->tag) return;
-    char *dtor = resolve_method(d->dtype, "dtor");
-    if (dtor) {
-        char *an = mangle_local(d->name);
-        emit("LEA %s", an); emit("PSH"); emit("CAL %s", dtor);
-        free(an); free(dtor);
-    }
+    type *cls = NULL; int n = decl_objects(d, &cls);
+    if (!n) return;
+    char *dtor = resolve_method(cls, "dtor");
+    sym *ls = st_find(d->name);                // this block's own, still in scope
+    if (dtor && ls && ls->asm_name) emit_dtors_at(ls->asm_name, dtor, n, type_size_words(cls));
+    free(dtor);
 }
 
 // emit destructor calls for the class-typed locals declared directly in this
@@ -3416,12 +3587,35 @@ static void emit_block_dtors(stmt *block)
 }
 
 // ---- early-exit RAII: live-local tracking + dtor emission ------------------
-static void live_push(const char *mangled, const char *dtor)
+static void live_push(const char *mangled, const char *dtor, int n, int words)
 {
     XGROW(g_live, g_live_n, g_live_cap);
-    g_live[g_live_n].name = xstrdup(mangled);
-    g_live[g_live_n].dtor = xstrdup(dtor);
+    g_live[g_live_n].name  = xstrdup(mangled);
+    g_live[g_live_n].dtor  = xstrdup(dtor);
+    g_live[g_live_n].n     = n;
+    g_live[g_live_n].words = words;
     g_live_n++;
+}
+
+// the destructor of n objects of `words` words at the named block, last first:
+// one call for a single object, a loop for an array (#128: an array of
+// objects never had its destructors run)
+static void emit_dtors_at(const char *name, const char *dtor, int n, int words)
+{
+    if (n <= 1) { emit("LEA %s", name); emit("PSH"); emit("CAL %s", dtor); return; }
+    int id = ++label_n;
+    char *b = new_temp("adb"), *k = new_temp("adk");
+    emit("LEA %s", name); emit("SET %s", b);
+    emit("LOD %d", n);    emit("SET %s", k);
+    emit("@__Lad_t%d NOP", id);
+    emit("LOD %s", k); emit("JIZ __Lad_e%d", id);
+    emit("LOD %s", k); emit("ADD -1"); emit("SET %s", k);
+    if (words != 1) { emit("PSH"); emit("LOD %d", words); emit("S_MLT"); }
+    emit("ADD %s", b); emit("PSH");                    // this = &name[k]
+    emit("CAL %s", dtor);
+    emit("JMP __Lad_t%d", id);
+    emit("@__Lad_e%d NOP", id);
+    free(b); free(k);
 }
 static void live_pop_to(int mark)
 {
@@ -3433,7 +3627,7 @@ static void live_pop_to(int mark)
 static void emit_live_dtors(int mark)
 {
     for (int i = g_live_n - 1; i >= mark; i--)
-        { emit("LEA %s", g_live[i].name); emit("PSH"); emit("CAL %s", g_live[i].dtor); }
+        emit_dtors_at(g_live[i].name, g_live[i].dtor, g_live[i].n, g_live[i].words);
 }
 
 // ---- loop-invariant address hoisting ----------------------------------------
@@ -3686,9 +3880,12 @@ static void gen_stmt_inner(stmt *s)
         for (decl *d = s->decls; d; d = d->next) {
             declare_local(d);
             // track constructed class locals so an early exit can run their dtors
-            if (d->dtype && d->dtype->kind == TY_STRUCT && d->dtype->tag) {
-                char *dt = resolve_method(d->dtype, "dtor");
-                if (dt) { char *an = mangle_local(d->name); live_push(an, dt); free(an); free(dt); }
+            type *cls = NULL; int n = decl_objects(d, &cls);
+            if (n) {
+                char *dt = resolve_method(cls, "dtor");
+                sym *ls = st_find(d->name);       // the word declare_local gave it
+                if (dt && ls && ls->asm_name) live_push(ls->asm_name, dt, n, type_size_words(cls));
+                free(dt);
             }
         }
         return;
@@ -3790,6 +3987,7 @@ static void gen_stmt_inner(stmt *s)
                 // return its address (a struct rvalue == its base address)
                 char *rb = xasprintf("__ret_%s", cur_func_name);
                 copy_to_block(rb, s->e1, type_size_words(cur_func_ret));
+                set_block_vptr(rb, cur_func_ret);
                 emit("LEA %s", rb);
                 free(rb);
             } else if (cur_func_ret && cur_func_ret->is_ref) {
@@ -4102,7 +4300,7 @@ static void emit_global_scalar_inits(unit *u)
         if (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT) {
             if (g_glob_data && g_glob_data[i]) continue;   // in the .mif already (#arrayd)
             if      (d->binit) emit_initz(d->name, 0, d->dtype, d->binit);
-            else if (d->init)  copy_to_block(d->name, d->init, type_size_words(d->dtype));
+            else if (d->init) { copy_to_block(d->name, d->init, type_size_words(d->dtype)); set_block_vptr(d->name, d->dtype); }
             continue;
         }
         if (!d->init) continue;
@@ -4242,7 +4440,7 @@ static void emit_function(func *f, unit *u, int is_main)
                                    u->funcs[i]->asm_label ? u->funcs[i]->asm_label : u->funcs[i]->name);
                     free(lst); lst = more; nrec++;
                 }
-            int guarded = nrec < 255;
+            int guarded = nrec < 255 && !g_tmpl_recursive;
             if (guarded) emit("#IFLIVE%s", lst);
             free(lst);
             emit("LEA __cstk"); emit("SET __sp");
@@ -4256,7 +4454,10 @@ static void emit_function(func *f, unit *u, int is_main)
             emit("#ENDLIVE");                                            // (asm_reach, asm_share.h)
         }
         emit_vtable_inits();                                             // fill class vtables
-        emit_global_scalar_inits(u); emit_static_once_flags();
+        // the guards first: a global initializer may call a function whose
+        // static local it then initializes (#128: int g = counter(); had its
+        // guard cleared after, and counter() started over)
+        emit_static_once_flags(); emit_global_scalar_inits(u);
     }
 
     gen_stmt(f->body);
@@ -4492,7 +4693,101 @@ static void write_src_lines(const char *tmp_dir, const char *src_text)
 // Edges: a direct call F->G; an indirect (function-pointer) call in F adds an
 // edge F->A for EVERY address-taken function A (conservative: an fp could call
 // any of them). Non-recursive functions keep fast fixed-address locals.
-static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect)
+// the name a method has in its class (`sum` for Node__sum); a free function's
+// own name. Calls through an object or an operator are matched on it.
+static const char *short_name(const func *f)
+{
+    if (f->method_of && f->method_of->tag) {
+        size_t n = strlen(f->method_of->tag);
+        if (!strncmp(f->name, f->method_of->tag, n) && f->name[n] == '_' && f->name[n + 1] == '_')
+            return f->name + n + 2;
+    }
+    return f->name;
+}
+
+// an edge to every function of the unit named `name` (each overload), or,
+// with methods_only, to every method whose own name is `name` in any class:
+// a call through an object or an operator may reach any of them, and a
+// method marked recursive that is not only costs it a stack frame
+static int calls_named(unit *u, char *row, const char *name, int methods_only)
+{
+    int hit = 0;
+    if (!name) return 0;
+    for (int j = 0; j < u->n_funcs; j++) {
+        const func *g = u->funcs[j];
+        if (methods_only ? (g->method_of && !strcmp(short_name(g), name)) : !strcmp(g->name, name))
+            { row[j] = 1; hit = 1; }
+    }
+    return hit;
+}
+
+// a class object built or ended here: its constructors and its destructor
+static void calls_lifetime(unit *u, char *row, type *t)
+{
+    while (t && t->kind == TY_ARRAY) t = t->base;
+    if (!t || t->kind != TY_STRUCT || !t->tag) return;
+    for (int j = 0; j < u->n_funcs; j++) {
+        const func *g = u->funcs[j];
+        if (g->method_of == t && (!strcmp(short_name(g), "ctor") || !strcmp(short_name(g), "copyctor")
+                                  || !strcmp(short_name(g), "dtor")))
+            row[j] = 1;
+    }
+}
+
+// The type of e as far as the names in scope tell it, for the recursion
+// analysis: NULL when it cannot tell (a call's result, an overloaded
+// operator's). Unlike infer_type it never stops on a name it does not know.
+static type *peek_type(expr *e)
+{
+    if (!e) return NULL;
+    switch (e->kind) {
+    case E_INT_LIT: case E_CHAR_LIT: case E_SIZEOF_T: case E_SIZEOF_E: return t_int();
+    case E_FLOAT_LIT:  return t_float();
+    case E_STRING_LIT: return t_ptr(t_char());
+    case E_IDENT: {
+        strct_field *mf = cur_class_member(e->sval);
+        if (mf) return mf->ftype;
+        sym *s = st_find(e->sval);
+        if (!s || s->kind == SK_FUNC) return NULL;
+        return s->stype && s->stype->is_ref ? s->stype->base : s->stype;
+    }
+    case E_MEMBER: case E_PMEMBER: {
+        type *bt = peek_type(e->a);
+        if (bt && e->kind == E_PMEMBER) bt = (bt->kind == TY_PTR) ? bt->base : NULL;
+        if (!bt || bt->kind != TY_STRUCT) return NULL;
+        strct_field *f = t_struct_find(bt, e->member);
+        return f ? f->ftype : NULL;
+    }
+    case E_INDEX: case E_DEREF: {
+        type *bt = peek_type(e->a);
+        return bt && (bt->kind == TY_ARRAY || bt->kind == TY_PTR) ? bt->base : NULL;
+    }
+    case E_ADDR: { type *bt = peek_type(e->a); return bt ? t_ptr(bt) : NULL; }
+    case E_CAST: case E_TEMPOBJ: case E_COMPOUND: return e->target_t;
+    case E_NEW:  return e->target_t ? t_ptr(e->target_t) : NULL;
+    case E_CALL: {
+        sym *s = (e->a && e->a->kind == E_IDENT) ? st_find(e->a->sval) : NULL;
+        return s && s->kind == SK_FUNC ? s->stype : NULL;
+    }
+    case E_BINOP: case E_UNOP: {
+        type *a = peek_type(e->a), *b = e->kind == E_BINOP ? peek_type(e->b) : t_int();
+        if (!a || !b || a->kind == TY_STRUCT || b->kind == TY_STRUCT) return NULL;
+        return (type_is_float(a) || type_is_float(b)) ? t_float() : t_int();
+    }
+    default: return NULL;
+    }
+}
+
+// an operand that may be an object of a class: its operators may be methods
+static int maybe_object(expr *e)
+{
+    type *t = peek_type(e);
+    return !t || t->kind == TY_STRUCT;
+}
+
+// Every call a function body can make (#128: before, only a direct call to a
+// free function by name, and only the first overload of that name):
+static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect, const func *in)
 {
     if (!e) return;
     // `delete p` dispatches p's (possibly virtual) destructor — an indirect call
@@ -4500,39 +4795,90 @@ static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect)
     // tree dtor doing `delete child`). Treat it like an indirect call so such a
     // dtor is detected as recursive and gets a stack frame (its `this` must not
     // live at a fixed address that a nested dtor invocation would clobber).
-    if (e->kind == E_DELETE) { *indirect = 1; collect_calls_expr(e->a, u, row, indirect); return; }
+    if (e->kind == E_DELETE) { *indirect = 1; calls_named(u, row, "dtor", 1); }
     if (e->kind == E_CALL) {
         if (e->a && e->a->kind == E_IDENT) {
-            int hit = 0;
-            for (int j = 0; j < u->n_funcs; j++)
-                if (strcmp(u->funcs[j]->name, e->a->sval) == 0) { row[j] = 1; hit = 1; break; }
+            int hit = calls_named(u, row, e->a->sval, 0);          // every overload
+            if (in && in->method_of)                               // a sibling method, unqualified
+                hit |= calls_named(u, row, e->a->sval, 1);
             if (!hit && e->a->sval && strcmp(e->a->sval, "in") && strcmp(e->a->sval, "out")
                      && strcmp(e->a->sval, "toma") && strcmp(e->a->sval, "toma_sync") && !is_cade_name(e->a->sval))
                 *indirect = 1;                 // a variable holding a function id
+        } else if (e->a && (e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER)) {
+            calls_named(u, row, e->a->member, 1);                  // obj.m(), p->m()
+            *indirect = 1;                                         // a virtual m dispatches
+            collect_calls_expr(e->a->a, u, row, indirect, in);
         } else {
             *indirect = 1;
-            collect_calls_expr(e->a, u, row, indirect);
+            collect_calls_expr(e->a, u, row, indirect, in);
         }
-        for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect);
+        for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect, in);
         return;
     }
-    collect_calls_expr(e->a, u, row, indirect);
-    collect_calls_expr(e->b, u, row, indirect);
-    collect_calls_expr(e->c, u, row, indirect);
-    for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect);
+    // an operator a class overloads is a call to its method, when an operand
+    // may be an object of a class (an int + an int calls nothing)
+    if (e->kind == E_BINOP && maybe_object(e->a)) calls_named(u, row, op_method_name(e->op), 1);
+    if (e->kind == E_UNOP  && maybe_object(e->a)) calls_named(u, row, op_unary_method_name(e->op), 1);
+    if (e->kind == E_INDEX && maybe_object(e->a)) calls_named(u, row, "op_index", 1);
+    if (e->kind == E_ASSIGN && maybe_object(e->a)) {
+        calls_named(u, row, "op_assign", 1);
+        calls_named(u, row, op_compound_method_name(e->op), 1);
+    }
+    if (e->kind == E_NEW || e->kind == E_TEMPOBJ || e->kind == E_COMPOUND) calls_lifetime(u, row, e->target_t);
+    collect_calls_expr(e->a, u, row, indirect, in);
+    collect_calls_expr(e->b, u, row, indirect, in);
+    collect_calls_expr(e->c, u, row, indirect, in);
+    for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect, in);
 }
 
-static void collect_calls_stmt(stmt *s, unit *u, char *row, int *indirect)
+// The walk opens a scope for each block and loop, and enters each local in
+// the symbol table, so peek_type knows what a name is.
+static void collect_calls_stmt(stmt *s, unit *u, char *row, int *indirect, const func *in)
 {
     if (!s) return;
-    collect_calls_expr(s->e1, u, row, indirect);
-    collect_calls_expr(s->e2, u, row, indirect);
-    collect_calls_expr(s->e3, u, row, indirect);
-    collect_calls_stmt(s->body, u, row, indirect);
-    collect_calls_stmt(s->body2, u, row, indirect);
-    collect_calls_stmt(s->init_stmt, u, row, indirect);
-    for (int i = 0; i < s->n_items; i++) collect_calls_stmt(s->items[i], u, row, indirect);
-    for (decl *d = s->decls; d; d = d->next) collect_calls_expr(d->init, u, row, indirect);
+    int scoped = s->kind == S_BLOCK || s->init_stmt != NULL;
+    if (scoped) st_push_scope();
+    collect_calls_stmt(s->init_stmt, u, row, indirect, in);
+    for (decl *d = s->decls; d; d = d->next) {
+        collect_calls_expr(d->init, u, row, indirect, in);
+        for (int i = 0; i < d->n_ctor_args; i++) collect_calls_expr(d->ctor_args[i], u, row, indirect, in);
+        calls_lifetime(u, row, d->dtype);                         // built here, ended at the block's end
+        st_add(SK_LOCAL_VAR, d->name, NULL, d->dtype);
+    }
+    collect_calls_expr(s->e1, u, row, indirect, in);
+    collect_calls_expr(s->e2, u, row, indirect, in);
+    collect_calls_expr(s->e3, u, row, indirect, in);
+    collect_calls_stmt(s->body, u, row, indirect, in);
+    collect_calls_stmt(s->body2, u, row, indirect, in);
+    for (int i = 0; i < s->n_items; i++) collect_calls_stmt(s->items[i], u, row, indirect, in);
+    if (scoped) st_pop_scope();
+}
+
+// a body that calls `name`, as a plain call or through an object (obj.name(),
+// p->name()): how a template instance, made after analyze_recursion, learns
+// that it is recursive (#128)
+static int expr_calls(const expr *e, const char *name)
+{
+    if (!e) return 0;
+    if (e->kind == E_CALL && e->a &&
+        ((e->a->kind == E_IDENT && e->a->sval && !strcmp(e->a->sval, name)) ||
+         ((e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER) && e->a->member && !strcmp(e->a->member, name))))
+        return 1;
+    if (expr_calls(e->a, name) || expr_calls(e->b, name) || expr_calls(e->c, name)) return 1;
+    for (int i = 0; i < e->n_args; i++) if (expr_calls(e->args[i], name)) return 1;
+    return 0;
+}
+static int stmt_calls(const stmt *s, const char *name)
+{
+    if (!s) return 0;
+    if (expr_calls(s->e1, name) || expr_calls(s->e2, name) || expr_calls(s->e3, name)) return 1;
+    if (stmt_calls(s->body, name) || stmt_calls(s->body2, name) || stmt_calls(s->init_stmt, name)) return 1;
+    for (int i = 0; i < s->n_items; i++) if (stmt_calls(s->items[i], name)) return 1;
+    for (const decl *d = s->decls; d; d = d->next) {
+        if (expr_calls(d->init, name)) return 1;
+        for (int i = 0; i < d->n_ctor_args; i++) if (expr_calls(d->ctor_args[i], name)) return 1;
+    }
+    return 0;
 }
 
 static void analyze_recursion(unit *u)
@@ -4541,7 +4887,22 @@ static void analyze_recursion(unit *u)
     if (n <= 0) return;
     char *adj = xcalloc((size_t)n * n, 1);
     int  *ind = xcalloc(n, sizeof(int));
-    for (int i = 0; i < n; i++) collect_calls_stmt(u->funcs[i]->body, u, &adj[(size_t)i*n], &ind[i]);
+    type *sv_cls = cur_method_class;
+    for (int i = 0; i < n; i++) {
+        func *f = u->funcs[i];
+        cur_method_class = f->method_of;                          // members resolve as in the body
+        st_push_scope();                                          // the parameters, `this` first
+        for (decl *p = f->params; p; p = p->next) st_add(SK_PARAM, p->name, NULL, p->dtype);
+        collect_calls_stmt(f->body, u, &adj[(size_t)i*n], &ind[i], f);
+        st_pop_scope();
+        // a constructor also constructs the members and the base, and a
+        // destructor ends them: the struct's fields are its lifetimes
+        if (f->method_of && (!strcmp(short_name(f), "ctor") || !strcmp(short_name(f), "copyctor")
+                             || !strcmp(short_name(f), "dtor")))
+            for (strct_field *fd = f->method_of->fields; fd; fd = fd->next)
+                calls_lifetime(u, &adj[(size_t)i*n], fd->ftype);
+    }
+    cur_method_class = sv_cls;
     for (int i = 0; i < n; i++) if (ind[i])
         for (int j = 0; j < n; j++)
             if (fp_id_of(u->funcs[j]->name) >= 0) adj[(size_t)i*n + j] = 1;
@@ -4674,6 +5035,7 @@ static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int ne
     f->ret    = subst_type(t->ret, targs, t->n_tparams);
     f->params = clone_decl(t->params, targs, t->n_tparams);
     f->body   = clone_stmt(t->body, targs, t->n_tparams);
+    f->is_recursive = stmt_calls(f->body, t->name);   // fact(n - 1) is this instance
     f->asm_label = lbl;
     { XGROW(g_inst, g_n_inst, g_inst_cap); g_inst[g_n_inst++] = f; }
     return f;
@@ -4702,6 +5064,7 @@ static void instantiate_ctmpl_methods(unit *u)
             f->params = clone_decl(src->params, ta, nta);
             if (f->params) f->params->dtype = t_ptr(ins->concrete);   // retype `this`
             f->body   = clone_stmt(src->body, ta, nta);
+            f->is_recursive = stmt_calls(f->body, src->name + plen);   // next->sum()
             char *nm  = cg_mangle_method(ins->concrete->tag, src->name + plen);
             f->name = nm; f->asm_label = nm;
             sym *s = st_add(SK_FUNC, nm, nm, f->ret);
@@ -4930,13 +5293,16 @@ static void peephole(void)
     g_ibuf_n = w;
     // pass 3: an instruction that follows an unconditional JMP or a RET, and
     // carries no label, cannot be reached: control either falls through (it
-    // cannot, the jump took it away) or arrives at a label (it has none).
+    // cannot, the jump took it away) or arrives at a label (it has none). A
+    // directive (#array and the like) is not an instruction: it declares
+    // storage wherever it stands, and stays (#128: a local declared after a
+    // return in a switch lost its #array).
     w = 0;
     int dead = 0;
     for (int r = 0; r < g_ibuf_n; r++) {
         const char *t = g_ibuf[r].text;
         if (t[0] == '@' || g_ibuf[r].nofuse) dead = 0;     // a label makes it live again
-        if (dead) { free(g_ibuf[r].text); continue; }
+        if (dead && t[0] != '#') { free(g_ibuf[r].text); continue; }
         if (!g_ibuf[r].nofuse &&
             (!strncmp(t, "JMP ", 4) || !strcmp(t, "RET"))) dead = 1;
         g_ibuf[w++] = g_ibuf[r];
@@ -5071,6 +5437,20 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     analyze_recursion(u);
     g_any_recursive = 0;
     for (int i = 0; i < u->n_funcs; i++) if (u->funcs[i]->is_recursive) g_any_recursive = 1;
+    // a template that calls itself: its instances are made while main is
+    // generated, after the call stack's setup is written, so it is set up
+    // whatever is reached (get_instance marks each instance, #128)
+    g_tmpl_recursive = 0;
+    for (int i = 0; i < u->n_templates; i++)
+        if (stmt_calls(u->templates[i]->body, u->templates[i]->name)) g_tmpl_recursive = 1;
+    for (int i = 0; i < u->n_ctmpls; i++) {
+        ctmpl *ct = u->ctmpls[i];
+        int plen = (int)strlen(ct->proto->tag) + 2;
+        for (int m = 0; m < ct->n_methods; m++)
+            if ((int)strlen(ct->methods[m]->name) > plen &&
+                stmt_calls(ct->methods[m]->body, ct->methods[m]->name + plen)) g_tmpl_recursive = 1;
+    }
+    if (g_tmpl_recursive) g_any_recursive = 1;
 
     emit_header(u);
     emit_global_arrays(u);

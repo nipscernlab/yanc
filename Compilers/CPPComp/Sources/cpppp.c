@@ -309,6 +309,23 @@ static char *macro_subst(macro *m, char **args, int na)
 }
 
 // fully expand object- and function-like macros in src; returns malloc'd result
+// past the string or char literal that starts at p (its closing quote
+// included; a backslash escapes the next character)
+static const char *skip_literal(const char *p)
+{
+    char q = *p++;
+    while (*p && *p != q) { if (*p == '\\' && p[1]) p++; p++; }
+    return *p ? p + 1 : p;
+}
+
+// past the comment that starts at p: // to the end of the line, /* to its */
+static const char *skip_comment(const char *p)
+{
+    if (p[1] == '/') return p + strlen(p);
+    const char *e = strstr(p + 2, "*/");
+    return e ? e + 2 : p + strlen(p);
+}
+
 static char *expand_str(const char *src, int depth)
 {
     sbuf out; sb_init(&out);
@@ -316,10 +333,14 @@ static char *expand_str(const char *src, int depth)
 
     const char *p = src;
     while (*p) {
-        if (*p == '"' || *p == '\'') {
-            char q = *p; sb_putc(&out, *p++);
-            while (*p && *p != q) { if (*p == '\\' && p[1]) sb_putc(&out, *p++); sb_putc(&out, *p++); }
-            if (*p) sb_putc(&out, *p++);
+        if (*p == '"' || *p == '\'') {                      // a literal is copied as it is
+            const char *e = skip_literal(p);
+            sb_putn(&out, p, (size_t)(e - p)); p = e;
+            continue;
+        }
+        if (*p == '/' && (p[1] == '/' || p[1] == '*')) {     // so is a comment: an apostrophe
+            const char *e = skip_comment(p);               // in one is not a char literal (#128)
+            sb_putn(&out, p, (size_t)(e - p)); p = e;
             continue;
         }
         if (is_ident_start(*p)) {
@@ -333,7 +354,8 @@ static char *expand_str(const char *src, int depth)
                     char **args = NULL; int na = 0, args_cap = 0;
                     int dep = 1; const char *as = q;
                     while (*q && dep > 0) {
-                        if (*q == '(') dep++;
+                        if (*q == '"' || *q == '\'') { q = skip_literal(q); continue; }   // a comma in
+                        if (*q == '(') dep++;                                           // "a,b" is text (#128)
                         else if (*q == ')') { dep--; if (dep == 0) break; }
                         else if (*q == ',' && dep == 1) {
                             XGROW(args, na, args_cap);

@@ -25,7 +25,8 @@ namespace std {
         }
         void resize(int n) {
             reserve(n);
-            for (int i = _len; i < n; i = i + 1) _data[i] = 0;   // zero-fill the new tail
+            for (int i = _len; i < n; i = i + 1) { T z{}; _data[i] = z; }   // value-initialized, as
+                                                                          // in C++ (#128: a struct took mem[0])
             _len = n;
         }
         void push_back(T x) {

@@ -14,6 +14,7 @@
 static sym **scopes;                   // ordinary identifiers
 static sym **tagscopes;                // struct tags (separate namespace)
 static int   scope_n, scope_cap;
+static int   scope_floor = 1;          // st_find looks from the top down to here, then global
 static char *cur_func;
 
 void st_init(void)
@@ -99,11 +100,19 @@ sym *st_add_tag(const char *tag, type *t)
 
 sym *st_find(const char *name)
 {
-    for (int i = scope_n - 1; i >= 0; i--)
+    for (int i = scope_n - 1; i >= 0; i = (i == scope_floor ? 0 : i - 1)) {
         for (sym *s = scopes[i]; s; s = s->next)
             if (strcmp(s->name, name) == 0) return s;
+        if (i == 0) break;
+    }
     return NULL;
 }
+
+// the scopes open now become invisible to st_find, but the global one, until
+// st_restore_floor: a function body expanded inline sees its own names and
+// the globals, never the locals of the function it is expanded in
+int  st_hide_scopes(void)       { int old = scope_floor; scope_floor = scope_n; return old; }
+void st_restore_floor(int old)  { scope_floor = old; }
 
 sym *st_find_local(const char *name)
 {
