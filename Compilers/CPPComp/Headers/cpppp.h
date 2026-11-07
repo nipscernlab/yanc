@@ -19,4 +19,12 @@ int         pp_where(int line, const char **file);
 // kept), or NULL outside the text
 const char *pp_source(int line);
 
+// a C escape: *p is past the backslash, and ends past the escape. The value
+// (0 to 255), PP_ESC_BAD for an escape C does not have (*p left on it), or
+// PP_ESC_RANGE for \x or octal past 255. The lexer reads char and string
+// literals with it, and #if its char constants, so the two agree.
+#define PP_ESC_BAD   (-1)
+#define PP_ESC_RANGE (-2)
+int         pp_escape(const char **p);
+
 #endif

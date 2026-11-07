@@ -39,6 +39,9 @@
 // (ctinst, the codegen's type arguments) hold this many
 #define CPP_TPARAM_MAX 8
 
+// the most dimensions an array may have (#129): a declarator's list holds this many
+#define CPP_DIM_MAX 8
+
 #include "../../yanc_version.h"   // YANC_VERSION, shared with the driver and the other compilers
 
 #endif

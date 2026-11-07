@@ -100,6 +100,24 @@ tags consumed by Aurora.
   of "unknown option". A table that cannot be written ends the run with
   an error instead of 0. The compiler checks every message's arguments
   against its format, in both languages.
+- **cppcomp's preprocessor and lexer read C++ as C++ (#130).** A
+  `/* */` comment may span lines in a directive too, and an `#include`
+  inside one is no longer read. A macro call may go on over several
+  lines, and a call with the wrong number of arguments is an error
+  instead of an expansion with empty arguments. A macro is not expanded
+  again inside its own expansion (`#define x x+1` gave 64 levels of
+  `+1`). `#include` takes a macro. An unknown directive (`#defne`), an
+  `#if` without `#endif` in its file, a second `#else` and an `#elif`
+  after `#else` are errors, and a `#` in a code line no longer eats the
+  rest of the line. `#if` computes in 64 bits, reads `010` as 8, as the
+  lexer does, and knows `true`; a malformed `#if` is an error. Escapes
+  `\x41`, `\101` and `\a` work in a char and in a string, a file that
+  starts with the UTF-8 mark is read, an integer literal that does not
+  fit the word is an error instead of being cut, and `1uuu` is not a
+  number. `#pragma yanc` checks its value: a whole number, `nubits` from
+  2 to 32, `nugain` a power of two. An array with a ninth dimension is
+  an error instead of losing it (#129). Tested by test105 and fifteen
+  NegTests.
 - **The Verilator tests pass however the MSYS2 shell was opened.** An
   MSYS2 bash started from Git Bash has no `PATHEXT`, and without it the
   PowerShell that `Scripts/regress.sh` starts for them refused to run
