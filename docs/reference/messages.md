@@ -261,7 +261,6 @@ value. What the common ones mean and how to get past them is in
 - error: '<name>' needs a value after it
 - error: unknown option '<name>'
 - error: the file '<name>' names the processor, and '<name>' <name>; rename the file
-- error: parse failed
 - error: cannot open '<name>' for writing
 - error: #include nested too deep (more than 32 levels)
 - error: cannot open '<name>'

@@ -7,8 +7,8 @@
 //     into the right side of a binop, S_<op> to combine.
 //   - All locals get the asm name "<func>_<var>"; globals keep their raw name.
 //   - Caller of f(a,b,c) pushes args LEFT-to-RIGHT; callee pops them in REVERSE.
-//   - Conditional jumps run through LIN;LIN to normalise the value to {0,1}
-//     unless the expression's top operator is already comparison/logic.
+//   - A conditional jump tests the value itself (JIZ, JNZ: zero is false);
+//     LIN;LIN makes a value 0 or 1 only where a bool is stored.
 //   - Lvalue accesses (arr[i], s.f, *p, p->f) compute &lv into the accumulator
 //     and use LDI 0 / STI 0 to dereference. Simple scalar idents use LOD/SET fast.
 // ----------------------------------------------------------------------------
@@ -231,6 +231,23 @@ static int ov_score(type *pt, type *at)
     return 0;
 }
 
+// how well the call's arguments fit the parameters from p on, nparams of
+// them (the trailing ones may have a default): the sum of each argument's
+// ov_score, or -1 when they do not fit. Every overload choice ranks with it.
+static int args_fit(decl *p, int nparams, expr **args, int nargs)
+{
+    int required = 0;
+    for (decl *q = p; q; q = q->next) if (!q->init) required++;
+    if (nargs < required || nargs > nparams) return -1;
+    int score = 0;
+    for (int a = 0; a < nargs && p; a++, p = p->next) {
+        int sc = ov_score(p->dtype, infer_type(args[a]));
+        if (!sc) return -1;
+        score += sc;
+    }
+    return score;
+}
+
 // the overload of method `m` of `cls` (or of the nearest ancestor that has
 // one) that best fits the call's arguments (`this` not among them); NULL if
 // none fits. A class template's methods are clones in g_inst, so both lists
@@ -247,16 +264,9 @@ static func *resolve_method_ov(type *cls, const char *m, expr **args, int nargs)
             func *f = (i < cg_unit->n_funcs) ? cg_unit->funcs[i] : g_inst[i - cg_unit->n_funcs];
             if (!f->method_of || strcmp(f->name, mm)) continue;
             seen = 1;
-            decl *p0 = f->params ? f->params->next : NULL;     // skip `this`
-            int required = 0;
-            for (decl *q = p0; q; q = q->next) if (!q->init) required++;
-            if (nargs < required || nargs > f->n_params - 1) continue;
-            int score = 0, ok = 1; decl *p = p0;
-            for (int a = 0; a < nargs && p; a++, p = p->next) {
-                int sc = ov_score(p->dtype, infer_type(args[a]));
-                if (sc) score += sc; else { ok = 0; break; }
-            }
-            if (ok && score > best_score) { best_score = score; best = f; }
+            int score = args_fit(f->params ? f->params->next : NULL,     // skip `this`
+                                 f->n_params - 1, args, nargs);
+            if (score > best_score) { best_score = score; best = f; }
         }
         free(mm);
         if (seen) return best;            // the name in a class hides its bases'
@@ -289,16 +299,8 @@ static func *resolve_overload(const char *name, expr **args, int nargs)
     for (int i = 0; i < cg_unit->n_funcs; i++) {
         func *f = cg_unit->funcs[i];
         if (f->method_of || strcmp(f->name, name)) continue;
-        int required = 0;                       // params without a default (assumed leading)
-        for (decl *p = f->params; p; p = p->next) if (!p->init) required++;
-        if (nargs < required || nargs > f->n_params) continue;   // default args fill the rest
-        int score = 0, ok = 1;
-        decl *p = f->params;
-        for (int a = 0; a < nargs && p; a++, p = p->next) {
-            int sc = ov_score(p->dtype, infer_type(args[a]));
-            if (sc) score += sc; else { ok = 0; break; }
-        }
-        if (ok && score > best_score) { best_score = score; best = f; }
+        int score = args_fit(f->params, f->n_params, args, nargs);
+        if (score > best_score) { best_score = score; best = f; }
     }
     return best;
 }
@@ -317,18 +319,9 @@ static func *resolve_ctor(type *cls, expr **args, int nargs)
     for (int i = 0; i < cg_unit->n_funcs + g_n_inst; i++) {
         func *f = (i < cg_unit->n_funcs) ? cg_unit->funcs[i] : g_inst[i - cg_unit->n_funcs];
         if (!f->method_of || strcmp(f->name, mn)) continue;
-        decl *p0 = f->params ? f->params->next : NULL;     // skip `this`
-        int nuser = f->n_params - 1;
-        int required = 0;
-        for (decl *q = p0; q; q = q->next) if (!q->init) required++;
-        if (nargs < required || nargs > nuser) continue;
-        int score = 0, ok = 1;
-        decl *p = p0;
-        for (int a = 0; a < nargs && p; a++, p = p->next) {
-            int sc = ov_score(p->dtype, infer_type(args[a]));
-            if (sc) score += sc; else { ok = 0; break; }
-        }
-        if (ok && score > best_score) { best_score = score; best = f; }
+        int score = args_fit(f->params ? f->params->next : NULL,         // skip `this`
+                             f->n_params - 1, args, nargs);
+        if (score > best_score) { best_score = score; best = f; }
     }
     free(mn);
     return best;
@@ -647,6 +640,7 @@ static void emit_fn_return(void);
 static void gen_addr (expr *e);
 static void gen_arg  (expr *arg, type *ptype);
 static char *new_temp(const char *prefix);
+static char *new_temp_as(const char *prefix, type *t, int code, char **plain);
 static void emit_dtors_at(const char *name, const char *dtor, int n, int words);
 static type *array_elems(type *t, int *n);
 static void gen_store(expr *lv, expr *val);
@@ -745,12 +739,13 @@ static void prescan_func(func *f)
     prescan_stmt(f->body);
 }
 
-// ---- static-local initializers ---------------------------------------------
-// A `static` local has fixed storage (like every local on this target), but its
-// initializer must run ONCE at program start, not on each function entry. We
-// collect them in a pre-pass and emit them at main's entry, like globals. The
-// stored base name is already mangled (<func>_<var>), matching declare_local.
-typedef struct { char *base; type *t; expr *init; initz *binit; int line; expr **args; int nargs; } stinit_e;
+// ---- static locals ---------------------------------------------------------
+// A `static` local runs its initializer the first time control reaches it,
+// under a `__once_<name>` guard (emit_static_guard_open). A pre-pass collects
+// every static local that has one, so that main can zero all the guards at its
+// entry (emit_static_once_flags). The name is already mangled (<func>_<var>),
+// matching declare_local; the line maps the guard's word to the declaration.
+typedef struct { char *base; int line; } stinit_e;
 static stinit_e *stinits;
 static int       n_stinit = 0, stinit_cap = 0;
 
@@ -767,13 +762,8 @@ static void collect_statics_stmt(const char *fn, stmt *s)
         if (d->sclass == SC_STATIC && (d->init || d->binit || is_obj)) {
             XGROW(stinits, n_stinit, stinit_cap);
             char *base = xasprintf("%s_%s", fn, d->name);
-            stinits[n_stinit].base  = base;
-            stinits[n_stinit].t     = d->dtype;
-            stinits[n_stinit].init  = d->init;
-            stinits[n_stinit].binit = d->binit;
-            stinits[n_stinit].line  = d->line;
-            stinits[n_stinit].args  = d->ctor_args;
-            stinits[n_stinit].nargs = d->n_ctor_args;
+            stinits[n_stinit].base = base;
+            stinits[n_stinit].line = d->line;
             n_stinit++;
         }
     }
@@ -1150,9 +1140,9 @@ static int cfold_node(expr *e)
     return 1;
 }
 
-// Jump to target when e is TRUE (the test at the bottom of a loop). The ISA
-// only has JIZ (jump if zero), so the value tested must be zero when e holds:
-// an int comparison is inverted (a < b tests a >= b, one instruction with a
+// Jump to target when e is TRUE (the test at the bottom of a loop), with JIZ:
+// the value tested must be zero when e holds (asm_jnz turns a JIZ over a JMP
+// into a JNZ afterwards, #78): an int comparison is inverted (a < b tests a >= b, one instruction with a
 // literal bound), a == b tests a ^ b, a != b tests a == b; && and || are
 // split; anything else (float, a plain value) tests !e.
 static void gen_jump_true(expr *e, const char *target)
@@ -1609,10 +1599,7 @@ static void copy_to_block(const char *dest, expr *src, int n)
             }
         }
     }
-    char sn[32]; snprintf(sn, sizeof(sn), "__cbs%d", ++label_n);
-    char *st = mangle_local(sn);
-    const char *fn = cur_func_name ? cur_func_name : "global";
-    st_add(SK_LOCAL_VAR, sn, st, t_int()); log_var(fn, sn, 1, 0);
+    char *st = new_temp("cbs");
     gen_expr(src); emit("SET %s", st);       // st = &src
     for (int i = 0; i < n; i++) {
         emit("LOD %d", i); emit("PSH");      // offset on stack
@@ -1773,21 +1760,28 @@ static void gen_virtual_call(expr *obj, int arrow, type *ct, const char *member,
 // ---- object construction ---------------------------------------------------
 
 // a fresh one-word scratch variable of the current function (its asm name)
-static char *new_temp(const char *prefix)
+// A compiler temporary __<prefix><n> of type t in the function being
+// emitted: added to the symbol table, logged for the waveform with type code
+// code (0: not logged), and its .asm name returned. *plain, when given, gets
+// the name as the source would write it (for an ast_ident of the temporary).
+static char *new_temp_as(const char *prefix, type *t, int code, char **plain)
 {
-    char nm[32]; snprintf(nm, sizeof(nm), "__%s%d", prefix, ++label_n);
+    char *nm = xasprintf("__%s%d", prefix, ++label_n);
     char *an = mangle_local(nm);
-    st_add(SK_LOCAL_VAR, nm, an, t_int());
-    log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
+    st_add(SK_LOCAL_VAR, nm, an, t);
+    if (code) log_var(cur_func_name ? cur_func_name : "global", nm, code, 0);
+    if (plain) *plain = nm; else free(nm);
     return an;
 }
+
+// an int temporary, logged as an int
+static char *new_temp(const char *prefix) { return new_temp_as(prefix, t_int(), 1, NULL); }
 
 // Where an object is, for constructing it: at a fixed symbol (`LEA name`) or at
 // the address a variable holds (`LOD name`).
 typedef struct { int in_var; const char *name; } objaddr;
 static void emit_objaddr(objaddr a) { emit(a.in_var ? "LOD %s" : "LEA %s", a.name); }
 
-// does creating an object of class t run code (a vptr to set, a ctor to call)?
 // the label of a class's destructor (direct call), or NULL when it has none
 static char *dtor_label(type *t)
 {
@@ -1799,6 +1793,7 @@ static char *dtor_label(type *t)
     return NULL;
 }
 
+// does creating an object of class t run code (a vptr to set, a ctor to call)?
 static int needs_construct(type *t)
 {
     return t && t->kind == TY_STRUCT && t->tag && (t->n_vtbl > 0 || resolve_ctor(t, NULL, 0));
@@ -1931,10 +1926,7 @@ static void gen_store(expr *lv, expr *val)
         if (bf && bf->is_bitfield) {
             long mask  = bf_mask(bf);
             long clear = bf_clear(bf);
-            char tn[64]; snprintf(tn, sizeof(tn), "__bf%d", ++label_n);
-            char *ta = mangle_local(tn);
-            st_add(SK_LOCAL_VAR, tn, ta, t_int());
-            log_var(cur_func_name ? cur_func_name : "global", tn, 1, 0);
+            char *ta = new_temp("bf");
             gen_addr(lv);  emit("SET %s", ta);     // ta = &word
             emit("LOD %s", ta); emit("PSH");        // stack: [&word]  (STI 0 address)
             emit("LOD %s", ta); emit("LDI 0");        // acc = old word
@@ -2370,14 +2362,11 @@ static void gen_expr(expr *e)
         // the store and the read go through that.
         if (e->op != OP_NONE && !expr_calls_nothing(e->a)) {
             type *lt = infer_type(e->a);
-            char nm[32]; snprintf(nm, sizeof nm, "__cpa%d", ++label_n);
-            char *an = mangle_local(nm);
-            st_add(SK_LOCAL_VAR, nm, an, t_ptr(lt));
-            log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
+            char *nm, *an = new_temp_as("cpa", t_ptr(lt), 1, &nm);
             gen_addr(e->a); emit("SET %s", an);
             expr *at = ast_deref(ast_ident(xstrdup(nm), e->line), e->line);
             gen_store(at, ast_binop(e->op, ast_deref(ast_ident(xstrdup(nm), e->line), e->line), e->b->b, e->line));
-            free(an);
+            free(an); free(nm);
             return;
         }
         gen_store(e->a, e->b);
@@ -2658,10 +2647,7 @@ static void gen_expr(expr *e)
         // float (re-adding would round) or a wrapping type (the old value cannot
         // be recovered from the wrapped one): keep old in a temp instead
         {
-            char tn[64]; snprintf(tn, sizeof(tn), "__pf%d", ++label_n);
-            char *ta = mangle_local(tn);
-            st_add(SK_LOCAL_VAR, tn, ta, t_int());
-            log_var(cur_func_name ? cur_func_name : "global", tn, 1, 0);
+            char *ta = new_temp("pf");
             gen_addr(lv);                                // acc = &lv
             emit("SET %s", ta);                          // _pf = &lv
             emit("LDI 0");                                 // acc = old (mem[&lv])
@@ -2739,15 +2725,9 @@ static void gen_expr(expr *e)
             emit("LOD __new_p"); emit("PSH"); emit("LEA __vt_%s", t->tag); emit("STI 0");
         }
         if (has_ctor) {
-            emit("LOD __new_p"); emit("PSH");                      // result (kept on stack bottom)
-            emit("LOD __new_p"); emit("PSH");                      // this (arg 0)
-            decl *p = cf->params ? cf->params->next : NULL;        // skip `this`
-            for (int i = 0; i < e->n_args; i++) {
-                gen_arg(e->args[i], p ? p->dtype : NULL);
-                if (p) p = p->next;
-            }
-            for (; p; p = p->next) gen_arg(p->init, p->dtype);     // default args
-            emit("CAL %s", cf->asm_label);
+            emit("LOD __new_p"); emit("PSH");                      // the result, kept on the stack:
+            objaddr a = { 1, "__new_p" };                          // an argument's own new
+            emit_ctor_call(cf, a, e->args, e->n_args);             // changes __new_p
             emit("POP");                                           // acc = result
         } else {
             emit("LOD __new_p");                                   // acc = result
@@ -2759,10 +2739,7 @@ static void gen_expr(expr *e)
         // T(args): build a hidden stack temporary, run its ctor, yield its address.
         type *t = e->target_t;
         if (!t || t->kind != TY_STRUCT || !t->tag) { msg_error(e->line, MSG_ERR_CTOR_NON_CLASS); return; }
-        char nm[32]; snprintf(nm, sizeof(nm), "__tmp%d", ++label_n);
-        char *aname = mangle_local(nm);
-        st_add(SK_LOCAL_VAR, nm, aname, t);
-        log_var(cur_func_name ? cur_func_name : "global", nm, innermost_code(t), 0);
+        char *aname = new_temp_as("tmp", t, innermost_code(t), NULL);
         emit("#array %s %d %d", aname, agg_fill_code(t), type_size_words(t));
         objaddr a = { 0, aname };
         emit_construct(t, a, e->args, e->n_args);
@@ -3026,14 +3003,7 @@ static void gen_expr(expr *e)
                 if (nw <= 0) return;
                 gen_addr(e->args[0]);                      // acc = &field (this + offset)
                 int id = ++label_n;
-                char pn[32], kn[32];
-                snprintf(pn, sizeof(pn), "__zfp%d", id);
-                snprintf(kn, sizeof(kn), "__zfk%d", id);
-                char *zp = mangle_local(pn), *zk = mangle_local(kn);
-                st_add(SK_LOCAL_VAR, pn, zp, t_int());
-                st_add(SK_LOCAL_VAR, kn, zk, t_int());
-                log_var(cur_func_name ? cur_func_name : "global", pn, 1, 0);
-                log_var(cur_func_name ? cur_func_name : "global", kn, 1, 0);
+                char *zp = new_temp("zfp"), *zk = new_temp("zfk");
                 emit("SET %s", zp);                        // zp = &field
                 emit("LOD %ld", nw); emit("SET %s", zk);   // zk = N
                 emit("@__Lzf_t%d NOP", id);
@@ -3077,17 +3047,9 @@ static void gen_expr(expr *e)
                 for (int i = 0; i < cg_unit->n_funcs; i++) {
                     func *f = cg_unit->funcs[i];
                     if (!f->method_of || strcmp(f->name, fn)) continue;
-                    decl *p0 = f->params ? f->params->next : NULL;   // skip `this`
-                    int required = 0;
-                    for (decl *q = p0; q; q = q->next) if (!q->init) required++;
-                    int nuser = e->n_args - 1;                       // args[0] is `this`
-                    if (nuser < required || nuser > f->n_params - 1) continue;
-                    int score = 0, ok = 1; decl *p = p0;
-                    for (int a = 1; a < e->n_args && p; a++, p = p->next) {
-                        int sc = ov_score(p->dtype, infer_type(e->args[a]));
-                        if (sc) score += sc; else { ok = 0; break; }
-                    }
-                    if (ok && score > bests) { bests = score; bestm = f; }
+                    int score = args_fit(f->params ? f->params->next : NULL,   // skip `this`,
+                                         f->n_params - 1, e->args + 1, e->n_args - 1);   // args[0]
+                    if (score > bests) { bests = score; bestm = f; }
                 }
                 if (bestm) {
                     decl *p = bestm->params;
@@ -3292,10 +3254,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
             emit("STI %s", base);
         } else {
             int n = type_size_words(t);
-            char sn[32]; snprintf(sn, sizeof(sn), "__izs%d", ++label_n);
-            char *st = mangle_local(sn);
-            st_add(SK_LOCAL_VAR, sn, st, t_int());
-            log_var(cur_func_name ? cur_func_name : "global", sn, 1, 0);
+            char *st = new_temp("izs");
             gen_expr(z->e); emit("SET %s", st);          // st = &src
             for (int i = 0; i < n; i++) {
                 emit("LOD %d", off + i); emit("PSH");
@@ -3376,9 +3335,9 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
 // A `static` local is initialised the first time control reaches its
 // declaration, not at program start: C++ runs its initialiser (and its
 // constructor) on that first pass and never again, so a function that is
-// never called never builds its static. The word `<name>__once` guards it,
+// never called never builds its static. The word `__once_<name>` guards it,
 // zeroed for every static at main entry (so a reset re-runs them) and set
-// after the initialiser. TODO.md item 11(d).
+// after the initialiser (TODO.md item 11(d), in the git history).
 static void emit_static_guard_open(const char *aname, char **l_done)
 {
     char *l_init = fresh_label("st_init");
@@ -3488,7 +3447,7 @@ static void declare_local(decl *d)
 // ---- switch dispatch -------------------------------------------------------
 // A switch's case/default labels may appear ANYWHERE in its body (even nested
 // inside a loop, e.g. Duff's device), so we walk the body, mint a label per
-// case (stored on the node), and emit the EQU/JIZ dispatch chain. We do NOT
+// case (stored on the node), and emit the EQU/JNZ dispatch chain. We do NOT
 // descend into a nested switch — its cases belong to it.
 static stmt *g_sw_default;
 static void switch_dispatch(stmt *s, const char *tmp_name)
@@ -3498,8 +3457,7 @@ static void switch_dispatch(stmt *s, const char *tmp_name)
         s->label = fresh_label("case");
         emit("LOD %s", tmp_name);
         emit("EQU %ld", s->e1->ival);
-        emit("LIN");
-        emit("JIZ %s", s->label);      // jump to this case when discriminant matches
+        emit("JNZ %s", s->label);      // jump to this case when discriminant matches
         switch_dispatch(s->body, tmp_name);
         return;
     }
@@ -3761,12 +3719,9 @@ static void lih_rewrite_expr(expr *e, const nameset *w)
         if (!strcmp(lih_h[i].base, e->a->sval) && lih_expr_eq(lih_h[i].inv, inv)) tmp = lih_h[i].tmp;
     if (!tmp) {
         if (lih_nh == 16) return;
-        char nm[32]; snprintf(nm, sizeof nm, "__lip%d", ++label_n);
-        char *an = mangle_local(nm);
-        st_add(SK_LOCAL_VAR, nm, an, st_find(e->a->sval)->stype);
-        log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
-        free(an);
-        lih_h[lih_nh].base = e->a->sval; lih_h[lih_nh].inv = inv; lih_h[lih_nh].tmp = xstrdup(nm);
+        char *nm;
+        free(new_temp_as("lip", st_find(e->a->sval)->stype, 1, &nm));
+        lih_h[lih_nh].base = e->a->sval; lih_h[lih_nh].inv = inv; lih_h[lih_nh].tmp = nm;
         tmp = lih_h[lih_nh++].tmp;
     }
     e->a = ast_ident((char *)tmp, e->line);
@@ -3963,10 +3918,7 @@ static void gen_stmt_inner(stmt *s)
             int hasval = s->e1 && cur_func_ret && cur_func_ret->kind != TY_VOID;
             char *rs = NULL;
             if (hasval) {                    // protect the return value across the dtor CALs
-                char rn[32]; snprintf(rn, sizeof(rn), "__rsv%d", ++label_n);
-                rs = mangle_local(rn);
-                st_add(SK_LOCAL_VAR, rn, rs, t_int());
-                log_var(cur_func_name ? cur_func_name : "global", rn, 1, 0);
+                rs = new_temp("rsv");
                 emit("SET %s", rs);
             }
             emit_live_dtors(0);
@@ -4009,10 +3961,7 @@ static void gen_stmt_inner(stmt *s)
         // (cases may be nested anywhere — Duff's device), then emit the body
         // normally; each case/default emits its minted label inline.
         infer_type(s->e1);
-        char tmp[64]; snprintf(tmp, sizeof(tmp), "__sw%d", ++label_n);
-        char *tmp_name = mangle_local(tmp);
-        st_add(SK_LOCAL_VAR, tmp, tmp_name, t_int());
-        log_var(cur_func_name ? cur_func_name : "global", tmp, 1, 0);
+        char *tmp_name = new_temp("sw");
         gen_expr(s->e1);
         emit("SET %s", tmp_name);
 
@@ -4021,7 +3970,7 @@ static void gen_stmt_inner(stmt *s)
 
         stmt *saved_default = g_sw_default;
         g_sw_default = NULL;
-        switch_dispatch(s->body, tmp_name);            // mint labels + EQU/JIZ chain
+        switch_dispatch(s->body, tmp_name);            // mint labels + EQU/JNZ chain
         if (g_sw_default) emit("JMP %s", g_sw_default->label);
         else              emit("JMP %s", end);
         g_sw_default = saved_default;
@@ -4282,7 +4231,6 @@ static void emit_global_scalar_inits(unit *u)
     cg_line = saved;
 }
 
-// emit the one-time initializers for `static` locals (collected pre-pass)
 // Zero every static local's `__once` guard at main entry. The initialisers
 // themselves run at their declarations (see emit_static_guard_open): all this
 // has to do is make a fresh start -- including after a reset, which re-runs

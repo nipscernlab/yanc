@@ -1,9 +1,9 @@
 #pragma once
-// CPPComp <vector>: a heap-backed std::vector<T> for the 4K word target.
-// The zero-initialised state (_data=0, _len=0, _cap=0) is a valid empty vector,
-// so GLOBAL vector objects work without running a constructor (globals are
-// zero-init on this target). Real type-parameter monomorphization gives each
-// vector<T> a concrete element type, so operator[] returns a true T&.
+// CPPComp <vector>: a std::vector<T> on the heap (2048 words, shared with
+// every new). The constructor makes an empty vector, and so does the zeroed
+// state (_data=0, _len=0, _cap=0) a global starts in. Each vector<T> is its
+// own instance with T's element type, so operator[] returns a true T&. A new
+// that finds no memory ends the program (#129).
 namespace std {
     template<class T>
     class vector {

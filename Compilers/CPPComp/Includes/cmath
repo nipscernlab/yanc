@@ -20,7 +20,7 @@ namespace std {
     }
     inline float sqrtf(float x) { return sqrt(x); }
 
-    // YANC float has no NaN or infinity bit patterns (see [[yanc-float-format]]),
+    // YANC float has no NaN or infinity bit patterns (docs/floating-point.md),
     // so anything we can store is finite by construction. We still expose
     // isfinite() as a no-op `true` so user code that defensively guards
     // against non-finite results compiles and behaves like a finite-only

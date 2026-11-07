@@ -1,13 +1,10 @@
 /* ----------------------------------------------------------------------------
-   CPPComp — bison grammar for the YANC C subset
+   CPPComp — bison grammar for the C++ YANC accepts
    ----------------------------------------------------------------------------
-   Grammar is loosely C99, restricted to constructs the target can execute:
-     - scalar types int/float/char/void, pointers, 1-D arrays, structs
-     - all expression operators, all looping/conditional constructs
-     - functions with array/pointer params (passed via LEA, read with LDI 0 / STI 0)
-     - typedef, enum, const, static (storage class is mostly cosmetic here)
-   What's intentionally omitted from v1: function pointers, variadic args,
-   unions, multi-D arrays, VLAs.
+   C with classes, inheritance and virtual methods, templates, references,
+   new and delete, function pointers, unions and arrays of up to CPP_DIM_MAX
+   dimensions. docs/language-cpp.md is what it accepts and "What does not
+   exist" what it refuses (variadic functions, exceptions, VLAs, ...).
    ---------------------------------------------------------------------------- */
 
 %{
@@ -177,7 +174,7 @@ static void replay_method_defaults(const char *cls_tag, const char *name, decl *
 // ---- lambda IIFE: a no-capture, no-param lambda immediately invoked,
 // `[]() { body }()`, used as a global initializer (the C++14 idiom for
 // computing a const table). The body becomes a synthesized free function
-// `lam_N` and the whole expression lowers to the plain call `lam_N()`.
+// `__lamN` and the whole expression lowers to the plain call `__lamN()`.
 // Function-parse state does not nest (st_enter_func holds ONE cur_func),
 // so a lambda inside a function body is rejected with a clear message.
 static int  lambda_seq = 0;
@@ -329,7 +326,7 @@ static stmt *make_range_for(type *vt, char *var, char *container, stmt *body, in
 // to g_ctor_inits. Called from each ctor finalization (in-class and out-of-class)
 // after ctor_init_opt populated g_ctor_inits and before it gets prepended to
 // the body. Scalar inits land here; aggregate `= {}` defaults are dropped during
-// parsing for now (see [[cppcomp-blind-port]]).
+// parsing for now.
 static void inject_default_member_inits(type *cls)
 {
     if (!cls || cls->kind != TY_STRUCT) return;
@@ -936,7 +933,7 @@ external_decl:
       function_def
     | declaration                   { /* declaration's action adds it to globals (or registers typedef) */ }
     | template_prefix function_def  { g_in_template = 0; }  /* function template (monomorphized per use) */
-    | template_prefix declaration   { g_in_template = 0; }  /* class template (type-erased) */
+    | template_prefix declaration   { g_in_template = 0; }  /* class template */
     | KW_NAMESPACE IDENT '{' translation_unit '}' { free($2); }   /* transparent namespace */
     | KW_NAMESPACE IDENT '{' '}'                   { free($2); }
     | KW_USING KW_NAMESPACE qualified_id ';'       { free($3); }  /* using-directive (no-op) */
@@ -952,7 +949,9 @@ external_decl:
 /* Template prefix. Each type parameter is a t_tparam placeholder (int-like until
    substituted). FUNCTION templates are captured and monomorphized per concrete
    argument type at the call site (so float instantiations use float ops). CLASS
-   templates stay type-erased: the placeholder behaves as one machine word. */
+   templates are cloned per instance Name<args> (instantiate_ctmpl_methods); one
+   with only type parameters is also emitted with the placeholder as one word,
+   for a use with no <args>. */
 template_prefix:
       KW_TEMPLATE '<' { g_tparam_n = 0; g_ct_nontype = 0; g_n_ctm = 0;
                         for (int i = 0; i < CPP_TPARAM_MAX; i++) g_tparam_isval[i] = 0; }
@@ -1701,7 +1700,7 @@ init_declarator:
       }
     | pointers IDENT '{' { $<typ>$ = cur_base; } init_item_list '}' {
           /* direct list-init `T v{a, b, ...};` — aggregate init without `=`,
-             same semantics as `T v = {a, b, ...}` (line 1446 below). Save
+             same semantics as `T v = {a, b, ...}` (the '=' '{' rule below). Save
              cur_base before the list items in case a cast inside one of
              them reduces a new base_type and clobbers the global. */
           decl *d = make_decl($<typ>4, $1, $2, NULL, 0, yylineno, NULL);

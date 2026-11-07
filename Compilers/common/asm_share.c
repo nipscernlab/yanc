@@ -2075,3 +2075,19 @@ done:
     st_free(&lines); st_free(&pc);
     return removed;
 }
+
+int asm_passes(const char *asm_path, const char *pc_path, int which,
+               void (*gone)(const char *name), int (*keep)(const char *name))
+{
+    int n, less = 0;                     // each pass: -1 on an I/O error, which counts nothing
+    if ((which & ASM_P_FUSE) && (n = asm_fuse(asm_path, pc_path)) > 0) less += n;
+    if ((n = asm_reach(asm_path, pc_path)) > 0) less += n;
+    if ((which & ASM_P_DIVK) && (n = asm_divk(asm_path, pc_path)) > 0) less += n;
+    if ((n = asm_divseq(asm_path, pc_path)) > 0) less -= n;                  // words added
+    if ((n = asm_unread(asm_path, pc_path, gone, keep)) > 0) less += n;
+    if ((n = asm_callarg(asm_path, pc_path)) > 0) less += n;
+    if ((which & ASM_P_TAIL) && (n = asm_tail(asm_path, pc_path)) > 0) less += n;
+    if ((n = asm_jnz(asm_path, pc_path)) > 0) less += n;                       // last (#78)
+    asm_share(asm_path);
+    return less;
+}

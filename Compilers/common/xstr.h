@@ -19,6 +19,7 @@ void *xmalloc  (size_t n);                           // malloc, or the tool ends
 void *xcalloc  (size_t n, size_t size);              // calloc (zeroed), or the tool ends
 void *xrealloc (void *p, size_t n);                  // realloc, or the tool ends
 char *xstrdup  (const char *s);                      // a copy of s
+char *xstrndup (const char *s, size_t n);            // a copy of the n characters at s
 void  xstr_oom_hook(void (*fn)(void));               // runs before the tool ends out of
                                                      // memory (cmmcomp: removes its outputs)
 char *xasprintf(const char *fmt, ...)                // the formatted text

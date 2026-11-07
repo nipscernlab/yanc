@@ -2,8 +2,10 @@
 // CPPComp — symbol table -------------------------------------------------------
 // ----------------------------------------------------------------------------
 // Lexical-scoped table: file scope at depth 0, function scope at 1, then
-// nested blocks. Each symbol carries its assigned asm-level name (mangled
-// for locals as <funcname>_<varname>).
+// nested blocks. Globals, functions, typedefs and struct tags all go to the
+// file scope, wherever they are declared (#131: a typedef inside a function
+// is seen in main too). Each symbol carries its assigned asm-level name
+// (mangled for locals as <funcname>_<varname>).
 // ----------------------------------------------------------------------------
 
 #ifndef CPPCOMP_SYMTAB_H

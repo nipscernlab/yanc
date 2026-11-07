@@ -412,10 +412,6 @@ void msg_on_internal(void (*fn)(void));                // runs before msg_intern
     M("cppcomp: o arquivo '%s' dá nome ao processador, e '%s' %s; renomeie o arquivo\n", \
       "cppcomp: the file '%s' names the processor, and '%s' %s; rename the file\n")
 
-#define MSG_ERR_PARSE_FAILED \
-    M("cppcomp: a análise do programa falhou\n", \
-      "cppcomp: parse failed\n")
-
 #define MSG_ERR_CANT_WRITE \
     M("cppcomp: não foi possível abrir '%s' para escrita\n", \
       "cppcomp: cannot open '%s' for writing\n")

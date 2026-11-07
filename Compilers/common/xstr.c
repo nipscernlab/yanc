@@ -53,6 +53,14 @@ char *xstrdup(const char *s)
     return d;
 }
 
+char *xstrndup(const char *s, size_t n)
+{
+    char *r = xmalloc(n + 1);
+    memcpy(r, s, n);
+    r[n] = 0;
+    return r;
+}
+
 char *xvasprintf(const char *fmt, va_list ap)
 {
     va_list aq;

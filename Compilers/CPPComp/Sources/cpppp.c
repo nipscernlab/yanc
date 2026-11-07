@@ -204,15 +204,13 @@ static void sb_putc(sbuf *b, char c) {
 static void sb_puts(sbuf *b, const char *s) { while (*s) sb_putc(b, *s++); }
 static void sb_putn(sbuf *b, const char *s, size_t n) { for (size_t i = 0; i < n; i++) sb_putc(b, s[i]); }
 
-static char *dupn(const char *s, size_t n) { char *r = xmalloc(n + 1); memcpy(r, s, n); r[n] = 0; return r; }
-
 // the identifier at s, of any length, in a block of its own; *n gets its length
 static char *take_ident(const char *s, size_t *n)
 {
     size_t k = 0;
     while (is_ident_cont(s[k])) k++;
     *n = k;
-    return dupn(s, k);
+    return xstrndup(s, k);
 }
 
 // trim leading/trailing whitespace, returning a fresh string
@@ -220,7 +218,7 @@ static char *dup_trim(const char *s, size_t n)
 {
     while (n > 0 && (*s == ' ' || *s == '\t')) { s++; n--; }
     while (n > 0 && (s[n-1] == ' ' || s[n-1] == '\t')) n--;
-    return dupn(s, n);
+    return xstrndup(s, n);
 }
 
 static char *expand_str(const char *src);
@@ -519,7 +517,7 @@ static ppv pp_number(const char **pp)
         int d = isdigit((unsigned char)*p) ? *p - '0'
               : base == 16 && isxdigit((unsigned char)*p) ? tolower((unsigned char)*p) - 'a' + 10 : -1;
         if (d < 0) break;
-        if (d >= base) pp_fail(MSG_ERR_OCTAL, dupn(s, (size_t)(skip_number(s) - s)));
+        if (d >= base) pp_fail(MSG_ERR_OCTAL, xstrndup(s, (size_t)(skip_number(s) - s)));
         if (v > (~0ULL - (unsigned)d) / (unsigned)base) pp_bad(s);   // past 64 bits
         v = v * (unsigned)base + (unsigned)d;
     }
@@ -745,7 +743,7 @@ static char *dirname_of(const char *path)
 {
     const char *last = path;
     for (const char *p = path; *p; p++) if (*p == '/' || *p == '\\') last = p;
-    return last == path ? xstrdup(".") : dupn(path, (size_t)(last - path));
+    return last == path ? xstrdup(".") : xstrndup(path, (size_t)(last - path));
 }
 
 // an #include of target: the file, unless a #pragma once closed it
@@ -874,7 +872,7 @@ static void do_include(const char *p, const char *dir)
     char close = *p == '"' ? '"' : '>';
     const char *t = ++p; while (*p && *p != close) p++;
     if (*p != close || *trim_in_place((char *)p + 1)) pp_fail(MSG_ERR_INCLUDE_FORM);
-    char *target = dupn(t, (size_t)(p - t));
+    char *target = xstrndup(t, (size_t)(p - t));
     include_file(target, close == '"' ? dir : NULL);   // "..." looks in this file's folder first
     free(target); free(x);
 }

@@ -255,4 +255,20 @@ int asm_is_norm(const char *mn);                  // its ALU result goes through
 // (both 0), -1 on an I/O error.
 int asm_depth(const char *asm_path, int *sdepth, int *ddepth);
 
+// ****************************************************************************
+// asm_passes -- the passes a compiler runs on its .asm, in their one order ----
+// ****************************************************************************
+//
+// cmmcomp and cppcomp both run, after their code generation: asm_fuse,
+// asm_reach, asm_divk, asm_divseq, asm_unread, asm_callarg, asm_tail, asm_jnz
+// and asm_share, each with the order its own comment above asks for. `which`
+// picks the optional ones, ASM_P_FUSE, ASM_P_DIVK and ASM_P_TAIL (cppcomp
+// does its own fusion in its peephole, and keeps every division as written
+// and every call a call); the others always run. gone and keep go to
+// asm_unread (NULL for none). Returns how many instructions the pc map lost,
+// net (asm_divseq adds words): what the caller takes off its count.
+enum { ASM_P_FUSE = 1, ASM_P_DIVK = 2, ASM_P_TAIL = 4 };
+int asm_passes(const char *asm_path, const char *pc_path, int which,
+               void (*gone)(const char *name), int (*keep)(const char *name));
+
 #endif

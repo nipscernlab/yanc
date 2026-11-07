@@ -110,7 +110,7 @@ unit *ast_unit(void)
 {
     unit *u = (unit*)xcalloc(1, sizeof(unit));
     u->nubits = -1; u->nbmant = -1; u->nbexpo = -1; u->nugain = -1;
-    u->ndstac = -1; u->sdepth = -1; u->nuioin = -1; u->nuioou = -1; u->fftsiz = -1; u->itradd = -1;
+    u->ndstac = -1; u->sdepth = -1; u->nuioin = -1; u->nuioou = -1;
     return u;
 }
 

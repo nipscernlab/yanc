@@ -28,6 +28,16 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **cppcomp tidied (#133).** One helper makes a compiler temporary
+  (`new_temp_as`), one ranks how arguments fit an overload (`args_fit`),
+  and `new` calls a constructor as every other object creation does. The
+  passes both compilers run on their `.asm` are one function,
+  `asm_passes` (`Compilers/common/asm_share.c`), so their order cannot
+  drift apart. A `switch` tests each `case` with `EQU; JNZ` instead of
+  `EQU; LIN; JIZ`: one instruction less per case. Dead code (`type_str`,
+  the `fftsiz` and `itradd` fields, a parse-failure message no path
+  reached) is gone, and the comments that described the code as it was
+  say what it does now.
 - **Opcodes 18 and up moved one place.** `JNZ` takes 18, next to `JIZ`
   (17), so the jumps stay together; `CAL` is now 19 and every opcode
   after it is one more than before, up to `S_SRS` at 108. Take

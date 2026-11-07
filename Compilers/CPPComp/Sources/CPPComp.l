@@ -51,12 +51,6 @@ static long int_lit(const char *text, int base)
     return (long)v;
 }
 
-static char *xstrdup_n(const char *s, int n)
-{
-    char *r = (char*)xmalloc(n + 1);
-    memcpy(r, s, n); r[n] = 0; return r;
-}
-
 static int is_ident_char(char c) { return isalnum((unsigned char)c) || c == '_'; }
 
 // A float literal as the .asm takes it, digits.digits[e[-]digits], with no
@@ -137,7 +131,7 @@ static void pragma_line(const char *p)
     while (*p == ' ' || *p == '\t') p++;
     const char *k = p;
     while (is_ident_char(*p)) p++;
-    char *key = xstrdup_n(k, (int)(p - k));
+    char *key = xstrndup(k, (size_t)(p - k));
     while (*p == ' ' || *p == '\t') p++;
     char *val = xstrdup(p);
     for (int L = (int)strlen(val); L > 0 && isspace((unsigned char)val[L-1]); ) val[--L] = 0;
@@ -340,8 +334,8 @@ CHRLIT  \'(\\([0-7]{1,3}|x{HEXIT}+|.)|[^\\'\n])\'
                            while (fl < yyleng && is_ident_char(yytext[fl])) fl++;
                            int ls = yyleng;
                            while (ls > 0 && is_ident_char(yytext[ls-1])) ls--;
-                           char *first = xstrdup_n(yytext, fl);
-                           char *last  = xstrdup_n(yytext + ls, yyleng - ls);
+                           char *first = xstrndup(yytext, fl);
+                           char *last  = xstrndup(yytext + ls, yyleng - ls);
                            int ft = classify_ident(first);
                            int lt = classify_ident(last);
                            free(last);
@@ -354,10 +348,10 @@ CHRLIT  \'(\\([0-7]{1,3}|x{HEXIT}+|.)|[^\\'\n])\'
                               Reached when the chain is not a plain run of names
                               (`N::Type<...>::x`, `Color::` before a template
                               bracket, ...) — the rule above handles the rest. */
-                           yylval.sval = xstrdup_n(yytext, yyleng);
+                           yylval.sval = xstrndup(yytext, yyleng);
                            int t = classify_ident(yytext);
                            return t == IDENT ? NS_IDENT : t; }
-{IDENTIF}                { yylval.sval = xstrdup_n(yytext, yyleng); return classify_ident(yytext); }
+{IDENTIF}                { yylval.sval = xstrndup(yytext, yyleng); return classify_ident(yytext); }
 
   /* multi-char operators ----------------------------------------------- */
 
