@@ -37,6 +37,14 @@ tags consumed by Aurora.
   underline** (`F_ADD`, `LDI_V`, `SET_P`). `Scripts/check_isa.py`
   checks it on `Compilers/common/isa.tsv`; the table already followed
   it.
+- **cppcomp takes names of up to 1000 characters, as cmmcomp (#66).** A
+  longer name stops it with a message that says its length and the limit;
+  before, it went through unchecked, and a parameter name over about 250
+  characters was cut short without a word. cppcomp no longer keeps a name
+  in a buffer of fixed size, and every allocation goes through
+  `Compilers/common/xstr.c`, as in asmcomp and cmmcomp: its own copies of
+  `xstrdup` and `xcalloc`, in four files, are gone. Test `test97` takes
+  names of 1000 characters through the whole chain.
 
 ### Fixed
 - **The Verilator tests pass however the MSYS2 shell was opened.** An

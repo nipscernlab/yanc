@@ -308,6 +308,10 @@ int  msg_error_count(void);
 
 // the lexer (CPPComp.l) -------------------------------------------------------
 
+#define MSG_ERR_NAME_TOO_LONG \
+    M("esse nome tem %d caracteres, e o máximo é %d", \
+      "that name has %d characters, and the most a name may have is %d")
+
 #define MSG_ERR_RESERVED_DUNDER \
     M("'%s': um nome com '__' é reservado (o C++ os guarda para o compilador, e o YANC os usa no assembly)", \
       "'%s': a name with '__' in it is reserved (C++ keeps them for the compiler, and YANC uses them in the assembly)")

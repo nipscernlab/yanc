@@ -34,6 +34,9 @@ program is one source file, which can `#include` others.
   `yanc -I <dir>`, then in the headers that come with YANC.
 - The processor is configured with `#pragma yanc` lines, the C++ form of the
   C± directives (see [Configuration](#configuration)).
+- A name has at most 1000 characters, as in C±. The limit leaves room for
+  the names the compiler builds from yours, such as a local's
+  `<function>_<name>`, in the Verilog and the waveform (GitHub issue #66).
 
 ## Input and output
 

@@ -20,6 +20,7 @@
 #include "../Headers/codegen.h"
 #include "../Headers/messages.h"
 #include "../Headers/cpppp.h"
+#include "../../common/xstr.h"
 #include "../../common/asm_share.h"
 #include "../../common/console_utf8.h"
 #include "../../common/exe_dir.h"
@@ -38,7 +39,7 @@ static void lower_num_ins(const char *tmp_dir, int gone) {
         int v;
         if (sscanf(line, "num_ins %d", &v) == 1) snprintf(line, sizeof(line), "num_ins %d\n", v - gone);
         size_t k = strlen(line);
-        if (len + k + 1 > cap) { cap = 2 * (len + k + 1); text = realloc(text, cap); }
+        if (len + k + 1 > cap) { cap = 2 * (len + k + 1); text = xrealloc(text, cap); }
         memcpy(text + len, line, k + 1); len += k;
     }
     fclose(f);
@@ -83,7 +84,7 @@ static char *derive_name(const char *path, const char *new_ext)
     const char *dot = strrchr(base, '.');
     size_t blen = dot ? (size_t)(dot - base) : strlen(base);
     size_t elen = strlen(new_ext);
-    char *r = malloc(blen + elen + 1);
+    char *r = xmalloc(blen + elen + 1);
     memcpy(r, base, blen);
     memcpy(r + blen, new_ext, elen);
     r[blen + elen] = 0;
@@ -144,19 +145,19 @@ int main(int argc, char **argv)
      * levels): <prname>.asm and the tables asmcomp and the waveform read. */
     char *dflt = NULL;
     if (!out_dir) {
-        dflt = malloc(strlen(g_unit->prname) + 3);
+        dflt = xmalloc(strlen(g_unit->prname) + 3);
         sprintf(dflt, "./%s", g_unit->prname);
         out_dir = dflt;
     }
     make_dir(out_dir);
     const char *tmp_dir = out_dir;
-    char *outp = malloc(strlen(out_dir) + strlen(g_unit->prname) + 8);
+    char *outp = xmalloc(strlen(out_dir) + strlen(g_unit->prname) + 8);
     sprintf(outp, "%s/%s.asm", out_dir, g_unit->prname);
     {
         const char *fmt[4] = {"%s/%s.asm", "%s/pc_%s_mem.txt", "%s/prog_log.txt%.0s", "%s/src_lines.txt%.0s"};
         for (int i = 0; i < 4; i++) {
             size_t n = strlen(out_dir) + strlen(g_unit->prname) + 32;
-            out_files[i] = malloc(n);
+            out_files[i] = xmalloc(n);
             snprintf(out_files[i], n, fmt[i], out_dir, g_unit->prname);
         }
         atexit(remove_outputs);

@@ -24,6 +24,7 @@
 #include "../Headers/messages.h"
 #include "../Headers/cpppp.h"
 #include "../../common/asm_share.h"
+#include "../../common/xstr.h"
 
 // ---- output ----------------------------------------------------------------
 
@@ -79,7 +80,7 @@ static strct_field *cur_class_member(const char *name)
 // mangle Class::name -> "Class__name" (must match the parser's scheme)
 static char *cg_mangle_method(const char *cls, const char *name)
 {
-    char *m = malloc(strlen(cls) + strlen(name) + 3);
+    char *m = xmalloc(strlen(cls) + strlen(name) + 3);
     sprintf(m, "%s__%s", cls, name);
     return m;
 }
@@ -185,7 +186,7 @@ static void assign_overload_labels(unit *u)
         for (int j = 0; j < u->n_funcs; j++)
             if (j != i && !strcmp(u->funcs[j]->name, f->name)) { dup = 1; break; }
         if (!dup) { f->asm_label = f->name; continue; }
-        char *lbl = malloc(strlen(f->name) + f->n_params + 3);
+        char *lbl = xmalloc(strlen(f->name) + f->n_params + 3);
         int k = sprintf(lbl, "%s_O", f->name);
         decl *p = f->params;
         for (int a = 0; a < f->n_params && p; a++, p = p->next) lbl[k++] = ov_code(p->dtype);
@@ -256,7 +257,7 @@ static char *method_call_label(type *cls, const char *m, expr **args, int nargs,
     if (f && f->asm_label && strcmp(f->asm_label, masm)) {
         free(masm);
         *fo = f;
-        return strdup(f->asm_label);
+        return xstrdup(f->asm_label);
     }
     return masm;
 }
@@ -337,7 +338,7 @@ static void ibuf_push(char *text, int line, int nofuse)
 {
     if (g_ibuf_n == g_ibuf_cap) {
         g_ibuf_cap = g_ibuf_cap ? g_ibuf_cap * 2 : 256;
-        g_ibuf = realloc(g_ibuf, (size_t)g_ibuf_cap * sizeof(ibuf_e));
+        g_ibuf = xrealloc(g_ibuf, (size_t)g_ibuf_cap * sizeof(ibuf_e));
     }
     g_ibuf[g_ibuf_n].text = text; g_ibuf[g_ibuf_n].line = line;
     g_ibuf[g_ibuf_n].nofuse = nofuse; g_ibuf_n++;
@@ -350,32 +351,29 @@ static void emit(const char *fmt, ...)
     va_start(ap, fmt); va_copy(ap2, ap);
     int n = vsnprintf(NULL, 0, fmt, ap);
     va_end(ap);
-    char *s = malloc((size_t)n + 1);
+    char *s = xmalloc((size_t)n + 1);
     vsnprintf(s, (size_t)n + 1, fmt, ap2);
     va_end(ap2);
     ibuf_push(s, cg_line, 0);
 }
 
 // like emit but the line is verbatim user inline asm: never peephole-fused.
-static void emit_verbatim(const char *text) { ibuf_push(strdup(text), cg_line, 1); }
+static void emit_verbatim(const char *text) { ibuf_push(xstrdup(text), cg_line, 1); }
 
 static char *fresh_label(const char *prefix)
 {
     char buf[64];
     snprintf(buf, sizeof(buf), "__L%s%d", prefix, ++label_n);
-    char *s = malloc(strlen(buf)+1); strcpy(s, buf); return s;
+    char *s = xmalloc(strlen(buf)+1); strcpy(s, buf); return s;
 }
 
 // the local `x` of `f` is `f_x` in the .asm; a compiler temporary (its name
 // starts with `__`, which no user name may) stays under `__`: `__f_tmp3`
 static char *mangle_local(const char *name)
 {
-    if (!cur_func_name) return strdup(name);
-    size_t n = strlen(cur_func_name) + strlen(name) + 4;
-    char *r = malloc(n);
-    if (name[0] == '_' && name[1] == '_') snprintf(r, n, "__%s_%s", cur_func_name, name + 2);
-    else                                  snprintf(r, n, "%s_%s", cur_func_name, name);
-    return r;
+    if (!cur_func_name) return xstrdup(name);
+    if (name[0] == '_' && name[1] == '_') return xasprintf("__%s_%s", cur_func_name, name + 2);
+    return xasprintf("%s_%s", cur_func_name, name);
 }
 
 // ---- one name, one owner in the .asm --------------------------------------
@@ -393,11 +391,11 @@ static int      owners_n[2], owners_cap[2];
 
 static void claim(int ns, const char *name, const char *who, int line)
 {
-    char quoted[300]; snprintf(quoted, sizeof(quoted), "'%s'", name);
     if (asm_is_mnemonic(name)) {
-        if (strstr(who, quoted))     // the name as written: no need to spell it twice
-            msg_error(line, MSG_ERR_NAME_IS_MNEMONIC, who, name);
-        msg_error(line, MSG_ERR_ASM_NAME_IS_MNEMONIC, who, name);
+        char *quoted = xasprintf("'%s'", name);
+        int as_written = strstr(who, quoted) != NULL;   // no need to spell it twice
+        free(quoted);
+        msg_error(line, as_written ? MSG_ERR_NAME_IS_MNEMONIC : MSG_ERR_ASM_NAME_IS_MNEMONIC, who, name);
     }
     if (ns == NS_LABEL && strcmp(name, "global") == 0)
         msg_error(line, MSG_ERR_NAME_GLOBAL, who);
@@ -411,28 +409,27 @@ static void claim(int ns, const char *name, const char *who, int line)
     }
     if (owners_n[ns] == owners_cap[ns]) {
         owners_cap[ns] = owners_cap[ns] ? 2 * owners_cap[ns] : 256;
-        owners[ns] = realloc(owners[ns], (size_t)owners_cap[ns] * sizeof(owner_e));
+        owners[ns] = xrealloc(owners[ns], (size_t)owners_cap[ns] * sizeof(owner_e));
     }
-    owners[ns][owners_n[ns]].name = strdup(name);
-    owners[ns][owners_n[ns]].who  = strdup(who);
+    owners[ns][owners_n[ns]].name = xstrdup(name);
+    owners[ns][owners_n[ns]].who  = xstrdup(who);
     owners[ns][owners_n[ns]].reserved = (line == 0);   // the compiler's own (fim, malloc...)
     owners_n[ns]++;
 }
 
 static void claim_local(const char *aname, const char *name, int line)
 {
-    char who[512];
-    snprintf(who, sizeof(who), MSG_WHO_LOCAL, name, cur_func_name);
+    char *who = xasprintf(MSG_WHO_LOCAL, name, cur_func_name);
     claim(NS_DATA, aname, who, line);
+    free(who);
 }
 
 // a function's label (an overload's is f_O<types>), described by its source name
 static void claim_func(func *f)
 {
-    char who[512];
-    if (strcmp(f->name, f->asm_label) == 0) snprintf(who, sizeof(who), MSG_WHO_FUNC, f->name);
-    else                                    snprintf(who, sizeof(who), MSG_WHO_OVERLOAD, f->name);
+    char *who = xasprintf(strcmp(f->name, f->asm_label) == 0 ? MSG_WHO_FUNC : MSG_WHO_OVERLOAD, f->name);
     claim(NS_LABEL, f->asm_label, who, f->line);
+    free(who);
 }
 
 static void claims_reset(void)
@@ -454,8 +451,8 @@ static void log_var(const char *func, const char *var, int type_code, int size)
 {
     if (type_code == 0) return;   // ptr/struct/etc.: not published to prog_log.txt
     if (varlog_n >= VARLOG_MAX) msg_internal("too many variables");
-    varlog[varlog_n].func = strdup(func);
-    varlog[varlog_n].var  = strdup(var);
+    varlog[varlog_n].func = xstrdup(func);
+    varlog[varlog_n].var  = xstrdup(var);
     varlog[varlog_n].type_code = type_code;
     varlog[varlog_n].size = size;
     varlog_n++;
@@ -574,7 +571,7 @@ static void fp_add(const char *name)
     if (fptab_n >= FPTAB_MAX) msg_internal("too many address-taken functions");
     sym *s = st_find(name);
     fptab_np[fptab_n] = (s && s->kind == SK_FUNC) ? s->n_params : -1;
-    fptab[fptab_n++] = strdup(name);
+    fptab[fptab_n++] = xstrdup(name);
 }
 
 // emit the inlined function-ID dispatch (assumes __fp_id is set and the args,
@@ -645,7 +642,7 @@ static void scan_strings_expr(expr *e)
     if (e->kind == E_STRING_LIT && !e->member) {
         if (strtab_n >= STRLIT_MAX) msg_internal("too many string literals");
         char lbl[32]; snprintf(lbl, sizeof(lbl), "__str%d", strtab_n);
-        e->member = strdup(lbl);
+        e->member = xstrdup(lbl);
         strtab[strtab_n].label = e->member;
         strtab[strtab_n].bytes = e->sval;
         strtab[strtab_n].len   = e->slen;
@@ -788,7 +785,7 @@ static void collect_statics_stmt(const char *fn, stmt *s)
         int is_obj = et && et->kind == TY_STRUCT && et->tag;    // constructed at program start
         if (d->sclass == SC_STATIC && (d->init || d->binit || is_obj) && n_stinit < MAX_STINIT) {
             size_t n = strlen(fn) + strlen(d->name) + 2;
-            char *base = malloc(n); snprintf(base, n, "%s_%s", fn, d->name);
+            char *base = xmalloc(n); snprintf(base, n, "%s_%s", fn, d->name);
             stinits[n_stinit].base  = base;
             stinits[n_stinit].t     = d->dtype;
             stinits[n_stinit].init  = d->init;
@@ -2005,7 +2002,7 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
             expr *src = args[i - first];
             sym *vs = simple_mem_var(src);
             if (vs && vs->asm_name && same_scalar(infer_type(src), plist[i]->dtype))
-                bound[i] = strdup(vs->asm_name);
+                bound[i] = xstrdup(vs->asm_name);
         }
     }
 
@@ -2031,7 +2028,7 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
     int   sv_rec       = cur_fn_recursive;
     type *sv_cls       = cur_method_class;
     const char *sv_stf = st_current_func();
-    char *keep = sv_stf ? strdup(sv_stf) : NULL;
+    char *keep = sv_stf ? xstrdup(sv_stf) : NULL;
 
     cur_func_name    = f->asm_label;
     cur_func_ret     = f->ret;
@@ -2040,14 +2037,10 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
     st_enter_func(f->asm_label);
     st_push_scope();
     for (int i = 0; i < np; i++) {
-        char nm[256];
-        if (bound[i]) snprintf(nm, sizeof(nm), "%s", bound[i]);
-        else {
-            char *m = mangle_local(plist[i]->name);
-            snprintf(nm, sizeof(nm), "%s", m); free(m);
-            claim_local(nm, plist[i]->name, f->line);
-        }
+        char *nm = bound[i] ? xstrdup(bound[i]) : mangle_local(plist[i]->name);
+        if (!bound[i]) claim_local(nm, plist[i]->name, f->line);
         st_add(SK_PARAM, plist[i]->name, nm, plist[i]->dtype);
+        free(nm);
     }
     for (int i = 0; i < np; i++) free(bound[i]);
     if (f->ret->is_ref) gen_addr(body); else gen_expr_to(body, f->ret);
@@ -3193,7 +3186,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
     if (t && t->kind == TY_ARRAY) {
         int esz = type_size_words(t->base);
         int n = t->arr_size;
-        char *done = calloc(n > 0 ? n : 1, 1);
+        char *done = xcalloc(n > 0 ? n : 1, 1);
         int cursor = 0;
         for (int k = 0; k < z->n; k++) {
             int idx = cursor;
@@ -3217,7 +3210,7 @@ static void emit_initz(const char *base, int off, type *t, initz *z)
         free(done);
     } else if (t && t->kind == TY_STRUCT) {
         strct_field *f = t->fields;
-        strct_field **wr = calloc(z->n + 1, sizeof(strct_field*));
+        strct_field **wr = xcalloc(z->n + 1, sizeof(strct_field*));
         for (int k = 0; k < z->n; k++) {
             strct_field *target;
             if (z->desigs[k].kind == DESIG_INDEX)
@@ -3416,8 +3409,8 @@ static void emit_block_dtors(stmt *block)
 static void live_push(const char *mangled, const char *dtor)
 {
     if (g_live_n < MAX_LIVE) {
-        g_live[g_live_n].name = strdup(mangled);
-        g_live[g_live_n].dtor = strdup(dtor);
+        g_live[g_live_n].name = xstrdup(mangled);
+        g_live[g_live_n].dtor = xstrdup(dtor);
         g_live_n++;
     }
 }
@@ -3460,7 +3453,7 @@ static void ns_add(nameset *s, const char *n)
 {
     if (!n) return;
     for (int i = 0; i < s->n; i++) if (!strcmp(s->v[i], n)) return;
-    if (s->n == s->cap) { s->cap = s->cap ? 2 * s->cap : 16; s->v = realloc(s->v, s->cap * sizeof *s->v); }
+    if (s->n == s->cap) { s->cap = s->cap ? 2 * s->cap : 16; s->v = xrealloc(s->v, s->cap * sizeof *s->v); }
     s->v[s->n++] = n;
 }
 static int ns_has(const nameset *s, const char *n)
@@ -3603,7 +3596,7 @@ static void lih_rewrite_expr(expr *e, const nameset *w)
         st_add(SK_LOCAL_VAR, nm, an, st_find(e->a->sval)->stype);
         log_var(cur_func_name ? cur_func_name : "global", nm, 1, 0);
         free(an);
-        lih_h[lih_nh].base = e->a->sval; lih_h[lih_nh].inv = inv; lih_h[lih_nh].tmp = strdup(nm);
+        lih_h[lih_nh].base = e->a->sval; lih_h[lih_nh].inv = inv; lih_h[lih_nh].tmp = xstrdup(nm);
         tmp = lih_h[lih_nh++].tmp;
     }
     e->a = ast_ident((char *)tmp, e->line);
@@ -3941,11 +3934,11 @@ static void cw_put(cwords *c, int at, const char *txt)
 {
     if (at >= c->cap) {
         int nc = c->cap ? c->cap : 16; while (nc <= at) nc *= 2;
-        c->w = realloc(c->w, nc * sizeof(char *));
+        c->w = xrealloc(c->w, nc * sizeof(char *));
         for (int i = c->cap; i < nc; i++) c->w[i] = NULL;
         c->cap = nc;
     }
-    free(c->w[at]); c->w[at] = strdup(txt);
+    free(c->w[at]); c->w[at] = xstrdup(txt);
     if (at + 1 > c->n) c->n = at + 1;
 }
 
@@ -4028,7 +4021,7 @@ static void emit_arrayd(const char *name, int code, int size, cwords *c)
     const char *zero = (code == 2) ? "0.0" : "0";
     size_t len = strlen(name) + 64;
     for (int i = 0; i < c->n; i++) len += (c->w[i] ? strlen(c->w[i]) : 3) + 1;
-    char *line = malloc(len), *p = line;
+    char *line = xmalloc(len), *p = line;
     p += sprintf(p, "#arrayd %s %d %d %d", name, code, size, c->n);
     for (int i = 0; i < c->n; i++) p += sprintf(p, " %s", c->w[i] ? c->w[i] : zero);
     emit("%s", line);
@@ -4040,7 +4033,7 @@ static char *g_glob_data;     // per global: its value is in the .mif (#arrayd),
 static void emit_global_arrays(unit *u)
 {
     free(g_glob_data);
-    g_glob_data = calloc(u->n_globals + 1, 1);
+    g_glob_data = xcalloc(u->n_globals + 1, 1);
     for (int i = 0; i < u->n_globals; i++) {
         decl *d = u->globals[i];
         if (!d->dtype) continue;
@@ -4519,8 +4512,8 @@ static void analyze_recursion(unit *u)
 {
     int n = u->n_funcs;
     if (n <= 0) return;
-    char *adj = calloc((size_t)n * n, 1);
-    int  *ind = calloc(n, sizeof(int));
+    char *adj = xcalloc((size_t)n * n, 1);
+    int  *ind = xcalloc(n, sizeof(int));
     for (int i = 0; i < n; i++) collect_calls_stmt(u->funcs[i]->body, u, &adj[(size_t)i*n], &ind[i]);
     for (int i = 0; i < n; i++) if (ind[i])
         for (int j = 0; j < n; j++)
@@ -4564,7 +4557,7 @@ static type *subst_type(type *t, type **a, int n)
 static expr *clone_expr(expr *e, type **a, int n)
 {
     if (!e) return NULL;
-    expr *c = malloc(sizeof(expr)); *c = *e;       // shallow copy (strings shared)
+    expr *c = xmalloc(sizeof(expr)); *c = *e;       // shallow copy (strings shared)
     c->etype = NULL;                                // re-infer per instance
     // a non-type template parameter referenced in an expression is an int with a
     // sentinel value — replace it with the concrete argument for this instance.
@@ -4575,7 +4568,7 @@ static expr *clone_expr(expr *e, type **a, int n)
     c->b = clone_expr(e->b, a, n);
     c->c = clone_expr(e->c, a, n);
     if (e->n_args) {
-        c->args = malloc(sizeof(expr*) * e->n_args);
+        c->args = xmalloc(sizeof(expr*) * e->n_args);
         for (int i = 0; i < e->n_args; i++) c->args[i] = clone_expr(e->args[i], a, n);
     }
     return c;
@@ -4584,11 +4577,11 @@ static expr *clone_expr(expr *e, type **a, int n)
 static decl *clone_decl(decl *d, type **a, int n)
 {
     if (!d) return NULL;
-    decl *c = malloc(sizeof(decl)); *c = *d;
+    decl *c = xmalloc(sizeof(decl)); *c = *d;
     c->dtype = subst_type(d->dtype, a, n);
     c->init  = clone_expr(d->init, a, n);
     if (d->n_ctor_args) {
-        c->ctor_args = malloc(sizeof(expr*) * d->n_ctor_args);
+        c->ctor_args = xmalloc(sizeof(expr*) * d->n_ctor_args);
         for (int i = 0; i < d->n_ctor_args; i++) c->ctor_args[i] = clone_expr(d->ctor_args[i], a, n);
     }
     c->next = clone_decl(d->next, a, n);
@@ -4598,7 +4591,7 @@ static decl *clone_decl(decl *d, type **a, int n)
 static stmt *clone_stmt(stmt *s, type **a, int n)
 {
     if (!s) return NULL;
-    stmt *c = malloc(sizeof(stmt)); *c = *s;
+    stmt *c = xmalloc(sizeof(stmt)); *c = *s;
     c->e1 = clone_expr(s->e1, a, n);
     c->e2 = clone_expr(s->e2, a, n);
     c->e3 = clone_expr(s->e3, a, n);
@@ -4606,7 +4599,7 @@ static stmt *clone_stmt(stmt *s, type **a, int n)
     c->body2 = clone_stmt(s->body2, a, n);
     c->init_stmt = clone_stmt(s->init_stmt, a, n);
     if (s->n_items) {
-        c->items = malloc(sizeof(stmt*) * s->n_items);
+        c->items = xmalloc(sizeof(stmt*) * s->n_items);
         for (int i = 0; i < s->n_items; i++) c->items[i] = clone_stmt(s->items[i], a, n);
     }
     c->decls = clone_decl(s->decls, a, n);
@@ -4647,12 +4640,12 @@ static func *get_instance(func *t, expr **cargs, int ncargs, type **expl, int ne
         lbl[k++] = type_code(targs[i]);          // label over ALL tparams (incl. explicit-only)
     lbl[k] = 0;
     for (int i = 0; i < g_n_inst; i++) if (!strcmp(g_inst[i]->asm_label, lbl)) return g_inst[i];
-    func *f = malloc(sizeof(func)); *f = *t;
+    func *f = xmalloc(sizeof(func)); *f = *t;
     f->n_tparams = 0;
     f->ret    = subst_type(t->ret, targs, t->n_tparams);
     f->params = clone_decl(t->params, targs, t->n_tparams);
     f->body   = clone_stmt(t->body, targs, t->n_tparams);
-    f->asm_label = strdup(lbl);
+    f->asm_label = xstrdup(lbl);
     if (g_n_inst < 256) g_inst[g_n_inst++] = f;
     return f;
 }
@@ -4673,7 +4666,7 @@ static void instantiate_ctmpl_methods(unit *u)
         int    nta = ins->ntargs;
         for (int m = 0; m < ct->n_methods; m++) {
             func *src = ct->methods[m];
-            func *f = malloc(sizeof(func)); *f = *src;
+            func *f = xmalloc(sizeof(func)); *f = *src;
             f->n_tparams = 0;
             f->method_of = ins->concrete;
             f->ret    = subst_type(src->ret, ta, nta);
@@ -4684,7 +4677,7 @@ static void instantiate_ctmpl_methods(unit *u)
             f->name = nm; f->asm_label = nm;
             sym *s = st_add(SK_FUNC, nm, nm, f->ret);
             s->n_params = f->n_params;
-            s->param_types = malloc(sizeof(type*) * (f->n_params > 0 ? f->n_params : 1));
+            s->param_types = xmalloc(sizeof(type*) * (f->n_params > 0 ? f->n_params : 1));
             { int i = 0; for (decl *p = f->params; p; p = p->next, i++) s->param_types[i] = p->dtype; }
             if (g_n_inst < 256) g_inst[g_n_inst++] = f;
         }
@@ -4716,7 +4709,7 @@ static char *fuse_after_psh(const char *t)
     const char *pfx = (mnem[0] == 'F' && mnem[1] == '_') ? "P" : "P_";
     const char *rest = t + mlen;             // operand part incl. leading space
     size_t n = strlen(pfx) + mlen + strlen(rest) + 1;
-    char *r = malloc(n);
+    char *r = xmalloc(n);
     snprintf(r, n, "%s%s%s", pfx, mnem, rest);
     return r;
 }
@@ -4739,7 +4732,7 @@ static char *fuse_lod_unary(const char *lod, const char *un)
     for (int i = 0; u[i].acc; i++) if (!strcmp(un, u[i].acc)) { mem = u[i].mem; break; }
     if (!mem) return NULL;
     size_t n = strlen(mem) + 1 + strlen(opnd) + 1;
-    char *r = malloc(n);
+    char *r = xmalloc(n);
     snprintf(r, n, "%s %s", mem, opnd);
     return r;
 }
@@ -4781,7 +4774,7 @@ static void peephole(void)
     // variable nobody reads still shows in the waveform, `this` never does.
     {
         int nread = 0, cap = 64;
-        char **read = malloc(cap * sizeof(char *));
+        char **read = xmalloc(cap * sizeof(char *));
         for (int r = 0; r < g_ibuf_n; r++) {           // every name read anywhere
             const char *t = g_ibuf[r].text;
             int is_set = !g_ibuf[r].nofuse && !strncmp(t, "SET ", 4);
@@ -4791,8 +4784,8 @@ static void peephole(void)
                 while (*q && *q != ' ' && *q != '\t') q++;
                 size_t len = (size_t)(q - p);
                 if (len > 5 && !strncmp(q - 5, "_this", 5) && !(is_set && p == t + 4)) {
-                    if (nread == cap) { cap *= 2; read = realloc(read, cap * sizeof(char *)); }
-                    char *nm = malloc(len + 1);
+                    if (nread == cap) { cap *= 2; read = xrealloc(read, cap * sizeof(char *)); }
+                    char *nm = xmalloc(len + 1);
                     memcpy(nm, p, len); nm[len] = 0;
                     read[nread++] = nm;
                 }
@@ -4865,7 +4858,7 @@ static void peephole(void)
             // Not SET_V (no _V_P opcode); not a labeled POP.
             if (!strcmp(g_ibuf[r].text, "POP") && !strncmp(g_ibuf[w-1].text, "SET ", 4)) {
                 const char *opnd = g_ibuf[w-1].text + 3;     // " <name>"
-                char *fused = malloc(5 + strlen(opnd) + 1);  // "SET_P" + " <name>"
+                char *fused = xmalloc(5 + strlen(opnd) + 1);  // "SET_P" + " <name>"
                 sprintf(fused, "SET_P%s", opnd);
                 free(g_ibuf[w-1].text);
                 g_ibuf[w-1].text = fused;                    // keep the SET's source line
@@ -4889,14 +4882,14 @@ static void peephole(void)
             && r + 1 < g_ibuf_n && !g_ibuf[r+1].nofuse) {
             const char *n1 = g_ibuf[r+1].text;
             if (!strcmp(n1, "LDI 0")) {
-                char *f = malloc(24); snprintf(f, 24, "LDI %d", k);
+                char *f = xmalloc(24); snprintf(f, 24, "LDI %d", k);
                 free(g_ibuf[r].text); free(g_ibuf[r+1].text);
                 g_ibuf[w] = g_ibuf[r+1]; g_ibuf[w].text = f; w++;
                 r += 1; continue;
             }
             if (r + 2 < g_ibuf_n && !g_ibuf[r+2].nofuse && n1[0] == 'P' && (n1[1] == '_' || n1[1] == 'F')
                 && !strcmp(g_ibuf[r+2].text, "STI 0")) {
-                char *f = malloc(24); snprintf(f, 24, "STI %d", k);
+                char *f = xmalloc(24); snprintf(f, 24, "STI %d", k);
                 free(g_ibuf[r].text); free(g_ibuf[r+2].text);
                 g_ibuf[w++] = g_ibuf[r+1];
                 g_ibuf[w] = g_ibuf[r+2]; g_ibuf[w].text = f; w++;
@@ -4939,7 +4932,7 @@ static void peephole(void)
         if (e > r && d < g_ibuf_n && !g_ibuf[d].nofuse) {
             size_t n = strlen(g_ibuf[d].text) + 1;
             for (int k = r; k < e; k++) n += strlen(g_ibuf[k].text) + 1;
-            char *merged = malloc(n);
+            char *merged = xmalloc(n);
             size_t at = 0;
             for (int k = r; k < e; k++) {                 // the labels, NOP dropped
                 size_t len = strlen(g_ibuf[k].text) - 4;  // without the trailing " NOP"

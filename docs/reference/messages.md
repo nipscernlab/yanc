@@ -239,6 +239,7 @@ value. What the common ones mean and how to get past them is in
 - error: out-of-class ctor for unknown class '<name>'
 - error: qualified id '<name>::~<name>' is not a destructor
 - error: out-of-class dtor for unknown class '<name>'
+- error: that name has <n> characters, and the most a name may have is <n>
 - error: '<name>': a name with '\_\_' in it is reserved (C++ keeps them for the compiler, and YANC uses them in the assembly)
 - error: #pragma yanc prname is gone: the processor takes the name of the file (filtro.cpp becomes the processor filtro); delete the line and, for another name, rename the file
 - error: #pragma yanc fftsiz does nothing in C++ (the bit-reversed addressing is C± only); delete the line

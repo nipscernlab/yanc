@@ -20,6 +20,7 @@
 #include "../Headers/symtab.h"
 #include "../Headers/messages.h"
 #include "../Headers/config.h"
+#include "../../common/xstr.h"
 
 int   yylex  (void);
 extern int   yylineno;
@@ -65,13 +66,13 @@ static void unit_add_func(func *f);   // defined below; used by method_finish
 static char *params_sig(decl *params)
 {
     int n = 0; for (decl *p = params; p; p = p->next) n++;
-    char *s = malloc(n + 1); int i = 0;
+    char *s = xmalloc(n + 1); int i = 0;
     for (decl *p = params; p; p = p->next) s[i++] = ov_code(p->dtype);
     s[i] = 0; return s;
 }
 static char *sym_sig(sym *s)
 {
-    char *str = malloc(s->n_params + 1);
+    char *str = xmalloc(s->n_params + 1);
     for (int i = 0; i < s->n_params; i++) str[i] = ov_code(s->param_types[i]);
     str[s->n_params] = 0; return str;
 }
@@ -97,7 +98,7 @@ static int   g_n_ctor_members = 0;
 // mangle a method name: Class::name -> "Class__name" (asm-level symbol)
 static char *mangle_method(const char *cls, const char *name)
 {
-    char *m = malloc(strlen(cls) + strlen(name) + 3);
+    char *m = xmalloc(strlen(cls) + strlen(name) + 3);
     sprintf(m, "%s__%s", cls, name);
     return m;
 }
@@ -110,7 +111,7 @@ static char *g_tmpl_names[256];
 static int   g_n_tmpl_names = 0;
 static void tmpl_name_register(const char *n) {
     for (int i = 0; i < g_n_tmpl_names; i++) if (!strcmp(g_tmpl_names[i], n)) return;
-    if (g_n_tmpl_names < 256) g_tmpl_names[g_n_tmpl_names++] = strdup(n);
+    if (g_n_tmpl_names < 256) g_tmpl_names[g_n_tmpl_names++] = xstrdup(n);
 }
 int tmpl_name_is(const char *n) {   // consulted by the lexer (classify_ident)
     for (int i = 0; i < g_n_tmpl_names; i++) if (!strcmp(g_tmpl_names[i], n)) return 1;
@@ -140,10 +141,10 @@ static void register_method_decl(type *ret, const char *name, decl *params, int 
     sym *s = st_find(mname);
     if (!s) s = st_add(SK_FUNC, mname, mname, ret);
     s->n_params = nparams + 1;
-    s->param_types = malloc(sizeof(type*) * s->n_params);
+    s->param_types = xmalloc(sizeof(type*) * s->n_params);
     s->param_types[0] = t_ptr(cur_class);
     { int i = 1; for (decl *p = params; p; p = p->next, i++) s->param_types[i] = p->dtype; }
-    s->param_defaults = malloc(sizeof(expr*) * s->n_params);
+    s->param_defaults = xmalloc(sizeof(expr*) * s->n_params);
     s->param_defaults[0] = NULL;   /* `this` has no default */
     { int i = 1; for (decl *p = params; p; p = p->next, i++) s->param_defaults[i] = p->init; }
 }
@@ -239,7 +240,7 @@ static expr *lambda_finish(stmt *body)
         msg_error(yylineno, MSG_ERR_LAMBDA_RETURN);
     sym *s = st_find(lambda_name);
     if (s) s->stype = ret;
-    func *f = ast_func(ret, strdup(lambda_name), NULL, 0, body, yylineno);
+    func *f = ast_func(ret, xstrdup(lambda_name), NULL, 0, body, yylineno);
     unit_add_func(f);
     st_pop_scope();
     st_leave_func();
@@ -247,7 +248,7 @@ static expr *lambda_finish(stmt *body)
     ts_typedef  = lambda_sv_typedef;
     ts_sclass   = lambda_sv_sclass;
     cur_base    = lambda_sv_base;
-    return ast_call(ast_ident(strdup(lambda_name), yylineno), NULL, 0, yylineno);
+    return ast_call(ast_ident(xstrdup(lambda_name), yylineno), NULL, 0, yylineno);
 }
 
 // open a method's scope: register the mangled symbol, inject `this` as param 0,
@@ -261,12 +262,12 @@ static void method_enter(type *ret, const char *name, decl *params, int nparams)
     s->defined = 1;
     /* param_types = [this, declared...] so call sites can spot reference params */
     s->n_params = nparams + 1;
-    s->param_types = malloc(sizeof(type*) * s->n_params);
+    s->param_types = xmalloc(sizeof(type*) * s->n_params);
     s->param_types[0] = t_ptr(cur_class);
     { int i = 1; for (decl *p = params; p; p = p->next, i++) s->param_types[i] = p->dtype; }
     st_enter_func(mname);
     st_push_scope();
-    decl *thisd = ast_decl(t_ptr(cur_class), strdup("this"), NULL, 0);
+    decl *thisd = ast_decl(t_ptr(cur_class), xstrdup("this"), NULL, 0);
     thisd->next = params;
     st_add(SK_PARAM, "this", NULL, t_ptr(cur_class));
     for (decl *p = params; p; p = p->next) st_add(SK_PARAM, p->name, NULL, p->dtype);
@@ -296,18 +297,18 @@ static stmt *make_range_for(type *vt, char *var, char *container, stmt *body, in
     }   // an object: auto / auto& are deduced from c[__ri] (declare_local)
     char ivar[24]; sprintf(ivar, "__ri%d", rc++);
 
-    decl *id = ast_decl(t_int(), strdup(ivar), ast_int_lit(0, line), line);
+    decl *id = ast_decl(t_int(), xstrdup(ivar), ast_int_lit(0, line), line);
     stmt *init = ast_stmt(S_DECL, line); init->decls = id;
     expr *count = is_arr ? ast_int_lit(ct->arr_size, line)
-                         : ast_call(ast_member(ast_ident(strdup(container), line), strdup("size"), line), NULL, 0, line);
-    expr *cond = ast_binop(OP_LT, ast_ident(strdup(ivar), line), count, line);
-    expr *step = ast_assign(ast_ident(strdup(ivar), line),
-                    ast_binop(OP_ADD, ast_ident(strdup(ivar), line), ast_int_lit(1, line), line), line);
+                         : ast_call(ast_member(ast_ident(xstrdup(container), line), xstrdup("size"), line), NULL, 0, line);
+    expr *cond = ast_binop(OP_LT, ast_ident(xstrdup(ivar), line), count, line);
+    expr *step = ast_assign(ast_ident(xstrdup(ivar), line),
+                    ast_binop(OP_ADD, ast_ident(xstrdup(ivar), line), ast_int_lit(1, line), line), line);
     decl *vd = ast_decl(vt, var,
-                    ast_index(ast_ident(strdup(container), line), ast_ident(strdup(ivar), line), line), line);
+                    ast_index(ast_ident(xstrdup(container), line), ast_ident(xstrdup(ivar), line), line), line);
     stmt *vdecl = ast_stmt(S_DECL, line); vdecl->decls = vd;
     stmt *blk = ast_stmt(S_BLOCK, line);
-    blk->items = malloc(sizeof(stmt*) * 2); blk->items[0] = vdecl; blk->items[1] = body; blk->n_items = 2;
+    blk->items = xmalloc(sizeof(stmt*) * 2); blk->items[0] = vdecl; blk->items[1] = body; blk->n_items = 2;
     stmt *f = ast_stmt(S_FOR, line);
     f->init_stmt = init; f->e1 = cond; f->e2 = step; f->body = blk;
     return f;
@@ -336,15 +337,15 @@ static void inject_default_member_inits(type *cls)
         if (already) continue;
         stmt *s = ast_stmt(S_EXPR, yylineno);
         if (f->dinit) {
-            s->e1 = ast_assign(ast_ident(strdup(f->name), yylineno), (expr*)f->dinit, yylineno);
+            s->e1 = ast_assign(ast_ident(xstrdup(f->name), yylineno), (expr*)f->dinit, yylineno);
         } else {
             /* aggregate `= {}`: synthesize `__zerofill(&field, N)` (a codegen
                builtin) so the ctor zero-fills the field's N words at runtime. */
             int nwords = type_size_words(f->ftype);
-            expr **args = malloc(sizeof(expr*) * 2);
-            args[0] = ast_ident(strdup(f->name), yylineno);   /* codegen does gen_addr -> &field */
+            expr **args = xmalloc(sizeof(expr*) * 2);
+            args[0] = ast_ident(xstrdup(f->name), yylineno);   /* codegen does gen_addr -> &field */
             args[1] = ast_int_lit(nwords, yylineno);
-            s->e1 = ast_call(ast_ident(strdup("__zerofill"), yylineno), args, 2, yylineno);
+            s->e1 = ast_call(ast_ident(xstrdup("__zerofill"), yylineno), args, 2, yylineno);
         }
         if (g_n_ctor_inits < 32) g_ctor_inits[g_n_ctor_inits++] = s;
     }
@@ -358,15 +359,15 @@ static void inject_default_member_inits(type *cls)
 static void ctor_prologue(stmt *body)
 {
     inject_default_member_inits(cur_class);
-    expr **a = malloc(sizeof(expr*) * (2 + g_n_ctor_members));
-    a[0] = ast_ident(strdup("this"), yylineno);
+    expr **a = xmalloc(sizeof(expr*) * (2 + g_n_ctor_members));
+    a[0] = ast_ident(xstrdup("this"), yylineno);
     a[1] = ast_int_lit(g_ctor_base_named, yylineno);
     for (int i = 0; i < g_n_ctor_members; i++)       // skipped: built by the list
-        a[2 + i] = ast_ident(strdup(g_ctor_members[i]), yylineno);
+        a[2 + i] = ast_ident(xstrdup(g_ctor_members[i]), yylineno);
     stmt *cm = ast_stmt(S_EXPR, yylineno);
-    cm->e1 = ast_call(ast_ident(strdup("__construct_members"), yylineno), a, 2 + g_n_ctor_members, yylineno);
+    cm->e1 = ast_call(ast_ident(xstrdup("__construct_members"), yylineno), a, 2 + g_n_ctor_members, yylineno);
     int total = 1 + g_n_ctor_inits + body->n_items;
-    stmt **arr = malloc(sizeof(stmt*) * total);
+    stmt **arr = xmalloc(sizeof(stmt*) * total);
     arr[0] = cm;
     for (int i = 0; i < g_n_ctor_inits; i++) arr[1 + i] = g_ctor_inits[i];
     for (int j = 0; j < body->n_items; j++) arr[1 + g_n_ctor_inits + j] = body->items[j];
@@ -388,8 +389,8 @@ static const char *ctor_kind(decl *params)
 static void add_static(type *cls, const char *name)
 {
     if (!cls) return;
-    cls->statics = realloc(cls->statics, sizeof(char*) * (cls->n_statics + 1));
-    cls->statics[cls->n_statics++] = strdup(name);
+    cls->statics = xrealloc(cls->statics, sizeof(char*) * (cls->n_statics + 1));
+    cls->statics[cls->n_statics++] = xstrdup(name);
 }
 
 // register a virtual method name into the class's vtable (override reuses slot)
@@ -397,8 +398,8 @@ static void add_vmethod(type *cls, const char *name)
 {
     if (!cls) return;
     for (int i = 0; i < cls->n_vtbl; i++) if (!strcmp(cls->vtbl[i], name)) return;
-    cls->vtbl = realloc(cls->vtbl, sizeof(char*) * (cls->n_vtbl + 1));
-    cls->vtbl[cls->n_vtbl++] = strdup(name);
+    cls->vtbl = xrealloc(cls->vtbl, sizeof(char*) * (cls->n_vtbl + 1));
+    cls->vtbl[cls->n_vtbl++] = xstrdup(name);
 }
 
 // function-template capture: while parsing `template<...> ret f(...)`, type
@@ -444,7 +445,7 @@ static void static_method_enter(type *ret, const char *name, decl *params, int n
     s->defined = 1;
     s->n_params = nparams;
     if (nparams > 0) {
-        s->param_types = malloc(sizeof(type*) * nparams);
+        s->param_types = xmalloc(sizeof(type*) * nparams);
         int i = 0;
         for (decl *p = params; p; p = p->next, i++) s->param_types[i] = p->dtype;
     }
@@ -478,32 +479,30 @@ static char *cur_enum_prefix = NULL;   // set for `enum class E` -> enumerators 
 
 // helpers --------------------------------------------------------------------
 
-static char *xstrdup(const char *s) { char *r = malloc(strlen(s)+1); strcpy(r,s); return r; }
-
 static void unit_add_global(decl *d)
 {
     if (!g_unit) msg_internal("unit not allocated");
-    g_unit->globals = realloc(g_unit->globals, sizeof(*g_unit->globals) * (g_unit->n_globals + 1));
+    g_unit->globals = xrealloc(g_unit->globals, sizeof(*g_unit->globals) * (g_unit->n_globals + 1));
     g_unit->globals[g_unit->n_globals++] = d;
 }
 
 static void unit_add_func(func *f)
 {
-    g_unit->funcs = realloc(g_unit->funcs, sizeof(*g_unit->funcs) * (g_unit->n_funcs + 1));
+    g_unit->funcs = xrealloc(g_unit->funcs, sizeof(*g_unit->funcs) * (g_unit->n_funcs + 1));
     g_unit->funcs[g_unit->n_funcs++] = f;
 }
 
 static void unit_add_template(func *f)
 {
     f->n_tparams = g_tparam_n;
-    g_unit->templates = realloc(g_unit->templates, sizeof(func*) * (g_unit->n_templates + 1));
+    g_unit->templates = xrealloc(g_unit->templates, sizeof(func*) * (g_unit->n_templates + 1));
     g_unit->templates[g_unit->n_templates++] = f;
 }
 
 // register a class template (with non-type parameters) for real monomorphization
 static void unit_add_ctmpl(ctmpl *c)
 {
-    g_unit->ctmpls = realloc(g_unit->ctmpls, sizeof(ctmpl*) * (g_unit->n_ctmpls + 1));
+    g_unit->ctmpls = xrealloc(g_unit->ctmpls, sizeof(ctmpl*) * (g_unit->n_ctmpls + 1));
     g_unit->ctmpls[g_unit->n_ctmpls++] = c;
 }
 
@@ -579,7 +578,7 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
     c->base_class = ct->proto->base_class;
     c->n_vtbl = ct->proto->n_vtbl;
     c->has_ctor = ct->proto->has_ctor;
-    if (c->n_vtbl) { c->vtbl = malloc(sizeof(char*) * c->n_vtbl);
+    if (c->n_vtbl) { c->vtbl = xmalloc(sizeof(char*) * c->n_vtbl);
                      for (int i = 0; i < c->n_vtbl; i++) c->vtbl[i] = xstrdup(ct->proto->vtbl[i]); }
     for (strct_field *f = ct->proto->fields; f; f = f->next) {
         type *ft = f->ftype;
@@ -592,14 +591,14 @@ static type *instantiate_ctmpl_mixed(ctmpl *ct, type **targs, int *vals, int *is
     st_add_tag(xstrdup(tag), c);
     st_add_typedef(xstrdup(tag), c);
 
-    ctinst *ins = calloc(1, sizeof(ctinst));
+    ctinst *ins = xcalloc(1, sizeof(ctinst));
     ins->tmpl = ct; ins->concrete = c; ins->suffix = xstrdup(suffix);
     ins->nvals  = n; ins->ntargs = n;          // total parameter count; isval[] distinguishes
     for (int i = 0; i < n && i < 8; i++) {
         ins->vals[i]  = isval[i] ? vals[i]  : 0;
         ins->targs[i] = isval[i] ? NULL     : targs[i];
     }
-    g_unit->ctinsts = realloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
+    g_unit->ctinsts = xrealloc(g_unit->ctinsts, sizeof(ctinst*) * (g_unit->n_ctinsts + 1));
     g_unit->ctinsts[g_unit->n_ctinsts++] = ins;
     return c;
 }
@@ -761,8 +760,8 @@ static void class_open(char *tag, type *base)
         }
         t->n_vtbl = base->n_vtbl;       // inherit the base's virtual slots
         if (t->n_vtbl) {
-            t->vtbl = malloc(sizeof(char*) * t->n_vtbl);
-            for (int i = 0; i < t->n_vtbl; i++) t->vtbl[i] = strdup(base->vtbl[i]);
+            t->vtbl = xmalloc(sizeof(char*) * t->n_vtbl);
+            for (int i = 0; i < t->n_vtbl; i++) t->vtbl[i] = xstrdup(base->vtbl[i]);
         }
     }
 }
@@ -809,11 +808,11 @@ static type *class_close(void)
        concrete type at each `Name<args>` use. Only the outermost class: a
        struct nested in a class template belongs to it. */
     if (g_in_template && cur_class_sp == 0) {
-        ctmpl *ct = calloc(1, sizeof(ctmpl));
+        ctmpl *ct = xcalloc(1, sizeof(ctmpl));
         ct->name = xstrdup(done->tag); ct->proto = done; ct->n_tparams = g_tparam_n;
         for (int i = 0; i < g_tparam_n && i < 8; i++) ct->isval[i] = g_tparam_isval[i];
         ct->n_methods = g_n_ctm;
-        ct->methods = malloc(sizeof(func*) * (g_n_ctm ? g_n_ctm : 1));
+        ct->methods = xmalloc(sizeof(func*) * (g_n_ctm ? g_n_ctm : 1));
         for (int i = 0; i < g_n_ctm; i++) ct->methods[i] = g_ctm[i];
         unit_add_ctmpl(ct);
     }
@@ -1287,11 +1286,11 @@ mem_init:
           strct_field *f = cur_class ? t_struct_find(cur_class, $1) : NULL;
           stmt *s = ast_stmt(S_EXPR, yylineno);
           if (f && f->ftype && f->ftype->kind == TY_STRUCT) {
-              expr **a = malloc(sizeof(expr*) * ($3.n + 1));
-              a[0] = ast_ident(strdup($1), yylineno);
+              expr **a = xmalloc(sizeof(expr*) * ($3.n + 1));
+              a[0] = ast_ident(xstrdup($1), yylineno);
               for (int i = 0; i < $3.n; i++) a[i + 1] = $3.arr[i];
-              s->e1 = ast_call(ast_ident(strdup("__construct_at"), yylineno), a, $3.n + 1, yylineno);
-              if (g_n_ctor_members < 32) g_ctor_members[g_n_ctor_members++] = strdup($1);
+              s->e1 = ast_call(ast_ident(xstrdup("__construct_at"), yylineno), a, $3.n + 1, yylineno);
+              if (g_n_ctor_members < 32) g_ctor_members[g_n_ctor_members++] = xstrdup($1);
           } else {
               if ($3.n > 1) msg_error(yylineno, MSG_ERR_MEMBER_ONE_INIT, $1);
               s->e1 = ast_assign(ast_ident($1, yylineno),
@@ -1306,8 +1305,8 @@ mem_init:
           if ($3.n == 0 && bs && bs->struct_t && !bs->struct_t->has_ctor) {
               g_ctor_base_named = 1; free($1);
           } else {
-              expr **a = malloc(sizeof(expr*) * ($3.n + 1));
-              a[0] = ast_ident(strdup("this"), yylineno);
+              expr **a = xmalloc(sizeof(expr*) * ($3.n + 1));
+              a[0] = ast_ident(xstrdup("this"), yylineno);
               for (int i = 0; i < $3.n; i++) a[i + 1] = $3.arr[i];
               expr *call = ast_call(ast_ident(mangle_method($1, "ctor"), yylineno), a, $3.n + 1, yylineno);
               stmt *s = ast_stmt(S_EXPR, yylineno); s->e1 = call;
@@ -1559,11 +1558,11 @@ enum_list:
 
 enum_item:
       IDENT {
-          char *nm = cur_enum_prefix ? mangle_method(cur_enum_prefix, $1) : strdup($1);
+          char *nm = cur_enum_prefix ? mangle_method(cur_enum_prefix, $1) : xstrdup($1);
           st_add_enum(nm, enum_counter++); free(nm); free($1);
       }
     | IDENT '=' INT_LIT {
-          char *nm = cur_enum_prefix ? mangle_method(cur_enum_prefix, $1) : strdup($1);
+          char *nm = cur_enum_prefix ? mangle_method(cur_enum_prefix, $1) : xstrdup($1);
           enum_counter = $3; st_add_enum(nm, enum_counter++); free(nm); free($1);
       }
     ;
@@ -1598,10 +1597,10 @@ array_suffix:
 /* explicit template TYPE arguments `<int>` / `<float, int>` for fn<T...>(args) */
 type_arg_list:
       base_type pointers {
-          $$.arr = malloc(sizeof(type*)); $$.arr[0] = apply_pointers($1, $2); $$.n = 1;
+          $$.arr = xmalloc(sizeof(type*)); $$.arr[0] = apply_pointers($1, $2); $$.n = 1;
       }
     | type_arg_list ',' base_type pointers {
-          $$ = $1; $$.arr = realloc($$.arr, sizeof(type*) * ($$.n + 1));
+          $$ = $1; $$.arr = xrealloc($$.arr, sizeof(type*) * ($$.n + 1));
           $$.arr[$$.n++] = apply_pointers($3, $4);
       }
     ;
@@ -1763,8 +1762,8 @@ init_declarator:
           sym *s = st_add(SK_FUNC, $2, $2, ret);
           s->n_params = $4.n;
           if ($4.n > 0) {
-              s->param_types    = malloc(sizeof(type*) * $4.n);
-              s->param_defaults = malloc(sizeof(expr*) * $4.n);
+              s->param_types    = xmalloc(sizeof(type*) * $4.n);
+              s->param_defaults = xmalloc(sizeof(expr*) * $4.n);
               int i = 0;
               for (decl *p = $4.head; p; p = p->next, i++) {
                   s->param_types[i]    = p->dtype;
@@ -1823,7 +1822,7 @@ function_def:
               s = st_add(SK_FUNC, $3, $3, ret);
               s->n_params = $5.n;
               if ($5.n > 0) {
-                  s->param_types = malloc(sizeof(type*) * $5.n);
+                  s->param_types = xmalloc(sizeof(type*) * $5.n);
                   int i = 0;
                   for (decl *p = $5.head; p; p = p->next, i++) s->param_types[i] = p->dtype;
               }
@@ -2012,9 +2011,9 @@ compound_stmt:
     ;
 
 block_item_list:
-      block_item                             { $$.arr = malloc(sizeof(stmt*)); $$.arr[0] = $1; $$.n = 1; }
+      block_item                             { $$.arr = xmalloc(sizeof(stmt*)); $$.arr[0] = $1; $$.n = 1; }
     | block_item_list block_item             {
-          $$.arr = realloc($1.arr, sizeof(stmt*) * ($1.n + 1));
+          $$.arr = xrealloc($1.arr, sizeof(stmt*) * ($1.n + 1));
           $$.arr[$1.n] = $2;
           $$.n = $1.n + 1;
       }
@@ -2289,9 +2288,9 @@ argument_list:
     ;
 
 non_empty_argument_list:
-      assignment_expr                        { $$.arr = malloc(sizeof(expr*)); $$.arr[0] = $1; $$.n = 1; }
+      assignment_expr                        { $$.arr = xmalloc(sizeof(expr*)); $$.arr[0] = $1; $$.n = 1; }
     | non_empty_argument_list ',' assignment_expr {
-          $$.arr = realloc($1.arr, sizeof(expr*) * ($1.n + 1));
+          $$.arr = xrealloc($1.arr, sizeof(expr*) * ($1.n + 1));
           $$.arr[$1.n] = $3;
           $$.n = $1.n + 1;
       }
@@ -2314,7 +2313,7 @@ primary_expr:
           if (s && s->kind == SK_ENUM_CONST) { $$ = ast_int_lit(s->enum_val, yylineno); free($1); }
           else $$ = ast_ident($1, yylineno);
       }
-    | KW_THIS                                { $$ = ast_ident(strdup("this"), yylineno); }
+    | KW_THIS                                { $$ = ast_ident(xstrdup("this"), yylineno); }
     | '[' ']' '(' ')' { lambda_enter(); } compound_stmt '(' ')' {
           /* lambda IIFE as a global initializer: body -> hidden fn, expr -> call */
           $$ = lambda_finish($6);
@@ -2390,12 +2389,12 @@ generic_assoc:
 
 generic_assoc_list:
       generic_assoc {
-          $$.ts = malloc(sizeof(type*)); $$.es = malloc(sizeof(expr*));
+          $$.ts = xmalloc(sizeof(type*)); $$.es = xmalloc(sizeof(expr*));
           $$.ts[0] = $1.t; $$.es[0] = $1.e; $$.n = 1;
       }
     | generic_assoc_list ',' generic_assoc {
-          $$.ts = realloc($1.ts, sizeof(type*) * ($1.n + 1));
-          $$.es = realloc($1.es, sizeof(expr*) * ($1.n + 1));
+          $$.ts = xrealloc($1.ts, sizeof(type*) * ($1.n + 1));
+          $$.es = xrealloc($1.es, sizeof(expr*) * ($1.n + 1));
           $$.ts[$1.n] = $3.t; $$.es[$1.n] = $3.e; $$.n = $1.n + 1;
       }
     ;

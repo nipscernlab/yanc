@@ -7,12 +7,11 @@
 
 #include "../Headers/ast.h"
 #include "../Headers/messages.h"
-
-static void *xcalloc(size_t n) { void *p = calloc(1, n); if (!p) msg_internal("oom"); return p; }
+#include "../../common/xstr.h"
 
 static expr *new_expr(expr_kind k, int line)
 {
-    expr *e = (expr*)xcalloc(sizeof(expr));
+    expr *e = (expr*)xcalloc(1, sizeof(expr));
     e->kind = k; e->line = line;
     return e;
 }
@@ -72,44 +71,44 @@ expr *ast_delete(expr *p, int is_array, int line)
 
 stmt *ast_stmt(stmt_kind k, int line)
 {
-    stmt *s = (stmt*)xcalloc(sizeof(stmt));
+    stmt *s = (stmt*)xcalloc(1, sizeof(stmt));
     s->kind = k; s->line = line; return s;
 }
 
 decl *ast_decl(type *t, char *n, expr *init, int line)
 {
-    decl *d = (decl*)xcalloc(sizeof(decl));
+    decl *d = (decl*)xcalloc(1, sizeof(decl));
     d->dtype = t; d->name = n; d->init = init; d->line = line; return d;
 }
 
 initz *ast_initz_expr(expr *e, int line)
 {
-    initz *z = (initz*)xcalloc(sizeof(initz));
+    initz *z = (initz*)xcalloc(1, sizeof(initz));
     z->is_list = 0; z->e = e; z->line = line; return z;
 }
 
 initz *ast_initz_list(int line)
 {
-    initz *z = (initz*)xcalloc(sizeof(initz));
+    initz *z = (initz*)xcalloc(1, sizeof(initz));
     z->is_list = 1; z->line = line; return z;
 }
 
 void initz_add(initz *z, initz *item, init_desig d)
 {
-    z->items  = (initz**)realloc(z->items,  sizeof(initz*)    * (z->n + 1));
-    z->desigs = (init_desig*)realloc(z->desigs, sizeof(init_desig) * (z->n + 1));
+    z->items  = (initz**)xrealloc(z->items,  sizeof(initz*)    * (z->n + 1));
+    z->desigs = (init_desig*)xrealloc(z->desigs, sizeof(init_desig) * (z->n + 1));
     z->items[z->n] = item; z->desigs[z->n] = d; z->n++;
 }
 
 func *ast_func(type *ret, char *n, decl *params, int np, stmt *body, int line)
 {
-    func *f = (func*)xcalloc(sizeof(func));
+    func *f = (func*)xcalloc(1, sizeof(func));
     f->ret = ret; f->name = n; f->params = params; f->n_params = np; f->body = body; f->line = line; return f;
 }
 
 unit *ast_unit(void)
 {
-    unit *u = (unit*)xcalloc(sizeof(unit));
+    unit *u = (unit*)xcalloc(1, sizeof(unit));
     u->nubits = -1; u->nbmant = -1; u->nbexpo = -1; u->nugain = -1;
     u->ndstac = -1; u->sdepth = -1; u->nuioin = -1; u->nuioou = -1; u->fftsiz = -1; u->itradd = -1;
     return u;

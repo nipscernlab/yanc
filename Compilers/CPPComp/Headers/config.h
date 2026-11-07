@@ -28,6 +28,13 @@
 #ifndef CFG_NUIOOU
 #define CFG_NUIOOU 1
 #endif
+// the longest name a program may write (issue #66, the same rule as C±'s
+// CMM_NAME_MAX). It is a rule of the language, not the size of a buffer:
+// every name lives in a block of its own. The longest name cppcomp builds
+// from it joins a function and a local (<function>_<name>), about twice
+// this, and iverilog takes identifiers of up to 16382 characters.
+#define CPP_NAME_MAX 1000
+
 #include "../../yanc_version.h"   // YANC_VERSION, shared with the driver and the other compilers
 
 #endif

@@ -8,6 +8,7 @@
 
 #include "../Headers/symtab.h"
 #include "../Headers/messages.h"
+#include "../../common/xstr.h"
 
 #define MAX_SCOPES 64
 
@@ -15,13 +16,6 @@ static sym *scopes[MAX_SCOPES];        // ordinary identifiers
 static sym *tagscopes[MAX_SCOPES];     // struct tags (separate namespace)
 static int  scope_n;
 static char *cur_func;
-
-static char *xstrdup(const char *s)
-{
-    char *r = (char*)malloc(strlen(s) + 1);
-    if (!r) msg_internal("oom");
-    strcpy(r, s); return r;
-}
 
 void st_init(void)
 {
@@ -56,8 +50,7 @@ const char *st_current_func(void) { return cur_func; }
 
 static sym *new_sym(sym_kind kind, const char *name, const char *asm_name, type *t)
 {
-    sym *s = (sym*)calloc(1, sizeof(sym));
-    if (!s) msg_internal("oom");
+    sym *s = xcalloc(1, sizeof(sym));
     s->kind = kind;
     s->name = xstrdup(name);
     s->asm_name = asm_name ? xstrdup(asm_name) : xstrdup(name);

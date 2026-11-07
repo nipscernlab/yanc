@@ -22,6 +22,7 @@
 
 #include "../Headers/cpppp.h"
 #include "../Headers/messages.h"
+#include "../../common/xstr.h"
 #include "../../common/exe_dir.h"
 
 #define MAX_INCDIRS 32
@@ -66,7 +67,7 @@ static int once_seen(const char *canon)
 static void once_mark(const char *canon)
 {
     if (once_seen(canon) || n_once >= MAX_ONCE) return;
-    once_paths[n_once++] = strdup(canon);
+    once_paths[n_once++] = xstrdup(canon);
 }
 
 #define MAX_MPARAMS 32
@@ -97,8 +98,8 @@ static macro *macro_get_or_new(const char *name)
 {
     macro *m = macro_find(name);
     if (m) { free(m->body); m->body = NULL; macro_free_params(m); return m; }
-    m = calloc(1, sizeof(macro));
-    m->name = strdup(name);
+    m = xcalloc(1, sizeof(macro));
+    m->name = xstrdup(name);
     m->next = macros;
     macros = m;
     return m;
@@ -107,18 +108,18 @@ static macro *macro_get_or_new(const char *name)
 static void macro_define(const char *name, const char *body)
 {
     macro *m = macro_get_or_new(name);
-    m->body = strdup(body ? body : "");
+    m->body = xstrdup(body ? body : "");
     m->is_func = 0;
 }
 
 static void macro_define_func(const char *name, char **params, int np, int variadic, const char *body)
 {
     macro *m = macro_get_or_new(name);
-    m->body = strdup(body ? body : "");
+    m->body = xstrdup(body ? body : "");
     m->is_func = 1;
     m->is_variadic = variadic;
     m->n_params = np;
-    for (int i = 0; i < np; i++) m->params[i] = strdup(params[i]);
+    for (int i = 0; i < np; i++) m->params[i] = xstrdup(params[i]);
 }
 
 static void macro_undef(const char *name)
@@ -158,15 +159,15 @@ static int is_ident_cont (char c) { return isalnum((unsigned char)c) || c == '_'
 // ---- growable string buffer ------------------------------------------------
 
 typedef struct { char *p; size_t len, cap; } sbuf;
-static void sb_init(sbuf *b) { b->cap = 64; b->p = malloc(b->cap); b->p[0] = 0; b->len = 0; }
+static void sb_init(sbuf *b) { b->cap = 64; b->p = xmalloc(b->cap); b->p[0] = 0; b->len = 0; }
 static void sb_putc(sbuf *b, char c) {
-    if (b->len + 2 >= b->cap) { b->cap *= 2; b->p = realloc(b->p, b->cap); }
+    if (b->len + 2 >= b->cap) { b->cap *= 2; b->p = xrealloc(b->p, b->cap); }
     b->p[b->len++] = c; b->p[b->len] = 0;
 }
 static void sb_puts(sbuf *b, const char *s) { while (*s) sb_putc(b, *s++); }
 static void sb_putn(sbuf *b, const char *s, size_t n) { for (size_t i = 0; i < n; i++) sb_putc(b, s[i]); }
 
-static char *dupn(const char *s, size_t n) { char *r = malloc(n + 1); memcpy(r, s, n); r[n] = 0; return r; }
+static char *dupn(const char *s, size_t n) { char *r = xmalloc(n + 1); memcpy(r, s, n); r[n] = 0; return r; }
 
 // trim leading/trailing whitespace, returning a fresh string
 static char *dup_trim(const char *s, size_t n)
@@ -475,12 +476,12 @@ static void pp_emit(const char *s, const char *file, int line, const char *src)
         if (at_bol) {
             if (map_n == map_cap) {
                 map_cap  = map_cap ? 2 * map_cap : 1024;
-                map_file = realloc(map_file, map_cap * sizeof *map_file);
-                map_line = realloc(map_line, map_cap * sizeof *map_line);
-                map_src  = realloc(map_src , map_cap * sizeof *map_src );
+                map_file = xrealloc(map_file, map_cap * sizeof *map_file);
+                map_line = xrealloc(map_line, map_cap * sizeof *map_line);
+                map_src  = xrealloc(map_src , map_cap * sizeof *map_src );
             }
             map_file[map_n] = file; map_line[map_n] = line;
-            map_src [map_n] = strdup(src);
+            map_src [map_n] = xstrdup(src);
             map_n++;
             at_bol = 0;
         }
@@ -558,13 +559,13 @@ static void process_file(const char *path)
 
     FILE *fp = fopen(path, "r");
     if (!fp) { fprintf(stderr, MSG_ERR_CANT_OPEN, path); exit(1); }
-    const char *file = strdup(path);     // the map keeps it
+    const char *file = xstrdup(path);     // the map keeps it
     int ln = 0;
 
     char line[4096];
     while (fgets(line, sizeof(line), fp)) {
         ln++;
-        char *orig = strdup(line);
+        char *orig = xstrdup(line);
         char *t = trim_in_place(orig);
 
         if (t[0] == '#') {
@@ -622,7 +623,7 @@ static void process_file(const char *path)
                         char pn[64]; int j = 0;
                         while ((isalnum((unsigned char)*p) || *p == '_') && j < (int)sizeof(pn)-1) pn[j++] = *p++;
                         pn[j] = 0;
-                        if (j > 0 && np < MAX_MPARAMS) params[np++] = strdup(pn);
+                        if (j > 0 && np < MAX_MPARAMS) params[np++] = xstrdup(pn);
                         while (*p == ' ' || *p == '\t') p++;
                         if (*p == ',') p++;
                     }

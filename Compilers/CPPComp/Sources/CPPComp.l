@@ -18,6 +18,8 @@
 #include "../Headers/types.h"
 #include "../Headers/symtab.h"
 #include "../Headers/messages.h"
+#include "../Headers/config.h"
+#include "../../common/xstr.h"
 
 #include "y.tab.h"
 
@@ -37,8 +39,7 @@ static long int_lit(const char *text, int base)
 
 static char *xstrdup_n(const char *s, int n)
 {
-    char *r = (char*)malloc(n + 1);
-    if (!r) msg_internal("oom");
+    char *r = (char*)xmalloc(n + 1);
     memcpy(r, s, n); r[n] = 0; return r;
 }
 
@@ -48,8 +49,7 @@ static char *xstrdup_n(const char *s, int n)
 // the target format; going through a double first would round twice (#12).
 static char *float_text(const char *p)
 {
-    char *r = (char*)malloc(strlen(p) + 4), *o = r;   // at most "0", ".", "0" added
-    if (!r) msg_internal("oom");
+    char *r = (char*)xmalloc(strlen(p) + 4), *o = r;   // at most "0", ".", "0" added
     while (*p == '0' && p[1] >= '0' && p[1] <= '9') p++;
     if (*p == '.') *o++ = '0';
     while (*p >= '0' && *p <= '9') *o++ = *p++;
@@ -71,7 +71,7 @@ static char *float_text(const char *p)
 static char *unescape_string(const char *src, int *out_len)
 {
     int len = strlen(src);
-    char *buf = (char*)malloc(len + 1);
+    char *buf = (char*)xmalloc(len + 1);
     int j = 0;
     // src begins/ends with " — skip them
     for (int i = 1; i < len - 1; i++) {
@@ -117,6 +117,10 @@ extern int tmpl_name_is(const char *n);   // function-template name -> TEMPLATE_
 
 static int classify_ident(const char *name)
 {
+    // the language's limit on a name (issue #66): checked once, here
+    size_t len = strlen(name);
+    if (len > CPP_NAME_MAX)
+        msg_error(yylineno, MSG_ERR_NAME_TOO_LONG, (int)len, CPP_NAME_MAX);
     // C++ reserves every name with `__` in it, and here those are the
     // compiler's own names in the .asm (__fp, __L..., Class__method)
     if (strstr(name, "__"))
