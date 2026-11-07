@@ -1392,7 +1392,7 @@ static void gen_addr(expr *e)
         if (stat) { emit("LEA %s", stat->asm_name); return; }   // static via instance (object not addressed)
         gen_addr(e->a);
         strct_field *f = t_struct_find(st, e->member);
-        if (!f) msg_error(e->line, MSG_ERR_NO_FIELD, e->member);
+        if (!f) msg_error(e->line, MSG_ERR_NO_SUCH_FIELD, e->member);
         if (f->offset > 0) emit("ADD %d", f->offset);
         return;
     }
@@ -1403,7 +1403,7 @@ static void gen_addr(expr *e)
         if (stat) { emit("LEA %s", stat->asm_name); return; }   // static via pointer (pointer not loaded)
         gen_expr(e->a);                           // ptr value
         strct_field *f = t_struct_find(st->base, e->member);
-        if (!f) msg_error(e->line, MSG_ERR_NO_FIELD, e->member);
+        if (!f) msg_error(e->line, MSG_ERR_NO_SUCH_FIELD, e->member);
         if (f->offset > 0) emit("ADD %d", f->offset);
         return;
     }
@@ -1429,6 +1429,9 @@ static void gen_addr(expr *e)
         msg_error(e->line, MSG_ERR_NOT_LVALUE);
     }
     default:
+        // a constant the parser made a literal keeps its name: ++ on it is
+        // an assignment to a const (#132: said "not an lvalue")
+        if (e->kind == E_INT_LIT && e->sval) msg_error(e->line, MSG_ERR_ASSIGN_CONST, e->sval);
         msg_error(e->line, MSG_ERR_NOT_LVALUE);
     }
 }
@@ -1943,11 +1946,13 @@ static int gen_bitfield_step(expr *e)
 
 static void gen_store(expr *lv, expr *val)
 {
-    // reject assignment to a const variable (direct, by-name)
+    // reject assignment to a const variable (direct, by-name); a constant the
+    // parser made a literal keeps its name in sval (#132: "not an lvalue")
     if (lv->kind == E_IDENT) {
         sym *cs = st_find(lv->sval);
         if (cs && cs->is_const) msg_error(lv->line, MSG_ERR_ASSIGN_CONST, lv->sval);
     }
+    if (lv->kind == E_INT_LIT && lv->sval) msg_error(lv->line, MSG_ERR_ASSIGN_CONST, lv->sval);
     // whole-struct assignment: a user operator= overrides the default memberwise
     // copy; otherwise copy all words (not a single STI 0)
     {
@@ -4643,9 +4648,11 @@ static void write_prog_log(const char *tmp_dir)
 {
     char *path = xasprintf("%s/prog_log.txt", tmp_dir);
     FILE *f = fopen(path, "w");
-    if (!f) fprintf(stderr, MSG_ERR_TABLE_OPEN, path);
+    if (!f) {                     // a run without its tables is a failed run (#132: ended 0)
+        fprintf(stderr, MSG_ERR_TABLE_OPEN, path);
+        exit(1);                    // main's atexit removes the outputs
+    }
     free(path);
-    if (!f) return;
     for (int i = 0; i < varlog_n; i++) {
         if (varlog[i].size > 0)
             fprintf(f, "%s %s %d %d\n", varlog[i].func, varlog[i].var, varlog[i].type_code, varlog[i].size);
@@ -4666,9 +4673,11 @@ static void write_src_lines(const char *tmp_dir, const char *src_text)
 {
     char *path = xasprintf("%s/src_lines.txt", tmp_dir);
     FILE *out = fopen(path, "w");
-    if (!out) fprintf(stderr, MSG_ERR_TABLE_OPEN, path);
+    if (!out) {                     // a run without its tables is a failed run (#132: ended 0)
+        fprintf(stderr, MSG_ERR_TABLE_OPEN, path);
+        exit(1);                    // main's atexit removes the outputs
+    }
     free(path);
-    if (!out) return;
 
     fputs("-1 INTERNAL\n"    , out);   // pc code -1: scaffolding (NOP, prologue)
     fputs("-2 void main();\n", out);   // pc code -2: entry call
@@ -5387,6 +5396,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     if (tmp_dir && u->prname) {
         char *path = xasprintf("%s/pc_%s_mem.txt", tmp_dir, u->prname);
         f_line = fopen(path, "w");
+        if (!f_line) { fprintf(stderr, MSG_ERR_TABLE_OPEN, path); exit(1); }   // as the tables (#132)
         free(path);
     }
 

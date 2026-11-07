@@ -21,3 +21,8 @@ pragma_fftsiz.cpp|#pragma yanc fftsiz does nothing in C++
 lang_pt.cpp|erro: a variável global 'main_x' e a variável local 'x' de 'main' viram os dois 'main_x' no assembly|pt
 name_too_long.cpp|that name has 1001 characters, and the most a name may have is 1000
 tparams_too_many.cpp|a template has at most 8 parameters
+comment_lines.cpp|comment_lines.cpp:6: error
+include_missing.cpp|include_missing.cpp:3: error: can't find #include "nope.h"
+no_main.cpp|no_main.cpp: error: program has no main() function
+const_assign.cpp|assignment to const 'k'
+const_incr.cpp|assignment to const 'j'

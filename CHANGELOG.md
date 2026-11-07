@@ -90,6 +90,16 @@ tags consumed by Aurora.
   - a macro argument with a comma inside a string, an apostrophe in a
     comment that stopped macro expansion, `vector<struct>::resize`,
     `numeric_limits<int>` and `sqrt` of a large or small argument.
+- **cppcomp's messages name the right place and say what went wrong
+  (#132).** After a multi-line `/* */` comment every message gave a line
+  too far (the comment's newlines counted twice). The preprocessor's
+  errors (`#include` not found, `#else` without `#if`) now give the file
+  and line, as the others do. A program without `main()` no longer says
+  line 0. Assigning to a `const`, or `++` on one, says so instead of "not
+  an lvalue". Two source files, or `-o` with no folder, say that instead
+  of "unknown option". A table that cannot be written ends the run with
+  an error instead of 0. The compiler checks every message's arguments
+  against its format, in both languages.
 - **The Verilator tests pass however the MSYS2 shell was opened.** An
   MSYS2 bash started from Git Bash has no `PATHEXT`, and without it the
   PowerShell that `Scripts/regress.sh` starts for them refused to run

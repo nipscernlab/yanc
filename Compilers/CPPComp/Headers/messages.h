@@ -16,12 +16,21 @@
 // the language of the messages: English unless --lang or YANC_LANG says pt
 #define M(pt, en) (yanc_lang_en ? (en) : (pt))
 
+// the compiler checks each call's arguments against its format (#132), in
+// both languages: M() is a choice between two literals, and gcc checks both
+#if defined(__GNUC__)
+#define MSG_FMT(n, m) __attribute__((format(printf, n, m)))
+#define MSG_NORET     __attribute__((noreturn))
+#else
+#define MSG_FMT(n, m)
+#define MSG_NORET
+#endif
+
 void msg_set_file(const char *name);
-void msg_error    (int line, const char *fmt, ...);    // prints and exits(1)
-void msg_warning  (int line, const char *fmt, ...);
-void msg_internal (const char *fmt, ...);              // compiler-internal bug; abort
+void msg_error    (int line, const char *fmt, ...) MSG_FMT(2, 3) MSG_NORET;   // prints and exits(1)
+void msg_warning  (int line, const char *fmt, ...) MSG_FMT(2, 3);
+void msg_internal (const char *fmt, ...) MSG_FMT(1, 2) MSG_NORET;           // compiler-internal bug; abort
 void msg_on_internal(void (*fn)(void));                // runs before msg_internal aborts
-int  msg_error_count(void);
 
 // ============================================================================
 // MESSAGE CATALOG ============================================================
@@ -86,10 +95,6 @@ int  msg_error_count(void);
 #define MSG_ERR_NOT_LVALUE \
     M("a expressão não pode receber atribuição (não é um lvalue)", \
       "expression is not an lvalue")
-
-#define MSG_ERR_NO_FIELD \
-    M("não existe o campo '%s'", \
-      "no field '%s'")
 
 #define MSG_ERR_BAD_ARROW \
     M("alvo inválido para '->'", \
@@ -351,6 +356,14 @@ int  msg_error_count(void);
 
 // the command line and the files (main.c) -------------------------------------
 
+#define MSG_ERR_TWO_SOURCES \
+    M("cppcomp: um processador por vez: '%s' e '%s' são dois fontes\n", \
+      "cppcomp: one processor at a time: '%s' and '%s' are two sources\n")
+
+#define MSG_ERR_OPTION_VALUE \
+    M("cppcomp: falta o valor depois de '%s'\n", \
+      "cppcomp: '%s' needs a value after it\n")
+
 #define MSG_ERR_UNKNOWN_OPTION \
     M("cppcomp: opção desconhecida '%s'\n", \
       "cppcomp: unknown option '%s'\n")
@@ -370,32 +383,32 @@ int  msg_error_count(void);
 // the preprocessor (cpppp.c) --------------------------------------------------
 
 #define MSG_ERR_INCLUDE_DEEP \
-    M("cppcomp: #include aninhado fundo demais\n", \
-      "cppcomp: include too deep\n")
+    M("#include aninhado fundo demais (mais de 32 níveis)", \
+      "#include nested too deep (more than 32 levels)")
 
 #define MSG_ERR_CANT_OPEN \
-    M("cppcomp: não foi possível abrir '%s'\n", \
-      "cppcomp: cannot open '%s'\n")
+    M("não foi possível abrir '%s'", \
+      "cannot open '%s'")
 
 #define MSG_ERR_INCLUDE_QUOTE \
-    M("cppcomp: não achei o #include \"%s\"\n", \
-      "cppcomp: can't find #include \"%s\"\n")
+    M("não achei o #include \"%s\"", \
+      "can't find #include \"%s\"")
 
 #define MSG_ERR_INCLUDE_ANGLE \
-    M("cppcomp: não achei o #include <%s>\n", \
-      "cppcomp: can't find #include <%s>\n")
+    M("não achei o #include <%s>", \
+      "can't find #include <%s>")
 
 #define MSG_ERR_STRAY_ELIF \
-    M("cppcomp: #elif sem #if\n", \
-      "cppcomp: stray #elif\n")
+    M("#elif sem #if", \
+      "#elif without #if")
 
 #define MSG_ERR_STRAY_ELSE \
-    M("cppcomp: #else sem #if\n", \
-      "cppcomp: stray #else\n")
+    M("#else sem #if", \
+      "#else without #if")
 
 #define MSG_ERR_STRAY_ENDIF \
-    M("cppcomp: #endif sem #if\n", \
-      "cppcomp: stray #endif\n")
+    M("#endif sem #if", \
+      "#endif without #if")
 
 // pieces put into the messages above: who owns a name in the assembly ---------
 

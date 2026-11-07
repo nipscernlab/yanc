@@ -187,7 +187,6 @@ value. What the common ones mean and how to get past them is in
 - error: no such field '<name>'
 - error: '->' on non-pointer-to-struct
 - error: expression is not an lvalue
-- error: no field '<name>'
 - error: bad -> target
 - error: <name>(): the link number comes first and is an integer literal from 0 to <n>
 - error: link <n> was already used <name> \_sync: a link has one hardware, the partner is on my clock (the \_sync forms in every use) or it is not (toma/cade/fcade in every use)
@@ -248,17 +247,19 @@ value. What the common ones mean and how to get past them is in
 - error: #pragma yanc itradd does nothing in C++ (interrupts are C± only); delete the line
 - error: '<name>': a number starting with 0 is octal, and has no 8 or 9
 - error: unexpected character '<c>' (0x<hex>)
+- error: one processor at a time: '<name>' and '<name>' are two sources
+- error: '<name>' needs a value after it
 - error: unknown option '<name>'
 - error: the file '<name>' names the processor, and '<name>' <name>; rename the file
 - error: parse failed
 - error: cannot open '<name>' for writing
-- error: include too deep
+- error: #include nested too deep (more than 32 levels)
 - error: cannot open '<name>'
 - error: can't find #include "<name>"
 - error: can't find #include <<name>>
-- error: stray #elif
-- error: stray #else
-- error: stray #endif
+- error: #elif without #if
+- error: #else without #if
+- error: #endif without #if
 - error: syntax error
 - error: memory exhausted
 

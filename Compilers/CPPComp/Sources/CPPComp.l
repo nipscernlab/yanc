@@ -154,7 +154,7 @@ CHRLIT  \'(\\.|[^\\'\n])\'
 %%
 
 "//"[^\n]*               { /* line comment */ }
-"/*"([^*]|\*+[^*/])*\*+"/"  { /* block comment */ for (char *p = yytext; *p; p++) if (*p == '\n') yylineno++; }
+"/*"([^*]|\*+[^*/])*\*+"/"  { /* block comment: %option yylineno counts its newlines already (#132) */ }
 
 "#pragma"[ \t]+"yanc"[ \t]+{IDENTIF}[ \t]+[^\n]* {
     /* parse "#pragma yanc <key> <value>" */

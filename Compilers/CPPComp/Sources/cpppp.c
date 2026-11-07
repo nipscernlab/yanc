@@ -24,6 +24,22 @@
 #include "../Headers/messages.h"
 #include "../../common/xstr.h"
 #include "../../common/exe_dir.h"
+#include <stdarg.h>
+
+// where the preprocessor is reading: an error names it, as cppcomp's others
+// do (#132: "can't find #include" said neither the file nor the line)
+static const char *pp_at_file = NULL;
+static int         pp_at_line = 0;
+
+static void pp_fail(const char *fmt, ...)
+{
+    va_list ap;
+    if (pp_at_file) fprintf(stderr, "%s:%d: %s", pp_at_file, pp_at_line, MSG_PREFIX_ERROR);
+    else            fprintf(stderr, "cppcomp: %s", MSG_PREFIX_ERROR);
+    va_start(ap, fmt); vfprintf(stderr, fmt, ap); va_end(ap);
+    fputc('\n', stderr);
+    exit(1);
+}
 
 static const char **incdirs;           // the -I folders, then the YANC headers
 static int          n_incdirs = 0, incdirs_cap = 0;
@@ -562,8 +578,7 @@ static void include_file(const char *target, const char *ref_dir)
 {
     char *resolved = find_include(target, ref_dir);
     if (!resolved) {
-        fprintf(stderr, ref_dir ? MSG_ERR_INCLUDE_QUOTE : MSG_ERR_INCLUDE_ANGLE, target);
-        exit(1);
+        pp_fail(ref_dir ? MSG_ERR_INCLUDE_QUOTE : MSG_ERR_INCLUDE_ANGLE, target);
     }
     char *canon = path_canon(resolved);
     if (!once_seen(canon)) process_file(resolved);
@@ -600,21 +615,24 @@ static char *trim_in_place(char *s)
 
 static void process_file(const char *path)
 {
-    if (depth > 32) { fprintf(stderr, MSG_ERR_INCLUDE_DEEP); exit(1); }
+    if (depth > 32) pp_fail(MSG_ERR_INCLUDE_DEEP);
     depth++;
 
     char *dir = dirname_of(path);
 
     FILE *fp = fopen(path, "r");
-    if (!fp) { fprintf(stderr, MSG_ERR_CANT_OPEN, path); exit(1); }
+    if (!fp) pp_fail(MSG_ERR_CANT_OPEN, path);
     const char *file = xstrdup(path);     // the map keeps it
     int ln = 0;
+    const char *sv_file = pp_at_file;     // the includer's place, back at the end
+    int         sv_line = pp_at_line;
 
     char *raw, *line = NULL;
     while ((raw = xgetline(fp)) != NULL) {          // a line of any length, ended
         free(line);                                 // with '\n' even at the end of a
         line = xasprintf("%s\n", raw); free(raw);   // file that has none
         ln++;
+        pp_at_file = file; pp_at_line = ln;
         char *orig = xstrdup(line);
         char *t = trim_in_place(orig);
 
@@ -705,7 +723,7 @@ static void process_file(const char *path)
 
             // ---- #elif <expr> ----
             if (strncmp(p, "elif", 4) == 0 && (p[4] == ' ' || p[4] == '\t' || p[4] == '(')) {
-                if (cond_n == 0) { fprintf(stderr, MSG_ERR_STRAY_ELIF); exit(1); }
+                if (cond_n == 0) pp_fail(MSG_ERR_STRAY_ELIF);
                 p += 4;
                 if (cond_seen_true[cond_n-1]) {
                     cond_stk[cond_n-1] = 0;          // an earlier branch already won
@@ -719,7 +737,7 @@ static void process_file(const char *path)
 
             // ---- #else ----
             if (strcmp(p, "else") == 0 || strncmp(p, "else ", 5) == 0 || strncmp(p, "else\t", 5) == 0) {
-                if (cond_n == 0) { fprintf(stderr, MSG_ERR_STRAY_ELSE); exit(1); }
+                if (cond_n == 0) pp_fail(MSG_ERR_STRAY_ELSE);
                 cond_stk[cond_n-1] = !cond_seen_true[cond_n-1];
                 cond_seen_true[cond_n-1] = 1;
                 free(orig); continue;
@@ -727,7 +745,7 @@ static void process_file(const char *path)
 
             // ---- #endif ----
             if (strcmp(p, "endif") == 0 || strncmp(p, "endif ", 6) == 0 || strncmp(p, "endif\t", 6) == 0) {
-                if (cond_n == 0) { fprintf(stderr, MSG_ERR_STRAY_ENDIF); exit(1); }
+                if (cond_n == 0) pp_fail(MSG_ERR_STRAY_ENDIF);
                 cond_n--;
                 free(orig); continue;
             }
@@ -773,6 +791,7 @@ static void process_file(const char *path)
     }
     free(line);
     free(dir);
+    pp_at_file = sv_file; pp_at_line = sv_line;
 
     fclose(fp);
     depth--;

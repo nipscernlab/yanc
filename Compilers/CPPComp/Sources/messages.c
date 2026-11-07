@@ -10,20 +10,18 @@
 #include "../Headers/cpppp.h"
 
 static const char *g_file = "<input>";
-static int         g_errs = 0;
 
 void msg_set_file(const char *name) { g_file = name; }
-int  msg_error_count(void)          { return g_errs; }
 
 void msg_error(int line, const char *fmt, ...)
 {
     va_list ap;
     const char *file = g_file;
     line = pp_where(line, &file);        // back to the file and line written
-    fprintf(stderr, "%s:%d: %s", file, line, MSG_PREFIX_ERROR);
+    if (line > 0) fprintf(stderr, "%s:%d: %s", file, line, MSG_PREFIX_ERROR);
+    else          fprintf(stderr, "%s: %s", file, MSG_PREFIX_ERROR);   // the whole program (#132: no main)
     va_start(ap, fmt); vfprintf(stderr, fmt, ap); va_end(ap);
     fputc('\n', stderr);
-    g_errs++;
     exit(1);
 }
 
@@ -32,7 +30,8 @@ void msg_warning(int line, const char *fmt, ...)
     va_list ap;
     const char *file = g_file;
     line = pp_where(line, &file);
-    fprintf(stderr, "%s:%d: %s", file, line, MSG_PREFIX_WARNING);
+    if (line > 0) fprintf(stderr, "%s:%d: %s", file, line, MSG_PREFIX_WARNING);
+    else          fprintf(stderr, "%s: %s", file, MSG_PREFIX_WARNING);
     va_start(ap, fmt); vfprintf(stderr, fmt, ap); va_end(ap);
     fputc('\n', stderr);
 }

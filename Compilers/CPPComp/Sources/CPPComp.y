@@ -2324,9 +2324,10 @@ non_empty_argument_list:
 
 primary_expr:
       IDENT                                  {
-          /* enum constants become int literals; everything else is an IDENT */
+          /* enum constants become int literals, which keep the name they had
+             (sval) for a message; everything else is an IDENT */
           sym *s = st_find($1);
-          if (s && s->kind == SK_ENUM_CONST) { $$ = ast_int_lit(s->enum_val, yylineno); free($1); }
+          if (s && s->kind == SK_ENUM_CONST) { $$ = ast_int_lit(s->enum_val, yylineno); $$->sval = $1; }
           else $$ = ast_ident($1, yylineno);
       }
     | INT_LIT                                { $$ = ast_int_lit($1, yylineno); $$->is_uns = g_lit_uns; }
@@ -2336,7 +2337,7 @@ primary_expr:
     | '(' expr ')'                           { $$ = $2; }
     | qualified_id                           {
           sym *s = st_find($1);
-          if (s && s->kind == SK_ENUM_CONST) { $$ = ast_int_lit(s->enum_val, yylineno); free($1); }
+          if (s && s->kind == SK_ENUM_CONST) { $$ = ast_int_lit(s->enum_val, yylineno); $$->sval = $1; }
           else $$ = ast_ident($1, yylineno);
       }
     | KW_THIS                                { $$ = ast_ident(xstrdup("this"), yylineno); }
