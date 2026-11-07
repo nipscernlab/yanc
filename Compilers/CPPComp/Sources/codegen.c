@@ -4734,6 +4734,57 @@ static void calls_lifetime(unit *u, char *row, type *t)
     }
 }
 
+// The type of e as far as the names in scope tell it, for the recursion
+// analysis: NULL when it cannot tell (a call's result, an overloaded
+// operator's). Unlike infer_type it never stops on a name it does not know.
+static type *peek_type(expr *e)
+{
+    if (!e) return NULL;
+    switch (e->kind) {
+    case E_INT_LIT: case E_CHAR_LIT: case E_SIZEOF_T: case E_SIZEOF_E: return t_int();
+    case E_FLOAT_LIT:  return t_float();
+    case E_STRING_LIT: return t_ptr(t_char());
+    case E_IDENT: {
+        strct_field *mf = cur_class_member(e->sval);
+        if (mf) return mf->ftype;
+        sym *s = st_find(e->sval);
+        if (!s || s->kind == SK_FUNC) return NULL;
+        return s->stype && s->stype->is_ref ? s->stype->base : s->stype;
+    }
+    case E_MEMBER: case E_PMEMBER: {
+        type *bt = peek_type(e->a);
+        if (bt && e->kind == E_PMEMBER) bt = (bt->kind == TY_PTR) ? bt->base : NULL;
+        if (!bt || bt->kind != TY_STRUCT) return NULL;
+        strct_field *f = t_struct_find(bt, e->member);
+        return f ? f->ftype : NULL;
+    }
+    case E_INDEX: case E_DEREF: {
+        type *bt = peek_type(e->a);
+        return bt && (bt->kind == TY_ARRAY || bt->kind == TY_PTR) ? bt->base : NULL;
+    }
+    case E_ADDR: { type *bt = peek_type(e->a); return bt ? t_ptr(bt) : NULL; }
+    case E_CAST: case E_TEMPOBJ: case E_COMPOUND: return e->target_t;
+    case E_NEW:  return e->target_t ? t_ptr(e->target_t) : NULL;
+    case E_CALL: {
+        sym *s = (e->a && e->a->kind == E_IDENT) ? st_find(e->a->sval) : NULL;
+        return s && s->kind == SK_FUNC ? s->stype : NULL;
+    }
+    case E_BINOP: case E_UNOP: {
+        type *a = peek_type(e->a), *b = e->kind == E_BINOP ? peek_type(e->b) : t_int();
+        if (!a || !b || a->kind == TY_STRUCT || b->kind == TY_STRUCT) return NULL;
+        return (type_is_float(a) || type_is_float(b)) ? t_float() : t_int();
+    }
+    default: return NULL;
+    }
+}
+
+// an operand that may be an object of a class: its operators may be methods
+static int maybe_object(expr *e)
+{
+    type *t = peek_type(e);
+    return !t || t->kind == TY_STRUCT;
+}
+
 // Every call a function body can make (#128: before, only a direct call to a
 // free function by name, and only the first overload of that name):
 static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect, const func *in)
@@ -4764,14 +4815,15 @@ static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect, const
         for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect, in);
         return;
     }
-    // an operator a class overloads is a call to its method
-    if (e->kind == E_BINOP) {
-        calls_named(u, row, op_method_name(e->op), 1);
+    // an operator a class overloads is a call to its method, when an operand
+    // may be an object of a class (an int + an int calls nothing)
+    if (e->kind == E_BINOP && maybe_object(e->a)) calls_named(u, row, op_method_name(e->op), 1);
+    if (e->kind == E_UNOP  && maybe_object(e->a)) calls_named(u, row, op_unary_method_name(e->op), 1);
+    if (e->kind == E_INDEX && maybe_object(e->a)) calls_named(u, row, "op_index", 1);
+    if (e->kind == E_ASSIGN && maybe_object(e->a)) {
+        calls_named(u, row, "op_assign", 1);
         calls_named(u, row, op_compound_method_name(e->op), 1);
     }
-    if (e->kind == E_UNOP)   calls_named(u, row, op_unary_method_name(e->op), 1);
-    if (e->kind == E_INDEX)  calls_named(u, row, "op_index", 1);
-    if (e->kind == E_ASSIGN) calls_named(u, row, "op_assign", 1);
     if (e->kind == E_NEW || e->kind == E_TEMPOBJ || e->kind == E_COMPOUND) calls_lifetime(u, row, e->target_t);
     collect_calls_expr(e->a, u, row, indirect, in);
     collect_calls_expr(e->b, u, row, indirect, in);
@@ -4779,21 +4831,27 @@ static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect, const
     for (int i = 0; i < e->n_args; i++) collect_calls_expr(e->args[i], u, row, indirect, in);
 }
 
+// The walk opens a scope for each block and loop, and enters each local in
+// the symbol table, so peek_type knows what a name is.
 static void collect_calls_stmt(stmt *s, unit *u, char *row, int *indirect, const func *in)
 {
     if (!s) return;
+    int scoped = s->kind == S_BLOCK || s->init_stmt != NULL;
+    if (scoped) st_push_scope();
+    collect_calls_stmt(s->init_stmt, u, row, indirect, in);
+    for (decl *d = s->decls; d; d = d->next) {
+        collect_calls_expr(d->init, u, row, indirect, in);
+        for (int i = 0; i < d->n_ctor_args; i++) collect_calls_expr(d->ctor_args[i], u, row, indirect, in);
+        calls_lifetime(u, row, d->dtype);                         // built here, ended at the block's end
+        st_add(SK_LOCAL_VAR, d->name, NULL, d->dtype);
+    }
     collect_calls_expr(s->e1, u, row, indirect, in);
     collect_calls_expr(s->e2, u, row, indirect, in);
     collect_calls_expr(s->e3, u, row, indirect, in);
     collect_calls_stmt(s->body, u, row, indirect, in);
     collect_calls_stmt(s->body2, u, row, indirect, in);
-    collect_calls_stmt(s->init_stmt, u, row, indirect, in);
     for (int i = 0; i < s->n_items; i++) collect_calls_stmt(s->items[i], u, row, indirect, in);
-    for (decl *d = s->decls; d; d = d->next) {
-        collect_calls_expr(d->init, u, row, indirect, in);
-        for (int i = 0; i < d->n_ctor_args; i++) collect_calls_expr(d->ctor_args[i], u, row, indirect, in);
-        calls_lifetime(u, row, d->dtype);                         // built here, ended at the block's end
-    }
+    if (scoped) st_pop_scope();
 }
 
 // a body that calls `name`, as a plain call or through an object (obj.name(),
@@ -4829,9 +4887,14 @@ static void analyze_recursion(unit *u)
     if (n <= 0) return;
     char *adj = xcalloc((size_t)n * n, 1);
     int  *ind = xcalloc(n, sizeof(int));
+    type *sv_cls = cur_method_class;
     for (int i = 0; i < n; i++) {
         func *f = u->funcs[i];
+        cur_method_class = f->method_of;                          // members resolve as in the body
+        st_push_scope();                                          // the parameters, `this` first
+        for (decl *p = f->params; p; p = p->next) st_add(SK_PARAM, p->name, NULL, p->dtype);
         collect_calls_stmt(f->body, u, &adj[(size_t)i*n], &ind[i], f);
+        st_pop_scope();
         // a constructor also constructs the members and the base, and a
         // destructor ends them: the struct's fields are its lifetimes
         if (f->method_of && (!strcmp(short_name(f), "ctor") || !strcmp(short_name(f), "copyctor")
@@ -4839,6 +4902,7 @@ static void analyze_recursion(unit *u)
             for (strct_field *fd = f->method_of->fields; fd; fd = fd->next)
                 calls_lifetime(u, &adj[(size_t)i*n], fd->ftype);
     }
+    cur_method_class = sv_cls;
     for (int i = 0; i < n; i++) if (ind[i])
         for (int j = 0; j < n; j++)
             if (fp_id_of(u->funcs[j]->name) >= 0) adj[(size_t)i*n + j] = 1;
