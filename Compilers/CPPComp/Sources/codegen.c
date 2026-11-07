@@ -539,7 +539,7 @@ static int    brk_top = 0, brk_cap = 0;
 // emit_block_dtors sits after the jump in the .asm, so it is skipped at runtime).
 // Parallel marks record the live depth at each loop/switch and at function entry
 // so each exit unwinds exactly the right span (LIFO).
-typedef struct { char *name; char *dtor; } live_local;
+typedef struct { char *name; char *dtor; int n; int words; } live_local;   // n objects of `words` (an array: n > 1)
 static live_local *g_live;
 static int         g_live_n = 0, g_live_cap = 0;
 
@@ -646,6 +646,8 @@ static void emit_initz(const char *base, int off, type *t, initz *z);
 static void emit_fn_return(void);
 static void gen_addr (expr *e);
 static void gen_arg  (expr *arg, type *ptype);
+static char *new_temp(const char *prefix);
+static void emit_dtors_at(const char *name, const char *dtor, int n, int words);
 static type *array_elems(type *t, int *n);
 static void gen_store(expr *lv, expr *val);
 static void gen_stmt (stmt *s);
@@ -1597,23 +1599,28 @@ static void gen_expr_to(expr *e, type *want)
 // (freshly allocated) address temporaries.
 static void gen_struct_copy(expr *dest, expr *src, int nwords)
 {
-    char dn[32], sn[32];
-    snprintf(dn, sizeof(dn), "__scd%d", ++label_n);
-    snprintf(sn, sizeof(sn), "__scs%d", ++label_n);
-    char *dt = mangle_local(dn), *st = mangle_local(sn);
-    const char *fn = cur_func_name ? cur_func_name : "global";
-    st_add(SK_LOCAL_VAR, dn, dt, t_int()); log_var(fn, dn, 1, 0);
-    st_add(SK_LOCAL_VAR, sn, st, t_int()); log_var(fn, sn, 1, 0);
-
+    char *dt = new_temp("scd"), *st = new_temp("scs");
     gen_expr(src);  emit("SET %s", st);     // st = &src
     gen_addr(dest); emit("SET %s", dt);     // dt = &dest
-    for (int i = 0; i < nwords; i++) {
+    // an object keeps its own vptr: assigning a derived object to a base one
+    // copies the fields only (#128: the copy took D's vtable into a B)
+    type *t = infer_type(dest);
+    int first = (t && t->kind == TY_STRUCT && t->n_vtbl > 0) ? 1 : 0;
+    for (int i = first; i < nwords; i++) {
         emit("LOD %s", dt); if (i) emit("ADD %d", i); emit("PSH");
         emit("LOD %s", st); if (i) emit("ADD %d", i); emit("LDI 0");
         emit("STI 0");
     }
     emit("LOD %s", dt);                      // result = &dest
     free(dt); free(st);
+}
+
+// a new object of class t at the named block `dest`, copied from another:
+// its vptr is its own class's, whatever the source's was (slicing, #128)
+static void set_block_vptr(const char *dest, type *t)
+{
+    if (!t || t->kind != TY_STRUCT || t->n_vtbl <= 0 || !t->tag) return;
+    emit("LEA %s", dest); emit("PSH"); emit("LEA __vt_%s", t->tag); emit("STI 0");
 }
 
 // copy n words from src (which evaluates to a base address) into the named
@@ -1679,6 +1686,99 @@ static void gen_arg(expr *arg, type *ptype)
         return;
     }
     gen_push_arg(arg);
+}
+
+// ---- virtual calls ---------------------------------------------------------
+
+// an expression with no call in it, nor an operator a class may overload: its
+// evaluation cannot run code that sets __fp_id
+static int expr_calls_nothing(expr *e)
+{
+    if (!e) return 1;
+    switch (e->kind) {
+    case E_INT_LIT: case E_FLOAT_LIT: case E_CHAR_LIT: case E_STRING_LIT: case E_IDENT:
+    case E_SIZEOF_T: case E_SIZEOF_E:
+        return 1;
+    case E_MEMBER: case E_PMEMBER: case E_ADDR: case E_DEREF: case E_CAST:
+        return expr_calls_nothing(e->a);
+    case E_BINOP: case E_UNOP: {
+        type *t = infer_type(e);
+        type *ta = e->a ? infer_type(e->a) : NULL;
+        if ((t && t->kind == TY_STRUCT) || (ta && ta->kind == TY_STRUCT)) return 0;
+        return expr_calls_nothing(e->a) && expr_calls_nothing(e->b);
+    }
+    default:
+        return 0;
+    }
+}
+
+// an object expression that can be evaluated twice: a name, `this`, a member
+// of one, through . or ->
+static int expr_reevaluable(expr *e)
+{
+    if (!e) return 0;
+    if (e->kind == E_IDENT) return 1;
+    if (e->kind == E_MEMBER || e->kind == E_PMEMBER) return expr_reevaluable(e->a);
+    return 0;
+}
+
+// the function a label names, to read its parameters' default arguments
+static func *func_of_label(const char *label)
+{
+    if (!label) return NULL;
+    for (int i = 0; i < cg_unit->n_funcs; i++)
+        if (cg_unit->funcs[i]->asm_label && !strcmp(cg_unit->funcs[i]->asm_label, label)) return cg_unit->funcs[i];
+    for (int i = 0; i < g_n_inst; i++)
+        if (g_inst[i]->asm_label && !strcmp(g_inst[i]->asm_label, label)) return g_inst[i];
+    return NULL;
+}
+
+// `this` of a virtual call: obj (by . or ->), or the method's own when obj is NULL
+static void gen_vcall_this(expr *obj, int arrow)
+{
+    if (!obj) gen_load_this();
+    else if (arrow) gen_expr(obj);
+    else gen_addr(obj);
+}
+
+// A virtual call: fid = mem[mem[this] + slot], then the dispatch chain. The
+// arguments are pushed after `this`, the defaults of the ones not written
+// too (the chain picks the targets by their full parameter count). The fid
+// is read AFTER the arguments when one of them may call code that sets
+// __fp_id itself (#128: p->f(p->g(5)) called g twice): from `this`
+// evaluated again, or from a temporary when the object cannot be.
+static void gen_virtual_call(expr *obj, int arrow, type *ct, const char *member, int vslot,
+                             const char *masm, sym *ms, expr **args, int n_args)
+{
+    int late = 0;
+    for (int i = 0; i < n_args; i++) if (!expr_calls_nothing(args[i])) late = 1;
+    char *keep = NULL;
+    gen_vcall_this(obj, arrow);
+    if (late && obj && !expr_reevaluable(obj)) { keep = new_temp("vthis"); emit("SET %s", keep); }
+    emit("PSH");                                      // this -> arg 0 (kept on the stack)
+    if (!late) {
+        emit("LDI 0");                                // acc = vptr = mem[this]
+        if (vslot) emit("ADD %d", vslot);
+        emit("LDI 0");                                // acc = fid = mem[vptr+slot]
+        emit("SET __fp_id");
+    }
+    func *fd = func_of_label(masm);                   // its parameters, `this` first
+    decl *p = fd && fd->params ? fd->params->next : NULL;
+    for (int i = 0; i < n_args; i++) {
+        type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
+        gen_arg(args[i], pt);
+        if (p) p = p->next;
+    }
+    for (; p && p->init; p = p->next) gen_arg(p->init, p->dtype);   // default arguments
+    if (late) {
+        if (keep) emit("LOD %s", keep); else gen_vcall_this(obj, arrow);
+        emit("LDI 0");
+        if (vslot) emit("ADD %d", vslot);
+        emit("LDI 0");
+        emit("SET __fp_id");
+        free(keep);
+    }
+    emit_dispatch_chain(vcall_np(ct, member, ms, n_args));
 }
 
 // ---- object construction ---------------------------------------------------
@@ -2686,6 +2786,7 @@ static void gen_expr(expr *e)
             int words = type_size_words(t), id = ++label_n;      // n is the word before the
             char *dp = new_temp("dlp"), *dn = new_temp("dln");   // array (new[] put it there);
             gen_expr(e->a); emit("SET %s", dp);                  // destroy n..1, last first
+            emit("JIZ __Ldl_e%d_null", id);                      // delete[] of null: nothing (#128)
             emit("LOD %s", dp); emit("ADD -1"); emit("LDI 0"); emit("SET %s", dn);
             emit("@__Ldl_t%d NOP", id);
             emit("LOD %s", dn); emit("JIZ __Ldl_e%d", id);
@@ -2696,6 +2797,7 @@ static void gen_expr(expr *e)
             emit("JMP __Ldl_t%d", id);
             emit("@__Ldl_e%d NOP", id);
             emit("LOD %s", dp); emit("ADD -1"); emit("PSH"); emit("CAL free");   // the whole block
+            emit("@__Ldl_e%d_null NOP", id);
             free(ad); free(dp); free(dn);
             return;
         }
@@ -2713,6 +2815,8 @@ static void gen_expr(expr *e)
         // stale member and free the wrong object (a double-free). So keep one
         // copy on the data stack for free() across the dtor call.
         gen_expr(e->a);
+        char *skip = fresh_label("del_null");       // delete of null does nothing: no
+        emit("JIZ %s", skip);                       // destructor runs (#128)
         if (dslot >= 0 || dtor) {
             emit("PSH");                            // copy kept for free()
             emit("PSH");                            // copy consumed as the dtor's `this`
@@ -2727,6 +2831,7 @@ static void gen_expr(expr *e)
         } else {
             emit("PSH"); emit("CAL free");
         }
+        emit("@%s NOP", skip); free(skip);
         return;
     }
 
@@ -2781,18 +2886,8 @@ static void gen_expr(expr *e)
             if (!masm && vslot < 0) msg_error(e->line, MSG_ERR_NO_METHOD, e->a->member, ct->tag);
             sym *ms = masm ? st_find(masm) : NULL;
             if (vslot >= 0) {
-                // virtual dispatch: fid = mem[mem[this] + slot], then indirect-call
-                if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // acc = this
-                emit("PSH");                                  // this -> arg 0 (kept on stack)
-                emit("LDI 0");                                  // acc = vptr = mem[this]
-                if (vslot) emit("ADD %d", vslot);
-                emit("LDI 0");                                  // acc = fid = mem[vptr+slot]
-                emit("SET __fp_id");
-                for (int i = 0; i < e->n_args; i++) {
-                    type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
-                    gen_arg(e->args[i], pt);
-                }
-                emit_dispatch_chain(vcall_np(ct, e->a->member, ms, e->n_args));
+                gen_virtual_call(obj, e->a->kind == E_PMEMBER, ct, e->a->member, vslot,
+                                 masm, ms, e->args, e->n_args);
                 free(masm);
                 return;
             }
@@ -3025,16 +3120,8 @@ static void gen_expr(expr *e)
                 if (masm || vslot >= 0) {
                     sym *ms = masm ? st_find(masm) : NULL;
                     if (vslot >= 0) {
-                        gen_load_this(); emit("PSH");        // this -> arg 0
-                        emit("LDI 0");                          // acc = vptr = mem[this]
-                        if (vslot) emit("ADD %d", vslot);
-                        emit("LDI 0");                          // acc = fid = mem[vptr+slot]
-                        emit("SET __fp_id");
-                        for (int i = 0; i < e->n_args; i++) {
-                            type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
-                            gen_arg(e->args[i], pt);
-                        }
-                        emit_dispatch_chain(vcall_np(cur_method_class, fn, ms, e->n_args));
+                        gen_virtual_call(NULL, 0, cur_method_class, fn, vslot,
+                                         masm, ms, e->args, e->n_args);
                         free(masm);
                         return;
                     }
@@ -3383,11 +3470,11 @@ static void declare_local(decl *d)
         emit("#array %s %d %d", aname, agg_fill_code(d->dtype), type_size_words(d->dtype));
         type *ct = d->dtype;
         if (st_done && d->binit)   emit_initz(aname, 0, d->dtype, d->binit);
-        else if (st_done && d->init) copy_to_block(aname, d->init, type_size_words(d->dtype));
+        else if (st_done && d->init) { copy_to_block(aname, d->init, type_size_words(d->dtype)); set_block_vptr(aname, ct); }
         else if (st_done)          emit_construct_decl(ct, aname, d->ctor_args, d->n_ctor_args);
         else if (is_static)     { /* storage only, nothing to run */ }
         else if (d->binit)      { g_initz_fill = 1; emit_initz(aname, 0, d->dtype, d->binit); g_initz_fill = 0; }
-        else if (d->init)       copy_to_block(aname, d->init, type_size_words(d->dtype)); // = struct expr
+        else if (d->init)     { copy_to_block(aname, d->init, type_size_words(d->dtype)); set_block_vptr(aname, ct); } // = struct expr
         else if (d->vinit)      emit_value_init(aname, d->dtype);                         // T v{}; / T v = {};
         else if (ct->tag) emit_construct_decl(ct, aname, d->ctor_args, d->n_ctor_args);
     } else if (d->init && (!is_static || st_done)) {
@@ -3433,16 +3520,25 @@ static void switch_dispatch(stmt *s, const char *tmp_name)
 }
 
 // the destructors of the class-typed locals of one declaration, last first
+// the objects a declaration makes: n of class *cls (an array of objects: n > 1)
+static int decl_objects(decl *d, type **cls)
+{
+    int n = 1;
+    type *et = d->dtype && d->dtype->kind == TY_ARRAY ? array_elems(d->dtype, &n) : d->dtype;
+    if (!et || et->kind != TY_STRUCT || !et->tag || n < 1) return 0;
+    *cls = et;
+    return n;
+}
+
 static void emit_decl_dtors(decl *d)
 {
     if (!d) return;
     emit_decl_dtors(d->next);
-    if (!d->dtype || d->dtype->kind != TY_STRUCT || !d->dtype->tag) return;
-    char *dtor = resolve_method(d->dtype, "dtor");
+    type *cls = NULL; int n = decl_objects(d, &cls);
+    if (!n) return;
+    char *dtor = resolve_method(cls, "dtor");
     sym *ls = st_find(d->name);                // this block's own, still in scope
-    if (dtor && ls && ls->asm_name) {
-        emit("LEA %s", ls->asm_name); emit("PSH"); emit("CAL %s", dtor);
-    }
+    if (dtor && ls && ls->asm_name) emit_dtors_at(ls->asm_name, dtor, n, type_size_words(cls));
     free(dtor);
 }
 
@@ -3458,12 +3554,35 @@ static void emit_block_dtors(stmt *block)
 }
 
 // ---- early-exit RAII: live-local tracking + dtor emission ------------------
-static void live_push(const char *mangled, const char *dtor)
+static void live_push(const char *mangled, const char *dtor, int n, int words)
 {
     XGROW(g_live, g_live_n, g_live_cap);
-    g_live[g_live_n].name = xstrdup(mangled);
-    g_live[g_live_n].dtor = xstrdup(dtor);
+    g_live[g_live_n].name  = xstrdup(mangled);
+    g_live[g_live_n].dtor  = xstrdup(dtor);
+    g_live[g_live_n].n     = n;
+    g_live[g_live_n].words = words;
     g_live_n++;
+}
+
+// the destructor of n objects of `words` words at the named block, last first:
+// one call for a single object, a loop for an array (#128: an array of
+// objects never had its destructors run)
+static void emit_dtors_at(const char *name, const char *dtor, int n, int words)
+{
+    if (n <= 1) { emit("LEA %s", name); emit("PSH"); emit("CAL %s", dtor); return; }
+    int id = ++label_n;
+    char *b = new_temp("adb"), *k = new_temp("adk");
+    emit("LEA %s", name); emit("SET %s", b);
+    emit("LOD %d", n);    emit("SET %s", k);
+    emit("@__Lad_t%d NOP", id);
+    emit("LOD %s", k); emit("JIZ __Lad_e%d", id);
+    emit("LOD %s", k); emit("ADD -1"); emit("SET %s", k);
+    if (words != 1) { emit("PSH"); emit("LOD %d", words); emit("S_MLT"); }
+    emit("ADD %s", b); emit("PSH");                    // this = &name[k]
+    emit("CAL %s", dtor);
+    emit("JMP __Lad_t%d", id);
+    emit("@__Lad_e%d NOP", id);
+    free(b); free(k);
 }
 static void live_pop_to(int mark)
 {
@@ -3475,7 +3594,7 @@ static void live_pop_to(int mark)
 static void emit_live_dtors(int mark)
 {
     for (int i = g_live_n - 1; i >= mark; i--)
-        { emit("LEA %s", g_live[i].name); emit("PSH"); emit("CAL %s", g_live[i].dtor); }
+        emit_dtors_at(g_live[i].name, g_live[i].dtor, g_live[i].n, g_live[i].words);
 }
 
 // ---- loop-invariant address hoisting ----------------------------------------
@@ -3728,10 +3847,11 @@ static void gen_stmt_inner(stmt *s)
         for (decl *d = s->decls; d; d = d->next) {
             declare_local(d);
             // track constructed class locals so an early exit can run their dtors
-            if (d->dtype && d->dtype->kind == TY_STRUCT && d->dtype->tag) {
-                char *dt = resolve_method(d->dtype, "dtor");
+            type *cls = NULL; int n = decl_objects(d, &cls);
+            if (n) {
+                char *dt = resolve_method(cls, "dtor");
                 sym *ls = st_find(d->name);       // the word declare_local gave it
-                if (dt && ls && ls->asm_name) live_push(ls->asm_name, dt);
+                if (dt && ls && ls->asm_name) live_push(ls->asm_name, dt, n, type_size_words(cls));
                 free(dt);
             }
         }
@@ -3834,6 +3954,7 @@ static void gen_stmt_inner(stmt *s)
                 // return its address (a struct rvalue == its base address)
                 char *rb = xasprintf("__ret_%s", cur_func_name);
                 copy_to_block(rb, s->e1, type_size_words(cur_func_ret));
+                set_block_vptr(rb, cur_func_ret);
                 emit("LEA %s", rb);
                 free(rb);
             } else if (cur_func_ret && cur_func_ret->is_ref) {
@@ -4146,7 +4267,7 @@ static void emit_global_scalar_inits(unit *u)
         if (d->dtype->kind == TY_ARRAY || d->dtype->kind == TY_STRUCT) {
             if (g_glob_data && g_glob_data[i]) continue;   // in the .mif already (#arrayd)
             if      (d->binit) emit_initz(d->name, 0, d->dtype, d->binit);
-            else if (d->init)  copy_to_block(d->name, d->init, type_size_words(d->dtype));
+            else if (d->init) { copy_to_block(d->name, d->init, type_size_words(d->dtype)); set_block_vptr(d->name, d->dtype); }
             continue;
         }
         if (!d->init) continue;
@@ -4300,7 +4421,10 @@ static void emit_function(func *f, unit *u, int is_main)
             emit("#ENDLIVE");                                            // (asm_reach, asm_share.h)
         }
         emit_vtable_inits();                                             // fill class vtables
-        emit_global_scalar_inits(u); emit_static_once_flags();
+        // the guards first: a global initializer may call a function whose
+        // static local it then initializes (#128: int g = counter(); had its
+        // guard cleared after, and counter() started over)
+        emit_static_once_flags(); emit_global_scalar_inits(u);
     }
 
     gen_stmt(f->body);
