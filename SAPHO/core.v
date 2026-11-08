@@ -1193,7 +1193,14 @@ always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out; // synchronous 
 // Only _sync links: the out bus itself (TOM keeps it there while it loops).
 // Any synchronized TOM link: a register loaded in the cycle T flips, so it is
 // already still when the partner sees T.
-generate if (TOM != 0 && TOM_REG) begin : toma_reg
+// Without an interrupt that register is the accumulator (#171): racc loads
+// the same ula_out on the same edge, and holds it while TOM loops (its ALU
+// operation passes the accumulator, and no input comes in); the writer
+// leaves TOM only once the value was taken. An interrupt can leave TOM
+// mid-wait and change the accumulator, so with #ITRAD rD stays.
+generate if (TOM != 0 && TOM_REG && ITRADD == 0) begin : toma_reg
+	assign toma_dado = racc;
+end else if (TOM != 0 && TOM_REG) begin : toma_reg
 	reg [NUBITS-1:0] rD = 0;
 	always @ (posedge clk) if (tom_offer) rD <= ula_out;
 	assign toma_dado = rD;

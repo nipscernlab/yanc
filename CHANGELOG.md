@@ -58,6 +58,13 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **A link writer offers the accumulator itself, without an interrupt
+  (#171).** `toma_dado`'s register loaded the same value as the accumulator
+  on the same edge, and the accumulator holds it while TOM waits; only an
+  interrupt, which can leave TOM mid-wait, tells them apart. Without
+  `#ITRAD` the register is gone: 32 flip-flops fewer in a 32-bit writer
+  (link_envia 82 to 50, lk_fan_w 83 to 51, Yosys). The LINK, LINK2 (two
+  clocks) and LINK3 projects give their sequences.
 - **No reset on the ALU's two input data registers (#172).** `stkr` (the
   popped word) and `ior` (the word read from a port) were reset, though the
   registers that pick them (`popr`, `req_inr`) are, so their value in and
