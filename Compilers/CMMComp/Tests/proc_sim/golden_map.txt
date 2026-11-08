@@ -34,6 +34,13 @@ Info: ULA resource -> float-point adder
 Info: stack depths from the program: SDEPTH 2, NDSTAC 3
 Info: using 12% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
+Processor proc_sim
+  word          23 bits
+  float         16 mantissa and 6 exponent bits
+  multiplier    float; divider no
+  data stack    3 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      87 instructions, 539 data words
 Sweet: the processor is good to go.
 ## variables
 main x 2

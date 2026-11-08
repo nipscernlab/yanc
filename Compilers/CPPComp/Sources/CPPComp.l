@@ -51,12 +51,6 @@ static long int_lit(const char *text, int base)
     return (long)v;
 }
 
-static char *xstrdup_n(const char *s, int n)
-{
-    char *r = (char*)xmalloc(n + 1);
-    memcpy(r, s, n); r[n] = 0; return r;
-}
-
 static int is_ident_char(char c) { return isalnum((unsigned char)c) || c == '_'; }
 
 // A float literal as the .asm takes it, digits.digits[e[-]digits], with no
@@ -92,16 +86,19 @@ static int escape_at(const char **p, const char *lit)
     return v;
 }
 
-// the bytes of a "..." string literal, in a new block; *out_len gets their
-// number (a \0 may be one of them)
+// the bytes of a string literal, in a new block; *out_len gets their number
+// (a \0 may be one of them). Adjacent literals are one, as in C++: "ab" "cd"
+// is "abcd" (#131), so src is one or more "..." with blanks between them.
 static char *unescape_string(const char *src, int *out_len)
 {
-    const char *end = src + strlen(src) - 1;          // the closing quote
-    char *buf = (char*)xmalloc((size_t)(end - src) + 1);
+    char *buf = (char*)xmalloc(strlen(src) + 1);
     int j = 0;
-    for (const char *p = src + 1; p < end; ) {
-        if (*p == '\\') { p++; buf[j++] = (char)escape_at(&p, src); }
-        else buf[j++] = *p++;
+    for (const char *p = src; *p == '"'; ) {
+        for (p++; *p != '"'; ) {
+            if (*p == '\\') { p++; buf[j++] = (char)escape_at(&p, src); }
+            else buf[j++] = *p++;
+        }
+        for (p++; *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n'; ) p++;
     }
     buf[j] = 0;
     *out_len = j;
@@ -137,7 +134,7 @@ static void pragma_line(const char *p)
     while (*p == ' ' || *p == '\t') p++;
     const char *k = p;
     while (is_ident_char(*p)) p++;
-    char *key = xstrdup_n(k, (int)(p - k));
+    char *key = xstrndup(k, (size_t)(p - k));
     while (*p == ' ' || *p == '\t') p++;
     char *val = xstrdup(p);
     for (int L = (int)strlen(val); L > 0 && isspace((unsigned char)val[L-1]); ) val[--L] = 0;
@@ -309,7 +306,7 @@ CHRLIT  \'(\\([0-7]{1,3}|x{HEXIT}+|.)|[^\\'\n])\'
 {FLOAT}[fFlL]?           { yylval.sval = float_text(yytext);       return FLOAT_LIT; }
 {DIGIT}{ALNUM}*          { msg_error(yylineno, MSG_ERR_NUM_SUFFIX, yytext); }   /* 1uuu, 12ab: not a number */
 {CHRLIT}                 { yylval.ival = unescape_char(yytext);    return CHAR_LIT; }
-{STRLIT}                 {
+{STRLIT}([ \t\r\n]*{STRLIT})* {
                            int len = 0;
                            char *bytes = unescape_string(yytext, &len);
                            yylval.sval = bytes;
@@ -340,8 +337,8 @@ CHRLIT  \'(\\([0-7]{1,3}|x{HEXIT}+|.)|[^\\'\n])\'
                            while (fl < yyleng && is_ident_char(yytext[fl])) fl++;
                            int ls = yyleng;
                            while (ls > 0 && is_ident_char(yytext[ls-1])) ls--;
-                           char *first = xstrdup_n(yytext, fl);
-                           char *last  = xstrdup_n(yytext + ls, yyleng - ls);
+                           char *first = xstrndup(yytext, fl);
+                           char *last  = xstrndup(yytext + ls, yyleng - ls);
                            int ft = classify_ident(first);
                            int lt = classify_ident(last);
                            free(last);
@@ -354,10 +351,10 @@ CHRLIT  \'(\\([0-7]{1,3}|x{HEXIT}+|.)|[^\\'\n])\'
                               Reached when the chain is not a plain run of names
                               (`N::Type<...>::x`, `Color::` before a template
                               bracket, ...) — the rule above handles the rest. */
-                           yylval.sval = xstrdup_n(yytext, yyleng);
+                           yylval.sval = xstrndup(yytext, yyleng);
                            int t = classify_ident(yytext);
                            return t == IDENT ? NS_IDENT : t; }
-{IDENTIF}                { yylval.sval = xstrdup_n(yytext, yyleng); return classify_ident(yytext); }
+{IDENTIF}                { yylval.sval = xstrndup(yytext, yyleng); return classify_ident(yytext); }
 
   /* multi-char operators ----------------------------------------------- */
 

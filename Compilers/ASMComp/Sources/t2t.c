@@ -48,14 +48,8 @@ unsigned int f2mf(char *va, float *delta)
 {
     yn_float r;
     eval_fp_check();    // a float word goes into memory: the format must work
-    if (!yn_encode(va, nbmant, nbexpo, fround, &r)) {
-        fprintf(stderr, MSG_ERR_BAD_FLOAT, va);
-        exit(EXIT_FAILURE);
-    }
-    if (r.overflow) {
-        fprintf(stderr, MSG_ERR_FLOAT_OVERFLOW, va, nbmant, nbexpo);
-        exit(EXIT_FAILURE);
-    }
+    if (!yn_encode(va, nbmant, nbexpo, fround, &r)) fatal(MSG_ERR_BAD_FLOAT, va);
+    if (r.overflow) fatal(MSG_ERR_FLOAT_OVERFLOW, va, nbmant, nbexpo);
     if (delta) *delta = (float)r.delta;
     return (unsigned int)strtoul(r.bits, NULL, 2);
 }

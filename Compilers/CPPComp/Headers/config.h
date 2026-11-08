@@ -16,7 +16,8 @@
 #ifndef CFG_NUBITS
 // This is the project's ONE default parameter set (audit 1.7): asmcomp,
 // cmmcomp and the HDL now carry the same numbers. It lives here too because
-// every C++ test omits the #pragma yanc lines and runs on these.
+// a C++ program without `#pragma yanc` lines runs on these, as almost every
+// C++ test does.
 #define CFG_NUBITS 32
 #endif
 #ifndef CFG_NUGAIN
@@ -41,6 +42,7 @@
 
 // the most dimensions an array may have (#129): a declarator's list holds this many
 #define CPP_DIM_MAX 8
+typedef struct { int dims[CPP_DIM_MAX]; int n; } dimlist_t;   // a declarator's dimensions
 
 #include "../../yanc_version.h"   // YANC_VERSION, shared with the driver and the other compilers
 

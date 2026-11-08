@@ -53,7 +53,25 @@ initialisation) are looked for in the `.asm`'s own folder.
 The processor takes the source file's name: `filtro.cmm` makes the processor
 `filtro`, its Verilog `filtro.v` and its module `filtro`. The name has to be
 a valid Verilog module name (letters, digits and `_`, not starting with a
-digit, not a Verilog keyword); for another name, rename the file.
+digit or with `__`, not a Verilog keyword); for another name, rename the
+file.
+
+At the end, asmcomp says what processor came out, in one block (here for a
+16-bit program without float; the numbers are an example):
+
+```
+Processor filtro
+  word          16 bits
+  float         no
+  multiplier    int; divider no
+  data stack    3 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      152 instructions, 40 data words
+```
+
+A stack that says "the default: it could not be worked out" keeps 128 words,
+which can be most of a small processor: give its depth with `#NDSTAC` or
+`#SDEPTH` (see [Directives](directives.md)).
 
 ## What lands where
 

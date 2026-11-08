@@ -11,6 +11,13 @@ Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 8% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
+Processor cmm_nubits8
+  word          8 bits
+  float         no
+  multiplier    int; divider no
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      93 instructions, 219 data words
 Sweet: the processor is good to go.
 ## variables
 main a 1

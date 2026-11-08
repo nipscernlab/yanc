@@ -41,3 +41,20 @@ pragma_nubits_value.cpp|#pragma yanc nubits takes a whole number, and 'abc' is n
 pragma_nubits_range.cpp|#pragma yanc nubits 100 is out of range, 2 to 32
 pragma_itradd_novalue.cpp|#pragma yanc itradd does nothing in C++
 array_dims.cpp|array_dims.cpp:2: error: an array has at most 8 dimensions
+recursive_array.cpp|recursive_array.cpp:4: error: array/struct local in a recursive function is not supported
+octal_89.cpp|'019': a number starting with 0 is octal, and has no 8 or 9
+static_assert_false.cpp|static assertion failed: a word is not two
+lambda_local.cpp|a lambda is only supported as a global initializer
+func_twice.cpp|func_twice.cpp:3: error: redefinition of function 'f'
+variadic.cpp|a variadic function (f(int n, ...)) does not exist in YANC's C++
+my-prog.cpp|'my-prog' can only have letters, digits and '_'
+__lead.cpp|cannot start with '__'
+array_negative.cpp|array_negative.cpp:2: error: an array size is at least 1, and this one is -2
+redecl.cpp|redecl.cpp:2: error: 'x' is already declared in this block
+param_redecl.cpp|param_redecl.cpp:2: error: 'a' is already declared in this block (or is a parameter of the function)
+typedef_local.cpp|typedef_local.cpp:3: error: syntax error
+bitfield_wide.cpp|bitfield_wide.cpp:2: error: bitfield 'a' has 40 bits, and a width goes from 1 to the word's 32 bits
+virtual_overload.cpp|two virtual methods 'f' in one class
+fptr_overload.cpp|fptr_overload.cpp:4: error: 'g' is overloaded: a function pointer cannot tell which one
+overload_tie.cpp|overload_tie.cpp:4: error: ambiguous call of 'f'
+template_and_func.cpp|template_and_func.cpp:3: error: 'h' is a function template already

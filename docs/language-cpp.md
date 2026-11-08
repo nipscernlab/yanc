@@ -11,6 +11,7 @@ instructions and cycles.
 ```cpp
 #pragma yanc nuioin 1
 #pragma yanc nuioou 1
+// #pragma yanc nubits 16    a 16-bit word; 32 bits without it
 
 int fact(int n) { return n <= 1 ? 1 : n * fact(n - 1); }
 
@@ -24,6 +25,14 @@ void main(void)
 `yanc fact.cpp` makes the processor `fact` (the file's name, which has to be
 a valid Verilog module name: see [The C± language](language-cmm.md)). The
 program is one source file, which can `#include` others.
+
+**The word is the program's choice.** The processor has the word `#pragma
+yanc nubits` gives it, 32 bits when the program says nothing, and an `int`,
+an `unsigned`, a pointer and a `float` are each one word of it. A program
+that handles 16-bit values and no float should say `#pragma yanc nubits 16`:
+its accumulator, ALU, stacks and data memory are then 16 bits wide instead of
+32. An `int` goes from -32768 to 32767 then, an `unsigned` up to 65535, and
+`cin >>` sets `fail()` past them (see [Configuration](#configuration)).
 
 ## The program
 
@@ -79,16 +88,16 @@ See [Text on the keyboard and the screen](#text-on-the-keyboard-and-the-screen).
 
 | type | in YANC |
 |---|---|
-| `int`, `short`, `long`, `char`, `signed`, `unsigned` | one word, 32 bits; `unsigned` compares and divides as unsigned |
+| `int`, `short`, `long`, `char`, `signed`, `unsigned` | one word of `nubits` bits, 32 by default; `unsigned` compares and divides as unsigned |
 | `int8_t`, `uint8_t`, `int16_t`, `uint16_t` | stored in a word, wrapping at their width as on a PC |
-| `long long`, `int64_t`, `uint64_t` | one 32-bit word: the compiler warns that the 64 bits are ignored |
+| `long long`, `int64_t`, `uint64_t` | one word: the compiler warns that the 64 bits are ignored |
 | `bool` | a word holding 0 or 1 |
-| `float` | the SAPHO float, 23 mantissa and 8 exponent bits by default: the sizes of IEEE 754 single, **not** its encoding, no infinity, no NaN (see [Floating point](floating-point.md)) |
-| `double`, `long double` | the same 32-bit float, with a warning |
+| `float` | the SAPHO float, one word: `nbmant` mantissa and `nbexpo` exponent bits, with `nubits = nbmant + nbexpo + 1`, 23 and 8 at 32 bits (the sizes of IEEE 754 single, **not** its encoding), no infinity, no NaN (see [Floating point](floating-point.md)) |
+| `double`, `long double` | the same one-word float, with a warning |
 | pointers, references | one word; a pointer counts in words, and `p + n` steps `n` elements of the type it points to |
 | arrays | up to 8 dimensions; `int t[N] "file.txt";` initialises one from a file, as in C± |
-| `enum`, `enum class` | the values are integer literals (`enum E { A = 1 }`); `= -1`, `= A + 1` and an underlying type (`enum class E : int`) are not accepted |
-| `struct`, `class`, `union`, bitfields | as in C++ |
+| `enum`, `enum class` | the name is a type (`Color c = GREEN;`); a value is any integer constant (`= -1`, `= A + 1`, `= 1 << 3`); an underlying type (`enum class E : unsigned`) is accepted, and every enum is one word |
+| `struct`, `class`, `union`, bitfields | as in C++, also declared first (`class Node;`) and defined later, or defined inside a function; a field may be an array of up to 8 dimensions; a bitfield has 1 to the word's bits |
 | `auto` | for a local with an initializer, and in a range-for |
 
 **Constant data in the data memory.** A string literal, and a global
@@ -128,7 +137,11 @@ tests its mantissa, because SAPHO's zero float is not an all-zero word.
   `int`), then a conversion (between integer types, integer and float, one
   pointer type to another). `char`, `bool`, `unsigned` and `int` are told
   apart (`f('A')` calls `f(char)`), `'A'` is a `char`, `true` a `bool`, and
-  a reference parameter (`int&`) matches by the type it refers to.
+  a reference parameter (`int&`) matches by the type it refers to. Two
+  overloads that fit equally well make the call ambiguous, an error, as in
+  C++. Unlike C++, a virtual method cannot be overloaded, a plain function
+  cannot share a function template's name, and a function pointer cannot
+  take an overloaded function: each gives its own message.
 - **Recursion works**: a function that can reach itself gets a stack frame
   on a 1024-word call stack, built only when the program has one. A call
   whose frame does not fit ends the program, as a stack overflow ends a C++
@@ -190,7 +203,7 @@ size is fixed.
 | `<iostream>` | `std::cout`, `std::cin` on the screen and the keyboard: [below](#text-on-the-keyboard-and-the-screen) |
 | `<cstdio>` | `putchar`, `puts`, `fputs`, `fputc`, `putc`, `getchar`, `fgetc`, `getc`, `fgets`, with `stdin`, `stdout`, `stderr`: [below](#text-on-the-keyboard-and-the-screen) |
 | `<cstdint>`, `<cstddef>` | the integer types, `size_t`, `ptrdiff_t` |
-| `<limits>` | `std::numeric_limits<T>`, with `infinity()` = 1e30 |
+| `<limits>` | `std::numeric_limits<T>`; a float's `max()` and `min()` are measured, so they follow `nbmant` and `nbexpo` (1.4e45 and 1.2e-32 at the default widths), and `infinity()` is `max()` |
 | `<bit>` | `std::bit_cast` |
 
 There is no `<string>`, `<algorithm>`, `<memory>` or `<utility>`. A header
@@ -289,8 +302,8 @@ exist in C± only) are errors.
 Exceptions (`try`, `catch`, `throw`), `typeid` and RTTI, `friend`,
 `decltype`, multiple inheritance, variadic functions, lambdas inside a
 function or with captures, template specialization and default template
-arguments, `std::string`, file streams, `printf`, `enum` values that are not plain
-literals, and more than one source file (use `#include`). Most of these
-stop the compiler with "syntax error" at the line. GitHub issue #43 keeps
+arguments, `std::string`, file streams, `printf`, the functional cast
+`int(f)` (write `(int)f`), and more than one source file (use `#include`). Most of these stop the compiler with "syntax error"
+at the line; a variadic function has its own message. GitHub issue #43 keeps
 the list of the forms not accepted yet, and issue #31 the functions of
 C±'s library that C++ lacks (`fin`, `fout`, `sin` and the rest).

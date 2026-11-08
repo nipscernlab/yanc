@@ -228,7 +228,16 @@ value. What the common ones mean and how to get past them is in
 - error: member '<name>' takes one initializer
 - error: array field size must be constant
 - error: array size must be a constant expression
+- error: two virtual methods '<name>' in one class: a virtual method cannot be overloaded here; give them different names
+- error: '<name>' is a function template already: a plain function cannot have the same name here
+- error: '<name>' is overloaded: a function pointer cannot tell which one; give them different names
+- error: ambiguous call of '<name>': two overloads fit equally well
+- error: '<name>' is already declared in this block (or is a parameter of the function)
+- error: bitfield '<name>' has <n> bits, and a width goes from 1 to the word's <n> bits
+- error: an array size is at least 1, and this one is <n>
 - error: a case label must be a constant
+- error: the value of '<name>' in the enum must be a constant
+- error: a variadic function (f(int n, ...)) does not exist in YANC's C++
 - error: template argument must be a constant
 - error: typedef cannot have an initializer
 - error: an array of function pointers takes a { ... } initializer
@@ -261,7 +270,6 @@ value. What the common ones mean and how to get past them is in
 - error: '<name>' needs a value after it
 - error: unknown option '<name>'
 - error: the file '<name>' names the processor, and '<name>' <name>; rename the file
-- error: parse failed
 - error: cannot open '<name>' for writing
 - error: #include nested too deep (more than 32 levels)
 - error: cannot open '<name>'
@@ -296,7 +304,6 @@ value. What the common ones mean and how to get past them is in
 
 ### Errors
 
-- Error: out of memory while growing the symbol table!
 - Error: the program has no instruction, so there is no processor to make.
 - Error: where the heck is the file <name>?
 - Error: couldn't open the file '<name>' for the life of me!!
@@ -339,6 +346,7 @@ value. What the common ones mean and how to get past them is in
 
 ### Warnings
 
+- Warning: the stack depths cannot be worked out from the program (<name>); each stack it does not set keeps <n> words, which can be much of the processor. #SDEPTH and #NDSTAC (in C++, #pragma yanc sdepth and ndstac) set them.
 - Heads up: there's <n> extra lines hanging around in file '<name>'!
 - Heads up: input port <n> isn't being used. Burning hardware for nothing!
 - Heads up: output port <n> isn't being used. Burning hardware for nothing!
@@ -401,5 +409,6 @@ value. What the common ones mean and how to get past them is in
 
 ### Other
 
+- Processor <name>
 - Bad format!
 - Sweet: the processor is good to go.

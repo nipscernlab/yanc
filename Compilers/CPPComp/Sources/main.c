@@ -130,11 +130,7 @@ int main(int argc, char **argv)
         const char *const why[] = {"", MSG_WHY_CHARS, MSG_WHY_DIGIT, MSG_WHY_DUNDER,
             MSG_WHY_KEYWORD};
         int bad = proc_name_problem(nm);
-        if (bad) {
-            fprintf(stderr, MSG_ERR_FILE_NAME,
-                    in_path, nm, why[bad]);
-            return 2;
-        }
+        if (bad) msg_fatal(2, MSG_ERR_FILE_NAME, in_path, nm, why[bad]);
         free(nm);
     }
     yy_scan_string(text);
@@ -142,24 +138,18 @@ int main(int argc, char **argv)
     g_unit = ast_unit();
     st_init();
 
-    // an error stops the run where it is found (msg_error), so a parse that
-    // returns failed for another reason only: bison out of memory
-    if (yyparse() != 0) { fprintf(stderr, MSG_ERR_PARSE_FAILED); exit(2); }
+    // an error stops the run where it is found (yyerror and msg_error exit,
+    // bison's "memory exhausted" too), so the parse returns only on success
+    if (yyparse() != 0) msg_internal("the parser failed without a message");
 
     g_unit->prname = derive_name(in_path, "");   // the source file's name
 
     /* Output: everything in one folder, -o or ./<prname> (created, all
      * levels): <prname>.asm and the tables asmcomp and the waveform read. */
-    char *dflt = NULL;
-    if (!out_dir) {
-        dflt = xmalloc(strlen(g_unit->prname) + 3);
-        sprintf(dflt, "./%s", g_unit->prname);
-        out_dir = dflt;
-    }
+    if (!out_dir) out_dir = xasprintf("./%s", g_unit->prname);
     make_dir(out_dir);
     const char *tmp_dir = out_dir;
-    char *outp = xmalloc(strlen(out_dir) + strlen(g_unit->prname) + 8);
-    sprintf(outp, "%s/%s.asm", out_dir, g_unit->prname);
+    char *outp = xasprintf("%s/%s.asm", out_dir, g_unit->prname);
     {
         const char *fmt[4] = {"%s/%s.asm", "%s/pc_%s_mem.txt", "%s/prog_log.txt%.0s", "%s/src_lines.txt%.0s"};
         for (int i = 0; i < 4; i++) {
@@ -171,43 +161,19 @@ int main(int argc, char **argv)
         msg_on_internal(remove_outputs);   // abort skips atexit
     }
     FILE *fo = fopen(outp, "w");
-    if (!fo) { fprintf(stderr, MSG_ERR_CANT_WRITE, outp); exit(1); }
+    if (!fo) msg_fatal(1, MSG_ERR_CANT_WRITE, outp);
 
     codegen(fo, g_unit, tmp_dir, text);
 
     fclose(fo);
 
-    // code no path reaches leaves the program, and its hardware with it (the
-    // pc_<proc>_mem.txt map and prog_log's num_ins follow)
-    if (tmp_dir) {
-        char *pc = xasprintf("%s/pc_%s_mem.txt", tmp_dir, g_unit->prname);
-        int gone = asm_reach(outp, pc);
-        if (gone > 0) lower_num_ins(tmp_dir, gone);
-        // every division becomes `<div> x; NOP...; <read>` (the dividers take
-        // five / four cycles); the count grows by the words added
-        int more = asm_divseq(outp, pc);
-        if (more > 0) lower_num_ins(tmp_dir, -more);
-        // a variable written and never read leaves the program
-        int unread = asm_unread(outp, pc, NULL, NULL);
-        if (unread > 0) lower_num_ins(tmp_dir, unread);
-        // an argument the called function never reads is not computed
-        int noarg = asm_callarg(outp, pc);
-        if (noarg > 0) lower_num_ins(tmp_dir, noarg);
-        // JIZ x; JMP y; @x is JNZ y (#78): last, after every pass that removes instructions
-        int jnz = asm_jnz(outp, pc);
-        if (jnz > 0) lower_num_ins(tmp_dir, jnz);
-        free(pc);
-    } else {
-        asm_reach(outp, NULL);
-        asm_divseq(outp, NULL);
-        asm_unread(outp, NULL, NULL, NULL);
-        asm_callarg(outp, NULL);
-        asm_jnz(outp, NULL);
-    }
-
-    // scalars never alive together share one data word (#SHARE lines ahead of
-    // the code; the instructions and the pc_<proc>_mem.txt map are untouched)
-    asm_share(outp);
+    // the passes on the .asm (asm_share.h, in the order they need), the same
+    // as cmmcomp's but asm_fuse (the peephole fuses), asm_divk and asm_tail;
+    // pc_<proc>_mem.txt and prog_log's num_ins follow what they remove
+    char *pc = xasprintf("%s/pc_%s_mem.txt", tmp_dir, g_unit->prname);
+    int less = asm_passes(outp, pc, 0, NULL, NULL);
+    if (less != 0) lower_num_ins(tmp_dir, less);
+    free(pc);
 
     // the folder of the source, where asmcomp reads the user's own files
     // (input_N.txt, cade_k.txt)

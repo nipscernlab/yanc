@@ -268,31 +268,38 @@ int main(int argc, char *argv[])
   // and the instruction count of the compilers follow
   char pc_path[2048]; snprintf(pc_path, sizeof(pc_path), "%s/pc_%s_mem.txt", a.temp_dir, a.name);
   int jn = asm_normnop(a.input, pc_path);
-  if (jn < 0) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }
+  if (jn < 0) fatal(MSG_ERR_CANT_OPEN_FILE, a.input);
   if (jn > 0) add_num_ins(a.temp_dir, jn);
 
   pass1_run(a.input, a.temp_dir, a.name);    // first pass: app_log.txt (name, labels, sizes)
 
   yyin = fopen(a.input, "r");                // second pass: the .asm again
-  if (yyin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }
+  if (yyin == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, a.input);
   eval_init(a.freq, a.clocks);               // initialize the state variables
   yylex();                                   // run the lexer
   fclose(yyin);                              // close the .asm file
 
   // a stack the .asm leaves undeclared is as deep as the program goes
-  // (asm_depth, Compilers/common/asm_share.h); recursion keeps the default
+  // (asm_depth, Compilers/common/asm_share.h); when that cannot be worked out
+  // (recursion, ...) it keeps the default, and the stacks may then be most
+  // of the processor (#54): a warning, not an Info line
+  int d_how = ddepth_set ? ASM_DEPTH_SET : ASM_DEPTH_DEFAULT;
+  int s_how = sdepth_set ? ASM_DEPTH_SET : ASM_DEPTH_DEFAULT;
   if (!sdepth_set || !ddepth_set)
   {
     int s, d;
-    if (asm_depth(a.input, &s, &d) > 0)
+    const char *why = NULL;
+    if (asm_depth(a.input, &s, &d, &why) > 0)
     {
-      if (!sdepth_set) sdepth = s;
-      if (!ddepth_set) ddepth = d;
+      if (!sdepth_set) { sdepth = s; s_how = ASM_DEPTH_WORKED; }
+      if (!ddepth_set) { ddepth = d; d_how = ASM_DEPTH_WORKED; }
       printf(MSG_INFO_STACK_DEPTHS, sdepth, ddepth);
     }
+    else if (why) printf(MSG_WARN_STACK_DEFAULT, why, sdepth_set ? ddepth : sdepth);
   }
 
   eval_finish();                             // finalize the assembler
+  eval_summary(d_how, s_how);                // what came out, in one place (#57)
 
   printf(MSG_OK_ASM_DONE);
 

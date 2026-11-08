@@ -53,6 +53,13 @@ Info: filling array with 4 values read from file "mc.txt"
 Info: stack depths from the program: SDEPTH 2, NDSTAC 4
 Info: using 32% of the Assembly Instruction Set
 Info: using 33% of the ULA operations
+Processor cmm_cov_misc
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    int and float; divider no
+  data stack    4 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      517 instructions, 91 data words
 Sweet: the processor is good to go.
 ## variables
 locals w 3

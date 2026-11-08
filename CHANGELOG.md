@@ -9,6 +9,13 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **asmcomp says what processor came out (#57).** At the end of a run, one
+  block: the word, the float's format or none, whether there is a
+  multiplier and a divider (int, float or both), each stack's depth and
+  where it came from (worked out, set by a directive, or the default of
+  128 because it could not be worked out), and the size of the two
+  memories. The fallback to 128 is a warning since #54. Something stable
+  for AURORA's TASM panel to show.
 - **`myADV7513Text`, the text screen through an ADV7513 HDMI transmitter.** `SAPHO/myADV7513Text.v` is
   `myVGAText` (the same words, `toma` link and pins) plus the I2C writes
   that set up an ADV7513 HDMI transmitter after each reset, so a program
@@ -28,6 +35,50 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **One `fatal()` in asmcomp and in cppcomp (#99).** asmcomp's 49 errors
+  written as `fprintf` and `exit` go through one `fatal()`, whose format
+  attribute checks every call's arguments; its command-line errors, which
+  print the usage after the message, through one `cli_fail()`. cppcomp's
+  errors of the run (a table or the `.asm` that cannot be written, a bad
+  file name) go through `msg_fatal()`, and `#error` through the
+  preprocessor's `pp_fail()`. No message and no exit code changed. The
+  unused `MSG_ERR_OUT_OF_MEMORY` of asmcomp is gone (`xstr` says it).
+- **cppcomp: enums as C++ has them, and `<limits>` on any float (#134).**
+  An enum's name is a type (`Color c = GREEN;`), a value may be any
+  constant (`= -1`, `= A + 1`), and an underlying type (`enum class E :
+  unsigned`) is read. A variadic function says so instead of "syntax
+  error". `numeric_limits<float>::max()` and `min()` are measured, not the
+  constants 1e30 and 1e-30, which a 16-bit float cannot hold: with `#pragma
+  yanc nubits 16` the header did not even assemble. `max()` and
+  `infinity()` are now the largest float, 1.4e45 at the default widths.
+  New tests cover what compiled and nothing ran (test108: `goto`,
+  `static_assert`, the casts, `##`, `__VA_ARGS__`, `#pragma once`,
+  `#warning`; test109: the `#pragma yanc` settings on a 16-bit processor;
+  test110: the enums) and eight refusals the manual promises.
+- **cppcomp: the forms the manual promises, and the refusals it owes
+  (#131).** A class declared first (`class Node;`) and defined later is
+  one type; a field may have two or more dimensions; a struct or class may
+  be defined inside a function; `"ab" "cd"` is one string; a method may
+  return `const char *`; `f(7).x` reads a member of the struct a call
+  returns; a struct a call returns initializes a parameter with no copy,
+  as C++17 has it; and a typedef inside a function stays there. Refused
+  now, each with its message: an array of size 0 or less, a name declared
+  twice in one block or named like a parameter in the function's body, a
+  bitfield wider than the word, an overloaded virtual method, `&f` of an
+  overloaded `f`, a call two overloads fit equally well, and a function
+  named like a function template. `cout << float` writes exponents up to
+  45 (it stopped at 38). Each `for` has its own scope, as in C++. Tested
+  by test112, test111 and nine NegTests.
+- **cppcomp tidied (#133).** One helper makes a compiler temporary
+  (`new_temp_as`), one ranks how arguments fit an overload (`args_fit`),
+  and `new` calls a constructor as every other object creation does. The
+  passes both compilers run on their `.asm` are one function,
+  `asm_passes` (`Compilers/common/asm_share.c`), so their order cannot
+  drift apart. A `switch` tests each `case` with `EQU; JNZ` instead of
+  `EQU; LIN; JIZ`: one instruction less per case. Dead code (`type_str`,
+  the `fftsiz` and `itradd` fields, a parse-failure message no path
+  reached) is gone, and the comments that described the code as it was
+  say what it does now.
 - **Opcodes 18 and up moved one place.** `JNZ` takes 18, next to `JIZ`
   (17), so the jumps stay together; `CAL` is now 19 and every opcode
   after it is one more than before, up to `S_SRS` at 108. Take
@@ -69,6 +120,43 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **The stack depths of a loop of seven `else if` (#54).** The passes on
+  the `.asm` read a line as at most 8 words, and the chain ends on one line
+  of seven labels and the jump back: the jump lost its target, the walk
+  found "the code runs off the end", and both stacks fell back to 128
+  words (the issue reports 6,682 of the 7,668 logic elements of a HITS
+  SAPHO on a Cyclone IV E taken by the two stacks). The five copies of that split are one function, with no limit, and
+  such a loop gets depths of 2. When the depths cannot be worked out
+  (recursion), asmcomp now warns, in both languages, instead of an English
+  Info line, since the stacks may be most of the processor. Tested by
+  test115 (`hardware.txt` checks the depths).
+- **`cin >>` of a number too big for the word sets `fail()` (#58).** It
+  wrapped: on 16 bits, 70000 read into an `unsigned` came out 4464, a value
+  no range check could catch. Now an `int` or `unsigned` that does not fit
+  `#NUBITS` sets `fail()`, takes its digits and is left at the nearest
+  value the type holds, as C++ gives; a minus sign still wraps an
+  `unsigned`, as in C++. The check uses shifts and comparisons only: no
+  multiplier and no divider in the processor. Tested by test114, on a
+  16-bit processor.
+- **The C++ manual says the word is `nubits` bits (#59).** Its types table
+  said 32 bits for `int`, `long long` and `double`, whatever `#pragma yanc
+  nubits` said, and the page never named the pragma near the top; a reader
+  writing for a 16-bit bus kept 32 bits and a processor twice the width.
+- **cppcomp: `sizeof` of a string literal (#140).** `sizeof("xyz")` was
+  1, the size of a pointer; it is 4 now, the three characters and the 0,
+  as in C++ (a char is a word here), in an expression and in a constant
+  (`char buf[sizeof("abc")];`, `static_assert`). Tested by test113.
+- **cppcomp: a method's default arguments (#134).** A call of a method
+  that is neither virtual nor overloaded, with fewer arguments than
+  parameters, pushed no default: `q.f(2)` with `int f(int n = 1, int d =
+  -1)` gave n a word off the stack, and `cin.ignore(2)` read past the line.
+  Every method call now pushes its arguments through one function. Found
+  by test111, which runs `<iostream>` and `<cstdio>` on the links
+  (`YANC_LINK_SYNC 0`, input from `cade_0.txt`): `cin >>` of int,
+  unsigned, float, char and a word, `fail`, `clear`, `peek`, `get`,
+  `ignore`, `getchar`, `fgets`, and `cout.put`, `write`, `oct`, `puts`.
+  The regression now also compares what a test wrote on link k with its
+  `golden_toma_k.txt`.
 - **cppcomp: programs that compiled and computed a wrong result (#128).**
   The cppcomp audit of 2026-11-07 found them; each is now right and
   checked by a test (test99 to test104):

@@ -209,7 +209,7 @@ char *sim_mem(int addr)
 {
     char aux[2048]; snprintf(aux, sizeof(aux), "%s/%s_data.mif", proc_dir, prname);
     FILE *f_data = fopen(aux, "r");
-    if (f_data == NULL) {fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, aux); exit(EXIT_FAILURE);}
+    if (f_data == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, aux);
 
     char *line, *val = NULL;
     for (int i = 0; (line = xgetline(f_data)) != NULL; i++)

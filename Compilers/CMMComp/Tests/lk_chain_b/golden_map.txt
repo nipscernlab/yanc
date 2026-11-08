@@ -10,6 +10,13 @@ Info: adding toma (TOM), which hands a value to the partner processor
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 2% of the Assembly Instruction Set
 Info: using 2% of the ULA operations
+Processor lk_chain_b
+  word          32 bits
+  float         no
+  multiplier    int; divider no
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      6 instructions, 1 data words
 Sweet: the processor is good to go.
 ## variables
 main x 1

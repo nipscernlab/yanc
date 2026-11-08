@@ -135,7 +135,7 @@ char *eval_get(char *fname, char *var)
     // open the log file
     char *path = xasprintf("%s/%s", temp_dir, fname);
     FILE *input = fopen(path , "r");
-    if   (input == NULL) {fprintf(stderr, MSG_ERR_FILE_WHERE, path); exit(EXIT_FAILURE);}
+    if   (input == NULL) fatal(MSG_ERR_FILE_WHERE, path);
     free(path);
 
     char *linha, *val = NULL;
@@ -222,7 +222,7 @@ static int link_num(const char *what, const char *va)
     int lim = MAX_LINKS - 1;
     if (nbopr < 31 && (1 << nbopr) - 1 < lim) lim = (1 << nbopr) - 1;
     char *end; long k = strtol(va, &end, 10);
-    if (*va == '\0' || *end != '\0' || k < 0 || k > lim) {fprintf(stderr, MSG_ERR_LINK_NUM, what, lim, va); exit(EXIT_FAILURE);}
+    if (*va == '\0' || *end != '\0' || k < 0 || k > lim) fatal(MSG_ERR_LINK_NUM, what, lim, va);
     return (int)k;
 }
 
@@ -314,7 +314,7 @@ void instr_lea(char *va)
 void instr_ind(char *va, int is_const)
 {
     if (is_const == 0) { instr_ula(va, 0); return; }
-    if (is_const != 1) {fprintf(stderr, MSG_ERR_IND_BASE_INT, opc_name, va); exit(EXIT_FAILURE);}
+    if (is_const != 1) fatal(MSG_ERR_IND_BASE_INT, opc_name, va);
 
     fprintf(f_instr, "%s%s\n", itob(opc_idx, NBITS_OPC), itob(atoi(va), nbopr));
     sim_add(opc_name, va);
@@ -373,7 +373,7 @@ void eval_init(int clk, int clk_n)
 
     // a program with no instruction makes no processor (and its memory's
     // address width, log2 of the size, would be undefined)
-    if (n_ins < 1) {fprintf(stderr, MSG_ERR_NO_INSTRUCTIONS); exit(EXIT_FAILURE);}
+    if (n_ins < 1) fatal(MSG_ERR_NO_INSTRUCTIONS);
 
     // A data memory needs at least 2 words: its address is $clog2(MDATAS)
     // bits wide (processor.v), and 1 word would make that 0 bits -- a [-1:0]
@@ -385,7 +385,7 @@ void eval_init(int clk, int clk_n)
     // the widths a program left out keep their defaults (32/23/8, above)
     eval_get_int("app_log.txt","nubits", &nubits);                // ALU word width (bits)
     // the words are built in a C int (itob, f2mf): the width stops at 32 (issue #29)
-    if (nubits > 32) {fprintf(stderr, MSG_ERR_NUBITS_WIDE, nubits); exit(EXIT_FAILURE);}
+    if (nubits > 32) fatal(MSG_ERR_NUBITS_WIDE, nubits);
     eval_get_int("app_log.txt","nbmant", &nbmant);                // mantissa width (bits)
     eval_get_int("app_log.txt","nbexpo", &nbexpo);                // exponent width (bits)
 
@@ -440,7 +440,7 @@ static void div_seq(const char *mn)
     if (div_left > 0)
     {
         const char *want = (div_left > 1) ? "NOP" : div_rd;
-        if (strcmp(mn, want) != 0) {fprintf(stderr, MSG_ERR_DIV_SEQ, div_op, div_len, div_len - 2, want, mn); exit(EXIT_FAILURE);}
+        if (strcmp(mn, want) != 0) fatal(MSG_ERR_DIV_SEQ, div_op, div_len, div_len - 2, want, mn);
         div_left--;
         return;
     }
@@ -492,7 +492,7 @@ void eval_opernd(char *va, int is_const)
         case  8: nuioou =  atoi(va);                    state =  0; break; // number of output addresses
         case  9: nugain =  atoi(va);                    state =  0; break; // normalization value
         case 10: fftsiz =  atoi(va);                    state =  0;            // number of bits to reverse in the FFT
-                 if (fftsiz < 1 || fftsiz > 30) {fprintf(stderr, MSG_ERR_FFTSIZ_RANGE, fftsiz); exit(EXIT_FAILURE);}
+                 if (fftsiz < 1 || fftsiz > 30) fatal(MSG_ERR_FFTSIZ_RANGE, fftsiz);
                  break;
         case 11: instr_arr     (va);                    state = 12; break; // found an array without initialization
         case 12: arr_typ = atoi(va);                    state = 13; break; // pick up the array type
@@ -530,18 +530,49 @@ void eval_opernd(char *va, int is_const)
 // eval_finish (a float opcode); a program without float takes any NBMANT/NBEXPO
 void eval_fp_check()
 {
-    if (nubits != nbmant+nbexpo+1) {fprintf(stderr, MSG_ERR_FP_INCONSISTENT, nubits, nbmant, nbexpo, nbmant+nbexpo+1); exit(EXIT_FAILURE);}
+    if (nubits != nbmant+nbexpo+1) fatal(MSG_ERR_FP_INCONSISTENT, nubits, nbmant, nbexpo, nbmant+nbexpo+1);
     if (nbexpo < 2 || (nbexpo <= 63 && nbmant >= (1LL << (nbexpo-1))))
-                                   {fprintf(stderr, MSG_ERR_FP_EXPO_SHORT, nbmant, nbexpo); exit(EXIT_FAILURE);}
+                                   fatal(MSG_ERR_FP_EXPO_SHORT, nbmant, nbexpo);
+}
+
+// int, float, both or none: the units an opcode family brings
+static const char *unit_kind(const char *op)
+{
+    int i = opc_unit(op, 0), f = opc_unit(op, 1);
+    return i && f ? MSG_WORD_INT_FLOAT : i ? MSG_WORD_INT : f ? MSG_WORD_FLOAT : MSG_WORD_NO;
+}
+
+static const char *depth_how(int how, const char *directive)
+{
+    static char *set = NULL;
+    if (how == ASM_DEPTH_WORKED) return MSG_WORD_DEPTH_WORKED;
+    if (how == ASM_DEPTH_DEFAULT) return MSG_WORD_DEPTH_DEFAULT;
+    free(set);
+    set = xasprintf(MSG_WORD_DEPTH_SET, directive);
+    return set;
+}
+
+void eval_summary(int d_how, int s_how)
+{
+    printf(MSG_SUM_HEAD, prname);
+    printf(MSG_SUM_WORD, nubits);
+    if (opc_float()) printf(MSG_SUM_FLOAT, nbmant, nbexpo);
+    else             printf(MSG_SUM_NO_FLOAT);
+    const char *dv = opc_unit("DIV", 0) || opc_unit("MOD", 0) ? (opc_unit("DIV", 1) ? MSG_WORD_INT_FLOAT : MSG_WORD_INT)
+                   : opc_unit("DIV", 1) ? MSG_WORD_FLOAT : MSG_WORD_NO;
+    printf(MSG_SUM_UNITS, unit_kind("MLT"), dv);
+    printf(MSG_SUM_DSTACK, ddepth, depth_how(d_how, "#NDSTAC"));
+    printf(MSG_SUM_SSTACK, sdepth, depth_how(s_how, "#SDEPTH"));
+    printf(MSG_SUM_MEMORY, n_ins, n_dat_used);
 }
 
 void eval_finish()
 {
-    if (div_left > 0) {fprintf(stderr, MSG_ERR_DIV_SEQ_END, div_op, div_rd); exit(EXIT_FAILURE);}
+    if (div_left > 0) fatal(MSG_ERR_DIV_SEQ_END, div_op, div_rd);
 
     // a #LKSYNC on a link the program does not use is a typo
     for (int k = 0; k < MAX_LINKS; k++)
-        if (l_sync[k] && !l_tom[k] && !l_cad[k]) {fprintf(stderr, MSG_ERR_LINK_SYNC, k, k); exit(EXIT_FAILURE);}
+        if (l_sync[k] && !l_tom[k] && !l_cad[k]) fatal(MSG_ERR_LINK_SYNC, k, k);
 
     // close the .mif files ---------------------------------------------------
 
@@ -561,18 +592,18 @@ void eval_finish()
     // the float format matters only to a program with float: a float opcode
     // here (the final assembly), a float word in data memory (f2mf checked it)
     if (opc_float()) eval_fp_check();
-    if (fround < 0 || fround > 2)  {fprintf(stderr, MSG_ERR_FROUND_RANGE  ); exit(EXIT_FAILURE);}
+    if (fround < 0 || fround > 2)  fatal(MSG_ERR_FROUND_RANGE  );
 
     // norm() divides by NUGAIN in hardware (ula_nrm: in / NUGAIN). A power of
     // two is a shift; anything else infers a constant divider that becomes
     // the ALU's critical path (Yosys, 32 bits: 100 -> 70 LUT levels, 3 -> 38,
     // against 12 for 64). This is the one gate every front end passes through.
-    if (nugain <= 0 || (nugain & (nugain - 1)) != 0) {fprintf(stderr, MSG_ERR_NUGAIN_POW2, nugain); exit(EXIT_FAILURE);}
+    if (nugain <= 0 || (nugain & (nugain - 1)) != 0) fatal(MSG_ERR_NUGAIN_POW2, nugain);
     // and it is a signed NUBITS-bit parameter: 128 at 8 bits is -128, and
     // norm() divided by a negative number. Only a program that uses norm()
     // is held to it; the others get NUGAIN 1 (hdl.c), a value nothing reads
     if (opc_norm() && nubits < 63 && (long long)nugain > (1LL << (nubits-1)) - 1)
-        {fprintf(stderr, MSG_ERR_NUGAIN_RANGE, nugain, nubits, (int)((1LL << (nubits-1)) - 1)); exit(EXIT_FAILURE);}
+        fatal(MSG_ERR_NUGAIN_RANGE, nugain, nubits, (int)((1LL << (nubits-1)) - 1));
 
     // finalize simulation ----------------------------------------------------
 

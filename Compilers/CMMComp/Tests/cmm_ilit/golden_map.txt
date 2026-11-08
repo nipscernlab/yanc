@@ -14,6 +14,13 @@ Info: ULA resource -> & operator
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 6% of the Assembly Instruction Set
 Info: using 8% of the ULA operations
+Processor cmm_ilit
+  word          32 bits
+  float         no
+  multiplier    no; divider no
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      56 instructions, 22 data words
 Sweet: the processor is good to go.
 ## variables
 main m 1

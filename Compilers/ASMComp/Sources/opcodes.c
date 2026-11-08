@@ -1060,6 +1060,16 @@ int opc_cal() {return  find_opc("CAL") != -1;}
 // checks whether norm() is used: NRM, NRM_M or P_NRM_M (x / NUGAIN)
 int opc_norm() {return find_opc("NRM") != -1 || find_opc("NRM_M") != -1 || find_opc("P_NRM_M") != -1;}
 
+// whether the program has an opcode with op ("MLT", "DIV", "MOD") in its
+// name, among the float ones (fl 1: F_ and SF_) or the int ones (fl 0): the
+// multiplier and the dividers the processor gets
+int opc_unit(const char *op, int fl)
+{
+	for (int i = 0; i < m_count; i++)
+		if (strstr(m_name[i], op) && (strstr(m_name[i], "F_") != NULL) == fl) return 1;
+	return 0;
+}
+
 // checks whether any float opcode is present: every float mnemonic has F_ in
 // its name (F_, SF_, PF_ prefixes, I2F_M), plus I2F, F2I and the XPO family
 int opc_float()

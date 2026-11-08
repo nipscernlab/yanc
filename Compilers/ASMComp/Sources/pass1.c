@@ -108,7 +108,7 @@ void p1_init(const char *dir, const char *name)
 
     f_log = fopen(file, "w");
 
-    if (f_log == NULL) {fprintf(stderr, MSG_ERR_CANT_CREATE_LOG, dir); exit(EXIT_FAILURE);}
+    if (f_log == NULL) fatal(MSG_ERR_CANT_CREATE_LOG, dir);
 
     fprintf(f_log, "prname %s\n", name);
 }

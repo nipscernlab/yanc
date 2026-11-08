@@ -20,6 +20,13 @@ Info: stack depths from the program: SDEPTH 2, NDSTAC 4
 Info: using 17% of the Assembly Instruction Set
 Info: using 22% of the ULA operations
 Heads up: input port 0 isn't being used. Burning hardware for nothing!
+Processor ProcDTW
+  word          32 bits
+  float         no
+  multiplier    int; divider no
+  data stack    4 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      227 instructions, 5792 data words
 Sweet: the processor is good to go.
 ## variables
 global len_ref 1

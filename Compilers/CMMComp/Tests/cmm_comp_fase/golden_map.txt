@@ -17,6 +17,13 @@ Info: ULA resource -> float-point sign computation (standard library)
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 12% of the Assembly Instruction Set
 Info: using 19% of the ULA operations
+Processor cmm_comp_fase
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    float; divider float
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      465 instructions, 21 data words
 Sweet: the processor is good to go.
 ## variables
 main c 3

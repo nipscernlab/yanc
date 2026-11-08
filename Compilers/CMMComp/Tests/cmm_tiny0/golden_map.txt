@@ -7,6 +7,13 @@ Info: adding data output handling
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 1% of the Assembly Instruction Set
 Info: using 0% of the ULA operations
+Processor cmm_tiny0
+  word          23 bits
+  float         no
+  multiplier    no; divider no
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      5 instructions, 0 data words
 Sweet: the processor is good to go.
 ## variables
 lang C+-

@@ -2,7 +2,7 @@
 // PT/EN bilingual support for asmcomp messages -------------------------------
 // ----------------------------------------------------------------------------
 // usage:
-//   printf(MSG_XXX, args...);   or   fprintf(stderr, MSG_XXX, args...);
+//   printf(MSG_XXX, args...);   or   fatal(MSG_XXX, args...);  (an error)
 // to see both versions of the string, just search for MSG_XXX below.
 // ----------------------------------------------------------------------------
 
@@ -18,15 +18,19 @@ extern int lang_en;
 // --lang=en|pt (and YANC_LANG): sets lang_en, takes the option out of argv
 void parse_lang_flag(int *argc, char **argv);
 
+// an error that stops asmcomp: the message on stderr, then exit(EXIT_FAILURE).
+// Every one goes through here (#99), as cmmcomp's do through its fatal()
+#if defined(__GNUC__)
+void fatal(const char *fmt, ...) __attribute__((format(printf, 1, 2), noreturn));
+#else
+void fatal(const char *fmt, ...);
+#endif
+
 // ----------------------------------------------------------------------------
 // message catalog ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 // general errors ------------------------------------------------------------
-
-#define MSG_ERR_OUT_OF_MEMORY \
-    M("Erro: memória insuficiente pra alocar a tabela de símbolos!\n", \
-      "Error: out of memory while growing the symbol table!\n")
 
 #define MSG_ERR_NO_INSTRUCTIONS \
     M("Erro: o programa não tem nenhuma instrução, então não há processador pra gerar.\n", \
@@ -57,6 +61,52 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_INFO_STACK_DEPTHS \
     M("Info: profundidade das pilhas pelo programa: SDEPTH %d, NDSTAC %d\n", \
       "Info: stack depths from the program: SDEPTH %d, NDSTAC %d\n")
+
+// the processor generated, at the end of a run (eval_summary, #57) -----------
+
+#define MSG_SUM_HEAD \
+    M("Processador %s\n", \
+      "Processor %s\n")
+
+#define MSG_SUM_WORD \
+    M("  palavra       %d bits\n", \
+      "  word          %d bits\n")
+
+#define MSG_SUM_FLOAT \
+    M("  float         %d bits de mantissa e %d de expoente\n", \
+      "  float         %d mantissa and %d exponent bits\n")
+
+#define MSG_SUM_NO_FLOAT \
+    M("  float         não\n", \
+      "  float         no\n")
+
+#define MSG_SUM_UNITS \
+    M("  multiplicador %s; divisor %s\n", \
+      "  multiplier    %s; divider %s\n")
+
+#define MSG_SUM_DSTACK \
+    M("  pilha de dados    %d palavras (%s)\n", \
+      "  data stack    %d words (%s)\n")
+
+#define MSG_SUM_SSTACK \
+    M("  pilha de chamadas %d palavras (%s)\n", \
+      "  call stack    %d words (%s)\n")
+
+#define MSG_SUM_MEMORY \
+    M("  memórias      %d instruções, %d palavras de dados\n", \
+      "  memories      %d instructions, %d data words\n")
+
+#define MSG_WORD_NO            M("não", "no")
+#define MSG_WORD_INT           M("inteiro", "int")
+#define MSG_WORD_FLOAT         M("float", "float")
+#define MSG_WORD_INT_FLOAT     M("inteiro e float", "int and float")
+#define MSG_WORD_DEPTH_WORKED  M("calculada pelo programa", "worked out from the program")
+#define MSG_WORD_DEPTH_DEFAULT M("o padrão: não deu para calcular", "the default: it could not be worked out")
+#define MSG_WORD_DEPTH_SET     M("fixada por %s", "set by %s")
+
+#define MSG_WARN_STACK_DEFAULT \
+    M("Atenção: as profundidades das pilhas não saem do programa (%s); cada pilha que ele não fixa fica com %d palavras, o que pode ser boa parte do processador. #SDEPTH e #NDSTAC (em C++, #pragma yanc sdepth e ndstac) as fixam.\n", \
+      "Warning: the stack depths cannot be worked out from the program (%s); each stack it does not set keeps %d words, which can be much of the processor. #SDEPTH and #NDSTAC (in C++, #pragma yanc sdepth and ndstac) set them.\n")
 
 #define MSG_ERR_BAD_FLOAT \
     M("Erro: a constante '%s' não é um número.\n", \

@@ -39,8 +39,11 @@ writes only what it changes. A C++ program says the same with
   on the processor's critical path, so the compilers refuse it.
 - **The stacks are sized from the program** when `#NDSTAC` and `#SDEPTH` are
   left out: as deep as the program goes, which is usually a few words. Give
-  them only to reserve more. A stack that overflows in simulation shows on the
-  waveform's `fl_full` signal.
+  them only to reserve more. When the depth cannot be worked out (a C++
+  function that calls itself back), the stack keeps 128 words and asmcomp
+  says so with a warning: give the depth then, since two stacks of 128 words
+  can be most of a small processor. A stack that overflows in simulation
+  shows on the waveform's `fl_full` signal.
 - **The processor's name** is the source file's: there is no directive for
   it (`#PRNAME` is an error since v7.1).
 

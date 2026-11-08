@@ -39,6 +39,13 @@ Heads up: output port 27 isn't being used. Burning hardware for nothing!
 Heads up: output port 28 isn't being used. Burning hardware for nothing!
 Heads up: output port 29 isn't being used. Burning hardware for nothing!
 Heads up: output port 30 isn't being used. Burning hardware for nothing!
+Processor cmm_ioports
+  word          16 bits
+  float         no
+  multiplier    no; divider no
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      13 instructions, 4 data words
 Sweet: the processor is good to go.
 ## variables
 main k 1

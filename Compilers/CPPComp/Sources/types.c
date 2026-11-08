@@ -274,19 +274,3 @@ int type_compatible(const type *a, const type *b)
     if ((b->kind == TY_INT && (a->kind == TY_PTR || a->kind == TY_ARRAY))) return 1;
     return 0;
 }
-
-const char *type_str(const type *t)
-{
-    static char buf[256];
-    if (!t) { snprintf(buf, sizeof(buf), "<null>"); return buf; }
-    switch (t->kind) {
-        case TY_VOID:   snprintf(buf, sizeof(buf), "void");   break;
-        case TY_INT:    snprintf(buf, sizeof(buf), "int");    break;
-        case TY_FLOAT:  snprintf(buf, sizeof(buf), "float");  break;
-        case TY_PTR:    snprintf(buf, sizeof(buf), "%s*", type_str(t->base)); break;
-        case TY_ARRAY:  snprintf(buf, sizeof(buf), "%s[%d]", type_str(t->base), t->arr_size); break;
-        case TY_STRUCT: snprintf(buf, sizeof(buf), "struct %s", t->tag ? t->tag : "<anon>"); break;
-        case TY_FUNC:   snprintf(buf, sizeof(buf), "<func>"); break;
-    }
-    return buf;
-}

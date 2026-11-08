@@ -48,4 +48,10 @@ void eval_direct(int   next_state);
 void eval_opcode(int   op   , int next_state, char *text, char *nome);
 void eval_opernd(char *va   , int is_const);
 void eval_finish();
+// the processor generated, in one block (#57): the word, the float, the
+// multiplier and divider, each stack's depth and where it came from (how:
+// ASM_DEPTH_SET by a directive, ASM_DEPTH_WORKED out from the program,
+// ASM_DEPTH_DEFAULT when that could not be done), and the memories
+enum { ASM_DEPTH_SET, ASM_DEPTH_WORKED, ASM_DEPTH_DEFAULT };
+void eval_summary(int d_how, int s_how);
 void eval_fp_check();         // stops on a float format that cannot work (only when the program uses float)

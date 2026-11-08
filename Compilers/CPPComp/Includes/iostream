@@ -11,8 +11,12 @@
 //
 // cout << : const char*, char, bool (as 1 / 0), int, unsigned, float (6
 // significant digits, as C++); std::endl, std::flush, std::hex, std::dec,
-// std::oct. cin >> : int, unsigned, char, float, char* (a word). A failed
-// read sets fail(), leaves 0 and takes nothing; clear() resets it.
+// std::oct. cin >> : int, unsigned, char, float, char* (a word of at most
+// YANC_LINE_MAX characters and its 0: the array must have room for them,
+// since the pointer does not say its size; cin.getline(s, n) takes n). A failed
+// read sets fail(), leaves 0 and takes nothing; a number too big for the word
+// (#NUBITS) sets fail() too, takes its digits and leaves the nearest value the
+// type holds, as C++ does; clear() resets it.
 // Not here (GitHub issue #5): std::string, std::getline(cin, s), setw,
 // setprecision, `if (cin >> x)` and `!cin` (use cin.fail()).
 #include <yanc_term>
@@ -57,14 +61,16 @@ namespace std {
     class istream {
         int bad;                     // the last read failed
     public:
+        // a number that does not fit the word sets fail() and leaves the
+        // nearest the type holds, as C++ does (#58)
         istream& operator>>(int& v) {
             int ok = 0; int x = yanc_get_int(&ok);
-            v = ok ? x : 0; if (!ok) bad = 1;
+            v = ok ? x : 0; if (ok != 1) bad = 1;
             return *this;
         }
         istream& operator>>(unsigned& v) {
-            int ok = 0; int x = yanc_get_int(&ok);
-            v = ok ? (unsigned)x : 0u; if (!ok) bad = 1;
+            int ok = 0; unsigned x = yanc_get_uint(&ok);
+            v = ok ? x : 0u; if (ok != 1) bad = 1;
             return *this;
         }
         istream& operator>>(float& v) {

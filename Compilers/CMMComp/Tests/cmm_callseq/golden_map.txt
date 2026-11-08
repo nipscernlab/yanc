@@ -12,6 +12,13 @@ Info: ULA resource -> integer multiplier
 Info: stack depths from the program: SDEPTH 2, NDSTAC 4
 Info: using 10% of the Assembly Instruction Set
 Info: using 8% of the ULA operations
+Processor cmm_callseq
+  word          32 bits
+  float         no
+  multiplier    int; divider no
+  data stack    4 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      53 instructions, 11 data words
 Sweet: the processor is good to go.
 ## variables
 global g 1

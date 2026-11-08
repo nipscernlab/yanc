@@ -32,6 +32,13 @@ Info: stack depths from the program: SDEPTH 2, NDSTAC 4
 Info: using 22% of the Assembly Instruction Set
 Info: using 19% of the ULA operations
 Heads up: output port 1 isn't being used. Burning hardware for nothing!
+Processor proc_rls
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    float; divider float
+  data stack    4 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      211 instructions, 52 data words
 Sweet: the processor is good to go.
 ## variables
 rls_update d 2

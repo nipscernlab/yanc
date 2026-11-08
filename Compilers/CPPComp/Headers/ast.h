@@ -204,7 +204,7 @@ typedef struct {
     int     n_ctinsts;
 
     char   *prname;
-    int     nubits, nbmant, nbexpo, nugain, ndstac, sdepth, nuioin, nuioou, fftsiz, itradd;
+    int     nubits, nbmant, nbexpo, nugain, ndstac, sdepth, nuioin, nuioou;
 } unit;
 
 // ----------------------------------------------------------------------------

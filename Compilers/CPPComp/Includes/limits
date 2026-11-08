@@ -1,28 +1,37 @@
 #pragma once
 // CPPComp <limits>: a minimal `std::numeric_limits<T>`. The SAPHO float is
 // not IEEE 754 (docs/floating-point.md): it has no infinity and no NaN, and
-// its magnitudes run from about 1.2e-32 to about 1.4e45 at the default
-// widths. infinity() and max() of a float return 1.0e30f, a finite value
-// far from the edge that serves as a "worst case" seed in a minimum search
-// (`best = numeric_limits<float>::infinity()`); min() returns 1.0e-30f.
+// its range depends on #pragma yanc nbmant and nbexpo (about 1.2e-32 to
+// 1.4e45 at the default widths). So a float's limits are measured, not
+// written as constants a narrower float could not hold (a 16-bit float has
+// no 1e30): max() doubles 1 until the product stops growing, which it does
+// at the largest float, since an overflow saturates there; min() halves 1
+// until the next half would be 0. infinity() is max(), the largest value a
+// minimum search can start from (`best = numeric_limits<float>::infinity()`).
 
 // An integer T is told from a float by (T)0.5f == (T)0, since there is no
 // template specialization: its limits come from the word, whatever #NUBITS
 // is (#128: max() of an int was the float 1e30 converted).
 namespace std {
+    // the largest float and the smallest positive one, measured
+    inline float yanc_float_max() { float m = 1.0f;
+                                    for (;;) { float n = m * 2.0f; if (n == m) return m; m = n; } }
+    inline float yanc_float_min() { float m = 1.0f;
+                                    for (;;) { float n = m * 0.5f; if (n == 0.0f || n == m) return m; m = n; } }
+
     template<class T>
     class numeric_limits {
     public:
         // (T)0.5f == (T)0 tells an integer T; it is written out in each method,
         // since a static method here cannot call a sibling unqualified (#131)
         static T infinity() { if ((T)0.5f == (T)0) return (T)0;   // as C++ gives an int
-                              return (T)1.0e30f; }                // no infinity: a large seed
+                              return (T)yanc_float_max(); }       // no infinity: the largest
         static T max()      { if ((T)0.5f == (T)0) return (T)(~0u >> 1);       // 2^(NUBITS-1) - 1
-                              return (T)1.0e30f; }
+                              return (T)yanc_float_max(); }
         static T min()      { if ((T)0.5f == (T)0) return (T)(~(~0u >> 1));    // -2^(NUBITS-1)
-                              return (T)1.0e-30f; }
+                              return (T)yanc_float_min(); }
         static T lowest()   { if ((T)0.5f == (T)0) return (T)(~(~0u >> 1));
-                              return (T)-1.0e30f; }
+                              return (T)-yanc_float_max(); }
         // the gap between 1 and the next float: measured, so it follows #NBMANT
         static T epsilon()  { if ((T)0.5f == (T)0) return (T)0;
                               T e = (T)1.0f;

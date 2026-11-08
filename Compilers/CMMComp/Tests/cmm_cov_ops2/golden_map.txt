@@ -38,6 +38,13 @@ Info: ULA resource -> float-point negative operation
 Info: stack depths from the program: SDEPTH 2, NDSTAC 5
 Info: using 50% of the Assembly Instruction Set
 Info: using 63% of the ULA operations
+Processor cmm_cov_ops2
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    int and float; divider int
+  data stack    5 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      10157 instructions, 42 data words
 Sweet: the processor is good to go.
 ## variables
 main ia 1

@@ -1,0 +1,1 @@
+out() sends an integer word; this float is output as its raw bit pattern

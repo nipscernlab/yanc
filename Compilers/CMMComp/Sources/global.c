@@ -248,48 +248,15 @@ void parse_end(char *d_proc)
 
 	mac_copy(asm_file);
 
-	// code no path reaches leaves the program, and with it its hardware -----
-
 	char *pc_file = xasprintf("%s/pc_%s_mem.txt", dir_tmp, cfg.prname);
 
-	// two words the ISA writes as one (#38)
+	// the passes on the .asm (asm_share.h, in the order they need): two words
+	// the ISA writes as one, a division by a constant kept one only when the
+	// float divider is there anyway, a call that ends a function made a jump,
+	// and those both compilers run; check_var says what asm_unread removed
 
-	int  fused = asm_fuse(asm_file, pc_file);
-	if  (fused > 0) ectx.num_ins -= fused;
-
-	int  gone = asm_reach(asm_file, pc_file);
-	if  (gone > 0) ectx.num_ins -= gone;
-
-	// a division by a constant stays one only when the float divider is there anyway
-
-	int  kept = asm_divk(asm_file, pc_file);
-	if  (kept > 0) ectx.num_ins -= kept;
-
-	// every division becomes <div> x; NOP...; <read>: the dividers take five / four cycles
-
-	int  more = asm_divseq(asm_file, pc_file);
-	if  (more > 0) ectx.num_ins += more;
-
-	// a variable written and never read leaves the program; check_var says so
-
-	int  unread = asm_unread(asm_file, pc_file, unread_gone, unread_keep);
-	if  (unread > 0) ectx.num_ins -= unread;
-
-	// an argument the called function never reads is not computed
-	int  noarg = asm_callarg(asm_file, pc_file);
-	if  (noarg > 0) ectx.num_ins -= noarg;
-
-	// a call that ends a function is a jump to it (#38)
-	int  tail = asm_tail(asm_file, pc_file);
-	if  (tail > 0) ectx.num_ins -= tail;
-
-	// JIZ x; JMP y; @x is JNZ y (#78): last, after every pass that removes instructions
-	int  jnz = asm_jnz(asm_file, pc_file);
-	if  (jnz > 0) ectx.num_ins -= jnz;
-
-	// variables that are never alive at the same time share a data word ------
-
-	asm_share(asm_file);
+	ectx.num_ins -= asm_passes(asm_file, pc_file, ASM_P_FUSE | ASM_P_DIVK | ASM_P_TAIL,
+	                           unread_gone, unread_keep);
 	free(asm_file); free(pc_file);
 
 	// check consistency of all variables and functions -----------------------
