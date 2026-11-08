@@ -35,6 +35,18 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **cppcomp pastes small plain functions too, and `cin >>` is shallower
+  (#67).** The expansion that took a method whose body is one `return`
+  now takes plain functions as well, a `void` function whose body is one
+  expression statement, and a body that calls `toma` or `cade`, which are
+  one instruction each. `yanc_put` and `yanc_key`, the last level of every
+  chain of `<iostream>`, are no longer called, and `yanc_term`'s number and
+  word readers read the line in place instead of through `yanc_peek`. A
+  `cin >>` of a number goes 5 calls deep instead of 7: test114 needs a call
+  stack of 6 instead of 8, test111 of 7 instead of 9. Over the 115 C++
+  tests, the `CAL`s fall from 1044 to 894 and the instruction words from
+  28090 to 27990; 7 tests grow, by 102 words in all, where a pasted body
+  is longer than its call and the function is still called elsewhere.
 - **One `fatal()` in asmcomp and in cppcomp (#99).** asmcomp's 49 errors
   written as `fprintf` and `exit` go through one `fatal()`, whose format
   attribute checks every call's arguments; its command-line errors, which

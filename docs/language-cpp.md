@@ -153,6 +153,15 @@ tests its mantissa, because SAPHO's zero float is not an all-zero word.
   recursive function a local cannot be an array or a struct; the compiler
   says so. Functions that do not recurse keep their locals at fixed
   addresses, as in C±.
+- **A small function is pasted where it is called**, with no `CAL`: one whose
+  body is a single `return <expression>;` (or, returning `void`, a single
+  expression statement), whose parameters are scalars, and whose expression
+  calls nothing but `toma` or `cade`. Methods and plain functions alike,
+  `inline` or not: the keyword changes nothing. A call that leaves out a
+  default argument, a call of a function template, a virtual call and a
+  call through a pointer still go through `CAL`. Each pasted call saves a level of the processor's call
+  stack and the cycles of the call; when the function is still called
+  elsewhere, its own copy stays in the program too.
 - Function pointers, including arrays of them, as parameters and as struct
   fields.
 - No variadic functions (`f(int n, ...)`).
