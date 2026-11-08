@@ -192,6 +192,16 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **SAPHO: a RET in decode no longer wins over a reset or an interrupt
+  (#164, #166).** The return address overrode the fetch address that
+  prefetch had already chosen, 0 in a reset and the #ITRAD address in an
+  interrupt: a reset in the middle of a run with a RET in decode went to
+  the return address (from a stack the same edge empties), and an interrupt
+  pulse was lost. The RET now takes effect only without either.
+  `Scripts/hw/tb_ret_priority.sh`, run by the regression, builds a program
+  with a call and an #ITRAD point and checks both: before the fix both went
+  to address 4, the return address. Cost, measured with Yosys on that
+  program: 5 LUT4 (39 to 44); the fix of #165 cost 2 (33 to 35).
 - **SAPHO: no memory write and no input read during a reset (#165).** The
   instruction memory has no reset, so an instruction can sit in decode
   while `rst` is 1, and the decoder drove the data memory's write enable and

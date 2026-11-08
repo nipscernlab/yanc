@@ -373,9 +373,20 @@ endgenerate
 
 // External interface
 
+// A RET takes the return address only when neither a reset nor an interrupt
+// does: prefetch has already put them first in pf_addr (0 and ITRADD), and a
+// RET here used to override both (#164, #166), so a reset or an interrupt
+// pulse with a RET in decode went to the return address. The interrupt term
+// exists only with #ITRAD.
+wire ret_go;
+generate
+	if (ITRADD > 0) begin : ret_go_sel assign ret_go = pf_isp_pop & ~rst & ~itr; end
+	else            begin : ret_go_sel assign ret_go = pf_isp_pop & ~rst;        end
+endgenerate
+
 generate
 	if (CAL) begin : ret_addr
-		assign addr = (pf_isp_pop) ? stack_out : pf_addr;
+		assign addr = (ret_go) ? stack_out : pf_addr;
 	end else begin : ret_addr
 		assign addr =  pf_addr;
 	end
