@@ -1050,7 +1050,25 @@ module ula_nrm
 	output    signed [NUBITS-1:0] out
 );
 
-assign out = in/NUGAIN;
+// in / NUGAIN, truncated toward zero as C does. NUGAIN is a power of two
+// (asmcomp refuses another), so the division is a shift by K: >>> floors,
+// and a negative input with a remainder (any of its K low bits set) gets 1
+// back to truncate toward zero. It was written as `in/NUGAIN`, a divider the
+// synthesiser then had to simplify (#160). Dropping the low bits alone (a
+// floor, no correction) costs nothing but rounds negatives down, a bias of
+// up to one unit; kept as C, at about 27 LUT4 per unit (Yosys, 32 bits),
+// decided by Luciano on 2026-11-08.
+localparam integer K = $clog2(NUGAIN);
+
+generate if (K == 0) begin : by_one
+	assign out = in;
+end else begin : by_shift
+	// the shift in a signed wire of its own: inside the sum with an unsigned
+	// term the whole expression is unsigned, and >>> would shift in zeros
+	wire signed [NUBITS-1:0] fl  = in >>> K;                       // floor(in / 2^K)
+	wire                     fix = in[NUBITS-1] & (|in[K-1:0]);    // negative, not exact
+	assign out = fl + {{(NUBITS-1){1'b0}}, fix};
+end endgenerate
 
 endmodule
 

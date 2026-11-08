@@ -58,6 +58,14 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **NRM as a shift (#160).** `ula_nrm` was `in/NUGAIN`; NUGAIN is a power
+  of two, so it is now `in >>> K` with 1 added back to a negative input that
+  has a remainder, which truncates toward zero as the division did. It
+  saves nothing: Yosys (107 to 107 LUT4) and Quartus (sapho_all, 3189 to
+  3190 ALMs) already turned the division into that; it keeps the datapath
+  free of a `/` whose cost depends on the synthesiser.
+  `Scripts/hw/tb_nrm.sh`, in the regression, checks it against the division
+  for every 8-bit input and NUGAIN 1 to 64.
 - **No F_MLT or F_DIV leg before the normaliser's leading-zero count at
   `#FROUND` 1 and 2 (#158).** At those levels both always take the direct
   path, but their legs in front of the count were built and read by

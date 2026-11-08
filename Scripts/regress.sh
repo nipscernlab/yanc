@@ -1736,7 +1736,8 @@ fi
 # for the shared shifter, the integer divider, F2I and the float comparison as
 # blocks, in four formats. Both at every #FROUND level. Scripts/hw/tb_dec_reset.sh
 # checks that the decoder drives no memory write and no input read in reset
-# (#165); Scripts/hw/tb_ret_priority.sh that a RET in decode does not win over
+# (#165); Scripts/hw/tb_nrm.sh NRM against the division for every 8-bit
+# input and NUGAIN 1 to 64 (#160); Scripts/hw/tb_ret_priority.sh that a RET in decode does not win over
 # a reset or an interrupt (#164, #166). Scripts/hw/tb_keyps2.sh
 # checks SAPHO/myKeyPS2.v alone (both layouts, two clocks, three queue sizes);
 # Scripts/hw/tb_vgatext.sh 8, SAPHO/myVGAText.v alone with an 8-bit word;
@@ -1745,7 +1746,7 @@ fi
 if [ "$CPP_ONLY" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
     echo ""
     echo "==> unit testbenches (ALU, keyboard, screen)"
-    for t in tb_ula tb_alu tb_dec_reset tb_ret_priority tb_keyps2 tb_vgatext tb_adv7513text; do
+    for t in tb_ula tb_alu tb_nrm tb_dec_reset tb_ret_priority tb_keyps2 tb_vgatext tb_adv7513text; do
         t_arg=""; [ "$t" = tb_vgatext ] && t_arg=8          # one width: about 3 minutes each
         [ "$t" = tb_adv7513text ] && t_arg=8:1:11               # one configuration: about 2 minutes
         if t_out=$(bash "$ROOT/Scripts/hw/$t.sh" $t_arg 2>&1); then
