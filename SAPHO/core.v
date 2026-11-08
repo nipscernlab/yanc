@@ -27,8 +27,7 @@ module pc
 	parameter NBITS = 8
 )(
 	 input                 clk , rst,
-	 input                 load,
-	 input     [NBITS-1:0] data,
+	 input     [NBITS-1:0] data,       // the address fetched this cycle
 	output reg [NBITS-1:0] addr = 0
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
@@ -38,17 +37,21 @@ module pc
 
 wire [NBITS-1:0] um  = 1'b1;   // zero-extended; {{NBITS-1{..}}, ..} was a zero-width
                                // replication for a 2-word program (#167), as in stack
-wire [NBITS-1:0] val = (load) ? data : addr;
+// The next address is the one fetched now + 1. It used to be computed again
+// here, from a load flag and a value of its own (instr_fetch's pc_lval),
+// a second copy of the fetch's choice that always gave the same address
+// (#169): no jump, the PC itself; a jump, CAL or a waiting TOM/CAD, its
+// target; RET, the stack's top; an interrupt, ITRADD.
 
 // synchronous reset: FPGA-friendly (maps to the FF's dedicated sync clear, no
 // recovery/removal timing on the reset net)
 always @ (posedge clk) begin
 	if (rst) addr <= 0;
-	else     addr <= val + um;
+	else     addr <= data + um;
 end
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
-assign sim = val;
+assign sim = data;
 `endif // ---------------------------------------------------------------------
 
 endmodule
@@ -78,7 +81,6 @@ module prefetch
 	output    [NBOPER       -1:0] operand   ,
 	 input    [NBOPCO+NBOPER-1:0] mem_instr ,
 	output    [MINSTW       -1:0] instr_addr,
-	output                        pc_l      ,
 	 input                        is_um     ,
 	output                        isp_push  ,
 	output                        isp_pop   ,
@@ -153,12 +155,10 @@ generate if ((TOM) != 0 || (CAD) != 0) begin : jmp_tgt assign jmp_addr = (pc_sel
 
 generate if (ITRADD>0) begin : itr_fetch
 
-assign pc_l       =  itr  | pc_load;
 assign instr_addr = (rst) ? {MINSTW{1'b0}} : (itr) ? ITRADD : (pc_load) ? jmp_addr : pc_instr;
 
 end else begin : itr_fetch
 
-assign pc_l       =         pc_load;
 assign instr_addr = (rst) ? {MINSTW{1'b0}} :                  (pc_load) ? jmp_addr : pc_instr;
 
 end endgenerate
@@ -295,20 +295,14 @@ module instr_fetch
 
 // Program Counter
 
-wire              pc_load;
-wire [MINSTW-1:0] pc_lval;
 wire [MINSTW-1:0] pc_addr;
-wire [MINSTW-1:0] pcl;
 
-generate
-	if (ITRADD>0) begin : pcl_sel assign pcl = (itr) ? addr : pc_lval; end
-	else          begin : pcl_sel assign pcl = pc_lval;                 end
-endgenerate
-
+// the PC follows the address fetched (addr, below): one choice of the next
+// address, not two (#169)
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
-pc #(MINSTW) pc (clk, rst, pc_load, pcl, pc_addr, pc_sim_val);
+pc #(MINSTW) pc (clk, rst, addr, pc_addr, pc_sim_val);
 `else
-pc #(MINSTW) pc (clk, rst, pc_load, pcl, pc_addr);
+pc #(MINSTW) pc (clk, rst, addr, pc_addr);
 `endif // ---------------------------------------------------------------------
 
 // Instruction prefetch
@@ -344,7 +338,7 @@ prefetch #(.MINSTW(MINSTW),
 		   .TOM   (TOM   ),
 		   .CAD   (CAD   )) pf(rst, tom_go, cad_go, self_addr, pf_self, pc_addr, opcode, operand,
                                pf_instr, pf_addr,
-                               pc_load , acc,
+                               acc,
                                pf_isp_push, pf_isp_pop,
                                itr, cheguei);
 
@@ -355,20 +349,6 @@ wire [MINSTW-1:0] stack_out;
 generate
 	if (CAL) begin : isp_blk
 		stack #((SDEPTH > 1) ? $clog2(SDEPTH) : 1, SDEPTH, MINSTW) isp(clk, rst, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
-	end
-endgenerate
-
-// what the PC loads on a jump: the operand, the return address, or the
-// waiting TOM/CAD's own address (each term only when its block exists)
-generate
-	if (CAL && (TOM || CAD)) begin : pcl_val
-		assign pc_lval = (pf_isp_pop) ? stack_out : (pf_self) ? self_addr : instr[MINSTW-1:0];
-	end else if (CAL) begin : pcl_val
-		assign pc_lval = (pf_isp_pop) ? stack_out : instr[MINSTW-1:0];
-	end else if (TOM || CAD) begin : pcl_val
-		assign pc_lval = (pf_self) ? self_addr : instr[MINSTW-1:0];
-	end else begin : pcl_val
-		assign pc_lval = instr[MINSTW-1:0];
 	end
 endgenerate
 

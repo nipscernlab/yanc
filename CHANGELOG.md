@@ -58,6 +58,12 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **One choice of the next instruction's address (#169).** The fetch
+  address was chosen in prefetch and instr_fetch, and the PC chose again
+  what to load, a second mux that always gave the same address. The PC now
+  loads the fetched address + 1; `pc_lval`, `pcl` and prefetch's `pc_l` are
+  gone. Yosys: a program with a call, a return and an interrupt point 44 to
+  36 LUT4 (8-bit addresses); simple programs unchanged.
 - **A link writer offers the accumulator itself, without an interrupt
   (#171).** `toma_dado`'s register loaded the same value as the accumulator
   on the same edge, and the accumulator holds it while TOM waits; only an
