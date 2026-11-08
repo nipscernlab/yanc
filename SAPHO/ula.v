@@ -1122,10 +1122,16 @@ module ula_f2i
 #(
 	parameter MAN    = 23,
 	parameter EXP    =  8,
-	parameter FROUND =  0
+	parameter FROUND =  0,
+	parameter EXT    =  0                 // 1: the shift is done outside, by ula_shift (#156)
 )(
 	input             [MAN+EXP :0] in,
-	output reg signed [MAN+EXP :0] out
+	output reg signed [MAN+EXP :0] out,
+	// EXT: the shift asked of ula_shift, and its result
+	output            [MAN+EXP :0] x_word,  // the mantissa, widened
+	output            [EXP-1   :0] x_amt,   // |e|
+	output                         x_left,  // e >= 0: a left shift
+	input             [MAN+EXP :0] x_mag    // x_word shifted by x_amt
 );
 
 wire           s = in[MAN+EXP      ];
@@ -1141,15 +1147,25 @@ wire        [MAN+EXP:0] m_ext = {{(EXP+1){1'b0}}, m};
 // one shifter for both directions: the left shift (e >= 0) is a right shift
 // of the bit-reversed word, reversed again on the way out (the reversal is
 // wiring); the exponent sign selects
-wire        [MAN+EXP:0] m_rev, sh_out, sh_rev;
-genvar i;
-generate for (i = 0; i <= MAN+EXP; i = i+1) begin : rev
-	assign m_rev [i] = m_ext [MAN+EXP-i];
-	assign sh_rev[i] = sh_out[MAN+EXP-i];
+// With EXT, that shifter is ula_shift's, the same circuit: SHR for e < 0,
+// SHL for e >= 0, a logical shift, 0 from the word's width on.
+wire        [MAN+EXP:0] mag;
+assign x_word = m_ext;
+assign x_amt  = shift;
+assign x_left = ~e[EXP-1];
+generate if (EXT != 0) begin : ext_shift
+	assign mag = x_mag;
+end else begin : own_shift
+	wire [MAN+EXP:0] m_rev, sh_out, sh_rev;
+	genvar i;
+	for (i = 0; i <= MAN+EXP; i = i+1) begin : rev
+		assign m_rev [i] = m_ext [MAN+EXP-i];
+		assign sh_rev[i] = sh_out[MAN+EXP-i];
+	end
+	wire [MAN+EXP:0] sh_in = (e[EXP-1]) ? m_ext  : m_rev;
+	assign           sh_out = sh_in >> shift;
+	assign           mag    = (e[EXP-1]) ? sh_out : sh_rev;
 end endgenerate
-wire        [MAN+EXP:0] sh_in = (e[EXP-1]) ? m_ext  : m_rev;
-assign                  sh_out = sh_in >> shift;
-wire        [MAN+EXP:0] mag   = (e[EXP-1]) ? sh_out : sh_rev;
 wire        [MAN+EXP:0] val   = (s) ? -mag : mag;
 
 // FROUND >= 1: saturate instead of wrapping. A normalized mantissa is at least
@@ -1821,7 +1837,17 @@ generate
 	else                                 begin : f2i_src assign f2i_in = in2;                       end
 endgenerate
 
-generate if ((F2I | F2I_M) != 0) begin : op_f2i ula_f2i #(NBMANT,NBEXPO,FROUND) my_f2i (f2i_in, f2i_out); end else begin : op_f2i assign f2i_out = {NUBITS{1'b0}}; end endgenerate
+// F2I's shift, done by ula_shift when the program also shifts (#156): the
+// same circuit, and the two never run in the same cycle
+localparam HAS_SH  = (SHL | SHR | SRS) != 0;
+localparam HAS_F2I = (F2I | F2I_M) != 0;
+localparam F2I_SH  = HAS_SH && HAS_F2I;
+
+wire [NUBITS-1:0] f2i_xword, f2i_xmag;
+wire [NBEXPO-1:0] f2i_xamt;
+wire              f2i_xleft;
+
+generate if (HAS_F2I) begin : op_f2i ula_f2i #(NBMANT,NBEXPO,FROUND,F2I_SH) my_f2i (f2i_in, f2i_out, f2i_xword, f2i_xamt, f2i_xleft, f2i_xmag); end else begin : op_f2i assign f2i_out = {NUBITS{1'b0}}; assign f2i_xword = {NUBITS{1'b0}}; assign f2i_xamt = {NBEXPO{1'b0}}; assign f2i_xleft = 1'b0; end endgenerate
 
 // the output mux keeps one leg per operation (t27, t28), each under its own
 // parameter, both reading the one converter
@@ -1921,7 +1947,23 @@ generate if ((EQU) != 0) begin : op_equ ula_equ #(NUBITS) my_equ(in1, in2, equ);
 // still keeps its own mux input so an absent one stays x
 wire signed [NUBITS-1:0] shl, shr, srs, sh_out;
 
-generate if ((SHL | SHR | SRS) != 0) begin : op_shift ula_shift #(NUBITS,SHL,SHR,SRS) my_shift(op, in1, in2, sh_out); end else begin : op_shift assign sh_out = {NUBITS{1'b0}}; end endgenerate
+// with F2I sharing it, the shifter takes F2I's word and amount in F2I's
+// cycles (ops 27, 28) as an SHL or an SHR, so it is built with both
+// directions; otherwise it is the program's shifts alone
+generate if (F2I_SH) begin : op_shift
+	wire              f2i_now = (op == 6'd27) | (op == 6'd28);
+	wire        [5:0] sh_op   = (f2i_now) ? ((f2i_xleft) ? 6'd43 : 6'd44) : op;
+	wire [NUBITS-1:0] sh_a    = (f2i_now) ? f2i_xword : in1;
+	wire [NUBITS-1:0] sh_b    = (f2i_now) ? {{(NUBITS-NBEXPO){1'b0}}, f2i_xamt} : in2;
+	ula_shift #(NUBITS,1,1,SRS) my_shift(sh_op, sh_a, sh_b, sh_out);
+	assign f2i_xmag = sh_out;
+end else if (HAS_SH) begin : op_shift
+	ula_shift #(NUBITS,SHL,SHR,SRS) my_shift(op, in1, in2, sh_out);
+	assign f2i_xmag = {NUBITS{1'b0}};
+end else begin : op_shift
+	assign sh_out   = {NUBITS{1'b0}};
+	assign f2i_xmag = {NUBITS{1'b0}};
+end endgenerate
 generate if ((SHL) != 0) begin : op_shl assign shl = sh_out; end else begin : op_shl assign shl = {NUBITS{1'b0}}; end endgenerate
 generate if ((SHR) != 0) begin : op_shr assign shr = sh_out; end else begin : op_shr assign shr = {NUBITS{1'b0}}; end endgenerate
 generate if ((SRS) != 0) begin : op_srs assign srs = sh_out; end else begin : op_srs assign srs = {NUBITS{1'b0}}; end endgenerate

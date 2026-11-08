@@ -58,6 +58,14 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **F2I shifts with the shifter of SHL, SHR and SRS (#156).** F2I shifts
+  the mantissa by the exponent with a barrel shifter of its own, the same
+  circuit as `ula_shift`'s, and the two never run in the same cycle. When
+  a program has both, `ula_shift` does F2I's shift too, as an SHL or an
+  SHR, behind muxes on its word and amount. Yosys (LUT4, 32 bits, `#FROUND`
+  2): SHL and F2I 561 to 492, SRS and F2I 612 to 534; either alone
+  unchanged. A program with F2I and SRS only, simulated against the float
+  format's definition, converts 11 values right.
 - **One negator for NEG, NEG_M, ABS and ABS_M (#157).** The four were four
   modules, one negator each on the accumulator or the memory word, and one
   runs per cycle. They now share one negator, behind an operand mux only
