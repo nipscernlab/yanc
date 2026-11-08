@@ -277,6 +277,14 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **The text screens check their limits (#182).** myVGAText and
+  myADV7513Text read a character from `w[6:0]` and myADV7513Text counts
+  its writes in `c[10:7]`, so a NUBITS below 8 or a WAIT_BITS below 11
+  indexed past their words without a sign; both now stop the elaboration
+  with the rule in the message. myADV7513Text's write count was in two
+  places (NREGS and the `cfg` table, whose default stood for write 10):
+  write 10 has its own line now, and a NREGS that does not match the table
+  stops the elaboration too. tb_vgatext and tb_adv7513text pass.
 - **An FFT array that is the whole data memory (#168).** v[k) reverses the
   index's low `#FFTSIZ` bits and keeps the ones above, which a memory of
   exactly 2^FFTSIZ words does not have: a program whose only data was an

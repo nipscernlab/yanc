@@ -71,6 +71,12 @@ module myADV7513Text
 	inout               sda
 );
 
+// WAIT_BITS below 11 overlaps the write counter (c[10:7] below); the
+// elaboration stops on a module named after the rule (#182)
+generate if (WAIT_BITS < 11) begin : wait_check
+	myADV7513Text_WAIT_BITS_must_be_at_least_11 wait_rule ();
+end endgenerate
+
 myVGAText #(.NUBITS(NUBITS), .LINK_SYNC(LINK_SYNC)) tela (
 	.clk(clk), .rst(rst), .toma(toma), .dado(dado), .valeu(valeu),
 	.hs(hs), .vs(vs), .ativo(ativo), .pixel(pixel));
@@ -93,9 +99,18 @@ function [15:0] cfg; input [3:0] n;
 		4'd7:    cfg = 16'hA3_A4;
 		4'd8:    cfg = 16'hE0_D0;
 		4'd9:    cfg = 16'hF9_00;
-		default: cfg = 16'h16_30;           // 10
+		4'd10:   cfg = 16'h16_30;
+		default: cfg = 16'h00_00;           // no write: NREGS stops before it
 	endcase
 endfunction
+
+// NREGS and the table say the same count (#182): write NREGS-1 has its own
+// line and none comes after it. The default used to stand for write 10, so
+// a write added to one and not the other repeated 0x16 without a word; now
+// the elaboration stops, on a module named after the rule.
+generate if (cfg(NREGS - 4'd1) == 16'h00_00 || cfg(NREGS) != 16'h00_00) begin : nregs_check
+	myADV7513Text_NREGS_must_match_the_cfg_table nregs_rule ();
+end endgenerate
 
 // ----------------------------------------------------------------------------
 // one counter, one step a line: the wait, then {write, slot, quarter} --------
