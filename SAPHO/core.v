@@ -524,7 +524,8 @@ module io_ctrl
 	parameter    INN = 0,
 	parameter  F_INN = 0,
 	parameter  P_INN = 0,
-	parameter PF_INN = 0
+	parameter PF_INN = 0,
+	parameter    OUT = 0
 )(
 	input                   clk, rst,
 	input                   req_in, out_en,
@@ -533,8 +534,8 @@ module io_ctrl
 	output                  en_in,
 	output     [NBIOIN-1:0] addr_in,
 
-	output reg              en_out,
-	output reg [NBIOOU-1:0] addr_out
+	output                  en_out,
+	output     [NBIOOU-1:0] addr_out
 );
 
 localparam AW = (NBOPER > NBIOIN) ? ((NBOPER > NBIOOU) ? NBOPER : NBIOOU)
@@ -544,8 +545,20 @@ wire [AW-1:0] addr = opnd;                         // zero-extended when narrowe
 generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : en_in_sel   assign en_in   = req_in;           end else begin : en_in_sel   assign en_in   =         1'b0  ; end endgenerate
 generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : addr_in_sel assign addr_in = addr[NBIOIN-1:0]; end else begin : addr_in_sel assign addr_in = {NBIOIN{1'b0}}; end endgenerate
 
-always @ (posedge clk) if (rst) en_out   <= 1'b0; else en_out   <= out_en;
-always @ (posedge clk) if (rst) addr_out <= 0;    else addr_out <= addr[NBIOOU-1:0];
+// the output side only with OUT (#172): a program that only reads had both
+// registers, addr_out loading the operand of every instruction. The port
+// number now loads in OUT's cycle alone and holds until the next OUT.
+generate if ((OUT) != 0) begin : out_side
+	reg              en_r   = 1'b0;
+	reg [NBIOOU-1:0] addr_r = 0;
+	always @ (posedge clk) if (rst) en_r   <= 1'b0; else en_r   <= out_en;
+	always @ (posedge clk) if (rst) addr_r <= 0;    else if (out_en) addr_r <= addr[NBIOOU-1:0];
+	assign en_out   = en_r;
+	assign addr_out = addr_r;
+end else begin : out_side
+	assign en_out   = 1'b0;
+	assign addr_out = {NBIOOU{1'b0}};
+end endgenerate
 
 endmodule
 
@@ -1215,7 +1228,8 @@ io_ctrl #(.NBOPER(NBOPER),
 		     .INN(   INN),
 		   .F_INN( F_INN),
 		   .P_INN( P_INN),
-		  .PF_INN(PF_INN)) io(clk, rst, id_req_in, id_out_en,
+		  .PF_INN(PF_INN),
+		     .OUT(   OUT)) io(clk, rst, id_req_in, id_out_en,
                               if_operand,
                               req_in, addr_in, out_en, addr_out);
 end else begin : io_ports

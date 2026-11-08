@@ -58,6 +58,12 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **io_ctrl builds its output side only with OUT (#172).** A program that
+  only reads had `en_out` and `addr_out`, the latter loading every
+  instruction's operand; they now exist only with OUT, and `addr_out` loads
+  in OUT's cycle and holds. No area changes (synthesis already removed them,
+  since the generated top leaves them unconnected); the RTL now says what is
+  built, and the port number stops toggling between outputs.
 - **The normaliser's shift without its dead cap (#163).** The shift was
   the leading-zero count held at W-1, but the count passes W-1 only for a
   zero mantissa, and then the result does not read it. The cap, a compare
