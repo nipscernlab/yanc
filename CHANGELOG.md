@@ -58,6 +58,14 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **F_SCL and XPO at the exponent's width (#161).** F_SCL (`exp()`,
+  `ldexp`) added k to the exponent and compared at the word's width; a k
+  wider than EXP+1 bits saturates whatever the exponent, so it now adds at
+  EXP+2 bits and saturates a wider k by its sign. XPO (`log()`) adds its
+  constant at EXP+1 bits and sign-extends. Both give the old results on
+  every case tried (1,076,224 F_SCL cases and all 65,536 XPO words at 16
+  bits). Yosys (32 bits): F_SCL 175 to 110 LUT4; XPO unchanged, synthesis
+  already narrowed it.
 - **F2I shifts with the shifter of SHL, SHR and SRS (#156).** F2I shifts
   the mantissa by the exponent with a barrel shifter of its own, the same
   circuit as `ula_shift`'s, and the two never run in the same cycle. When

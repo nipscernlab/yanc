@@ -1509,11 +1509,19 @@ wire                  s = in2[MAN+EXP      ];
 wire signed [EXP-1:0] e = in2[MAN+EXP-1:MAN];
 wire        [MAN-1:0] m = in2[MAN    -1:0  ];
 
-wire signed [MAN+EXP+1:0] esum = $signed(e) + in1;              // e + k (one bit wider than k)
-localparam signed [MAN+EXP+1:0] EMAX =  (1 <<< (EXP-1)) - 1;    //  127 for EXP=8
-localparam signed [MAN+EXP+1:0] EMIN = -(1 <<< (EXP-1));        // -128 for EXP=8
-wire signed [EXP-1:0] e_out = (esum > EMAX) ? EMAX[EXP-1:0] :
-                              (esum < EMIN) ? EMIN[EXP-1:0] : esum[EXP-1:0];
+// e + k, at the exponent's width (#161; it was a sum and two compares at the
+// word's): a k of EXP+1 bits (its bits from EXP up all copies of its sign)
+// gives a sum that fits EXP+2 bits, compared with the limits there; a wider k
+// has |k| >= 2^EXP, which takes any e past a limit, so it saturates by k's
+// sign
+wire                  k_fit = (in1[MAN+EXP:EXP] == {(MAN+1){in1[MAN+EXP]}});
+wire signed [EXP+1:0] esum  = {{2{e[EXP-1]}}, e} + {in1[EXP], in1[EXP:0]};
+localparam signed [EXP+1:0] EMAX = {3'b000, {(EXP-1){1'b1}}};   //  127 for EXP=8
+localparam signed [EXP+1:0] EMIN = {3'b111, {(EXP-1){1'b0}}};   // -128 for EXP=8
+wire                  hi    = (k_fit) ? (esum > EMAX) : ~in1[MAN+EXP];
+wire                  lo    = (k_fit) ? (esum < EMIN) :  in1[MAN+EXP];
+wire signed [EXP-1:0] e_out = (hi) ? EMAX[EXP-1:0] :
+                              (lo) ? EMIN[EXP-1:0] : esum[EXP-1:0];
 wire                  zero  = (FROUND != 0) & (m == {MAN{1'b0}}); // FROUND >= 1: zero stays canonical (+0)
 
 assign out = (zero) ? {1'b0, EMIN[EXP-1:0], m} : {s, e_out, m};
@@ -1539,13 +1547,15 @@ module ula_xpo
 
 wire signed [EXP-1:0]   e    = in[MAN+EXP-1:MAN];
 wire                    nz   = |in[MAN+EXP-1:0];            // nonzero magnitude
-wire signed [MAN+EXP:0] bias = MAN-1;                       // 22, full-width signed
+// e + (MAN-1) at EXP+1 bits, then sign-extended to the word (#161; the sum was
+// at the word's width): it lies in [-2^(EXP-1) + MAN-1, 2^(EXP-1)-1 + MAN-1],
+// which EXP+1 bits hold since MAN < 2^(EXP-1). The bias is a part-select of an
+// integer localparam, so no tool sees a 32-bit value cut down.
+localparam integer       B_INT = MAN-1;
+localparam signed [EXP:0] BIAS = B_INT[EXP:0];               // 22 for MAN 23
+wire signed [EXP:0]      xs   = {e[EXP-1], e} + BIAS;
 
-// compute the signed sum in its OWN signed wire first (like ula_scl's esum) so e
-// is sign-extended; doing it inside the ?: would pick up the unsigned else branch.
-wire signed [MAN+EXP:0] xval = $signed(e) + bias;          // e + (MAN-1)
-
-assign out = nz ? xval : {(MAN+EXP+1){1'b0}};
+assign out = nz ? {{MAN{xs[EXP]}}, xs} : {(MAN+EXP+1){1'b0}};
 
 endmodule
 
