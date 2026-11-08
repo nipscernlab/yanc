@@ -1771,17 +1771,27 @@ wire signed [NUBITS-1:0] nrmm;
 
 generate if ((NRM_M) != 0) begin : op_nrmm ula_nrm #(NUBITS,NUGAIN) my_nrmm(in1, nrmm); end else begin : op_nrmm assign nrmm = {NUBITS{1'b0}}; end endgenerate
 
-// I2F ------------------------------------------------------------------------
+// I2F and I2F_M --------------------------------------------------------------
+// One converter for both (#154), as for F2I: I2F converts in2 (the
+// accumulator; F_INN and PF_INN too, which read a port into it), I2F_M in1
+// (the memory word), one per cycle. With both, a mux picks the operand by the
+// operation (I2F_M is op 26); with one, no mux. Two converters cost 213 LUT4
+// more than one at #FROUND 2 and 78 at level 0 (Yosys, 32 bits, 2026-11-08).
 
-wire signed [NUBITS+G+1:0] i2f;
+wire signed [NUBITS-1    :0] i2f_in;
+wire signed [NUBITS+G+1  :0] i2f_out;
 
-generate if ((I2F) != 0) begin : op_i2f ula_i2f #(NUBITS,NBMANT,NBEXPO,FROUND,G) my_i2f (in2, i2f); end else begin : op_i2f assign i2f = {NUBITS+G+2{1'b0}}; end endgenerate
+generate
+	if      ((I2F) != 0 && (I2F_M) != 0) begin : i2f_src assign i2f_in = (op == 6'd26) ? in1 : in2; end
+	else if ((I2F_M) != 0)               begin : i2f_src assign i2f_in = in1;                       end
+	else                                 begin : i2f_src assign i2f_in = in2;                       end
+endgenerate
 
-// I2F_M ----------------------------------------------------------------------
+generate if ((I2F | I2F_M) != 0) begin : op_i2f ula_i2f #(NUBITS,NBMANT,NBEXPO,FROUND,G) my_i2f (i2f_in, i2f_out); end else begin : op_i2f assign i2f_out = {NUBITS+G+2{1'b0}}; end endgenerate
 
-wire signed [NUBITS+G+1:0] i2fm;
-
-generate if ((I2F_M) != 0) begin : op_i2fm ula_i2f #(NUBITS,NBMANT,NBEXPO,FROUND,G) my_i2fm(in1, i2fm); end else begin : op_i2fm assign i2fm = {NUBITS+G+2{1'b0}}; end endgenerate
+// norm_mux keeps one leg per operation (l25, l26), each under its parameter
+wire signed [NUBITS+G+1:0] i2f  = i2f_out;
+wire signed [NUBITS+G+1:0] i2fm = i2f_out;
 
 // F2I and F2I_M --------------------------------------------------------------
 // One converter for both (#153): F2I converts in2 (the accumulator), F2I_M in1

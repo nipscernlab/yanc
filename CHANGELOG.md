@@ -58,6 +58,12 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **One int-to-float converter for I2F and I2F_M (#154).** The same as
+  #153 for the other direction: one `ula_i2f` behind an operand mux when a
+  program has both forms (I2F also serves F_INN and PF_INN). A program with
+  both goes from 667 to 521 LUTs at `#FROUND` 2 and from 322 to 297 at
+  level 0 (Yosys, 32 bits, LUT4), the converter being cheap at level 0;
+  one form alone is unchanged. `tb_ula` passes at every format and level.
 - **One float-to-int converter for F2I and F2I_M (#153).** The ALU built
   two `ula_f2i`, one on the accumulator (F2I) and one on the memory word
   (F2I_M), though one operation runs per cycle. A program with both now
