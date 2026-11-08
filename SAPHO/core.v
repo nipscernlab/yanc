@@ -406,8 +406,11 @@ module ula_in1_ctrl
 	output [NUBITS-1:0] out
 );
 
+// stkr has no reset: popr, which picks it, is reset, so its value in and
+// right after a reset is never read; a reset it does not need can keep a
+// tool from packing it (#172)
 reg popr;              always @ (posedge clk) if (rst) popr <= 1'b0; else popr <= pop;
-reg [NUBITS-1:0] stkr; always @ (posedge clk) if (rst) stkr <= 0;    else stkr <= stack;
+reg [NUBITS-1:0] stkr; always @ (posedge clk) stkr <= stack;
 
 assign out = (popr) ? stkr : mem;
 
@@ -425,8 +428,9 @@ module ula_in2_ctrl
 	output [NUBITS-1:0] out
 );
 
+// ior has no reset, as stkr: req_inr, which picks it, is reset (#172)
 reg               req_inr; always @ (posedge clk) if (rst) req_inr <= 1'b0; else req_inr <= req_in;
-reg  [NUBITS-1:0] ior    ; always @ (posedge clk) if (rst) ior     <= 0;    else ior     <=  io_in;
+reg  [NUBITS-1:0] ior    ; always @ (posedge clk) ior <= io_in;
 
 assign out = (req_inr) ? ior : acc;
 

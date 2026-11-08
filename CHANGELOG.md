@@ -58,6 +58,12 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **No reset on the ALU's two input data registers (#172).** `stkr` (the
+  popped word) and `ior` (the word read from a port) were reset, though the
+  registers that pick them (`popr`, `req_inr`) are, so their value in and
+  right after a reset is never read. No area changes in Yosys (a
+  synchronous reset is free in its flip-flop); in simulation both show X
+  until their first load, which reaches no output.
 - **The link number on its own bits (#172).** With two or more links of a
   kind, TOM k and CAD k compared the whole operand with each k and indexed
   by it; asmcomp makes NLINK the highest number + 1, so the low
