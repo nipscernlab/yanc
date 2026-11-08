@@ -775,11 +775,13 @@ module ula_idiv
 	parameter NUBITS = 32,
 	parameter PRE10  = 15,                                    // see div_array: the magnitudes count here
 	parameter POST10 = 28,                                    //   and the sign correction there
-	parameter STG    =  5                                     // cycles (Compilers/common ASM_DIV_WORDS_INT)
+	parameter STG    =  5,                                    // cycles (Compilers/common ASM_DIV_WORDS_INT)
+	parameter BOTH   =  0                                     // 1: the program reads both (DIV and MOD)
 )(
 	 input signed [NUBITS-1:0] in1, in2,                      // in1 / in2, in1 % in2
 	output signed [NUBITS-1:0] quo, rem,
-	 input                     clk
+	 input                     clk,
+	 input                     pick_rem                       // BOTH: this cycle reads the remainder (REM)
 );
 
 wire [NUBITS-1:0] a = in1[NUBITS-1] ? -in1 : in1;
@@ -792,8 +794,21 @@ div_array #(NUBITS,NUBITS,2,STG,PRE10,POST10) arr({(NUBITS+1){1'b0}}, a, b,
                                                 {in1[NUBITS-1] ^ in2[NUBITS-1], in1[NUBITS-1]},
                                                 q, r, sg, clk);
 
-assign quo = sg[1] ? -q              : q;
-assign rem = sg[0] ? -r[NUBITS-1:0] : r[NUBITS-1:0];
+// The ALU reads one result per cycle, the quotient (QUO) or the remainder
+// (REM). With both in the program (BOTH), the magnitude and its sign are
+// picked first and negated once, one negator instead of two (#157); with one,
+// the other output is unread and synthesis drops it. tb_alu, which checks
+// both at once, uses BOTH = 0.
+generate if (BOTH != 0) begin : one_neg
+	wire [NUBITS-1:0] mag = (pick_rem) ? r[NUBITS-1:0] : q;
+	wire              ng  = (pick_rem) ? sg[0]         : sg[1];
+	wire [NUBITS-1:0] res = (ng) ? -mag : mag;
+	assign quo = res;
+	assign rem = res;
+end else begin : two_neg
+	assign quo = sg[1] ? -q              : q;
+	assign rem = sg[0] ? -r[NUBITS-1:0] : r[NUBITS-1:0];
+end endgenerate
 
 endmodule
 
@@ -1659,7 +1674,7 @@ generate if ((F_MLT) != 0) begin : op_fmlt ula_fmlt #(NBMANT,NBEXPO,FROUND,G) my
 
 wire signed [NUBITS-1:0] div, mod;
 
-generate if ((DIV | MOD) != 0) begin : op_idiv ula_idiv #(NUBITS) my_idiv(in1, in2, div, mod, clk); end else begin : op_idiv assign div = {NUBITS{1'b0}}; assign mod = {NUBITS{1'b0}}; end endgenerate
+generate if ((DIV | MOD) != 0) begin : op_idiv ula_idiv #(.NUBITS(NUBITS), .BOTH((DIV != 0) && (MOD != 0))) my_idiv(in1, in2, div, mod, clk, op == 6'd8); end else begin : op_idiv assign div = {NUBITS{1'b0}}; assign mod = {NUBITS{1'b0}}; end endgenerate
 
 // F_DIV ----------------------------------------------------------------------
 // four cycles (see ula_fdiv): F_DIV starts it, F_QUO reads it three words later

@@ -65,7 +65,9 @@ tags consumed by Aurora.
   negator's output or its input by the sign. Yosys (LUT4, 32 bits): NEG and
   NEG_M 200 to 166, the four 223 to 197; one form alone, and NEG with ABS
   (which synthesis already merged), unchanged. `ula_neg` and `ula_abs` are
-  gone.
+  gone. The integer divider, which negated its quotient and its remainder
+  apart though one is read per cycle (QUO or REM), picks first and negates
+  once when the program has DIV and MOD: 2697 to 2663.
 - **NRM as a shift (#160).** `ula_nrm` was `in/NUGAIN`; NUGAIN is a power
   of two, so it is now `in >>> K` with 1 added back to a negative input that
   has a remainder, which truncates toward zero as the division did. It
