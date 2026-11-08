@@ -128,6 +128,10 @@ literals. A range-for (`for (auto x : c)`) walks an array, or an object with
 starting with `0` is octal. A float used as a condition (`if (x)`, `!x`,
 `x && y`, `x ? a : b`) is true when it is not zero, as in C: the compiler
 tests its mantissa, because SAPHO's zero float is not an all-zero word.
+A division by zero does not stop the program, which C++ leaves undefined:
+an `int` divided by zero gives -1, or 1 when it is negative, as the
+processor defines it ([Instruction set](reference/instructions.md)), and an
+`unsigned` one the largest `unsigned`; the remainder is the dividend.
 
 ## Functions
 

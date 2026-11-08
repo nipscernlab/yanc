@@ -761,7 +761,9 @@ endmodule
 // dividend's sign. INT_MIN / -1, the one quotient that does not fit, wraps
 // to INT_MIN by itself (|INT_MIN| / 1 negated in NUBITS bits), which is what
 // Verilog defines and what both simulators now agree on (TODO 11a). A zero
-// divisor gives the array's all-ones quotient (undefined, issue #34).
+// divisor: every row finds that it fits, an all-ones quotient that the sign
+// correction leaves -1 (dividend >= 0) or makes 1 (dividend < 0), and the
+// dividend as the remainder; the manual defines it so (issue #34).
 
 module ula_idiv
 #(

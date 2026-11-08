@@ -44,6 +44,15 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **What the processor gives at the edges is written down (#34).** An
+  integer division by zero gives -1 for a dividend of 0 or more and 1 for a
+  negative one, and the dividend as the remainder, which is what the divider
+  already did: it is now the defined result, in C±, in C++ and with
+  constants alike, and `Scripts/hw/tb_ula.v` and `tb_alu.v` check it
+  instead of skipping a zero divisor. The instruction set page also says
+  what a shift by `NUBITS` or more gives, how a data address past the
+  memory wraps, and that a numeric jump target is cut, not checked. In C++
+  an `unsigned` divided by zero gives the largest `unsigned`.
 - **cppcomp pastes small plain functions too, and `cin >>` is shallower
   (#67).** The expansion that took a method whose body is one `return`
   now takes plain functions as well, a `void` function whose body is one

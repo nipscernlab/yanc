@@ -28,6 +28,24 @@ before the normaliser, and asmcomp inserts the `NOP` by itself, in a
 hand-written `.asm` too. The compilers never write that pattern: they
 test a float condition after `F2I`, and an index is an integer.
 
+Every result is defined, at the edges too (GitHub issue #34):
+
+- An integer division by zero gives a quotient of -1 for a dividend of 0
+  or more and 1 for a negative one, and the dividend as its remainder:
+  `7 / 0` is -1, `-7 / 0` is 1, `7 % 0` is 7. The divider finds that the
+  divisor always fits, and its sign correction applies as for any other
+  divisor. The one quotient that does not fit, `INT_MIN / -1`, is `INT_MIN`.
+- A shift amount is read as an unsigned word: from `NUBITS` up (and so a
+  negative amount) `SHL` and `SHR` give 0 and `SRS` a word of sign bits,
+  as Verilog's `<<`, `>>` and `>>>` do.
+- The address of `LDI`, `ILI`, `STI` and `ISI`, base plus index, is cut to
+  the bits of the data memory's size: past them it wraps to the start.
+  An address from the size up to the next power of two has no word, and
+  reading it gives an undefined value.
+- A jump or call target is cut to the bits of the instruction memory's
+  size. asmcomp checks that a label exists, but takes a number as written
+  (`JMP 5000`), whatever the size of the program.
+
 Columns: **operand**, what the operand field holds (`data` a data address,
 `code` an instruction address, `in`/`out` a port, `link` a link number,
 `offset` an address plus a constant, `lea` an address taken as a constant);
