@@ -58,6 +58,12 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **The normaliser's shift without its dead cap (#163).** The shift was
+  the leading-zero count held at W-1, but the count passes W-1 only for a
+  zero mantissa, and then the result does not read it. The cap, a compare
+  and a mux between the count and the shift on the float add's path, is
+  gone; no result changes (I2F on every 16-bit word, 200,000 F_ADD and
+  F_SU2 pairs, three levels). The clock is not measured.
 - **F_ROT without the normaliser (#159).** `sqrt()`'s first guess built
   the mantissa 1 and let the normaliser shift it up; the result is an exact
   power of two, always in range, so `ula_frot` now writes the final word and

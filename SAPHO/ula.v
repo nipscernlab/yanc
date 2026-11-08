@@ -299,8 +299,6 @@ module ula_norm
 );
 
 localparam W = MAN+G;
-localparam integer   W_1  = W-1;
-localparam [EXP-1:0] WMAX = W_1[EXP-1:0];   // the shift's cap at the shift's width (it fits: MAN < 2^(EXP-1))
 
 // Only the paths some opcode of the program needs are built: a processor
 // that only multiplies at FROUND >= 1 carries no leading-zero counter, one
@@ -319,12 +317,16 @@ generate if (LZC != 0) begin : lzc
 	wire signed [EXP+1  :0] exp_l = in[MAN+EXP+G+1:W];
 	wire        [W-1    :0] man_l = in[W        -1:0];
 
-	// the shift is the leading-zero count, capped at W-1 (a zero mantissa
-	// counts W; zman handles it)
+	// the shift is the leading-zero count. It passes W-1 only for a zero
+	// mantissa (it counts W), and then the result does not read it: the
+	// shifted mantissa is 0 for any shift, and zman puts the zero exponent
+	// at level 0 and the canonical zero at levels 1 and 2. The cap that held
+	// it at W-1 sat between the count and the shift, on the float add's
+	// path, and changed nothing (#163)
 	wire [EXP-1:0] lz;
 	ula_lzc #(W, EXP) lzc (man_l, lz);
 
-	wire        [EXP-1:0] sh    =  (lz > WMAX) ? WMAX : lz;
+	wire        [EXP-1:0] sh    =  lz;
 	wire        [W-1  :0] nrm_l =  man_l << sh;
 	wire signed [EXP+1:0] e_l   =  exp_l - {{2{1'b0}}, sh};
 
