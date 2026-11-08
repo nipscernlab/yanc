@@ -1709,6 +1709,23 @@ static func *func_of_label(const char *label)
     return NULL;
 }
 
+// The arguments of a call of method f after `this`: those written, each as
+// its parameter's type (from f, or from the method's symbol ms when f is not
+// known), then the default of each parameter not written. Every method call
+// pushes them through here (#134: a plain method call left the defaults out,
+// so cin.ignore(2) read past the line).
+static void gen_method_args(func *f, sym *ms, expr **args, int n_args)
+{
+    decl *p = f && f->params ? f->params->next : NULL;          // skip `this`
+    for (int i = 0; i < n_args; i++) {
+        type *pt = p ? p->dtype
+                 : (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
+        gen_arg(args[i], pt);
+        if (p) p = p->next;
+    }
+    for (; p && p->init; p = p->next) gen_arg(p->init, p->dtype);   // default arguments
+}
+
 // `this` of a virtual call: obj (by . or ->), or the method's own when obj is NULL
 static void gen_vcall_this(expr *obj, int arrow)
 {
@@ -1738,14 +1755,7 @@ static void gen_virtual_call(expr *obj, int arrow, type *ct, const char *member,
         emit("LDI 0");                                // acc = fid = mem[vptr+slot]
         emit("SET __fp_id");
     }
-    func *fd = func_of_label(masm);                   // its parameters, `this` first
-    decl *p = fd && fd->params ? fd->params->next : NULL;
-    for (int i = 0; i < n_args; i++) {
-        type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
-        gen_arg(args[i], pt);
-        if (p) p = p->next;
-    }
-    for (; p && p->init; p = p->next) gen_arg(p->init, p->dtype);   // default arguments
+    gen_method_args(func_of_label(masm), ms, args, n_args);
     if (late) {
         if (keep) emit("LOD %s", keep); else gen_vcall_this(obj, arrow);
         emit("LDI 0");
@@ -1803,9 +1813,7 @@ static int needs_construct(type *t)
 static void emit_ctor_call(func *cf, objaddr a, expr **args, int nargs)
 {
     emit_objaddr(a); emit("PSH");                             // this
-    decl *p = cf->params ? cf->params->next : NULL;           // skip `this`
-    for (int i = 0; i < nargs; i++) { gen_arg(args[i], p ? p->dtype : NULL); if (p) p = p->next; }
-    for (; p; p = p->next) gen_arg(p->init, p->dtype);        // default args
+    gen_method_args(cf, NULL, args, nargs);
     emit("CAL %s", cf->asm_label);
 }
 
@@ -2870,12 +2878,7 @@ static void gen_expr(expr *e)
                 if (fo) {
                     if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // this
                     emit("PSH");
-                    decl *p = fo->params ? fo->params->next : NULL;     // skip `this`
-                    for (int i = 0; i < e->n_args; i++) {
-                        gen_arg(e->args[i], p ? p->dtype : NULL);
-                        if (p) p = p->next;
-                    }
-                    for (; p; p = p->next) gen_arg(p->init, p->dtype);  // default arguments
+                    gen_method_args(fo, NULL, e->args, e->n_args);
                     emit("CAL %s", ml);
                     free(ml); free(masm);
                     return;
@@ -2890,10 +2893,7 @@ static void gen_expr(expr *e)
             }
             if (e->a->kind == E_MEMBER) gen_addr(obj); else gen_expr(obj);  // this
             emit("PSH");
-            for (int i = 0; i < e->n_args; i++) {            // param i+1 (this is param 0)
-                type *pt = (ms && ms->param_types && i + 1 < ms->n_params) ? ms->param_types[i + 1] : NULL;
-                gen_arg(e->args[i], pt);
-            }
+            gen_method_args(func_of_label(masm), ms, e->args, e->n_args);
             emit("CAL %s", masm);
             free(masm);
             return;

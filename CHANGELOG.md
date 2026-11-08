@@ -40,6 +40,17 @@ tags consumed by Aurora.
   `static_assert`, the casts, `##`, `__VA_ARGS__`, `#pragma once`,
   `#warning`; test109: the `#pragma yanc` settings on a 16-bit processor;
   test110: the enums) and eight refusals the manual promises.
+- **cppcomp: a method's default arguments (#134).** A call of a method
+  that is neither virtual nor overloaded, with fewer arguments than
+  parameters, pushed no default: `q.f(2)` with `int f(int n = 1, int d =
+  -1)` gave n a word off the stack, and `cin.ignore(2)` read past the line.
+  Every method call now pushes its arguments through one function. Found
+  by test111, which runs `<iostream>` and `<cstdio>` on the links
+  (`YANC_LINK_SYNC 0`, input from `cade_0.txt`): `cin >>` of int,
+  unsigned, float, char and a word, `fail`, `clear`, `peek`, `get`,
+  `ignore`, `getchar`, `fgets`, and `cout.put`, `write`, `oct`, `puts`.
+  The regression now also compares what a test wrote on link k with its
+  `golden_toma_k.txt`.
 - **cppcomp tidied (#133).** One helper makes a compiler temporary
   (`new_temp_as`), one ranks how arguments fit an overload (`args_fit`),
   and `new` calls a constructor as every other object creation does. The

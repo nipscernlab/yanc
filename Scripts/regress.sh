@@ -22,7 +22,9 @@
 #   2. CPP phase: for every Compilers/CPPComp/Tests/testN/testN.cpp run
 #      cppcomp -> asmcomp -> iverilog (or Verilator
 #      if testN/testN.in is present) and compare the resulting
-#      output_0.txt against Compilers/CPPComp/Tests/testN/golden.txt.
+#      output_0.txt against Compilers/CPPComp/Tests/testN/golden.txt (and
+#      toma_k.txt, what the program wrote on link k, against a
+#      testN/golden_toma_k.txt when there is one).
 #      Every test is a folder holding the source and its own files (array
 #      inits, input_N.txt); the tools write everything they generate to one
 #      output folder, <work>/<test>/<prname>/ (the default ./<prname> of the
@@ -1538,14 +1540,27 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             pass=$((pass+1))
         elif [ ! -f "$gold" ]; then
             echo "FAIL ($base): no golden at $gold (run --update?)"; fail=$((fail+1)); failed_names+=("$base")
-        elif same "$out" "$gold"; then
-            echo "PASS ($base): $(tr '\n' ' ' < "$out")"
-            pass=$((pass+1))
-        else
+        elif ! same "$out" "$gold"; then
             echo "FAIL ($base): output differs from golden"
             echo "    golden: $(tr '\n' ' ' < "$gold")"
             echo "    got:    $(tr '\n' ' ' < "$out")"
             fail=$((fail+1)); failed_names+=("$base")
+        else
+            # what toma(k) wrote (std::cout on a link), when the test has a
+            # golden_toma_k.txt for it
+            tbad=""
+            for gt in "${entry%/}"/golden_toma_*.txt; do
+                [ -e "$gt" ] || continue
+                tk="${gt##*/golden_toma_}"
+                { [ -f "$od/toma_$tk" ] && same "$od/toma_$tk" "$gt"; } || tbad="$tbad toma_$tk"
+            done
+            if [ -n "$tbad" ]; then
+                echo "FAIL ($base): differs from its golden:$tbad"
+                fail=$((fail+1)); failed_names+=("$base")
+            else
+                echo "PASS ($base): $(tr '\n' ' ' < "$out")"
+                pass=$((pass+1))
+            fi
         fi
     done
 fi
