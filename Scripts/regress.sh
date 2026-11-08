@@ -33,7 +33,10 @@
 #      must appear, and no other warning may. An optional hardware.txt (in
 #      both phases) holds the generated processor's parameters: see hw_check.
 #      Every Icarus run, in both phases, also fails when a stack reached its
-#      depth (fl_full in the VCD): see stack_check.
+#      depth (fl_full in the VCD): see stack_check. The waveform's tables
+#      of every test, and the VCD of every Icarus run, go through
+#      Scripts/wave_map.py as in the CMM phase, without its rules of the
+#      source line, which are written for C± (GitHub issue #87).
 #
 #   3. ISA table: hold the hand-written copies of the instruction set
 #      (ASMComp.l, core.v) to Compilers/common/isa.tsv, so the four places
@@ -1430,6 +1433,12 @@ if [ "$CMM_ONLY" -eq 0 ]; then
         if ! hw_msg=$(hw_check "${entry%/}/hardware.txt" "$od/$prname.v"); then
             echo "FAIL ($base): $hw_msg"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
+        # the waveform's tables agree with each other and with the .asm
+        # (wave_map.py part 1; its rules of part 2 are C±'s, #87)
+        if ! python3 "$ROOT/Scripts/wave_map.py" "$od" "$prname" >/dev/null; then
+            echo "FAIL ($base): the waveform's tables are wrong (Scripts/wave_map.py, above)"
+            fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
 
         uproc="$od/$prname"
         tb="$od/${prname}_tb.v"
@@ -1526,6 +1535,10 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             popd >/dev/null
             if ! stack_check "$od/${prname}_tb.vcd"; then
                 echo "FAIL ($base): a stack reached its depth in the simulation (fl_full)"
+                fail=$((fail+1)); failed_names+=("$base"); continue
+            fi
+            if [ -f "$od/${prname}_tb.vcd" ] && ! python3 "$ROOT/Scripts/wave_map.py" "$od" "$prname" --vcd "$od/${prname}_tb.vcd" >/dev/null; then
+                echo "FAIL ($base): the waveform disagrees with the program (wave_map.py --vcd, above)"
                 fail=$((fail+1)); failed_names+=("$base"); continue
             fi
         fi

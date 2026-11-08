@@ -44,6 +44,8 @@ from tables the compilers write beside it, and asmcomp completes them.
      jump       a jump to a loop's, if's, switch's, pow's, floor's or ceil's
                 label is on that construct's line, or on a break, continue,
                 if or switch (a case whose body is only a jump).
+   These rules are written for C±, and do not run on a C++ program (its
+   prog_log.txt says lang C++) until it has rules of its own (#87).
    --selftest breaks the map of a test the way a compiler bug would (one
    kind of instruction, or the first or last instruction of every line,
    moved to the line before or after; the map shifted by one address) and
@@ -57,10 +59,14 @@ from tables the compilers write beside it, and asmcomp completes them.
                 puts every instruction on the line of its neighbour;
      writes     an int or float variable of the waveform changes only in a
                 cycle whose instruction (valr2) is a SET or SET_P of that
-                variable: a signal tied to the wrong word, a #SHARE group
-                followed wrongly or a name mixed up with another's shows;
-     outputs    where out(p, x) or fout(p, x) writes a variable x, the
-                waveform's x is the word port p puts out one cycle later
+                variable (in C++ also an STI or ISI, a store through a
+                pointer or a reference): a signal tied to the wrong word, a
+                #SHARE group followed wrongly or a name mixed up with
+                another's shows;
+     outputs    where out(p, x) or fout(p, x) writes a variable x (and
+                the instruction before the OUT, or before its F2I, uses x:
+                the source is read before its macros), the waveform's x is
+                the word port p puts out one cycle later
                 (fout, or out of a float, truncates to an int; past the
                 word, #FROUND 0 wraps and 1 and 2 saturate,
                 docs/floating-point.md). The outputs are checked against
@@ -179,9 +185,11 @@ class Program:
         if len(words) != len(self.trad):
             fail(f"{name}_inst.mif has {len(words)} words, trad_opcode.txt {len(self.trad)} addresses")
 
-        self.num_ins, self.variables, self.var_of = None, [], {}
+        self.num_ins, self.variables, self.var_of, self.lang = None, [], {}, "C+-"
         for ln in lines(os.path.join(d, "prog_log.txt")):
             p = ln.split()
+            if len(p) == 2 and p[0] == "lang":
+                self.lang = p[1]
             if len(p) == 2 and p[0] == "num_ins":
                 self.num_ins = int(p[1])
             elif p and p[0] in ("srcdir",):
@@ -388,6 +396,11 @@ def check_vcd(prog, path):
             sig = f"me{t}_f_global_v_{v}_e_" if f == "global" else f"me{t}_f_{f}_v_{v}_e_"
             mirror_of[sig] = (v if f == "global" else f"{f}_{v}", t == "2")
 
+    # C++ writes a variable through a pointer or a reference too (cin >> x
+    # passes &x), with a store whose address is on the stack: it is not
+    # tied to a name, so there it counts as a write of any variable
+    indirect = ("STI", "ISI") if prog.lang == "C++" else ()
+
     ids, mirror, outsig, clk = {}, {}, {}, None
     with open(path, encoding="utf-8", errors="replace") as fh:
         for ln in fh:
@@ -409,7 +422,11 @@ def check_vcd(prog, path):
                 break
         id_of = {v: k for k, v in ids.items()}
 
-        # out(p, x) / fout(p, x) of a plain variable, by address
+        # out(p, x) / fout(p, x) of a plain variable, by address. The source
+        # is read as written, before its macros, so the value that goes out
+        # must also be that variable's word: the instruction before the OUT
+        # (or before its F2I) uses it. `#define x x + 1` makes out(0, x)
+        # write x + 1 (test105), and src_lines.txt has no #define to tell.
         outs = {}
         for a in range(prog.num_ins):
             ins = prog.trad[a].split()
@@ -424,6 +441,11 @@ def check_vcd(prog, path):
             fn = next((f for f, (b, e) in prog.funcs.items() if b <= prog.line[a] <= e), None)
             for name in (f"{fn}_{m.group(2)}", m.group(2)):
                 sig = next((i for i, (asm, _) in mirror.items() if asm == name), None)
+                k = a - 1
+                if k >= 0 and prog.trad[k].split()[0] == "F2I":   # F2I_M x names x
+                    k -= 1
+                if sig is not None and (k < 0 or prog.trad[k].split()[1:2] != [name]):
+                    break                          # the word is not x's alone
                 if sig is not None:
                     outs[a] = (int(ins[1]), sig, m.group(1) == "fout" or prog.trad[a - 1].split()[0] in ("F2I", "F2I_M"))
                     break
@@ -444,6 +466,8 @@ def check_vcd(prog, path):
             for i in changed:
                 writes += 1
                 ins = prog.trad[a].split() if a is not None and a < len(prog.trad) else ["?"]
+                if ins[0] in indirect:
+                    continue
                 if not (ins[0] in ("SET", "SET_P") and len(ins) > 1 and ins[1] == mirror[i][0]):
                     fail(f"at time {t}: the waveform's '{mirror[i][0]}' changes while the "
                          f"instruction is '{' '.join(ins)}' (address {a}), not a SET of it")
@@ -520,7 +544,13 @@ def main():
     if len(args) < 2:
         fail("usage: wave_map.py <output folder> <name> [<messages file> | --vcd <file> | --selftest]")
     prog = Program(args[0], args[1])
-    check_rules(prog)
+    # part 2's rules read C±: a C++ program's functions, names and lines
+    # (methods, templates, the inliner, the headers) need rules of their own
+    # (#87), so for C++ only parts 1 and 3 run
+    if prog.lang != "C++":
+        check_rules(prog)
+    elif args[2:3] == ["--selftest"]:
+        fail("--selftest checks part 2, which does not run on C++ yet (#87)")
     if args[2:3] == ["--selftest"]:
         selftest(prog)
         return

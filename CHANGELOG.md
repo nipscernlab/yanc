@@ -9,6 +9,15 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **The C++ tests check their waveform's tables and tracks (#87, first
+  part).** The CPP phase of `Scripts/regress.sh` runs `Scripts/wave_map.py`
+  as the CMM phase does: the tables agree with each other and with the
+  `.asm` for every test, and for every Icarus run the source-line and
+  instruction tracks show the same address at each change, a variable
+  changes only at a `SET` of it or at a store through a pointer, and a
+  variable written with `out` is the word that comes out. The rules that
+  tie each instruction to a source line that can have produced it stay
+  C±'s: on C++ they need rules of their own, which #87 keeps open.
 - **asmcomp says what processor came out (#57).** At the end of a run, one
   block: the word, the float's format or none, whether there is a
   multiplier and a divider (int, float or both), each stack's depth and
