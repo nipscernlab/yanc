@@ -36,7 +36,8 @@ module pc
 `endif // ---------------------------------------------------------------------
 );
 
-wire [NBITS-1:0] um  = {{NBITS-1{1'b0}}, {1'b1}};
+wire [NBITS-1:0] um  = 1'b1;   // zero-extended; {{NBITS-1{..}}, ..} was a zero-width
+                               // replication for a 2-word program (#167), as in stack
 wire [NBITS-1:0] val = (load) ? data : addr;
 
 // synchronous reset: FPGA-friendly (maps to the FF's dedicated sync clear, no
