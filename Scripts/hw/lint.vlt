@@ -31,6 +31,8 @@ lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'pf_self'*"
 lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'tom_go'*"
 lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'cad_go'*"
 lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'self_addr'*"
+// the link number's bits, read only with two or more links of a kind (#172)
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'lnum'*"
 lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*'xpo'*"
 // the top asmcomp writes declares every link and the addresses of the I/O
 // ports, whether the program uses them or not

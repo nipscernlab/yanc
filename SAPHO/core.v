@@ -861,6 +861,13 @@ localparam N_CAD   = n_ones(CADS);
 localparam TOM_REG = ((TOMS & ~LSYNC) != 0);   // a synchronized TOM link: toma_dado is a register
 
 wire [NLINK-1:0] tgo, cgo;     // per link: TOM k / CAD k may go on
+
+// the link number: TOM k and CAD k carry it in their operand, and asmcomp
+// makes NLINK the highest number used + 1, so its low LW bits are the whole
+// number. The selects compare and index those bits, not the whole operand
+// (#172).
+localparam        LW  = (NLINK > 1) ? $clog2(NLINK) : 1;
+wire     [LW-1:0] lnum = if_operand[LW-1:0];
 wire [NLINK-1:0] toffer;       // per link: this cycle T flips
 wire             tom_offer = |toffer;
 
@@ -879,7 +886,7 @@ generate for (k = 0; k < NLINK; k = k + 1) begin : lnk
 			always @ (posedge clk) begin s1 <= valeu[k]; s2 <= s1; end
 			assign c_in = s2;
 		end
-		if (N_TOM > 1) begin : sel assign me = (if_opcode == OP_TOM) & (if_operand == k); end
+		if (N_TOM > 1) begin : sel assign me = (if_opcode == OP_TOM) & (lnum == k); end
 		else           begin : sel assign me = (if_opcode == OP_TOM);                      end
 		assign toffer[k] = me & ~rW;
 		always @ (posedge clk) begin
@@ -913,7 +920,7 @@ generate for (k = 0; k < NLINK; k = k + 1) begin : lnk
 			always @ (posedge clk) begin s1 <= taqui[k]; s2 <= s1; end
 			assign t_in = s2;
 		end
-		if (N_CAD > 1) begin : sel assign me = (if_opcode == OP_CAD) & (if_operand == k); end
+		if (N_CAD > 1) begin : sel assign me = (if_opcode == OP_CAD) & (lnum == k); end
 		else           begin : sel assign me = (if_opcode == OP_CAD);                      end
 		always @ (posedge clk) begin
 			if      (rst              ) rC <= 1'b0;
@@ -931,9 +938,9 @@ end endgenerate
 // the go of the TOM / CAD in decode: with one link of the kind its bit alone
 // (the others are 0), with more the operand picks it
 generate
-	if (N_TOM > 1) begin : tom_go_sel assign tom_go = tgo[if_operand]; end
+	if (N_TOM > 1) begin : tom_go_sel assign tom_go = tgo[lnum]; end
 	else           begin : tom_go_sel assign tom_go = |tgo;            end
-	if (N_CAD > 1) begin : cad_go_sel assign cad_go = cgo[if_operand]; end
+	if (N_CAD > 1) begin : cad_go_sel assign cad_go = cgo[lnum]; end
 	else           begin : cad_go_sel assign cad_go = |cgo;            end
 endgenerate
 
@@ -946,7 +953,7 @@ localparam CAD_ONE = first_one(CADS);
 
 wire [NUBITS-1:0] cad_word;
 generate
-	if (N_CAD > 1) begin : cad_word_sel assign cad_word = cade_dado[if_operand*NUBITS +: NUBITS]; end
+	if (N_CAD > 1) begin : cad_word_sel assign cad_word = cade_dado[lnum*NUBITS +: NUBITS]; end
 	else           begin : cad_word_sel assign cad_word = cade_dado[CAD_ONE   *NUBITS +: NUBITS]; end
 endgenerate
 

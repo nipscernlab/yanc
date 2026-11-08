@@ -58,6 +58,12 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **The link number on its own bits (#172).** With two or more links of a
+  kind, TOM k and CAD k compared the whole operand with each k and indexed
+  by it; asmcomp makes NLINK the highest number + 1, so the low
+  `$clog2(NLINK)` bits are the number. Yosys: the fan-out processor of
+  LINK3 228 to 224 LUT4, the fan-in one 1664 to 1662; LINK3 simulates to
+  its sequences.
 - **io_ctrl builds its output side only with OUT (#172).** A program that
   only reads had `en_out` and `addr_out`, the latter loading every
   instruction's operand; they now exist only with OUT, and `addr_out` loads
