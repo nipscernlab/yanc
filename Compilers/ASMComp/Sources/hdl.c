@@ -567,7 +567,7 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     // ------------------------------------------------------------------------
 
     fprintf(f_veri, "`endif\n\n");        // YANC_SIM_VIS
-    fprintf(f_veri, "endmodule" );
+    fprintf(f_veri, "endmodule\n");
 
     fclose(f_veri);
 }

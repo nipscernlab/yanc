@@ -61,18 +61,22 @@ bash Scripts/regress.sh --no-sim   # without simulating anything (a few minutes)
 The regression builds the tools, compiles every test and compares its
 assembly with the golden one, assembles it, checks with
 `Scripts/wave_map.py` that the tables the waveform is built from agree with
-each other and with the assembly and put each instruction on a source line
-that can have produced it, compares what the waveform will show (each
+each other and with the assembly and, for C±, put each instruction on a
+source line that can have produced it (the rules for C++ are GitHub issue
+#87), compares what the waveform will show (each
 source line with its instructions, the variables and the messages) with
 `golden_map.txt`, simulates, checks that the waveform agrees with the
 program (the source-line and instruction tracks show the same address at
-every change, a variable changes only in the cycle of a `SET` of it, and
+every change, a variable changes only in the cycle of a `SET` of it, or
+in C++ of a store through a pointer, and
 where `out(p, x)` writes a variable the waveform's `x` is the word that
 comes out), and compares the outputs with
 references computed apart from YANC, checks that the bad programs of
 `NegTests/` are refused with the right message, holds the instruction set's
 copies and the manual's instruction page to `Compilers/common/isa.tsv`,
-holds the manual's message reference to the compilers' sources, holds the
+holds the manual's message reference to the compilers' sources, lints the
+processor's Verilog with Verilator (`Scripts/hw/lint.sh`, whose waivers in
+`Scripts/hw/lint.vlt` each say why), holds the
 link lines at the foot of `CHANGELOG.md` to its version headings, runs
 every combination of the Dirac notation in
 `Compilers/CMMComp/DiracCases/cases.tsv` through cmmcomp, holds the

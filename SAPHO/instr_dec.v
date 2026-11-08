@@ -20,7 +20,6 @@
 module instr_dec
 #(
     parameter  NBOPCO  = 7,   // number of opcode bits
-    parameter  MDATAW  = 8,   // number of address bits for data memory
 
     // one per mnemonic, set to 1 by asmcomp when the program uses it
 

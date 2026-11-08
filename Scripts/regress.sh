@@ -33,7 +33,10 @@
 #      must appear, and no other warning may. An optional hardware.txt (in
 #      both phases) holds the generated processor's parameters: see hw_check.
 #      Every Icarus run, in both phases, also fails when a stack reached its
-#      depth (fl_full in the VCD): see stack_check.
+#      depth (fl_full in the VCD): see stack_check. The waveform's tables
+#      of every test, and the VCD of every Icarus run, go through
+#      Scripts/wave_map.py as in the CMM phase, without its rules of the
+#      source line, which are written for C± (GitHub issue #87).
 #
 #   3. ISA table: hold the hand-written copies of the instruction set
 #      (ASMComp.l, core.v) to Compilers/common/isa.tsv, so the four places
@@ -57,6 +60,10 @@
 #   3b. Float and complex conditions: Scripts/fcond runs the same cases on
 #      the host C/C++ compiler and on both compilers (three float formats,
 #      three #FROUND levels) and compares C's answers.
+#
+#   3c. HDL lint: Scripts/hw/lint.sh runs Verilator -Wall on SAPHO, built
+#      for sapho_all; the warnings meant are waived, with their reasons, in
+#      Scripts/hw/lint.vlt (skipped by --cpp-only, and without Verilator).
 #
 #   4. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
@@ -1430,6 +1437,12 @@ if [ "$CMM_ONLY" -eq 0 ]; then
         if ! hw_msg=$(hw_check "${entry%/}/hardware.txt" "$od/$prname.v"); then
             echo "FAIL ($base): $hw_msg"; fail=$((fail+1)); failed_names+=("$base"); continue
         fi
+        # the waveform's tables agree with each other and with the .asm
+        # (wave_map.py part 1; its rules of part 2 are C±'s, #87)
+        if ! python3 "$ROOT/Scripts/wave_map.py" "$od" "$prname" >/dev/null; then
+            echo "FAIL ($base): the waveform's tables are wrong (Scripts/wave_map.py, above)"
+            fail=$((fail+1)); failed_names+=("$base"); continue
+        fi
 
         uproc="$od/$prname"
         tb="$od/${prname}_tb.v"
@@ -1526,6 +1539,10 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             popd >/dev/null
             if ! stack_check "$od/${prname}_tb.vcd"; then
                 echo "FAIL ($base): a stack reached its depth in the simulation (fl_full)"
+                fail=$((fail+1)); failed_names+=("$base"); continue
+            fi
+            if [ -f "$od/${prname}_tb.vcd" ] && ! python3 "$ROOT/Scripts/wave_map.py" "$od" "$prname" --vcd "$od/${prname}_tb.vcd" >/dev/null; then
+                echo "FAIL ($base): the waveform disagrees with the program (wave_map.py --vcd, above)"
                 fail=$((fail+1)); failed_names+=("$base"); continue
             fi
         fi
@@ -1689,6 +1706,27 @@ if command -v python3 >/dev/null 2>&1; then
     fi
 fi
 
+# ---- 4a0l. the HDL's lint ------------------------------------------------------
+# Scripts/hw/lint.sh lints SAPHO on sapho_all with Verilator -Wall; every
+# warning that is meant is waived in Scripts/hw/lint.vlt with its reason, so
+# a new one (a wire left unused, a width that does not match) fails here
+# (GitHub issue #35). Without Verilator it is skipped and says so.
+if [ "$CPP_ONLY" -eq 0 ]; then
+    echo ""
+    echo "==> HDL lint (Verilator)"
+    lint_out=$(bash "$ROOT/Scripts/hw/lint.sh" 2>&1); lint_rc=$?
+    if [ $lint_rc -eq 0 ]; then
+        echo "PASS (hdl-lint): $lint_out"
+        pass=$((pass + 1))
+    elif [ $lint_rc -eq 2 ]; then
+        echo "SKIP (hdl-lint): $lint_out"
+    else
+        echo "FAIL (hdl-lint):"
+        printf '%s\n' "$lint_out" | head -12 | sed 's/^/    /'
+        fail=$((fail + 1)); failed_names+=("hdl-lint")
+    fi
+fi
+
 # ---- 4a0. the ALU against what each operation means ---------------------------
 # Scripts/hw/tb_ula.sh drives the whole ula (every opcode on) through each
 # operation number and checks every result against a reference derived in the
@@ -1781,8 +1819,10 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             "blackbox mem_instr mem_data" "hierarchy -top sapho_min" \
             "synth -top sapho_min -flatten -noshare -lut 4" "stat" > "$sm_dir/cells.ys"
         ( cd "$sm_dir" && yosys -q -l cells.log cells.ys >/dev/null 2>&1 )
-        sm_ff=$(awk '/Printing statistics/{s=1; ff=0} s && /\$_[A-Z]*DFF[A-Z0-9_]*[ \t]+[0-9]+/{ff+=$2} END{print ff+0}' "$sm_dir/cells.log")
-        sm_lut=$(grep -E '^\s+\$lut\s+[0-9]+' "$sm_dir/cells.log" | tail -1 | awk '{print $2}')
+        # the last statistics block; Yosys 0.56 prints "<cell> <count>", 0.66
+        # "<count> <cell>": the number is taken from whichever side it is on
+        sm_ff=$(awk '/Printing statistics/{ff=0} $1 ~ /^[0-9]+$/ && $2 ~ /^\$_[A-Z]*DFF/ {ff+=$1} $2 ~ /^[0-9]+$/ && $1 ~ /^\$_[A-Z]*DFF/ {ff+=$2} END{print ff+0}' "$sm_dir/cells.log")
+        sm_lut=$(awk '/Printing statistics/{n=""} $1 ~ /^[0-9]+$/ && $2 == "$lut" {n=$1} $2 ~ /^[0-9]+$/ && $1 == "$lut" {n=$2} END{print n}' "$sm_dir/cells.log")
         sm_want_ff=$(awk '{ sub(/\r$/, "") } $1 == "FF"  {print $2}' "$CMM_ROOT/Tests/sapho_min/cells.txt")
         sm_want_lut=$(awk '{ sub(/\r$/, "") } $1 == "LUT" {print $2}' "$CMM_ROOT/Tests/sapho_min/cells.txt")
         if [ -z "$sm_lut" ]; then

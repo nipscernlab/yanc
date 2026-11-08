@@ -25,8 +25,9 @@
 //   - the divisions through the sequence the processor runs: the division
 //     in one cycle, other operands on the cycles of its NOPs, the read
 //     (QUO / REM / F_QUO, the same operation number) STG-1 cycles later.
-//     DIV and MOD against Verilog's / and % (a zero divisor stays undefined,
-//     issue #34); F_DIV from the exact quotient like the other rounding
+//     DIV and MOD against Verilog's / and %, and a zero divisor as the
+//     manual defines it (issue #34: x / 0 is -1 for x >= 0 and 1 below,
+//     x % 0 is x); F_DIV from the exact quotient like the other rounding
 //     operations, a zero divisor saturating at #FROUND >= 1; at level 0 the
 //     legacy slice of the quotient, for a normalized divisor only.
 //
@@ -411,8 +412,8 @@ function [NUBITS-1:0] ref_op;
 			6'd25: ref_op = ref_i2f(b);                                // I2F
 			6'd26: ref_op = ref_i2f(a);                                // I2F_M
 			6'd46: ref_op = ref_frot(b);                               // F_ROT
-			6'd6 : ref_op = a / b;                                     // DIV (QUO)
-			6'd8 : ref_op = a % b;                                     // MOD (REM)
+			6'd6 : ref_op = (b != 0) ? a / b : (a < 0) ? 1 : -1;       // DIV (QUO); x / 0, #34
+			6'd8 : ref_op = (b != 0) ? a % b : a;                      // MOD (REM); x % 0 is x
 			6'd7 : ref_op = ref_fdiv(a, b);                            // F_DIV (F_QUO)
 			default: ref_op = {NUBITS{1'bx}};
 		endcase
@@ -485,9 +486,9 @@ initial begin
 				3: begin in1 = gen_int(0); in2 = (k % 3 == 0) ? (k % (NUBITS + 4)) : gen_int(0); end
 				default: begin in1 = gen_int(0); in2 = gen_int(0); if (k % 13 == 0) in1 = in2; end
 			endcase
-			// a division: a nonzero int divisor; a normalized float divisor at
-			// level 0, where nothing else is defined
-			if (op == 6 || op == 8) while (in2 == 0) in2 = gen_int(0);
+			// a division: now and then a zero int divisor (#34); a normalized
+			// float divisor at level 0, where nothing else is defined
+			if ((op == 6 || op == 8) && k % 19 == 0) in2 = 0;
 			if (op == 7 && FROUND == 0) begin in2[MAN-1] = 1'b1; end
 			if (op == 7 && FROUND != 0 && k % 23 == 0) in2 = ZERO;            // x / 0
 			a_s = in1; b_s = in2;

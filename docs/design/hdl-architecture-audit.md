@@ -149,6 +149,15 @@ table fills.
 | stack over/underflow | silent wrap | 1.3 |
 | float division by zero | saturates at levels ≥ 1, all-ones quotient at 0 | documented (v5.4) |
 
+Decided on 2026-11-08 (issue #34, Luciano): the integer division by zero
+keeps what the array gives, now defined, with no hardware change: -1 for a
+dividend of 0 or more, 1 for a negative one (the sign correction of the
+all-ones quotient), the dividend as the remainder. The remainder is
+RISC-V's; the quotient differs from RISC-V's -1 only for a negative
+dividend. That and the other three rows are in
+`docs/reference/instructions.md`; the assembler does not reject a numeric
+jump target past the program.
+
 ### 1.7 Parameter hygiene and lint
 
 - ~~Default parameter sets disagree~~ — **done (2026-09-18):** one set

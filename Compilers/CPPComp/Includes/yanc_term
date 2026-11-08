@@ -216,7 +216,21 @@ inline int yanc_get() {                   // the next character typed
 }
 
 inline int yanc_blank(int c) { return c == ' ' || c == 10 || c == 9; }
-inline void yanc_skip_blanks() { while (yanc_blank(yanc_peek())) yanc_line_pos = yanc_line_pos + 1; }
+
+// The readers below stay shallow on the call stack (#67): every level is a
+// CAL that the hardware's return stack must hold. yanc_skip_blanks reads a
+// new line itself, and stops on a character that is not blank. The line ends
+// in a newline, which is blank and not a digit, so what follows it in a reader
+// cannot pass the end of the line: it reads the line with yanc_cur, which is
+// pasted in place, instead of yanc_peek, which may call yanc_read_line.
+inline int yanc_cur() { return yanc_line[yanc_line_pos]; }
+inline void yanc_skip_blanks() {
+    while (1) {
+        if (yanc_line_pos >= yanc_line_len) yanc_read_line();
+        if (!yanc_blank(yanc_cur())) break;
+        yanc_line_pos = yanc_line_pos + 1;
+    }
+}
 
 // an integer as text: blanks, an optional sign (*neg), digits. Returns their
 // magnitude; *ok is 0 when no digit came (nothing is taken then but the
@@ -228,11 +242,11 @@ inline unsigned yanc_get_mag(int* ok, int* neg) {
     yanc_skip_blanks();
     unsigned v = 0u, top = ~0u >> 3;  // past top, v*8 wraps
     int n = 0, over = 0;
-    int c = yanc_peek();
+    int c = yanc_cur();
     *neg = 0;
     if (c == '-' || c == '+') { *neg = c == '-'; yanc_line_pos = yanc_line_pos + 1; }
     while (1) {
-        c = yanc_peek();
+        c = yanc_cur();
         if (c < '0' || c > '9') break;
         if (!over) {
             unsigned v8 = v << 3, v10 = v8 + (v << 1), w = v10 + (unsigned)(c - '0');
@@ -268,23 +282,23 @@ inline float yanc_get_float(int* ok) {
     yanc_skip_blanks();
     int neg = 0, n = 0;
     float v = 0.0f;
-    int c = yanc_peek();
+    int c = yanc_cur();
     if (c == '-' || c == '+') { neg = c == '-'; yanc_line_pos = yanc_line_pos + 1; }
     while (1) {
-        c = yanc_peek();
+        c = yanc_cur();
         if (c < '0' || c > '9') break;
         v = v * 10.0f + (float)(c - '0'); n = n + 1; yanc_line_pos = yanc_line_pos + 1;
     }
-    if (yanc_peek() == '.') {
+    if (yanc_cur() == '.') {
         yanc_line_pos = yanc_line_pos + 1;
         float s = 0.1f;
         while (1) {
-            c = yanc_peek();
+            c = yanc_cur();
             if (c < '0' || c > '9') break;
             v = v + s * (float)(c - '0'); s = s * 0.1f; n = n + 1; yanc_line_pos = yanc_line_pos + 1;
         }
     }
-    if (n > 0 && (yanc_peek() == 'e' || yanc_peek() == 'E')) {
+    if (n > 0 && (yanc_cur() == 'e' || yanc_cur() == 'E')) {
         yanc_line_pos = yanc_line_pos + 1;
         int eok = 0;
         int e = yanc_get_int(&eok);
@@ -299,7 +313,7 @@ inline float yanc_get_float(int* ok) {
 inline int yanc_get_word(char* s, int n) {
     yanc_skip_blanks();
     int k = 0;
-    while (!yanc_blank(yanc_peek()) && k < n - 1) { s[k] = yanc_get(); k = k + 1; }
+    while (!yanc_blank(yanc_cur()) && k < n - 1) { s[k] = yanc_cur(); k = k + 1; yanc_line_pos = yanc_line_pos + 1; }
     s[k] = 0;
     return k;
 }

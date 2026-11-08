@@ -2054,18 +2054,29 @@ static sym *simple_mem_var(expr *e)
 // access written out -- ten cycles each, 1.69x on the whole program.
 //
 // Only the shape that is safe to paste is taken: a non-virtual, non-recursive
-// function whose body is exactly one `return <expr>;`, whose parameters are
-// all scalars, and whose expression calls nothing itself. The call then
+// function whose body is exactly one `return <expr>;` (or, returning void,
+// one expression statement), whose parameters are all scalars, and whose
+// expression calls nothing itself but a link (toma, cade), which is one
+// instruction. Methods and free functions alike: `inline` is not needed and
+// changes nothing (#67, a library leaf such as yanc_put). The call then
 // becomes: evaluate each argument into the callee's own parameter word (it has
 // fixed storage, like every non-recursive local), then emit the return
 // expression in the callee's scope. No stack traffic, no CAL, no RET. The
 // out-of-line copy is still emitted, because the dispatch chain and any call
 // this does not inline still reach it.
 
+// a call to toma or cade becomes one TOM or CAD in place, not a CAL
+static int is_link_call(expr *e)
+{
+    if (e->kind != E_CALL || !e->a || e->a->kind != E_IDENT || !e->a->sval) return 0;
+    const char *fn = e->a->sval;
+    return !strcmp(fn, "toma") || !strcmp(fn, "toma_sync") || is_cade_name(fn);
+}
+
 static int expr_calls_anything(expr *e)
 {
     if (!e) return 0;
-    if (e->kind == E_CALL || e->kind == E_NEW || e->kind == E_DELETE) return 1;
+    if ((e->kind == E_CALL && !is_link_call(e)) || e->kind == E_NEW || e->kind == E_DELETE) return 1;
     if (expr_calls_anything(e->a) || expr_calls_anything(e->b) ||
         expr_calls_anything(e->c)) return 1;
     for (int i = 0; i < e->n_args; i++)
@@ -2073,14 +2084,16 @@ static int expr_calls_anything(expr *e)
     return 0;
 }
 
-// the one `return <expr>;` that is the whole body, or NULL
+// the one `return <expr>;` that is the whole body (for a void function, the
+// one expression statement), or NULL
 static expr *inlinable_body(func *f)
 {
     if (!f || f->is_recursive || f->n_tparams > 0 || !f->body) return NULL;
-    if (!f->ret || f->ret->kind == TY_VOID || f->ret->kind == TY_STRUCT) return NULL;
+    if (!f->ret || f->ret->kind == TY_STRUCT) return NULL;
     if (f->body->kind != S_BLOCK || f->body->n_items != 1) return NULL;
     stmt *r = f->body->items[0];
-    if (!r || r->kind != S_RETURN || !r->e1) return NULL;
+    int want = f->ret->kind == TY_VOID ? S_EXPR : S_RETURN;
+    if (!r || (int)r->kind != want || !r->e1) return NULL;
     if (expr_calls_anything(r->e1)) return NULL;
     for (decl *p = f->params; p; p = p->next) {
         if (!p->dtype) return NULL;
@@ -2198,7 +2211,9 @@ static int inline_call(func *f, expr *body, expr *this_addr, expr **args, int n_
         free(nm);
     }
     for (int i = 0; i < np; i++) free(bound[i]);
-    if (f->ret->is_ref) gen_addr(body); else gen_expr_to(body, f->ret);
+    if (f->ret->kind == TY_VOID) gen_expr(body);
+    else if (f->ret->is_ref)     gen_addr(body);
+    else                         gen_expr_to(body, f->ret);
     st_pop_scope();
     st_restore_floor(floor);
 
@@ -3059,6 +3074,8 @@ static void gen_expr(expr *e)
             }
             func *ov = resolve_overload(fn, e->args, e->n_args);
             if (ov) {                                  // resolved (overloaded or unique)
+                expr *bd = inlinable_body(ov);         // a tiny one is pasted here
+                if (bd && inline_call(ov, bd, NULL, e->args, e->n_args)) return;
                 decl *p = ov->params;
                 for (int i = 0; i < e->n_args; i++) {
                     gen_arg(e->args[i], p ? p->dtype : NULL);

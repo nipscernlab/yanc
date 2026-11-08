@@ -9,6 +9,15 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **The C++ tests check their waveform's tables and tracks (#87, first
+  part).** The CPP phase of `Scripts/regress.sh` runs `Scripts/wave_map.py`
+  as the CMM phase does: the tables agree with each other and with the
+  `.asm` for every test, and for every Icarus run the source-line and
+  instruction tracks show the same address at each change, a variable
+  changes only at a `SET` of it or at a store through a pointer, and a
+  variable written with `out` is the word that comes out. The rules that
+  tie each instruction to a source line that can have produced it stay
+  C±'s: on C++ they need rules of their own, which #87 keeps open.
 - **asmcomp says what processor came out (#57).** At the end of a run, one
   block: the word, the float's format or none, whether there is a
   multiplier and a divider (int, float or both), each stack's depth and
@@ -35,6 +44,41 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **SAPHO's Verilog passes Verilator's lint, and the regression keeps it so
+  (#35).** `verilator --lint-only -Wall` on sapho_all gave 50 warnings.
+  The dead ones are gone: `sw` and `mem_wrb` (processor.v), `rf`, and the
+  unused parameters `NBOPCO` of the ALU's input controls and `MDATAW` of
+  `instr_dec` (core.v, instr_dec.v), `m_in` of `ula_frot`, and the missing
+  newline at the end of three files and of the top asmcomp writes. The rest
+  is meant, and `Scripts/hw/lint.vlt` waives each with its reason; the
+  regression runs `Scripts/hw/lint.sh`. Two constants that Quartus saw as
+  32-bit values cut to 8 bits (the normaliser's shift cap, `F_ROT`'s
+  exponent) are written at their width. `mem_instr`'s write that never
+  happens stays: without it Quartus 23.1 warns three times that the ROM's
+  write port has no driver, with the same memory and area (measured on
+  sapho_all), and its comment now says so. No behaviour changed;
+  `tb_ula` and `tb_alu` pass.
+- **What the processor gives at the edges is written down (#34).** An
+  integer division by zero gives -1 for a dividend of 0 or more and 1 for a
+  negative one, and the dividend as the remainder, which is what the divider
+  already did: it is now the defined result, in C±, in C++ and with
+  constants alike, and `Scripts/hw/tb_ula.v` and `tb_alu.v` check it
+  instead of skipping a zero divisor. The instruction set page also says
+  what a shift by `NUBITS` or more gives, how a data address past the
+  memory wraps, and that a numeric jump target is cut, not checked. In C++
+  an `unsigned` divided by zero gives the largest `unsigned`.
+- **cppcomp pastes small plain functions too, and `cin >>` is shallower
+  (#67).** The expansion that took a method whose body is one `return`
+  now takes plain functions as well, a `void` function whose body is one
+  expression statement, and a body that calls `toma` or `cade`, which are
+  one instruction each. `yanc_put` and `yanc_key`, the last level of every
+  chain of `<iostream>`, are no longer called, and `yanc_term`'s number and
+  word readers read the line in place instead of through `yanc_peek`. A
+  `cin >>` of a number goes 5 calls deep instead of 7: test114 needs a call
+  stack of 6 instead of 8, test111 of 7 instead of 9. Over the 115 C++
+  tests, the `CAL`s fall from 1044 to 894 and the instruction words from
+  28090 to 27990; 7 tests grow, by 102 words in all, where a pasted body
+  is longer than its call and the function is still called elsewhere.
 - **One `fatal()` in asmcomp and in cppcomp (#99).** asmcomp's 49 errors
   written as `fprintf` and `exit` go through one `fatal()`, whose format
   attribute checks every call's arguments; its command-line errors, which
@@ -120,6 +164,15 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **cppcomp: the waveform shows a condition on its own line (#87).** A
+  statement took the line the parser was on when it finished it: the test
+  of an `if`, a `while` or a `for` showed on the line of its closing brace,
+  and an `if` without `else`, finished only on the next token, on the line
+  after it. `if`, `switch`, `while`, `do`, `for`, `case`, `default` and a
+  label now take the line they start on (the `while` of a `do`). The
+  programs do not change; over the 115 C++ tests, the instructions on a
+  line that cannot have produced them, by `Scripts/wave_map.py`'s rules for
+  C±, fall from 2773 to 1851, and the jumps among them from 281 to 2.
 - **The stack depths of a loop of seven `else if` (#54).** The passes on
   the `.asm` read a line as at most 8 words, and the chain ends on one line
   of seven labels and the jump back: the jump lost its target, the walk

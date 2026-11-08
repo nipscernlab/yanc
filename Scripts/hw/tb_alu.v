@@ -82,9 +82,11 @@ ula_idiv #(NUBITS) dut_idiv (d1, d2, dq, dr, clk);
 reg signed [NUBITS-1:0] hq [0:DLAT-1], hr [0:DLAT-1], h1 [0:DLAT-1], h2 [0:DLAT-1];   // expected, oldest first
 integer kd;
 
-// The reference: Verilog's own signed / and %. Division by zero is NOT
-// checked: it stays undefined (the array gives an all-ones quotient, TODO
-// 10.5) -- see the audit's table of undefined behaviours.
+// The reference: Verilog's own signed / and %, and for a zero divisor what
+// the manual defines (docs/reference/instructions.md, issue #34): the array
+// finds the divisor always fits, an all-ones quotient that the sign
+// correction leaves -1 for a dividend >= 0 and makes 1 for a negative one;
+// the remainder is the dividend.
 //
 // The reference is a procedural signed divide, which Icarus 13 computes
 // correctly up to 64 bits -- the widest format run here. Above 64 bits it does
@@ -94,12 +96,12 @@ integer kd;
 // (measured with a Python bigint oracle, 3000 vectors per width).
 function signed [NUBITS-1:0] ref_div;
 	input signed [NUBITS-1:0] a, b;
-	begin ref_div = a / b; end
+	begin ref_div = (b != 0) ? a / b : (a < 0) ? 1 : -1; end
 endfunction
 
 function signed [NUBITS-1:0] ref_mod;
 	input signed [NUBITS-1:0] a, b;
-	begin ref_mod = a % b; end
+	begin ref_mod = (b != 0) ? a % b : a; end
 endfunction
 
 // ------------------------------------------------------------------- F2I ---
@@ -199,7 +201,7 @@ initial begin
 	for (k = 0; k < N + DLAT; k = k + 1) begin
 		d1 = rnd(0);
 		d2 = rnd(0);
-		if (d2 == 0) d2 = {{(NUBITS-1){1'b0}}, 1'b1};             // by zero is undefined: skip it
+		if (k % 17 == 0) d2 = 0;                                     // by zero
 		if (k % 7 == 0) d2 = {{(NUBITS-1){1'b0}}, 1'b1};          // by 1
 		if (k % 11 == 0) d1 = {1'b1, {(NUBITS-1){1'b0}}};         // most negative dividend
 		if (k % 13 == 0) begin d1 = {1'b1, {(NUBITS-1){1'b0}}}; d2 = {NUBITS{1'b1}}; end // INT_MIN / -1
