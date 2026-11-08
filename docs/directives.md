@@ -23,7 +23,7 @@ writes only what it changes. A C++ program says the same with
 | `#NUIOOU n` | 1 | the number of output ports | `nuioou` |
 | `#FROUND n` | 0 (C++: 2) | how float operations round: 0, 1 or 2 (see [Floating point](floating-point.md)) | always 2 |
 | `#NUGAIN n` | 128 | the divisor of `norm(x)`; a power of two | (no effect) |
-| `#FFTSIZ n` | 3 | how many low bits of the index `v[k)` reverses: 1 to 30 | (C± only) |
+| `#FFTSIZ n` | 3 | how many low bits of the index `v[k)` reverses: 1 to 30, and no more than the data memory's address bits (an FFT array of 2^n words has to fit) | (C± only) |
 | `#NDSTAC n` | worked out | the data stack depth | `ndstac` |
 | `#SDEPTH n` | worked out | the call stack depth | `sdepth` |
 

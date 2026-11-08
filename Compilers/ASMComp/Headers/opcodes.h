@@ -13,5 +13,6 @@ int   opc_out ();          // checks whether the OUT instruction is present
 int   opc_tom ();          // checks whether the TOM instruction is present (toma, docs/design/toma-and-cade.md)
 int   opc_cal ();          // checks whether the CAL instruction is present
 int   opc_float();         // checks whether any float opcode is present
+int   opc_fft ();          // checks whether ILI or ISI (the FFT's v[k)) is used
 int   opc_norm();          // checks whether norm() is used (NRM, NRM_M, P_NRM_M)
 int   opc_unit(const char *op, int fl);   // an opcode with op in its name, float ones (fl 1) or not (0)

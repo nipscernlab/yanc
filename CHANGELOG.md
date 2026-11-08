@@ -246,6 +246,13 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **An FFT array that is the whole data memory (#168).** v[k) reverses the
+  index's low `#FFTSIZ` bits and keeps the ones above, which a memory of
+  exactly 2^FFTSIZ words does not have: a program whose only data was an
+  8-word FFT array with `#FFTSIZ 3` stopped Icarus with a reversed
+  part-select. `core.v` now reverses the whole index then, and asmcomp
+  refuses, with a message, an `#FFTSIZ` wider than the data memory's
+  address. `Scripts/hw/tb_fft_size.sh`, in the regression, checks both.
 - **myFIFO and myDCFIFO refuse a LENGTH they cannot hold (#180).** The
   pointers have `$clog2(LENGTH)` bits and wrap only at a power of two: a
   myFIFO of LENGTH 100 accepted 126 words and lost 26, with full, empty and

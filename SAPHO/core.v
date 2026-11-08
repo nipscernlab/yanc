@@ -453,7 +453,14 @@ generate
 		integer i;
 		always @ (*) for (i = 0; i < FFTSIZ; i = i+1) aux[i] = offset[FFTSIZ-1-i];
 
-		wire [MDATAW-1:0] add = (fft) ? {offset[MDATAW-1:FFTSIZ], aux} : offset;
+		// the index's low FFTSIZ bits reversed (the FFT's order); the bits above
+		// them, when the data memory has any, kept. A memory of exactly
+		// 2^FFTSIZ words (an FFT array and nothing else) has none above:
+		// offset[MDATAW-1:FFTSIZ] was then a reversed part-select that Icarus
+		// refuses (#168). asmcomp refuses a smaller memory.
+		wire [MDATAW-1:0] add;
+		if (FFTSIZ < MDATAW) begin : keep_hi assign add = (fft) ? {offset[MDATAW-1:FFTSIZ], aux} : offset; end
+		else                 begin : all_rev assign add = (fft) ? aux[MDATAW-1:0]                  : offset; end
 
 		assign out = (use_oft) ?    add + addr: addr;
 	end else begin : fft_offset

@@ -136,6 +136,10 @@ void fatal(const char *fmt, ...);
     M("Erro: #FFTSIZ %d está fora da faixa. v[k) inverte de 1 a 30 bits baixos do índice.\n", \
       "Error: #FFTSIZ %d is out of range. v[k) reverses 1 to 30 low bits of the index.\n")
 
+#define MSG_ERR_FFTSIZ_MEM \
+    M("Erro: #FFTSIZ %d inverte %d bits do índice em v[k), mas a memória de dados tem %d palavras (%d bits de endereço). O vetor de uma FFT de 2^%d pontos tem 2^%d palavras: aumente o vetor ou diminua #FFTSIZ.\n", \
+      "Error: #FFTSIZ %d reverses %d bits of the index in v[k), but the data memory has %d words (%d address bits). The array of a 2^%d-point FFT has 2^%d words: make the array longer or #FFTSIZ smaller.\n")
+
 #define MSG_ERR_NUBITS_WIDE \
     M("Erro: #NUBITS %d passa de 32. A palavra do SAPHO tem no máximo 32 bits.\n", \
       "Error: #NUBITS %d is past 32. A SAPHO word is at most 32 bits.\n")
