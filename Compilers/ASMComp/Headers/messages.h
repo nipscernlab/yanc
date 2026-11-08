@@ -2,7 +2,7 @@
 // PT/EN bilingual support for asmcomp messages -------------------------------
 // ----------------------------------------------------------------------------
 // usage:
-//   printf(MSG_XXX, args...);   or   fprintf(stderr, MSG_XXX, args...);
+//   printf(MSG_XXX, args...);   or   fatal(MSG_XXX, args...);  (an error)
 // to see both versions of the string, just search for MSG_XXX below.
 // ----------------------------------------------------------------------------
 
@@ -18,15 +18,19 @@ extern int lang_en;
 // --lang=en|pt (and YANC_LANG): sets lang_en, takes the option out of argv
 void parse_lang_flag(int *argc, char **argv);
 
+// an error that stops asmcomp: the message on stderr, then exit(EXIT_FAILURE).
+// Every one goes through here (#99), as cmmcomp's do through its fatal()
+#if defined(__GNUC__)
+void fatal(const char *fmt, ...) __attribute__((format(printf, 1, 2), noreturn));
+#else
+void fatal(const char *fmt, ...);
+#endif
+
 // ----------------------------------------------------------------------------
 // message catalog ------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 // general errors ------------------------------------------------------------
-
-#define MSG_ERR_OUT_OF_MEMORY \
-    M("Erro: memória insuficiente pra alocar a tabela de símbolos!\n", \
-      "Error: out of memory while growing the symbol table!\n")
 
 #define MSG_ERR_NO_INSTRUCTIONS \
     M("Erro: o programa não tem nenhuma instrução, então não há processador pra gerar.\n", \

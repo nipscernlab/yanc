@@ -4590,10 +4590,8 @@ static void write_prog_log(const char *tmp_dir)
 {
     char *path = xasprintf("%s/prog_log.txt", tmp_dir);
     FILE *f = fopen(path, "w");
-    if (!f) {                     // a run without its tables is a failed run (#132: ended 0)
-        fprintf(stderr, MSG_ERR_TABLE_OPEN, path);
-        exit(1);                    // main's atexit removes the outputs
-    }
+    if (!f) msg_fatal(1, MSG_ERR_TABLE_OPEN, path);   // a run without its tables failed (#132: ended 0);
+                                                       // main's atexit removes the outputs
     free(path);
     for (int i = 0; i < varlog_n; i++) {
         if (varlog[i].size > 0)
@@ -4615,10 +4613,7 @@ static void write_src_lines(const char *tmp_dir, const char *src_text)
 {
     char *path = xasprintf("%s/src_lines.txt", tmp_dir);
     FILE *out = fopen(path, "w");
-    if (!out) {                     // a run without its tables is a failed run (#132: ended 0)
-        fprintf(stderr, MSG_ERR_TABLE_OPEN, path);
-        exit(1);                    // main's atexit removes the outputs
-    }
+    if (!out) msg_fatal(1, MSG_ERR_TABLE_OPEN, path);  // a run without its tables failed (#132)
     free(path);
 
     fputs("-1 INTERNAL\n"    , out);   // pc code -1: scaffolding (NOP, prologue)
@@ -5338,7 +5333,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     if (tmp_dir && u->prname) {
         char *path = xasprintf("%s/pc_%s_mem.txt", tmp_dir, u->prname);
         f_line = fopen(path, "w");
-        if (!f_line) { fprintf(stderr, MSG_ERR_TABLE_OPEN, path); exit(1); }   // as the tables (#132)
+        if (!f_line) msg_fatal(1, MSG_ERR_TABLE_OPEN, path);   // as the tables (#132)
         free(path);
     }
 

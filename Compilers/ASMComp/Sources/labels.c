@@ -58,7 +58,7 @@ void lab_reg()
     // open the log file
     char *path = xasprintf("%s/app_log.txt", temp_dir);
     FILE *input = fopen(path, "r");
-    if (input == NULL) {fprintf(stderr, MSG_ERR_FILE_WHERE, path); exit(EXIT_FAILURE);}
+    if (input == NULL) fatal(MSG_ERR_FILE_WHERE, path);
     free(path);
 
     // scan the log file

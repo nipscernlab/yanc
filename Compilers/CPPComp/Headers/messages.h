@@ -28,6 +28,8 @@
 
 void msg_set_file(const char *name);
 void msg_error    (int line, const char *fmt, ...) MSG_FMT(2, 3) MSG_NORET;   // prints and exits(1)
+void msg_fatal    (int code, const char *fmt, ...) MSG_FMT(2, 3) MSG_NORET;   // an error of the run, not of a
+                                                                              // line: prints fmt, exits(code)
 void msg_warning  (int line, const char *fmt, ...) MSG_FMT(2, 3);
 void msg_internal (const char *fmt, ...) MSG_FMT(1, 2) MSG_NORET;           // compiler-internal bug; abort
 void msg_on_internal(void (*fn)(void));                // runs before msg_internal aborts
@@ -603,10 +605,6 @@ void msg_on_internal(void (*fn)(void));                // runs before msg_intern
 #define MSG_WHY_KEYWORD \
     M("é uma palavra reservada do Verilog", \
       "is a Verilog keyword")
-
-#define MSG_WORD_ERROR \
-    M("erro", \
-      "error")
 
 #define MSG_WORD_WARNING \
     M("atenção", \

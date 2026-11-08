@@ -130,11 +130,7 @@ int main(int argc, char **argv)
         const char *const why[] = {"", MSG_WHY_CHARS, MSG_WHY_DIGIT, MSG_WHY_DUNDER,
             MSG_WHY_KEYWORD};
         int bad = proc_name_problem(nm);
-        if (bad) {
-            fprintf(stderr, MSG_ERR_FILE_NAME,
-                    in_path, nm, why[bad]);
-            return 2;
-        }
+        if (bad) msg_fatal(2, MSG_ERR_FILE_NAME, in_path, nm, why[bad]);
         free(nm);
     }
     yy_scan_string(text);
@@ -165,7 +161,7 @@ int main(int argc, char **argv)
         msg_on_internal(remove_outputs);   // abort skips atexit
     }
     FILE *fo = fopen(outp, "w");
-    if (!fo) { fprintf(stderr, MSG_ERR_CANT_WRITE, outp); exit(1); }
+    if (!fo) msg_fatal(1, MSG_ERR_CANT_WRITE, outp);
 
     codegen(fo, g_unit, tmp_dir, text);
 

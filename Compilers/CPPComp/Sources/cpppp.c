@@ -971,10 +971,8 @@ static void directive(char *p, const char *path, const char *dir, int cond_base)
             free(t);
         }
     } else if (!strcmp(name, "error") || !strcmp(name, "warning")) {
-        int err = name[0] == 'e';
-        fprintf(stderr, "%s:%d: %s: #%s %s\n", pp_at_file, pp_at_line,
-                err ? MSG_WORD_ERROR : MSG_WORD_WARNING, name, p);
-        if (err) exit(1);
+        if (name[0] == 'e') pp_fail("#%s %s", name, p);   // the place, "error:", the text
+        fprintf(stderr, "%s:%d: %s: #%s %s\n", pp_at_file, pp_at_line, MSG_WORD_WARNING, name, p);
     } else if (n > 0 || *p) {                      // a lone '#' is the null directive
         pp_fail(MSG_ERR_DIRECTIVE_UNKNOWN, n > 0 ? name : p);
     }

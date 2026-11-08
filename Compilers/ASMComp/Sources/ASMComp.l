@@ -268,13 +268,13 @@ int main(int argc, char *argv[])
   // and the instruction count of the compilers follow
   char pc_path[2048]; snprintf(pc_path, sizeof(pc_path), "%s/pc_%s_mem.txt", a.temp_dir, a.name);
   int jn = asm_normnop(a.input, pc_path);
-  if (jn < 0) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }
+  if (jn < 0) fatal(MSG_ERR_CANT_OPEN_FILE, a.input);
   if (jn > 0) add_num_ins(a.temp_dir, jn);
 
   pass1_run(a.input, a.temp_dir, a.name);    // first pass: app_log.txt (name, labels, sizes)
 
   yyin = fopen(a.input, "r");                // second pass: the .asm again
-  if (yyin == NULL) { fprintf(stderr, MSG_ERR_CANT_OPEN_FILE, a.input); exit(EXIT_FAILURE); }
+  if (yyin == NULL) fatal(MSG_ERR_CANT_OPEN_FILE, a.input);
   eval_init(a.freq, a.clocks);               // initialize the state variables
   yylex();                                   // run the lexer
   fclose(yyin);                              // close the .asm file

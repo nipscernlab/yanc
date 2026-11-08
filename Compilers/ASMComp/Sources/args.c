@@ -19,15 +19,22 @@ static void cli_help(FILE *stream)
     fprintf(stream, MSG_CLI_HELP, YANC_VERSION);
 }
 
+// a command-line error: the message, then the usage, then the end (an error
+// of the run itself goes through fatal() alone)
+static void cli_fail(const char *fmt, const char *a, const char *b)
+{
+    fprintf(stderr, fmt, a, b);
+    cli_help(stderr);
+    exit(EXIT_FAILURE);
+}
+
 // returns the value attached to an option, consuming the next argv slot.
 // bails out with a usage message when the value is missing.
 static char *opt_value(int argc, char **argv, int *i, const char *opt)
 {
     if (*i + 1 >= argc)
     {
-        fprintf(stderr, MSG_ERR_CLI_NEEDS_VALUE, opt);
-        cli_help(stderr);
-        exit(EXIT_FAILURE);
+        cli_fail(MSG_ERR_CLI_NEEDS_VALUE, opt, NULL);
     }
     return argv[++(*i)];
 }
@@ -41,9 +48,7 @@ static int opt_int(const char *value, const char *opt)
 
     if (errno != 0 || end == value || *end != '\0' || v < 0 || v > INT_MAX)
     {
-        fprintf(stderr, MSG_ERR_CLI_BAD_INT, opt, value);
-        cli_help(stderr);
-        exit(EXIT_FAILURE);
+        cli_fail(MSG_ERR_CLI_BAD_INT, opt, value);
     }
     return (int)v;
 }
@@ -74,9 +79,7 @@ void cli_parse(int argc, char **argv, cli_args *out)
             out->input = arg;               // the .asm
         else
         {
-            fprintf(stderr, MSG_ERR_CLI_UNKNOWN_OPT, arg);
-            cli_help(stderr);
-            exit(EXIT_FAILURE);
+            cli_fail(MSG_ERR_CLI_UNKNOWN_OPT, arg, NULL);
         }
     }
 
@@ -94,9 +97,7 @@ void cli_parse(int argc, char **argv, cli_args *out)
 
     if (!out->input)
     {
-        fprintf(stderr, MSG_ERR_CLI_MISSING, "<file.asm>");
-        cli_help(stderr);
-        exit(EXIT_FAILURE);
+        cli_fail(MSG_ERR_CLI_MISSING, "<file.asm>", NULL);
     }
     // the .asm names the processor, as the source does for the compilers
     // (whose .asm has the source's name): it has to be a Verilog module name
@@ -105,8 +106,8 @@ void cli_parse(int argc, char **argv, cli_args *out)
         int bad = proc_name_problem(out->name);
         const char *why = bad == 1 ? MSG_PROC_NAME_CHARS   : bad == 2 ? MSG_PROC_NAME_DIGIT :
                           bad == 3 ? MSG_PROC_NAME_UNDERSC : MSG_PROC_NAME_KEYWORD;
-        if (bad) {fprintf(stderr, MSG_ERR_PROC_NAME, out->input, out->name, why); exit(EXIT_FAILURE);}
+        if (bad) fatal(MSG_ERR_PROC_NAME, out->input, out->name, why);
     }
-    if (!out->hdl_dir)    {fprintf(stderr, MSG_ERR_NO_TOOL_DIR, "SAPHO" ); exit(EXIT_FAILURE);}
-    if (!out->macros_dir) {fprintf(stderr, MSG_ERR_NO_TOOL_DIR, "Macros"); exit(EXIT_FAILURE);}
+    if (!out->hdl_dir)    fatal(MSG_ERR_NO_TOOL_DIR, "SAPHO" );
+    if (!out->macros_dir) fatal(MSG_ERR_NO_TOOL_DIR, "Macros");
 }

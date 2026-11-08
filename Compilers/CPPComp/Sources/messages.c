@@ -25,6 +25,15 @@ void msg_error(int line, const char *fmt, ...)
     exit(1);
 }
 
+// an error of the run (the command line, a file that cannot be written):
+// the message as it is, then the exit code, 1 or 2 (a bad file name, #94)
+void msg_fatal(int code, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt); vfprintf(stderr, fmt, ap); va_end(ap);
+    exit(code);
+}
+
 void msg_warning(int line, const char *fmt, ...)
 {
     va_list ap;

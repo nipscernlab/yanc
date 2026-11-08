@@ -35,6 +35,14 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **One `fatal()` in asmcomp and in cppcomp (#99).** asmcomp's 49 errors
+  written as `fprintf` and `exit` go through one `fatal()`, whose format
+  attribute checks every call's arguments; its command-line errors, which
+  print the usage after the message, through one `cli_fail()`. cppcomp's
+  errors of the run (a table or the `.asm` that cannot be written, a bad
+  file name) go through `msg_fatal()`, and `#error` through the
+  preprocessor's `pp_fail()`. No message and no exit code changed. The
+  unused `MSG_ERR_OUT_OF_MEMORY` of asmcomp is gone (`xstr` says it).
 - **cppcomp: enums as C++ has them, and `<limits>` on any float (#134).**
   An enum's name is a type (`Color c = GREEN;`), a value may be any
   constant (`= -1`, `= A + 1`), and an underlying type (`enum class E :
