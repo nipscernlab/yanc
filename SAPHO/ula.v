@@ -428,10 +428,13 @@ module norm_mux
 localparam W2 = NUBITS+G+2;
 
 // operands that need the leading-zero count (F_MLT/F_DIV too at level 0, where
-// the legacy path is kept bit for bit)
+// the legacy path is kept bit for bit). At levels 1 and 2 F_MLT and F_DIV
+// always take the direct path (use_d below), so their legs here exist only at
+// level 0: they sat in front of the count, on the float add's critical path,
+// read by nothing (#158)
 wire [W2-1:0] l3 ; generate if ((F_ADD) != 0) begin : gl3  assign l3  = (op == 6'd3 ) ? fadd : {W2{1'b0}}; end else begin : gl3  assign l3  = {W2{1'b0}}; end endgenerate   // F_ADD
-wire [W2-1:0] l5 ; generate if ((F_MLT) != 0) begin : gl5  assign l5  = (op == 6'd5 ) ? fmlt : {W2{1'b0}}; end else begin : gl5  assign l5  = {W2{1'b0}}; end endgenerate   // F_MLT
-wire [W2-1:0] l7 ; generate if ((F_DIV) != 0) begin : gl7  assign l7  = (op == 6'd7 ) ? fdiv : {W2{1'b0}}; end else begin : gl7  assign l7  = {W2{1'b0}}; end endgenerate   // F_DIV
+wire [W2-1:0] l5 ; generate if ((F_MLT) != 0 && FROUND == 0) begin : gl5  assign l5  = (op == 6'd5 ) ? fmlt : {W2{1'b0}}; end else begin : gl5  assign l5  = {W2{1'b0}}; end endgenerate   // F_MLT
+wire [W2-1:0] l7 ; generate if ((F_DIV) != 0 && FROUND == 0) begin : gl7  assign l7  = (op == 6'd7 ) ? fdiv : {W2{1'b0}}; end else begin : gl7  assign l7  = {W2{1'b0}}; end endgenerate   // F_DIV
 wire [W2-1:0] l25; generate if ((I2F  ) != 0) begin : gl25 assign l25 = (op == 6'd25) ? i2f  : {W2{1'b0}}; end else begin : gl25 assign l25 = {W2{1'b0}}; end endgenerate   //   I2F
 wire [W2-1:0] l26; generate if ((I2F_M) != 0) begin : gl26 assign l26 = (op == 6'd26) ? i2fm : {W2{1'b0}}; end else begin : gl26 assign l26 = {W2{1'b0}}; end endgenerate   //   I2F_M
 wire [W2-1:0] l46; generate if ((F_ROT) != 0) begin : gl46 assign l46 = (op == 6'd46) ? frot : {W2{1'b0}}; end else begin : gl46 assign l46 = {W2{1'b0}}; end endgenerate   // F_ROT

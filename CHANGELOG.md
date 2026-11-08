@@ -58,6 +58,12 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **No F_MLT or F_DIV leg before the normaliser's leading-zero count at
+  `#FROUND` 1 and 2 (#158).** At those levels both always take the direct
+  path, but their legs in front of the count were built and read by
+  nothing; they sat on the float add's path, the processor's slowest. Now
+  built only at level 0. Area (Yosys, LUT4) moves within its noise, from -36
+  to +5; level 0 is unchanged. The clock is not measured yet.
 - **One int-to-float converter for I2F and I2F_M (#154).** The same as
   #153 for the other direction: one `ula_i2f` behind an operand mux when a
   program has both forms (I2F also serves F_INN and PF_INN). A program with
