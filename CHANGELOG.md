@@ -192,6 +192,14 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **SAPHO: no memory write and no input read during a reset (#165).** The
+  instruction memory has no reset, so an instruction can sit in decode
+  while `rst` is 1, and the decoder drove the data memory's write enable and
+  the input FIFO's read from it: a reset in the middle of a run with a SET
+  or STI in decode wrote a word, and with an INN popped one that was lost.
+  `mem_wr` and `req_in` are now held at 0 in reset, a gate each.
+  `Scripts/hw/tb_dec_reset.sh`, run by the regression, checks it: the old
+  decoder fails all five cases (SET, SET_P, STI, INN, P_INN in reset).
 - **cppcomp: the waveform shows a condition on its own line (#87).** A
   statement took the line the parser was on when it finished it: the test
   of an `if`, a `while` or a `for` showed on the line of its closing brace,
