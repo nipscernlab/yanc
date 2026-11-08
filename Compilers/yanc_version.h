@@ -8,6 +8,6 @@
 #ifndef YANC_VERSION_H
 #define YANC_VERSION_H
 
-#define YANC_VERSION "9.3"
+#define YANC_VERSION "9.2"
 
 #endif
