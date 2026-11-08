@@ -153,7 +153,7 @@ processor defines it ([Instruction set](reference/instructions.md)), and an
   processor's own return and data stacks are 128 deep in a program with
   recursion (`#pragma yanc sdepth` and `ndstac` give more), and a recursion
   deeper than that overflows them with no check; the simulation shows it on
-  `fl_full` (GitHub issue #138). Inside a
+  `fl_overflow` (GitHub issue #138). Inside a
   recursive function a local cannot be an array or a struct; the compiler
   says so. Functions that do not recurse keep their locals at fixed
   addresses, as in C±.

@@ -55,8 +55,9 @@ tags consumed by Aurora.
   pointer has at least one bit. Every processor whose depths are worked out
   loses a word of each stack (cmm_depth: 4 and 3 to 3 and 2). The waveform
   shows each stack's words held (`pointeri`, no longer a wrapping pointer),
-  a new `fl_top` while it is full, and `fl_full` labelled as the overflow
-  it is.
+  a new `fl_top` while it is full, and the overflow under its own name:
+  `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
+  that reads the old name (AURORA's waveform) has to change with it.
 - **SAPHO's Verilog passes Verilator's lint, and the regression keeps it so
   (#35).** `verilator --lint-only -Wall` on sapho_all gave 50 warnings.
   The dead ones are gone: `sw` and `mem_wrb` (processor.v), `rf`, and the

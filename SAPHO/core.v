@@ -227,7 +227,7 @@ wire [NADDR:0] fl_nxt  = rst  ? {(NADDR+1){1'b0}} :
                          push ? fl_cnt + 1'b1      :
                          pop  ? fl_cnt - 1'b1      : fl_cnt;
 
-reg            fl_full = 0;  // a push with DEPTH words held, or a pop with none
+reg            fl_overflow = 0;  // a push with DEPTH words held, or a pop with none
 reg            fl_top;       // DEPTH words held now: the stack is full, which a
                              // program at its deepest point is, with no harm
 reg  [NADDR:0] fl_max  = 0;  // the most words held
@@ -239,17 +239,17 @@ reg  [NADDR+1:0] pointeri;   // the words held, for the waveform: a sign bit on
 always @ (*) pointeri = {1'b0, fl_cnt};
 always @ (*) fl_top   = (fl_cnt == FULL);
 
-// fl_full ("stack ever overflowed", sticky) and fl_max are STATE: an always
+// fl_overflow ("stack ever overflowed", sticky) and fl_max are STATE: an always
 // @(*) that reads its own output is a latch / comb loop that Verilator flags
 // as UNOPTFLAT and may mis-evaluate. They are registered on the clock, and
 // fl_max on the count's NEXT value, so it changes in the same cycle as the
 // pointer, in Icarus and Verilator alike. They never reset (stats of the run).
-// fl_full rises on a real overflow (issue #145): before, it rose when the
-// stack became full, so asmcomp gave every stack a word more than the
-// program needs to keep a correct program below it.
+// fl_overflow rises on a real overflow (issue #145). Before, named fl_full,
+// it rose when the stack became full, so asmcomp gave every stack a word
+// more than the program needs to keep a correct program below it.
 always @ (posedge clk) begin
 	fl_cnt <= fl_nxt;
-	if (!rst && ((push && fl_cnt == FULL) || (!push && pop && fl_cnt == {(NADDR+1){1'b0}}))) fl_full <= 1'b1;
+	if (!rst && ((push && fl_cnt == FULL) || (!push && pop && fl_cnt == {(NADDR+1){1'b0}}))) fl_overflow <= 1'b1;
 	if (fl_nxt > fl_max) fl_max <= fl_nxt;
 end
 

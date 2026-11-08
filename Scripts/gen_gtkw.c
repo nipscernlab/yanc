@@ -482,16 +482,16 @@ static void emit_proc_section(const Proc *p) {
     if (any_stack) {
         emit_group_begin("Stack");
         // pointeri is the words the stack holds, fl_top 1 while it is full
-        // (a program at its deepest point), fl_full 1 from the first push
+        // (a program at its deepest point), fl_overflow 1 from the first push
         // past full or pop of an empty stack (core.v, stack; #145)
         emit_flag(p->inst, ".sp",  "pointeri", FMT_ANALOG_SIGNED, "Data Stack Words");
         emit_flag(p->inst, ".sp",  "fl_max",   FMT_DEC,           "Data Stack Max");
         emit_flag(p->inst, ".sp",  "fl_top",   FMT_BIN,           "Data Stack Full");
-        emit_flag(p->inst, ".sp",  "fl_full",  FMT_BIN,           "Data Stack Overflow");
+        emit_flag(p->inst, ".sp",  "fl_overflow",  FMT_BIN,           "Data Stack Overflow");
         emit_flag(p->inst, ".isp", "pointeri", FMT_ANALOG_SIGNED, "Inst Stack Words");
         emit_flag(p->inst, ".isp", "fl_max",   FMT_DEC,           "Inst Stack Max");
         emit_flag(p->inst, ".isp", "fl_top",   FMT_BIN,           "Inst Stack Full");
-        emit_flag(p->inst, ".isp", "fl_full",  FMT_BIN,           "Inst Stack Overflow");
+        emit_flag(p->inst, ".isp", "fl_overflow",  FMT_BIN,           "Inst Stack Overflow");
         emit_group_end("Stack");
     }
     if (any_ula) {

@@ -996,7 +996,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     {
         fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.isp_blk.isp.pointeri);\n", prname, prname);
         fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.isp_blk.isp.fl_max);\n"  , prname, prname);
-        fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.isp_blk.isp.fl_full);\n" , prname, prname);
+        fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.isp_blk.isp.fl_overflow);\n" , prname, prname);
         fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.instr_fetch.isp_blk.isp.fl_top);\n"  , prname, prname);
     }
 
@@ -1004,7 +1004,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
 
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.sp.pointeri);\n", prname, prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.sp.fl_max);\n"  , prname, prname);
-    fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.sp.fl_full);\n" , prname, prname);
+    fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.sp.fl_overflow);\n" , prname, prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.sp.fl_top);\n"  , prname, prname);
 
     // register rounding-error flags ------------------------------------------

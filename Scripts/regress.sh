@@ -33,7 +33,7 @@
 #      must appear, and no other warning may. An optional hardware.txt (in
 #      both phases) holds the generated processor's parameters: see hw_check.
 #      Every Icarus run, in both phases, also fails when a stack reached its
-#      depth (fl_full in the VCD): see stack_check. The waveform's tables
+#      depth (fl_overflow in the VCD): see stack_check. The waveform's tables
 #      of every test, and the VCD of every Icarus run, go through
 #      Scripts/wave_map.py as in the CMM phase, without its rules of the
 #      source line, which are written for C± (GitHub issue #87).
@@ -290,7 +290,7 @@ hw_check() {   # hw_check <hardware.txt> <top.v>
     return 0
 }
 
-# A stack that overflows in an Icarus run: the simulation's fl_full (core.v,
+# A stack that overflows in an Icarus run: the simulation's fl_overflow (core.v,
 # stack: a push with the stack full or a pop of an empty one, counted apart
 # from the pointer, which wraps at a full power-of-two depth) went to 1 in the
 # VCD. With the depths asmcomp works out (the peak itself, #145) it never
@@ -305,7 +305,7 @@ mk_list() {   # mk_list <VAR> [prefix]: a source list of the Makefile, the only 
 stack_check() {   # stack_check <tb.vcd>
     [ -f "$1" ] || return 0
     awk '{ sub(/\r$/, "") }
-         !hdr && $1 == "$var" && $5 == "fl_full" { id[$4] = 1; next }
+         !hdr && $1 == "$var" && $5 == "fl_overflow" { id[$4] = 1; next }
          $1 == "$enddefinitions"                 { hdr = 1; next }
          hdr && substr($0, 1, 1) == "1" && (substr($0, 2) in id) { fired = 1; exit }
          END { exit fired ? 1 : 0 }' "$1"
@@ -545,7 +545,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
         if ! stack_check "$tmp/${prname}_tb.vcd"; then
-            echo "FAIL ($prname): a stack reached its depth in the simulation (fl_full)"
+            echo "FAIL ($prname): a stack overflowed in the simulation (fl_overflow)"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
         if [ -f "$tmp/${prname}_tb.vcd" ] && ! python3 "$ROOT/Scripts/wave_map.py" "$out" "$prname" --vcd "$tmp/${prname}_tb.vcd" >/dev/null; then
@@ -1540,7 +1540,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             [ $died -eq 1 ] && vvp_once_more "$base" "$od/$prname.vvp"
             popd >/dev/null
             if ! stack_check "$od/${prname}_tb.vcd"; then
-                echo "FAIL ($base): a stack reached its depth in the simulation (fl_full)"
+                echo "FAIL ($base): a stack overflowed in the simulation (fl_overflow)"
                 fail=$((fail+1)); failed_names+=("$base"); continue
             fi
             if [ -f "$od/${prname}_tb.vcd" ] && ! python3 "$ROOT/Scripts/wave_map.py" "$od" "$prname" --vcd "$od/${prname}_tb.vcd" >/dev/null; then

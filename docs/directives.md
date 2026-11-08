@@ -45,9 +45,9 @@ writes only what it changes. A C++ program says the same with
   says so with a warning: give the depth then, since two stacks of 128 words
   can be most of a small processor. In simulation the waveform shows, for
   each stack, the words it holds, `fl_top` while it is full (as a program
-  is at its deepest point) and `fl_full` from the first push past full or
+  is at its deepest point) and `fl_overflow` from the first push past full or
   pop of an empty stack, an overflow; the regression fails any run that
-  raises `fl_full`.
+  raises `fl_overflow`.
 - **The processor's name** is the source file's: there is no directive for
   it (`#PRNAME` is an error since v7.1).
 
