@@ -280,16 +280,20 @@ int main(int argc, char *argv[])
   fclose(yyin);                              // close the .asm file
 
   // a stack the .asm leaves undeclared is as deep as the program goes
-  // (asm_depth, Compilers/common/asm_share.h); recursion keeps the default
+  // (asm_depth, Compilers/common/asm_share.h); when that cannot be worked out
+  // (recursion, ...) it keeps the default, and the stacks may then be most
+  // of the processor (#54): a warning, not an Info line
   if (!sdepth_set || !ddepth_set)
   {
     int s, d;
-    if (asm_depth(a.input, &s, &d) > 0)
+    const char *why = NULL;
+    if (asm_depth(a.input, &s, &d, &why) > 0)
     {
       if (!sdepth_set) sdepth = s;
       if (!ddepth_set) ddepth = d;
       printf(MSG_INFO_STACK_DEPTHS, sdepth, ddepth);
     }
+    else if (why) printf(MSG_WARN_STACK_DEFAULT, why, sdepth_set ? ddepth : sdepth);
   }
 
   eval_finish();                             // finalize the assembler

@@ -58,6 +58,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: profundidade das pilhas pelo programa: SDEPTH %d, NDSTAC %d\n", \
       "Info: stack depths from the program: SDEPTH %d, NDSTAC %d\n")
 
+#define MSG_WARN_STACK_DEFAULT \
+    M("Atenção: as profundidades das pilhas não saem do programa (%s); cada pilha que ele não fixa fica com %d palavras, o que pode ser boa parte do processador. #SDEPTH e #NDSTAC (em C++, #pragma yanc sdepth e ndstac) as fixam.\n", \
+      "Warning: the stack depths cannot be worked out from the program (%s); each stack it does not set keeps %d words, which can be much of the processor. #SDEPTH and #NDSTAC (in C++, #pragma yanc sdepth and ndstac) set them.\n")
+
 #define MSG_ERR_BAD_FLOAT \
     M("Erro: a constante '%s' não é um número.\n", \
       "Error: the constant '%s' is not a number.\n")

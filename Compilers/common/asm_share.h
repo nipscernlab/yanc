@@ -250,10 +250,11 @@ int asm_is_norm(const char *mn);                  // its ALU result goes through
 // asmcomp calls it for a stack the .asm does not declare (#SDEPTH / #NDSTAC
 // left out, in any front end or by hand); a declared depth stays. Recursion,
 // an unknown instruction, or two paths that disagree on the depth: no depth,
-// an Info line says why, and asmcomp keeps its default (128).
+// *why_out (when not NULL) says why, in the language chosen, and asmcomp
+// keeps its default (128) with a warning.
 // Returns 1 with *sdepth / *ddepth set, 0 when they could not be worked out
 // (both 0), -1 on an I/O error.
-int asm_depth(const char *asm_path, int *sdepth, int *ddepth);
+int asm_depth(const char *asm_path, int *sdepth, int *ddepth, const char **why_out);
 
 // ****************************************************************************
 // asm_passes -- the passes a compiler runs on its .asm, in their one order ----

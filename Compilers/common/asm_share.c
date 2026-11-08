@@ -10,6 +10,36 @@
 #include "yanc_lang.h"
 #include "xstr.h"
 
+#define L(pt, en) (yanc_lang_en ? (en) : (pt))   // a text in the language chosen
+
+// ---- the words of a line -------------------------------------------------------
+// Where each blank-separated word of text[0..end) starts (ts) and how long it
+// is (tl), any number of them. Every pass reads its lines through here; the
+// arrays are reused from line to line and grow. They held 8 words, and a line
+// of seven labels and a jump lost the jump's target: the stack depths fell
+// back to 128 for any loop of seven `else if` (#54).
+typedef struct { int *ts, *tl, n, cap; } toks;
+static toks g_toks;
+
+static void split_toks(toks *k, const char *text, int end)
+{
+    k->n = 0;
+    for (int p = 0; p < end; )
+    {
+        while (p < end && isspace((unsigned char)text[p])) p++;
+        if (p >= end) break;
+        if (k->n >= k->cap) {                    // ts and tl grow together
+            int cap = k->cap;
+            XGROW(k->ts, k->n, cap);
+            XGROW(k->tl, k->n, k->cap);
+        }
+        k->ts[k->n] = p;
+        while (p < end && !isspace((unsigned char)text[p])) p++;
+        k->tl[k->n] = p - k->ts[k->n];
+        k->n++;
+    }
+}
+
 // ---- what each mnemonic does to its operand and to the flow -----------------
 // A copy of seven columns of isa.tsv (mnemonic, operand class, effect on the
 // word the operand names, flow, data stack, effect on the acc, I/O);
@@ -269,16 +299,8 @@ int asm_share(const char *asm_path)
         char *cm   = strstr(text, "//");
         if (cm) end = (int)(cm - text);
 
-        // split into tokens, keeping where each one starts
-        int ts[8], tl[8], nt = 0;
-        for (int p = 0; p < end && nt < 8; )
-        {
-            while (p < end && isspace((unsigned char)text[p])) p++;
-            if (p >= end) break;
-            ts[nt] = p;
-            while (p < end && !isspace((unsigned char)text[p])) p++;
-            tl[nt] = p - ts[nt]; nt++;
-        }
+        split_toks(&g_toks, text, end);
+        int *ts = g_toks.ts, *tl = g_toks.tl, nt = g_toks.n;
 
         int t = 0;
         char *tok;
@@ -1076,7 +1098,7 @@ typedef struct {
 static void dp_walk(dp_ctx *c, int r, int start)
 {
     if (c->why) return;
-    if (c->state[r] == 1) { c->why = "a routine calls itself back (recursion)"; return; }
+    if (c->state[r] == 1) { c->why = L("uma rotina chama a si mesma (recursão)", "a routine calls itself back (recursion)"); return; }
     if (c->state[r] == 2) return;
     c->state[r] = 1;
 
@@ -1087,9 +1109,9 @@ static void dp_walk(dp_ctx *c, int r, int start)
     int net = unset, maxd = 0, maxc = 0;
 
     #define GO(k, v) do { int k_ = (k), v_ = (v);                                     \
-        if (k_ < 0 || k_ >= n)   { c->why = "the code runs off the end"; break; }      \
+        if (k_ < 0 || k_ >= n)   { c->why = L("o código passa do fim", "the code runs off the end"); break; }      \
         if (dep[k_] == unset)    { dep[k_] = v_; work[nw++] = k_; }                    \
-        else if (dep[k_] != v_)  { c->why = "two paths reach one instruction with different stack depths"; } \
+        else if (dep[k_] != v_)  { c->why = L("dois caminhos chegam a uma instrução com profundidades diferentes", "two paths reach one instruction with different stack depths"); } \
     } while (0)
 
     GO(start, 0);
@@ -1114,7 +1136,7 @@ static void dp_walk(dp_ctx *c, int r, int start)
         else if (strcmp(x->flow, "ret") == 0)
         {
             if (net == unset) net = d;
-            else if (net != d) c->why = "two RETs of one routine leave different stack depths";
+            else if (net != d) c->why = L("dois RET de uma rotina deixam profundidades diferentes", "two RETs of one routine leave different stack depths");
         }
         else GO(i + 1, d);
     }
@@ -1127,7 +1149,7 @@ static void dp_walk(dp_ctx *c, int r, int start)
     free(dep); free(work);
 }
 
-int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
+int asm_depth(const char *asm_path, int *sdepth, int *ddepth, const char **why_out)
 {
     FILE *f = fopen(asm_path, "r");
     if (!f) return -1;
@@ -1146,15 +1168,8 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
         int   end  = (int)strlen(text);
         char *cm   = strstr(text, "//");
         if (cm) end = (int)(cm - text);
-        int ts[8], tl[8], nt = 0;
-        for (int p = 0; p < end && nt < 8; )
-        {
-            while (p < end && isspace((unsigned char)text[p])) p++;
-            if (p >= end) break;
-            ts[nt] = p;
-            while (p < end && !isspace((unsigned char)text[p])) p++;
-            tl[nt] = p - ts[nt]; nt++;
-        }
+        split_toks(&g_toks, text, end);
+        int *ts = g_toks.ts, *tl = g_toks.tl, nt = g_toks.n;
         char *tok;
         int t = 0;
         for (; t < nt && text[ts[t]] == '@'; t++)
@@ -1170,7 +1185,7 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
         op  = grow(op,  &op_cap,  n, sizeof(int));
         tgl = grow(tgl, &tgl_cap, n, sizeof(int));
         op[n] = isa_find(tok); tgl[n] = -1;
-        if (op[n] < 0) { why = "an instruction it does not know"; break; }
+        if (op[n] < 0) { why = L("uma instrução que ele não conhece", "an instruction it does not know"); break; }
         if (strcmp(isa[op[n]].cls, "code") == 0 && t + 1 < nt)
         {
             tok = tok_of(text + ts[t + 1], tl[t + 1]);
@@ -1187,7 +1202,7 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
     for (int i = 0; i < n && !why; i++)
     {
         c.tgt[i] = tgl[i] >= 0 ? lab_at[tgl[i]] : -1;
-        if (tgl[i] >= 0 && (c.tgt[i] < 0 || c.tgt[i] >= n)) why = "a jump to a label that is not there";
+        if (tgl[i] >= 0 && (c.tgt[i] < 0 || c.tgt[i] >= n)) why = L("um salto para um rótulo que não existe", "a jump to a label that is not there");
         c.entry[i] = -1;
     }
     int nr = 0;
@@ -1221,7 +1236,7 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth)
         *sdepth = s + 1 < 2 ? 2 : s + 1;
         ret = 1;
     }
-    else if (why) printf("Info: stack depths not worked out from the program, the default stays: %s\n", why);
+    if (why_out) *why_out = why;
 
     free(c.tgt); free(c.entry); free(c.state); free(c.net); free(c.maxd); free(c.maxc);
     free(op); free(tgl); free(lab_at);
@@ -1347,15 +1362,8 @@ int asm_unread(const char *asm_path, const char *pc_path, void (*gone)(const cha
         if (cm) end = (int)(cm - text);
         set_of[ln] = ins_of[ln] = mn_at[ln] = -1;
 
-        int ts[8], tl[8], nt = 0;
-        for (int p = 0; p < end && nt < 8; )
-        {
-            while (p < end && isspace((unsigned char)text[p])) p++;
-            if (p >= end) break;
-            ts[nt] = p;
-            while (p < end && !isspace((unsigned char)text[p])) p++;
-            tl[nt] = p - ts[nt]; nt++;
-        }
+        split_toks(&g_toks, text, end);
+        int *ts = g_toks.ts, *tl = g_toks.tl, nt = g_toks.n;
         int t = 0;
         char *tok;
         while (t < nt && text[ts[t]] == '@') t++;
@@ -1562,15 +1570,8 @@ int asm_callarg(const char *asm_path, const char *pc_path)
         if (cm) end = (int)(cm - text);
         op_of[ln] = mn_at[ln] = tgt_of[ln] = ins_of[ln] = -1;
 
-        int ts[8], tl[8], nt = 0;
-        for (int p = 0; p < end && nt < 8; )
-        {
-            while (p < end && isspace((unsigned char)text[p])) p++;
-            if (p >= end) break;
-            ts[nt] = p;
-            while (p < end && !isspace((unsigned char)text[p])) p++;
-            tl[nt] = p - ts[nt]; nt++;
-        }
+        split_toks(&g_toks, text, end);
+        int *ts = g_toks.ts, *tl = g_toks.tl, nt = g_toks.n;
         if (nt == 0) continue;
         int  t = 0;
         char *tok;
@@ -1754,15 +1755,8 @@ int asm_fuse(const char *asm_path, const char *pc_path)
         if (cm) end = (int)(cm - text);
         mn_at[ln] = ar_at[ln] = ins_of[ln] = -1;
 
-        int ts[8], tl[8], nt = 0;
-        for (int p = 0; p < end && nt < 8; )
-        {
-            while (p < end && isspace((unsigned char)text[p])) p++;
-            if (p >= end) break;
-            ts[nt] = p;
-            while (p < end && !isspace((unsigned char)text[p])) p++;
-            tl[nt] = p - ts[nt]; nt++;
-        }
+        split_toks(&g_toks, text, end);
+        int *ts = g_toks.ts, *tl = g_toks.tl, nt = g_toks.n;
         if (nt == 0) continue;
         int t = 0;
         for (; t < nt && text[ts[t]] == '@'; t++)

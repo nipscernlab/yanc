@@ -105,6 +105,16 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **The stack depths of a loop of seven `else if` (#54).** The passes on
+  the `.asm` read a line as at most 8 words, and the chain ends on one line
+  of seven labels and the jump back: the jump lost its target, the walk
+  found "the code runs off the end", and both stacks fell back to 128
+  words (the issue reports 6,682 of the 7,668 logic elements of a HITS
+  SAPHO on a Cyclone IV E taken by the two stacks). The five copies of that split are one function, with no limit, and
+  such a loop gets depths of 2. When the depths cannot be worked out
+  (recursion), asmcomp now warns, in both languages, instead of an English
+  Info line, since the stacks may be most of the processor. Tested by
+  test115 (`hardware.txt` checks the depths).
 - **`cin >>` of a number too big for the word sets `fail()` (#58).** It
   wrapped: on 16 bits, 70000 read into an `unsigned` came out 4464, a value
   no range check could catch. Now an `int` or `unsigned` that does not fit

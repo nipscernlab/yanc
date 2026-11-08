@@ -347,6 +347,7 @@ value. What the common ones mean and how to get past them is in
 
 ### Warnings
 
+- Warning: the stack depths cannot be worked out from the program (<name>); each stack it does not set keeps <n> words, which can be much of the processor. #SDEPTH and #NDSTAC (in C++, #pragma yanc sdepth and ndstac) set them.
 - Heads up: there's <n> extra lines hanging around in file '<name>'!
 - Heads up: input port <n> isn't being used. Burning hardware for nothing!
 - Heads up: output port <n> isn't being used. Burning hardware for nothing!
