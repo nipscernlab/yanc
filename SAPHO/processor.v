@@ -40,7 +40,11 @@ reg [NBDATA-1:0] mem [0:NADDRE-1];
 	initial $readmemb(FNAME, mem);
 `endif
 
-wire wr = 0; // avoid unnecessary warnings
+// A write that never happens (wr is 0): without it Quartus (23.1, measured
+// 2026-11-08 on sapho_all) warns that the ROM's data_a, waddr_a and we_a
+// have no driver, three warnings in every synthesis. The memory is the same
+// altsyncram, with the same area, either way (issue #35).
+wire wr = 0;
 
 always @ (posedge clk) begin
 	data <= mem[addr];
@@ -338,7 +342,6 @@ wire        [MDATAW-1:0] mem_addr_rd;
 wire        [MINSTW-1:0] instr_addr;
 wire signed [NUBITS-1:0] mem_data_in;
 wire signed [NUBITS-1:0] mem_data_out;
-wire sw, mem_wrb;
 
 assign io_out = mem_data_out;
 

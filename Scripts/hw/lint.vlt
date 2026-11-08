@@ -1,0 +1,53 @@
+`verilator_config
+// What `verilator --lint-only -Wall` reports on SAPHO and that is meant,
+// each with its reason, so that the lint of Scripts/hw/lint.sh is clean and
+// a new warning shows (GitHub issue #35). Checked on 2026-11-08, Verilator
+// 5.050, on sapho_all.
+
+// One file holds several modules (core.v, ula.v, processor.v): the layout
+// AURORA and the board projects copy.
+lint_off -rule DECLFILENAME
+
+// A register with an initial value that a clocked block also assigns: the
+// value the FPGA loads at configuration, before any reset.
+lint_off -rule PROCASSINIT -file "*SAPHO*"
+
+// Widened on purpose, each said in a comment beside it: the leading-zero
+// count zero-extended to its output (ula.v), a signed exponent sign-extended
+// into a sum (ula.v, F_SCL and XPO), and 1'b1 zero-extended to a pointer's
+// width, which avoids a zero-width replication Vivado refuses (core.v).
+lint_off -rule WIDTHEXPAND -file "*ula.v" -match "*'total'*"
+lint_off -rule WIDTHEXPAND -file "*ula.v" -match "*LHS's SIGNED generates*"
+lint_off -rule WIDTHEXPAND -file "*core.v" -match "*CONST '1'h1'*"
+
+// A port or a wire whose user is generated only for some programs: the
+// links (TOM, CAD), XPO, the stacks' and the prefetch's paths. sapho_all has
+// every block it can have, but no link and no XPO (its blocks_except.txt).
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'valeu'*"
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'taqui'*"
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'tom_offer'*"
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'cad_word'*"
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'pf_self'*"
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'tom_go'*"
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'cad_go'*"
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'self_addr'*"
+lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*'xpo'*"
+// the top asmcomp writes declares every link and the addresses of the I/O
+// ports, whether the program uses them or not
+lint_off -rule UNUSEDSIGNAL -file "*sapho_all.v" -match "*'lk_*"
+lint_off -rule UNUSEDSIGNAL -file "*sapho_all.v" -match "*'addr_in'*"
+lint_off -rule UNUSEDSIGNAL -file "*sapho_all.v" -match "*'addr_out'*"
+
+// Bits a block reads only in part, by design: an index cut to the data
+// address width, a pointer's low bit, the sign or carry bit of a widened
+// result, an input's sign or mantissa where the operation does not need it,
+// and the "all zero" flag of the leading-zero tree's root.
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'idx'*"
+lint_off -rule UNUSEDSIGNAL -file "*core.v" -match "*'addr'*"
+lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*Bits of signal are not used: 'r'*"
+lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*Bits of signal are not used: 'in'*"
+lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*Bits of signal are not used: 'in2'*"
+lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*Bits of signal are not used: 'lzi'*"
+lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*Bits of signal are not used: 'ye'*"
+lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*Bits of signal are not used: 'e_rnd'*"
+lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*'zer'*"

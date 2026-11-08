@@ -298,6 +298,8 @@ module ula_norm
 );
 
 localparam W = MAN+G;
+localparam integer   W_1  = W-1;
+localparam [EXP-1:0] WMAX = W_1[EXP-1:0];   // the shift's cap at the shift's width (it fits: MAN < 2^(EXP-1))
 
 // Only the paths some opcode of the program needs are built: a processor
 // that only multiplies at FROUND >= 1 carries no leading-zero counter, one
@@ -321,7 +323,7 @@ generate if (LZC != 0) begin : lzc
 	wire [EXP-1:0] lz;
 	ula_lzc #(W, EXP) lzc (man_l, lz);
 
-	wire        [EXP-1:0] sh    =  (lz > W-1) ? W-1 : lz;
+	wire        [EXP-1:0] sh    =  (lz > WMAX) ? WMAX : lz;
 	wire        [W-1  :0] nrm_l =  man_l << sh;
 	wire signed [EXP+1:0] e_l   =  exp_l - {{2{1'b0}}, sh};
 
@@ -1440,11 +1442,15 @@ module ula_frot
 
 wire                  s_in  = in[MAN+EXP      ];
 wire signed [EXP-1:0] e_in  = in[MAN+EXP-1:MAN];
-wire        [MAN-1:0] m_in  = in[MAN    -1:0  ];
 
 wire                  s_out = s_in;
-wire signed [EXP-1:0] e_hlf = (e_in+(MAN-1))/2;
-wire signed [EXP+1:0] e_out = {{2{e_hlf[EXP-1]}}, e_hlf};
+// half of e + MAN-1, in the output's width: the sum needs a bit more than
+// EXP, and the half fits EXP bits again (MAN < 2^(EXP-1)), so this is the
+// value the EXP-bit form sign-extended, with no 32-bit integer in between
+localparam integer          M_1   = MAN-1;
+localparam signed [EXP+1:0] MAN_1 = M_1[EXP+1:0];
+localparam signed [EXP+1:0] TWO   = 2;            // a bare 2 is a 32-bit integer
+wire signed [EXP+1:0] e_out = ($signed({{2{e_in[EXP-1]}}, e_in}) + MAN_1) / TWO;
 wire        [MAN-1:0] m_one = 1;
 wire        [MAN+G-1:0] m_out;                               // exact: the G extra bits are zero
 

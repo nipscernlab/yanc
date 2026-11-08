@@ -383,8 +383,7 @@ endmodule
 
 module ula_in1_ctrl
 #(
-	parameter NUBITS = 8,
-	parameter NBOPCO = 7
+	parameter NUBITS = 8
 )(
 	input               clk, rst, pop,
 	input  [NUBITS-1:0] mem, stack,
@@ -402,8 +401,7 @@ endmodule
 
 module ula_in2_ctrl
 #(
-	parameter NUBITS = 8,
-	parameter NBOPCO = 7
+	parameter NUBITS = 8
 )(
 	input               clk, rst,
 	input               req_in,
@@ -926,7 +924,6 @@ wire              id_sti, id_ldi, id_fft, id_wr;
 wire              id_req_in, id_out_en;
 
 instr_dec #(.NBOPCO  ( NBOPCO ),
-            .MDATAW  ( MDATAW ),
 			   .LOD  (   LOD  ),
 			 .P_LOD  ( P_LOD  ),
 			   .LDI  (   LDI  ),
@@ -1057,7 +1054,7 @@ wire [NUBITS-1:0] uic_acc;
 reg signed [NUBITS-1:0] racc = 0;
 
 // input in1
-ula_in1_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic1 (clk, rst, id_dsp_pop, mem_data_rd, sp_data, ula_data_in1);
+ula_in1_ctrl #(.NUBITS(NUBITS)) uic1 (clk, rst, id_dsp_pop, mem_data_rd, sp_data, ula_data_in1);
 
 // input in2
 // CAD reads the partner's out bus through the same path as INN, but raises no
@@ -1068,11 +1065,11 @@ localparam HAS_CAD = (CAD != 0);
 generate if (HAS_INN && HAS_CAD) begin : uic_in2
 wire              is_cad = (id_opcode == OP_CAD);
 wire [NUBITS-1:0] in_sel = (is_cad) ? cad_word : io_in;
-ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_req_in | is_cad, uic_acc, in_sel, ula_data_in2);
+ula_in2_ctrl #(.NUBITS(NUBITS)) uic2 (clk, rst, id_req_in | is_cad, uic_acc, in_sel, ula_data_in2);
 end else if (HAS_CAD) begin : uic_in2   // cade() and no in(): the partner is the only input
-ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_opcode == OP_CAD, uic_acc, cad_word, ula_data_in2);
+ula_in2_ctrl #(.NUBITS(NUBITS)) uic2 (clk, rst, id_opcode == OP_CAD, uic_acc, cad_word, ula_data_in2);
 end else if (HAS_INN) begin : uic_in2   // in() only: as before the link existed
-ula_in2_ctrl #(.NUBITS(NUBITS),.NBOPCO(NBOPCO)) uic2 (clk, rst, id_req_in , uic_acc, io_in, ula_data_in2);
+ula_in2_ctrl #(.NUBITS(NUBITS)) uic2 (clk, rst, id_req_in , uic_acc, io_in, ula_data_in2);
 end else begin : uic_in2 assign ula_data_in2 = racc; end
 endgenerate
 
@@ -1168,8 +1165,6 @@ assign uic_acc = racc;
 assign  if_acc = |ula_fast;
 
 // Indirect Addressing --------------------------------------------------------
-
-wire [MDATAW-1:0] rf;
 
 generate
 	if (STI | LDI | ILI | ISI) begin : mem_access

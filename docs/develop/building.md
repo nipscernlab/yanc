@@ -74,7 +74,9 @@ comes out), and compares the outputs with
 references computed apart from YANC, checks that the bad programs of
 `NegTests/` are refused with the right message, holds the instruction set's
 copies and the manual's instruction page to `Compilers/common/isa.tsv`,
-holds the manual's message reference to the compilers' sources, holds the
+holds the manual's message reference to the compilers' sources, lints the
+processor's Verilog with Verilator (`Scripts/hw/lint.sh`, whose waivers in
+`Scripts/hw/lint.vlt` each say why), holds the
 link lines at the foot of `CHANGELOG.md` to its version headings, runs
 every combination of the Dirac notation in
 `Compilers/CMMComp/DiracCases/cases.tsv` through cmmcomp, holds the

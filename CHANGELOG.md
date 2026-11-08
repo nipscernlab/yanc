@@ -44,6 +44,20 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **SAPHO's Verilog passes Verilator's lint, and the regression keeps it so
+  (#35).** `verilator --lint-only -Wall` on sapho_all gave 50 warnings.
+  The dead ones are gone: `sw` and `mem_wrb` (processor.v), `rf`, and the
+  unused parameters `NBOPCO` of the ALU's input controls and `MDATAW` of
+  `instr_dec` (core.v, instr_dec.v), `m_in` of `ula_frot`, and the missing
+  newline at the end of three files and of the top asmcomp writes. The rest
+  is meant, and `Scripts/hw/lint.vlt` waives each with its reason; the
+  regression runs `Scripts/hw/lint.sh`. Two constants that Quartus saw as
+  32-bit values cut to 8 bits (the normaliser's shift cap, `F_ROT`'s
+  exponent) are written at their width. `mem_instr`'s write that never
+  happens stays: without it Quartus 23.1 warns three times that the ROM's
+  write port has no driver, with the same memory and area (measured on
+  sapho_all), and its comment now says so. No behaviour changed;
+  `tb_ula` and `tb_alu` pass.
 - **What the processor gives at the edges is written down (#34).** An
   integer division by zero gives -1 for a dividend of 0 or more and 1 for a
   negative one, and the dividend as the remainder, which is what the divider

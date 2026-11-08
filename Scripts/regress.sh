@@ -61,6 +61,10 @@
 #      the host C/C++ compiler and on both compilers (three float formats,
 #      three #FROUND levels) and compares C's answers.
 #
+#   3c. HDL lint: Scripts/hw/lint.sh runs Verilator -Wall on SAPHO, built
+#      for sapho_all; the warnings meant are waived, with their reasons, in
+#      Scripts/hw/lint.vlt (skipped by --cpp-only, and without Verilator).
+#
 #   4. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
 #      malformed program with a clean non-zero exit and the expected diagnostic
@@ -1699,6 +1703,27 @@ if command -v python3 >/dev/null 2>&1; then
             echo "FAIL (const_e2e): a constant in the .mif differs from the exact model"
             fail=$((fail + 1)); failed_names+=("const_e2e")
         fi
+    fi
+fi
+
+# ---- 4a0l. the HDL's lint ------------------------------------------------------
+# Scripts/hw/lint.sh lints SAPHO on sapho_all with Verilator -Wall; every
+# warning that is meant is waived in Scripts/hw/lint.vlt with its reason, so
+# a new one (a wire left unused, a width that does not match) fails here
+# (GitHub issue #35). Without Verilator it is skipped and says so.
+if [ "$CPP_ONLY" -eq 0 ]; then
+    echo ""
+    echo "==> HDL lint (Verilator)"
+    lint_out=$(bash "$ROOT/Scripts/hw/lint.sh" 2>&1); lint_rc=$?
+    if [ $lint_rc -eq 0 ]; then
+        echo "PASS (hdl-lint): $lint_out"
+        pass=$((pass + 1))
+    elif [ $lint_rc -eq 2 ]; then
+        echo "SKIP (hdl-lint): $lint_out"
+    else
+        echo "FAIL (hdl-lint):"
+        printf '%s\n' "$lint_out" | head -12 | sed 's/^/    /'
+        fail=$((fail + 1)); failed_names+=("hdl-lint")
     fi
 fi
 
