@@ -1819,8 +1819,10 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             "blackbox mem_instr mem_data" "hierarchy -top sapho_min" \
             "synth -top sapho_min -flatten -noshare -lut 4" "stat" > "$sm_dir/cells.ys"
         ( cd "$sm_dir" && yosys -q -l cells.log cells.ys >/dev/null 2>&1 )
-        sm_ff=$(awk '/Printing statistics/{s=1; ff=0} s && /\$_[A-Z]*DFF[A-Z0-9_]*[ \t]+[0-9]+/{ff+=$2} END{print ff+0}' "$sm_dir/cells.log")
-        sm_lut=$(grep -E '^\s+\$lut\s+[0-9]+' "$sm_dir/cells.log" | tail -1 | awk '{print $2}')
+        # the last statistics block; Yosys 0.56 prints "<cell> <count>", 0.66
+        # "<count> <cell>": the number is taken from whichever side it is on
+        sm_ff=$(awk '/Printing statistics/{ff=0} $1 ~ /^[0-9]+$/ && $2 ~ /^\$_[A-Z]*DFF/ {ff+=$1} $2 ~ /^[0-9]+$/ && $1 ~ /^\$_[A-Z]*DFF/ {ff+=$2} END{print ff+0}' "$sm_dir/cells.log")
+        sm_lut=$(awk '/Printing statistics/{n=""} $1 ~ /^[0-9]+$/ && $2 == "$lut" {n=$1} $2 ~ /^[0-9]+$/ && $1 == "$lut" {n=$2} END{print n}' "$sm_dir/cells.log")
         sm_want_ff=$(awk '{ sub(/\r$/, "") } $1 == "FF"  {print $2}' "$CMM_ROOT/Tests/sapho_min/cells.txt")
         sm_want_lut=$(awk '{ sub(/\r$/, "") } $1 == "LUT" {print $2}' "$CMM_ROOT/Tests/sapho_min/cells.txt")
         if [ -z "$sm_lut" ]; then
