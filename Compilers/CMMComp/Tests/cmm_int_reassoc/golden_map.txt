@@ -49,6 +49,13 @@ Info: adding stack memory for function calls
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 11% of the Assembly Instruction Set
 Info: using 8% of the ULA operations
+Processor cmm_int_reassoc
+  word          32 bits
+  float         no
+  multiplier    int; divider no
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      79 instructions, 12 data words
 Sweet: the processor is good to go.
 ## variables
 global v0 1

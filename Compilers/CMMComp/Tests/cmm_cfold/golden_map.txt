@@ -9,6 +9,13 @@ Info: ULA resource -> integer negative operation
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 5% of the Assembly Instruction Set
 Info: using 8% of the ULA operations
+Processor cmm_cfold
+  word          16 bits
+  float         no
+  multiplier    int; divider no
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      21 instructions, 7 data words
 Sweet: the processor is good to go.
 ## variables
 main a 1

@@ -37,6 +37,13 @@ Info: ULA resource -> float-point negative operation
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 20% of the Assembly Instruction Set
 Info: using 30% of the ULA operations
+Processor Seno
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    float; divider no
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      101 instructions, 2170 data words
 Sweet: the processor is good to go.
 ## variables
 seno_LUT x 2

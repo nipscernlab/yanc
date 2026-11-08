@@ -13,6 +13,13 @@ Info: ULA resource -> integer adder
 Info: stack depths from the program: SDEPTH 2, NDSTAC 3
 Info: using 7% of the Assembly Instruction Set
 Info: using 2% of the ULA operations
+Processor multiparam
+  word          16 bits
+  float         no
+  multiplier    no; divider no
+  data stack    3 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      25 instructions, 6 data words
 Sweet: the processor is good to go.
 ## variables
 add a 1

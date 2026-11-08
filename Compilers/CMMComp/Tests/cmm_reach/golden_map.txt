@@ -15,6 +15,13 @@ Info: adding data output handling
 Info: ULA resource -> integer adder
 Info: using 7% of the Assembly Instruction Set
 Info: using 5% of the ULA operations
+Processor cmm_reach
+  word          32 bits
+  float         no
+  multiplier    no; divider no
+  data stack    8 words (set by #NDSTAC)
+  call stack    8 words (set by #SDEPTH)
+  memories      21 instructions, 8 data words
 Sweet: the processor is good to go.
 ## variables
 fdead u 2

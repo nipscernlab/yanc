@@ -336,6 +336,13 @@ Info: ULA resource -> int to float converter
 Info: stack depths from the program: SDEPTH 2, NDSTAC 5
 Info: using 19% of the Assembly Instruction Set
 Info: using 16% of the ULA operations
+Processor cmm_cov_arr2d_wr
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    int and float; divider no
+  data stack    5 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      9047 instructions, 872 data words
 Sweet: the processor is good to go.
 ## variables
 main n0 1

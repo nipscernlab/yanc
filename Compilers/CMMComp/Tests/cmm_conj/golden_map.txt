@@ -11,6 +11,13 @@ Info: ULA resource -> float-point adder
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 8% of the Assembly Instruction Set
 Info: using 8% of the ULA operations
+Processor cmm_conj
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    no; divider no
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      56 instructions, 12 data words
 Sweet: the processor is good to go.
 ## variables
 main z 3

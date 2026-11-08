@@ -30,6 +30,13 @@ Info: ULA resource -> root-square approximation for float
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 18% of the Assembly Instruction Set
 Info: using 27% of the ULA operations
+Processor Sqrt
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    float; divider float
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      115 instructions, 2013 data words
 Sweet: the processor is good to go.
 ## variables
 my_sqrt num 2

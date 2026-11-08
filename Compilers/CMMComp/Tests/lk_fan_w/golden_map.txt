@@ -8,6 +8,13 @@ Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 5% of the Assembly Instruction Set
 Info: using 5% of the ULA operations
+Processor lk_fan_w
+  word          32 bits
+  float         no
+  multiplier    no; divider no
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      13 instructions, 5 data words
 Sweet: the processor is good to go.
 ## variables
 main n 1

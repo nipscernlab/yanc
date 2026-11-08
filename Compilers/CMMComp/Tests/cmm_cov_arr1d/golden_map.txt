@@ -116,6 +116,13 @@ Info: adding bit-reverse array index (FFT)
 Info: stack depths from the program: SDEPTH 2, NDSTAC 4
 Info: using 19% of the Assembly Instruction Set
 Info: using 13% of the ULA operations
+Processor cmm_cov_arr1d
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    float; divider no
+  data stack    4 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      2474 instructions, 372 data words
 Sweet: the processor is good to go.
 ## variables
 main n0 1

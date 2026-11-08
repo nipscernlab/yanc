@@ -32,6 +32,13 @@ Info: ULA resource -> integer negative operation
 Info: stack depths from the program: SDEPTH 2, NDSTAC 2
 Info: using 15% of the Assembly Instruction Set
 Info: using 30% of the ULA operations
+Processor cmm_fround0
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    float; divider float
+  data stack    2 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      202 instructions, 40 data words
 Sweet: the processor is good to go.
 ## variables
 main one 2
