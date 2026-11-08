@@ -58,6 +58,14 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **One negator for NEG, NEG_M, ABS and ABS_M (#157).** The four were four
+  modules, one negator each on the accumulator or the memory word, and one
+  runs per cycle. They now share one negator, behind an operand mux only
+  when the program has a memory form and an accumulator form; ABS is the
+  negator's output or its input by the sign. Yosys (LUT4, 32 bits): NEG and
+  NEG_M 200 to 166, the four 223 to 197; one form alone, and NEG with ABS
+  (which synthesis already merged), unchanged. `ula_neg` and `ula_abs` are
+  gone.
 - **NRM as a shift (#160).** `ula_nrm` was `in/NUGAIN`; NUGAIN is a power
   of two, so it is now `in >>> K` with 1 added back to a negative input that
   has a remainder, which truncates toward zero as the division did. It

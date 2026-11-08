@@ -933,20 +933,6 @@ endmodule
 // One-parameter arithmetic operations ****************************************
 // ****************************************************************************
 
-// NEG - negation of an integer -----------------------------------------------
-
-module ula_neg
-#(
-	parameter NUBITS = 32
-)(
-	 input signed [NUBITS-1:0] in,
-	output signed [NUBITS-1:0] out
-);
-
-assign out = -in;
-
-endmodule
-
 // F_NEG - negation of a floating-point number --------------------------------
 
 module ula_fneg
@@ -969,20 +955,6 @@ wire signed [EXP-1:0] e_out =  e_in;
 wire        [MAN-1:0] m_out =  m_in;
 
 assign out = {s_out, e_out, m_out};
-
-endmodule
-
-// ABS - absolute value of an integer -----------------------------------------
-
-module ula_abs
-#(
-	parameter NUBITS = 32
-)(
-	 input [NUBITS-1:0] in,
-	output [NUBITS-1:0] out
-);
-
-assign out = (in[NUBITS-1]) ? -in : in;
 
 endmodule
 
@@ -1708,17 +1680,33 @@ wire signed [NUBITS-1:0] fsgn;
 
 generate if ((F_SGN) != 0) begin : op_fsgn ula_fsgn #(NBMANT,NBEXPO,FROUND) my_fsgn(in1, in2, fsgn); end else begin : op_fsgn assign fsgn = {NUBITS{1'b0}}; end endgenerate
 
-// NEG ------------------------------------------------------------------------
+// NEG, NEG_M, ABS, ABS_M ------------------------------------------------------
+// One negator for the four (#157): NEG is -x and ABS is (x < 0) ? -x : x, on
+// in2 (the accumulator) or, for the _M forms (ops 12 and 16), on in1 (the
+// memory word), and one of them runs per cycle. A mux picks the operand only
+// when the program has an _M form and a plain one. Measured (Yosys, LUT4, 32
+// bits): NEG and NEG_M cost 90 more than NEG alone with a negator each.
 
-wire signed [NUBITS-1:0] neg;
+localparam HAS_NEG2 = (NEG | ABS)   != 0;   // a form on in2
+localparam HAS_NEG1 = (NEG_M | ABS_M) != 0; // a form on in1
 
-generate if ((NEG) != 0) begin : op_neg ula_neg #(NUBITS) my_neg(in2, neg); end else begin : op_neg assign neg = {NUBITS{1'b0}}; end endgenerate
+wire signed [NUBITS-1:0] na_in, na_neg;
 
-// NEG_M ----------------------------------------------------------------------
+generate
+	if      (HAS_NEG1 && HAS_NEG2) begin : na_src assign na_in = (op == 6'd12 || op == 6'd16) ? in1 : in2; end
+	else if (HAS_NEG1)             begin : na_src assign na_in = in1;                                       end
+	else                           begin : na_src assign na_in = in2;                                       end
+endgenerate
 
-wire signed [NUBITS-1:0] negm;
+generate if (HAS_NEG1 || HAS_NEG2) begin : op_negabs assign na_neg = -na_in; end
+         else                      begin : op_negabs assign na_neg = {NUBITS{1'b0}}; end endgenerate
 
-generate if ((NEG_M) != 0) begin : op_negm ula_neg #(NUBITS) my_negm(in1, negm ); end else begin : op_negm assign negm = {NUBITS{1'b0}}; end endgenerate
+// the output mux keeps one leg per operation (t11, t12, t15, t16), each under
+// its own parameter
+wire signed [NUBITS-1:0] neg  = na_neg;
+wire signed [NUBITS-1:0] negm = na_neg;
+wire signed [NUBITS-1:0] abs  = (na_in[NUBITS-1]) ? na_neg : na_in;
+wire signed [NUBITS-1:0] absm = abs;
 
 // F_NEG ----------------------------------------------------------------------
 
@@ -1731,18 +1719,6 @@ generate if ((F_NEG) != 0) begin : op_fneg ula_fneg #(NBMANT,NBEXPO,FROUND) my_f
 wire signed [NUBITS-1:0] fnegm;
 
 generate if ((F_NEG_M) != 0) begin : op_fnegm ula_fneg #(NBMANT,NBEXPO,FROUND) my_fnegm(in1, fnegm); end else begin : op_fnegm assign fnegm = {NUBITS{1'b0}}; end endgenerate
-
-// ABS ------------------------------------------------------------------------
-
-wire signed [NUBITS-1:0] abs;
-
-generate if ((ABS) != 0) begin : op_abs ula_abs #(NUBITS) my_abs(in2, abs); end else begin : op_abs assign abs = {NUBITS{1'b0}}; end endgenerate
-
-// ABS_M ----------------------------------------------------------------------
-
-wire signed [NUBITS-1:0] absm;
-
-generate if ((ABS_M) != 0) begin : op_absm ula_abs #(NUBITS) my_absm(in1, absm); end else begin : op_absm assign absm = {NUBITS{1'b0}}; end endgenerate
 
 // F_ABS ----------------------------------------------------------------------
 
