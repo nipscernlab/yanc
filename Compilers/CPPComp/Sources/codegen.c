@@ -2843,7 +2843,9 @@ static void gen_expr(expr *e)
     }
 
     case E_SIZEOF_T: emit_load_int(type_size_words(e->target_t)); return;
-    case E_SIZEOF_E: emit_load_int(type_size_words(infer_type(e->a))); return;
+    case E_SIZEOF_E:   // a string literal is an array of its characters and the 0 (#140)
+        emit_load_int(e->a->kind == E_STRING_LIT ? e->a->slen + 1 : type_size_words(infer_type(e->a)));
+        return;
 
     case E_GENERIC: gen_expr(generic_select(e)); return;  // controlling expr not evaluated
 

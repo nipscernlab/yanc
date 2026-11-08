@@ -105,6 +105,10 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **cppcomp: `sizeof` of a string literal (#140).** `sizeof("xyz")` was
+  1, the size of a pointer; it is 4 now, the three characters and the 0,
+  as in C++ (a char is a word here), in an expression and in a constant
+  (`char buf[sizeof("abc")];`, `static_assert`). Tested by test113.
 - **cppcomp: a method's default arguments (#134).** A call of a method
   that is neither virtual nor overloaded, with fewer arguments than
   parameters, pushed no default: `q.f(2)` with `int f(int n = 1, int d =

@@ -709,6 +709,9 @@ static int const_eval(expr *e, long *out)
     switch (e->kind) {
     case E_INT_LIT: case E_CHAR_LIT: *out = e->ival; return 1;
     case E_SIZEOF_T: *out = type_size_words(e->target_t); return 1;
+    case E_SIZEOF_E:                       /* sizeof "xyz": its characters and the 0 (#140) */
+        if (e->a && e->a->kind == E_STRING_LIT) { *out = e->a->slen + 1; return 1; }
+        return 0;
     case E_CAST:     return const_eval(e->a, out);
     case E_IDENT: {
         sym *s = st_find(e->sval);
