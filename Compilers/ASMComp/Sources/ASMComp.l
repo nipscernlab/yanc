@@ -283,20 +283,23 @@ int main(int argc, char *argv[])
   // (asm_depth, Compilers/common/asm_share.h); when that cannot be worked out
   // (recursion, ...) it keeps the default, and the stacks may then be most
   // of the processor (#54): a warning, not an Info line
+  int d_how = ddepth_set ? ASM_DEPTH_SET : ASM_DEPTH_DEFAULT;
+  int s_how = sdepth_set ? ASM_DEPTH_SET : ASM_DEPTH_DEFAULT;
   if (!sdepth_set || !ddepth_set)
   {
     int s, d;
     const char *why = NULL;
     if (asm_depth(a.input, &s, &d, &why) > 0)
     {
-      if (!sdepth_set) sdepth = s;
-      if (!ddepth_set) ddepth = d;
+      if (!sdepth_set) { sdepth = s; s_how = ASM_DEPTH_WORKED; }
+      if (!ddepth_set) { ddepth = d; d_how = ASM_DEPTH_WORKED; }
       printf(MSG_INFO_STACK_DEPTHS, sdepth, ddepth);
     }
     else if (why) printf(MSG_WARN_STACK_DEFAULT, why, sdepth_set ? ddepth : sdepth);
   }
 
   eval_finish();                             // finalize the assembler
+  eval_summary(d_how, s_how);                // what came out, in one place (#57)
 
   printf(MSG_OK_ASM_DONE);
 

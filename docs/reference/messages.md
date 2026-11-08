@@ -410,5 +410,6 @@ value. What the common ones mean and how to get past them is in
 
 ### Other
 
+- Processor <name>
 - Bad format!
 - Sweet: the processor is good to go.

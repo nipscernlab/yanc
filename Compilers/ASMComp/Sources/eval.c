@@ -535,6 +535,37 @@ void eval_fp_check()
                                    {fprintf(stderr, MSG_ERR_FP_EXPO_SHORT, nbmant, nbexpo); exit(EXIT_FAILURE);}
 }
 
+// int, float, both or none: the units an opcode family brings
+static const char *unit_kind(const char *op)
+{
+    int i = opc_unit(op, 0), f = opc_unit(op, 1);
+    return i && f ? MSG_WORD_INT_FLOAT : i ? MSG_WORD_INT : f ? MSG_WORD_FLOAT : MSG_WORD_NO;
+}
+
+static const char *depth_how(int how, const char *directive)
+{
+    static char *set = NULL;
+    if (how == ASM_DEPTH_WORKED) return MSG_WORD_DEPTH_WORKED;
+    if (how == ASM_DEPTH_DEFAULT) return MSG_WORD_DEPTH_DEFAULT;
+    free(set);
+    set = xasprintf(MSG_WORD_DEPTH_SET, directive);
+    return set;
+}
+
+void eval_summary(int d_how, int s_how)
+{
+    printf(MSG_SUM_HEAD, prname);
+    printf(MSG_SUM_WORD, nubits);
+    if (opc_float()) printf(MSG_SUM_FLOAT, nbmant, nbexpo);
+    else             printf(MSG_SUM_NO_FLOAT);
+    const char *dv = opc_unit("DIV", 0) || opc_unit("MOD", 0) ? (opc_unit("DIV", 1) ? MSG_WORD_INT_FLOAT : MSG_WORD_INT)
+                   : opc_unit("DIV", 1) ? MSG_WORD_FLOAT : MSG_WORD_NO;
+    printf(MSG_SUM_UNITS, unit_kind("MLT"), dv);
+    printf(MSG_SUM_DSTACK, ddepth, depth_how(d_how, "#NDSTAC"));
+    printf(MSG_SUM_SSTACK, sdepth, depth_how(s_how, "#SDEPTH"));
+    printf(MSG_SUM_MEMORY, n_ins, n_dat_used);
+}
+
 void eval_finish()
 {
     if (div_left > 0) {fprintf(stderr, MSG_ERR_DIV_SEQ_END, div_op, div_rd); exit(EXIT_FAILURE);}

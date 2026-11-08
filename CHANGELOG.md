@@ -9,6 +9,13 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **asmcomp says what processor came out (#57).** At the end of a run, one
+  block: the word, the float's format or none, whether there is a
+  multiplier and a divider (int, float or both), each stack's depth and
+  where it came from (worked out, set by a directive, or the default of
+  128 because it could not be worked out), and the size of the two
+  memories. The fallback to 128 is a warning since #54. Something stable
+  for AURORA's TASM panel to show.
 - **`myADV7513Text`, the text screen through an ADV7513 HDMI transmitter.** `SAPHO/myADV7513Text.v` is
   `myVGAText` (the same words, `toma` link and pins) plus the I2C writes
   that set up an ADV7513 HDMI transmitter after each reset, so a program
