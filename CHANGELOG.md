@@ -105,6 +105,18 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **`cin >>` of a number too big for the word sets `fail()` (#58).** It
+  wrapped: on 16 bits, 70000 read into an `unsigned` came out 4464, a value
+  no range check could catch. Now an `int` or `unsigned` that does not fit
+  `#NUBITS` sets `fail()`, takes its digits and is left at the nearest
+  value the type holds, as C++ gives; a minus sign still wraps an
+  `unsigned`, as in C++. The check uses shifts and comparisons only: no
+  multiplier and no divider in the processor. Tested by test114, on a
+  16-bit processor.
+- **The C++ manual says the word is `nubits` bits (#59).** Its types table
+  said 32 bits for `int`, `long long` and `double`, whatever `#pragma yanc
+  nubits` said, and the page never named the pragma near the top; a reader
+  writing for a 16-bit bus kept 32 bits and a processor twice the width.
 - **cppcomp: `sizeof` of a string literal (#140).** `sizeof("xyz")` was
   1, the size of a pointer; it is 4 now, the three characters and the 0,
   as in C++ (a char is a word here), in an expression and in a constant

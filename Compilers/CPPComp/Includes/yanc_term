@@ -218,22 +218,49 @@ inline int yanc_get() {                   // the next character typed
 inline int yanc_blank(int c) { return c == ' ' || c == 10 || c == 9; }
 inline void yanc_skip_blanks() { while (yanc_blank(yanc_peek())) yanc_line_pos = yanc_line_pos + 1; }
 
-// an integer: blanks, an optional sign, digits; *ok = 0 when no digit came
-// (nothing is taken then but the blanks). v*10 is (v<<3)+(v<<1): no multiplier.
-inline int yanc_get_int(int* ok) {
+// an integer as text: blanks, an optional sign (*neg), digits. Returns their
+// magnitude; *ok is 0 when no digit came (nothing is taken then but the
+// blanks), 2 when the magnitude passed the unsigned word (#58: it wrapped, and
+// 70000 read on 16 bits came out 4464), 1 otherwise. Every digit is taken.
+// v*10 is (v<<3)+(v<<1), and a wrap is caught by comparisons: no multiplier,
+// no divider.
+inline unsigned yanc_get_mag(int* ok, int* neg) {
     yanc_skip_blanks();
-    int neg = 0, v = 0, n = 0;
+    unsigned v = 0u, top = ~0u >> 3;  // past top, v*8 wraps
+    int n = 0, over = 0;
     int c = yanc_peek();
-    if (c == '-' || c == '+') { neg = c == '-'; yanc_line_pos = yanc_line_pos + 1; }
+    *neg = 0;
+    if (c == '-' || c == '+') { *neg = c == '-'; yanc_line_pos = yanc_line_pos + 1; }
     while (1) {
         c = yanc_peek();
         if (c < '0' || c > '9') break;
-        v = (v << 3) + (v << 1) + (c - '0');
+        if (!over) {
+            unsigned v8 = v << 3, v10 = v8 + (v << 1), w = v10 + (unsigned)(c - '0');
+            if (v > top || v10 < v8 || w < v10) over = 1; else v = w;
+        }
         n = n + 1;
         yanc_line_pos = yanc_line_pos + 1;
     }
-    *ok = n > 0;
-    return neg ? 0 - v : v;
+    *ok = n == 0 ? 0 : over ? 2 : 1;
+    return over ? ~0u : v;
+}
+
+// an int: *ok 0 when no digit came, 2 when it does not fit the word; the
+// value is then the nearest the word holds, as C++ gives
+inline int yanc_get_int(int* ok) {
+    int neg = 0;
+    unsigned m = yanc_get_mag(ok, &neg), max = ~0u >> 1;   // 2^(NUBITS-1) - 1
+    if (*ok == 1 && m > max + (neg ? 1u : 0u)) *ok = 2;
+    if (*ok == 2) return neg ? (int)~max : (int)max;
+    return neg ? (int)(0u - m) : (int)m;
+}
+
+// an unsigned: as C++ reads one, a minus sign wraps it (-1 is the largest)
+inline unsigned yanc_get_uint(int* ok) {
+    int neg = 0;
+    unsigned m = yanc_get_mag(ok, &neg);
+    if (*ok == 2) return ~0u;
+    return neg ? 0u - m : m;
 }
 
 // a float: blanks, sign, digits, '.', digits, e, sign, digits

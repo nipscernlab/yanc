@@ -11,6 +11,7 @@ instructions and cycles.
 ```cpp
 #pragma yanc nuioin 1
 #pragma yanc nuioou 1
+// #pragma yanc nubits 16    a 16-bit word; 32 bits without it
 
 int fact(int n) { return n <= 1 ? 1 : n * fact(n - 1); }
 
@@ -24,6 +25,14 @@ void main(void)
 `yanc fact.cpp` makes the processor `fact` (the file's name, which has to be
 a valid Verilog module name: see [The C± language](language-cmm.md)). The
 program is one source file, which can `#include` others.
+
+**The word is the program's choice.** The processor has the word `#pragma
+yanc nubits` gives it, 32 bits when the program says nothing, and an `int`,
+an `unsigned`, a pointer and a `float` are each one word of it. A program
+that handles 16-bit values and no float should say `#pragma yanc nubits 16`:
+its accumulator, ALU, stacks and data memory are then 16 bits wide instead of
+32. An `int` goes from -32768 to 32767 then, an `unsigned` up to 65535, and
+`cin >>` sets `fail()` past them (see [Configuration](#configuration)).
 
 ## The program
 
@@ -79,12 +88,12 @@ See [Text on the keyboard and the screen](#text-on-the-keyboard-and-the-screen).
 
 | type | in YANC |
 |---|---|
-| `int`, `short`, `long`, `char`, `signed`, `unsigned` | one word, 32 bits; `unsigned` compares and divides as unsigned |
+| `int`, `short`, `long`, `char`, `signed`, `unsigned` | one word of `nubits` bits, 32 by default; `unsigned` compares and divides as unsigned |
 | `int8_t`, `uint8_t`, `int16_t`, `uint16_t` | stored in a word, wrapping at their width as on a PC |
-| `long long`, `int64_t`, `uint64_t` | one 32-bit word: the compiler warns that the 64 bits are ignored |
+| `long long`, `int64_t`, `uint64_t` | one word: the compiler warns that the 64 bits are ignored |
 | `bool` | a word holding 0 or 1 |
-| `float` | the SAPHO float, 23 mantissa and 8 exponent bits by default: the sizes of IEEE 754 single, **not** its encoding, no infinity, no NaN (see [Floating point](floating-point.md)) |
-| `double`, `long double` | the same 32-bit float, with a warning |
+| `float` | the SAPHO float, one word: `nbmant` mantissa and `nbexpo` exponent bits, with `nubits = nbmant + nbexpo + 1`, 23 and 8 at 32 bits (the sizes of IEEE 754 single, **not** its encoding), no infinity, no NaN (see [Floating point](floating-point.md)) |
+| `double`, `long double` | the same one-word float, with a warning |
 | pointers, references | one word; a pointer counts in words, and `p + n` steps `n` elements of the type it points to |
 | arrays | up to 8 dimensions; `int t[N] "file.txt";` initialises one from a file, as in C± |
 | `enum`, `enum class` | the name is a type (`Color c = GREEN;`); a value is any integer constant (`= -1`, `= A + 1`, `= 1 << 3`); an underlying type (`enum class E : unsigned`) is accepted, and every enum is one word |
