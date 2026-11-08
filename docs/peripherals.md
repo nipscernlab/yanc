@@ -155,10 +155,11 @@ program a character nobody typed. The queue is emptied.
 does not have to be any particular one: the testbench runs the block at 2
 and at 25 MHz. The block samples the keyboard's 10 to 17 kHz clock, so keep
 the processor well above that (a few MHz). `ps2_clk` is filtered: a new
-level counts only after it holds for 8 cycles of `clk` (320 ns at 25 MHz),
-so a slow or ringing edge on the open-drain line does not count twice.
-`CLK_KHZ` only sizes the 1 ms after which a frame cut in the middle (noise,
-a keyboard plugged in with the board on) is forgotten.
+level counts only after it holds for about 320 ns of `clk` (8 cycles up to
+25 MHz, 32 at 100 MHz, never fewer than 8), so a slow or ringing edge on the
+open-drain line does not count twice. `CLK_KHZ` sizes that filter and the
+1 ms after which a frame cut in the middle (noise, a keyboard plugged in
+with the board on) is forgotten.
 
 **Size**, measured with Quartus 24.1 on a Cyclone IV E (DE2-115), `DEPTH` 4:
 294 logic elements and 99 registers, no memory bits. The queue stays in

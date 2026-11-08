@@ -285,6 +285,12 @@ tags consumed by Aurora.
   places (NREGS and the `cfg` table, whose default stood for write 10):
   write 10 has its own line now, and a NREGS that does not match the table
   stops the elaboration too. tb_vgatext and tb_adv7513text pass.
+- **myKeyPS2 filters `ps2_clk` for the same time at any clock (#182).**
+  The filter held a new level for a fixed 8 cycles, 320 ns at 25 MHz but
+  only 80 ns at 100 MHz, while the frame timeout already followed
+  `CLK_KHZ`. It now holds about 320 ns, never fewer than 8 cycles, so the
+  clocks up to 25 MHz are unchanged. tb_keyps2 passes in its 8
+  configurations and at 100 MHz.
 - **An FFT array that is the whole data memory (#168).** v[k) reverses the
   index's low `#FFTSIZ` bits and keeps the ones above, which a memory of
   exactly 2^FFTSIZ words does not have: a program whose only data was an

@@ -68,11 +68,17 @@ module myKeyPS2
 // can cross the threshold more than once, and each crossing would count as
 // an edge (one bit too many, the frame lost). The filtered clock `pc` takes a
 // new level only after the synchronized wire has held it for FILT cycles
-// (320 ns at 25 MHz; the keyboard holds each level 30 us at least), so a
+// (about 320 ns; the keyboard holds each level 30 us at least), so a
 // glitch shorter than that never makes an edge. The data is read on the
 // filtered falling edge, well inside the 5 us it is held.
 
-localparam FILT = 8;                               // cycles a new level must hold
+// FILT is about 320 ns of the clock: 8 cycles up to 25 MHz,
+// more above (32 at 100 MHz). A fixed 8 filtered only 80 ns at 100 MHz,
+// while the timeout below already follows CLK_KHZ (#182). Never below 8, so
+// the slower clocks keep the filter they had.
+localparam integer FILT_T = (CLK_KHZ * 32 + 99999) / 100000;   // ceil(320 ns x f)
+localparam integer FILT   = (FILT_T > 8) ? FILT_T : 8;
+localparam integer HW     = $clog2(FILT);                      // hold's width
 
 reg [1:0] clk_s, dat_s;
 always @ (posedge clk) begin
@@ -81,22 +87,22 @@ always @ (posedge clk) begin
 end
 
 reg       pc = 1'b1;                               // the filtered ps2_clk
-reg [3:0] hold;                                    // cycles clk_s[1] has differed from pc
+reg [HW-1:0] hold;                                 // cycles clk_s[1] has differed from pc
 reg       fall;                                    // pc fell this cycle
 
 always @ (posedge clk) begin
 	fall <= 1'b0;
 	if (rst) begin
 		pc   <= 1'b1;
-		hold <= 4'd0;
+		hold <= {HW{1'b0}};
 	end else if (clk_s[1] == pc)
-		hold <= 4'd0;
+		hold <= {HW{1'b0}};
 	else if (hold == FILT - 1) begin
 		pc   <= clk_s[1];
-		hold <= 4'd0;
+		hold <= {HW{1'b0}};
 		fall <= pc;                                // 1 -> 0
 	end else
-		hold <= hold + 4'd1;
+		hold <= hold + 1'b1;
 end
 
 wire bit_in = dat_s[1];
