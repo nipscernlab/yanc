@@ -272,6 +272,34 @@ void msg_on_internal(void (*fn)(void));                // runs before msg_intern
     M("o tamanho do array tem que ser uma expressão constante", \
       "array size must be a constant expression")
 
+#define MSG_ERR_VIRTUAL_OVERLOAD \
+    M("dois métodos virtuais '%s' na mesma classe: um método virtual não pode ser sobrecarregado aqui; dê nomes diferentes", \
+      "two virtual methods '%s' in one class: a virtual method cannot be overloaded here; give them different names")
+
+#define MSG_ERR_TEMPLATE_AND_FUNC \
+    M("'%s' já é um template de função: uma função comum não pode ter o mesmo nome aqui", \
+      "'%s' is a function template already: a plain function cannot have the same name here")
+
+#define MSG_ERR_FP_OVERLOADED \
+    M("'%s' é sobrecarregada: o ponteiro para função não sabe qual delas; dê nomes diferentes", \
+      "'%s' is overloaded: a function pointer cannot tell which one; give them different names")
+
+#define MSG_ERR_OVERLOAD_AMBIGUOUS \
+    M("chamada ambígua de '%s': duas sobrecargas servem igualmente bem", \
+      "ambiguous call of '%s': two overloads fit equally well")
+
+#define MSG_ERR_REDECL \
+    M("'%s' já foi declarado neste bloco (ou é um parâmetro da função)", \
+      "'%s' is already declared in this block (or is a parameter of the function)")
+
+#define MSG_ERR_BITFIELD_WIDTH \
+    M("o campo de bits '%s' tem %d bits, e a largura vai de 1 aos %d bits da palavra", \
+      "bitfield '%s' has %d bits, and a width goes from 1 to the word's %d bits")
+
+#define MSG_ERR_ARRAY_SIZE_POS \
+    M("o tamanho de um array é pelo menos 1, e este é %ld", \
+      "an array size is at least 1, and this one is %ld")
+
 #define MSG_ERR_CASE_CONST \
     M("o rótulo do case tem que ser uma constante", \
       "a case label must be a constant")

@@ -122,6 +122,11 @@ inline void yanc_put_int(int v, int width, int fill, int plus) {
 // itself scaled up instead), never by scaling a large f down by 0.1, whose
 // error piles up (1e10 came out 9.99999e+09); each digit is then counted by
 // subtracting p. No float division: no float divider in the processor.
+// p * 10, or p itself when that passes the largest float: an overflow
+// saturates there, and the result is not ten times p (#131: the exponent
+// stopped at 38, while the SAPHO float reaches about 1.4e45)
+inline float yanc_x10(float p) { float q = p * 10.0f; return q * 0.1f > p * 0.5f ? q : p; }
+
 inline void yanc_put_float(float f, int prec) {
     if (prec < 1) prec = 1;
     if (prec > 12) prec = 12;
@@ -129,12 +134,12 @@ inline void yanc_put_float(float f, int prec) {
     if (f == 0.0f) { yanc_put('0'); return; }
     float p = 1.0f;                  // 10^e <= f < 10^(e+1)
     int e = 0;
-    if (f >= 1.0f) { while (e < 38 && f >= p * 10.0f) { p = p * 10.0f; e = e + 1; } }
+    if (f >= 1.0f) { for (float q = yanc_x10(p); q != p && f >= q; q = yanc_x10(p)) { p = q; e = e + 1; } }
     else           { while (f < 1.0f) { f = f * 10.0f; e = e - 1; } }
     float h = p * 0.5f;              // round at the last digit kept
     for (int i = 1; i < prec; i = i + 1) h = h * 0.1f;
     f = f + h;
-    if (e < 38 && f >= p * 10.0f) { p = p * 10.0f; e = e + 1; }
+    { float q = yanc_x10(p); if (q != p && f >= q) { p = q; e = e + 1; } }
     char d[12];
     for (int i = 0; i < prec; i = i + 1) {
         int k = 0;

@@ -228,6 +228,13 @@ value. What the common ones mean and how to get past them is in
 - error: member '<name>' takes one initializer
 - error: array field size must be constant
 - error: array size must be a constant expression
+- error: two virtual methods '<name>' in one class: a virtual method cannot be overloaded here; give them different names
+- error: '<name>' is a function template already: a plain function cannot have the same name here
+- error: '<name>' is overloaded: a function pointer cannot tell which one; give them different names
+- error: ambiguous call of '<name>': two overloads fit equally well
+- error: '<name>' is already declared in this block (or is a parameter of the function)
+- error: bitfield '<name>' has <n> bits, and a width goes from 1 to the word's <n> bits
+- error: an array size is at least 1, and this one is <n>
 - error: a case label must be a constant
 - error: the value of '<name>' in the enum must be a constant
 - error: a variadic function (f(int n, ...)) does not exist in YANC's C++

@@ -42,6 +42,7 @@
 
 // the most dimensions an array may have (#129): a declarator's list holds this many
 #define CPP_DIM_MAX 8
+typedef struct { int dims[CPP_DIM_MAX]; int n; } dimlist_t;   // a declarator's dimensions
 
 #include "../../yanc_version.h"   // YANC_VERSION, shared with the driver and the other compilers
 

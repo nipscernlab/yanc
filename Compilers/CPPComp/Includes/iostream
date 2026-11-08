@@ -11,7 +11,9 @@
 //
 // cout << : const char*, char, bool (as 1 / 0), int, unsigned, float (6
 // significant digits, as C++); std::endl, std::flush, std::hex, std::dec,
-// std::oct. cin >> : int, unsigned, char, float, char* (a word). A failed
+// std::oct. cin >> : int, unsigned, char, float, char* (a word of at most
+// YANC_LINE_MAX characters and its 0: the array must have room for them,
+// since the pointer does not say its size; cin.getline(s, n) takes n). A failed
 // read sets fail(), leaves 0 and takes nothing; clear() resets it.
 // Not here (GitHub issue #5): std::string, std::getline(cin, s), setw,
 // setprecision, `if (cin >> x)` and `!cin` (use cin.fail()).

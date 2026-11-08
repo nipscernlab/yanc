@@ -86,16 +86,19 @@ static int escape_at(const char **p, const char *lit)
     return v;
 }
 
-// the bytes of a "..." string literal, in a new block; *out_len gets their
-// number (a \0 may be one of them)
+// the bytes of a string literal, in a new block; *out_len gets their number
+// (a \0 may be one of them). Adjacent literals are one, as in C++: "ab" "cd"
+// is "abcd" (#131), so src is one or more "..." with blanks between them.
 static char *unescape_string(const char *src, int *out_len)
 {
-    const char *end = src + strlen(src) - 1;          // the closing quote
-    char *buf = (char*)xmalloc((size_t)(end - src) + 1);
+    char *buf = (char*)xmalloc(strlen(src) + 1);
     int j = 0;
-    for (const char *p = src + 1; p < end; ) {
-        if (*p == '\\') { p++; buf[j++] = (char)escape_at(&p, src); }
-        else buf[j++] = *p++;
+    for (const char *p = src; *p == '"'; ) {
+        for (p++; *p != '"'; ) {
+            if (*p == '\\') { p++; buf[j++] = (char)escape_at(&p, src); }
+            else buf[j++] = *p++;
+        }
+        for (p++; *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n'; ) p++;
     }
     buf[j] = 0;
     *out_len = j;
@@ -303,7 +306,7 @@ CHRLIT  \'(\\([0-7]{1,3}|x{HEXIT}+|.)|[^\\'\n])\'
 {FLOAT}[fFlL]?           { yylval.sval = float_text(yytext);       return FLOAT_LIT; }
 {DIGIT}{ALNUM}*          { msg_error(yylineno, MSG_ERR_NUM_SUFFIX, yytext); }   /* 1uuu, 12ab: not a number */
 {CHRLIT}                 { yylval.ival = unescape_char(yytext);    return CHAR_LIT; }
-{STRLIT}                 {
+{STRLIT}([ \t\r\n]*{STRLIT})* {
                            int len = 0;
                            char *bytes = unescape_string(yytext, &len);
                            yylval.sval = bytes;

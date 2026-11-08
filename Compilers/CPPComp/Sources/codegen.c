@@ -259,16 +259,18 @@ static func *resolve_method_ov(type *cls, const char *m, expr **args, int nargs)
     for (type *c = cls; c; c = c->base_class) {
         if (!c->tag) continue;
         char *mm = cg_mangle_method(c->tag, m);
-        func *best = NULL; int best_score = -1, seen = 0;
+        func *best = NULL; int best_score = -1, seen = 0, tie = 0;
         for (int i = 0; i < cg_unit->n_funcs + g_n_inst; i++) {
             func *f = (i < cg_unit->n_funcs) ? cg_unit->funcs[i] : g_inst[i - cg_unit->n_funcs];
             if (!f->method_of || strcmp(f->name, mm)) continue;
             seen = 1;
             int score = args_fit(f->params ? f->params->next : NULL,     // skip `this`
                                  f->n_params - 1, args, nargs);
-            if (score > best_score) { best_score = score; best = f; }
+            if (score > best_score) { best_score = score; best = f; tie = 0; }
+            else if (score >= 0 && score == best_score) tie = 1;
         }
         free(mm);
+        if (seen && tie) msg_error(args && nargs ? args[0]->line : 0, MSG_ERR_OVERLOAD_AMBIGUOUS, m);
         if (seen) return best;            // the name in a class hides its bases'
     }
     return NULL;
@@ -295,13 +297,17 @@ static char *method_call_label(type *cls, const char *m, expr **args, int nargs,
 static func *resolve_overload(const char *name, expr **args, int nargs)
 {
     if (!cg_unit) return NULL;
-    func *best = NULL; int best_score = -1;
+    func *best = NULL; int best_score = -1, tie = 0;
     for (int i = 0; i < cg_unit->n_funcs; i++) {
         func *f = cg_unit->funcs[i];
         if (f->method_of || strcmp(f->name, name)) continue;
         int score = args_fit(f->params, f->n_params, args, nargs);
-        if (score > best_score) { best_score = score; best = f; }
+        if (score > best_score) { best_score = score; best = f; tie = 0; }
+        else if (score >= 0 && score == best_score) tie = 1;
     }
+    // two overloads that fit as well: C++ calls it ambiguous (#131: the first
+    // declared won)
+    if (tie) msg_error(nargs ? args[0]->line : 0, MSG_ERR_OVERLOAD_AMBIGUOUS, name);
     return best;
 }
 
@@ -688,7 +694,16 @@ static void prescan_expr(expr *e)
         break;
     case E_IDENT: {
         sym *s = st_find(e->sval);
-        if (s && s->kind == SK_FUNC) fp_add(e->sval);
+        if (s && s->kind == SK_FUNC) {
+            // a function pointer holds one function; for an overloaded name
+            // the pointer's type would pick it, and cppcomp does not keep that
+            // type (#131: the pointer called a label that did not exist)
+            int n = 0;
+            for (int i = 0; cg_unit && i < cg_unit->n_funcs; i++)
+                if (!cg_unit->funcs[i]->method_of && !strcmp(cg_unit->funcs[i]->name, e->sval)) n++;
+            if (n > 1) msg_error(e->line, MSG_ERR_FP_OVERLOADED, e->sval);
+            fp_add(e->sval);
+        }
         return;
     }
     case E_CALL:
@@ -1369,6 +1384,14 @@ static void gen_addr(expr *e)
             free(masm);
         }
         if (rt && rt->is_ref && rt->base && rt->base->kind == TY_STRUCT) { gen_expr(e); return; }
+        // a call that returns a struct by value yields its result block's
+        // address, which is where the struct is (#131: f(7).x, and a copy
+        // constructor given make()); the block is the function's own, so it
+        // holds the value until that function is called again
+        if (e->kind == E_CALL) {
+            type *ct = infer_type(e);
+            if (ct && ct->kind == TY_STRUCT && !ct->is_ref) { gen_expr(e); return; }
+        }
         msg_error(e->line, MSG_ERR_NOT_LVALUE);
     }
     default:
@@ -1585,10 +1608,15 @@ static void set_block_vptr(const char *dest, type *t)
 // block `dest` (declared via #array) at offsets 0..n-1.
 static void copy_to_block(const char *dest, expr *src, int n)
 {
-    // a user copy constructor overrides the default word-by-word copy
+    // a user copy constructor overrides the default word-by-word copy, when
+    // src is an object (an lvalue): a prvalue (a call that returns a struct by
+    // value, a temporary T(...), a compound literal) initializes dest itself,
+    // with no copy, as C++17 has it (#131)
     {
         type *st = infer_type(src);
-        if (st && st->kind == TY_STRUCT && st->tag) {
+        int prvalue = (src->kind == E_CALL && st && !st->is_ref) ||
+                      src->kind == E_TEMPOBJ || src->kind == E_COMPOUND;
+        if (!prvalue && st && st->kind == TY_STRUCT && st->tag) {
             char *cc = resolve_method(st, "copyctor");
             if (cc) {
                 emit("LEA %s", dest); emit("PSH");   // this = &dest

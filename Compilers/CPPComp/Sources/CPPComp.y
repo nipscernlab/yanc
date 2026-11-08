@@ -401,9 +401,21 @@ static void add_static(type *cls, const char *name)
 }
 
 // register a virtual method name into the class's vtable (override reuses slot)
+// A virtual slot is found by the method's name, so one class cannot have two
+// virtual methods of one name (#131: an overloaded virtual called a label that
+// did not exist). A derived class that overrides the base's takes its slot.
+static type  *vm_cls;                  // the class whose own virtual names vm_names holds
+static char **vm_names;
+static int    vm_n, vm_cap;
+
 static void add_vmethod(type *cls, const char *name)
 {
     if (!cls) return;
+    if (vm_cls != cls) { for (int i = 0; i < vm_n; i++) free(vm_names[i]); vm_n = 0; vm_cls = cls; }
+    for (int i = 0; i < vm_n; i++)
+        if (!strcmp(vm_names[i], name)) msg_error(yylineno, MSG_ERR_VIRTUAL_OVERLOAD, name);
+    XGROW(vm_names, vm_n, vm_cap);
+    vm_names[vm_n++] = xstrdup(name);
     for (int i = 0; i < cls->n_vtbl; i++) if (!strcmp(cls->vtbl[i], name)) return;
     cls->vtbl = xrealloc(cls->vtbl, sizeof(char*) * (cls->n_vtbl + 1));
     cls->vtbl[cls->n_vtbl++] = xstrdup(name);
@@ -768,9 +780,12 @@ static int    cur_class_sp = 0, cur_class_cap = 0;
 
 static void class_open(char *tag, type *base)
 {
-    type *t = t_make_struct(tag);
+    // `class Node;` made an incomplete type (size -1) that pointers already
+    // use: the definition completes that one (#131), it does not make another
+    sym *old = st_find_tag(tag);
+    type *t = old && old->struct_t && old->struct_t->size < 0 ? old->struct_t : t_make_struct(tag);
     cur_struct_push(t);
-    st_add_tag(tag, t);
+    if (!old || old->struct_t != t) st_add_tag(tag, t);
     st_add_typedef(tag, t);             // bare class name usable as a type
     XGROW(cur_class_stk, cur_class_sp, cur_class_cap);
     cur_class_stk[cur_class_sp++] = cur_class;
@@ -860,7 +875,7 @@ static type *class_close(void)
     struct { type **ts; expr **es; int n; } galist;
     struct { stmt **arr; int n; } slist;
     struct { decl  *head; int n; } dlist;
-    struct { int dims[CPP_DIM_MAX]; int n; } dimlist;
+    dimlist_t dimlist;
     struct { type **arr; int n; } talist;
     /* mixed template-arg list: each slot is either a type (targs[k] != NULL,
        isval[k] == 0) or a value (targs[k] == NULL, vals[k] = const, isval[k]==1). */
@@ -1144,6 +1159,12 @@ struct_specifier:
           }
           free($2);
       }
+    | KW_STRUCT TYPEDEF_NAME base_clause '{' { class_open($2, $3); } member_list '}' {
+          /* the definition of a struct declared before, whose name is a type
+             now (`struct Node;` ... `struct Node { ... };`, #131) */
+          $$ = class_close();
+          free($2);
+      }
     | KW_STRUCT TYPEDEF_NAME {
           /* `struct Tag` where Tag is also a typedef (e.g. a self-referential
              struct, since we register the bare name as a type too) */
@@ -1167,6 +1188,11 @@ struct_specifier:
    declared above them (single-pass). */
 class_specifier:
       KW_CLASS IDENT base_clause '{' { class_open($2, $3); } member_list '}' {
+          $$ = class_close();
+          free($2);
+      }
+    | KW_CLASS TYPEDEF_NAME base_clause '{' { class_open($2, $3); } member_list '}' {
+          /* the definition of a class declared before (`class Node;`, #131) */
           $$ = class_close();
           free($2);
       }
@@ -1225,6 +1251,8 @@ method_decl:
           { register_method_decl(t_ref($1), $3, $5.head, $5.n); free($3); }
     | KW_CONST base_type '&' IDENT '(' param_list ')' fn_quals ';'
           { register_method_decl(t_ref($2), $4, $6.head, $6.n); free($4); }
+    | KW_CONST base_type '*' IDENT '(' param_list ')' fn_quals ';'
+          { register_method_decl(t_ptr($2), $4, $6.head, $6.n); free($4); }
     | KW_VIRTUAL base_type IDENT '(' param_list ')' fn_quals ';'
           { add_vmethod(cur_class, $3); register_method_decl($2, $3, $5.head, $5.n); free($3); }
     | KW_VIRTUAL base_type '*' IDENT '(' param_list ')' fn_quals ';'
@@ -1388,6 +1416,12 @@ method_def:
           { method_enter(t_ref($2), $4, $6.head, $6.n); }
       compound_stmt
           { method_finish(t_ref($2), $4, $10); free($4); }
+    /* `const char *name() { ... }`: a method that returns a pointer to const
+       (#131: a syntax error; the const is cosmetic, as above) */
+    | KW_CONST base_type '*' IDENT '(' param_list ')' fn_quals
+          { method_enter(t_ptr($2), $4, $6.head, $6.n); }
+      compound_stmt
+          { method_finish(t_ptr($2), $4, $10); free($4); }
     | KW_VIRTUAL base_type IDENT '(' param_list ')' fn_quals
           { add_vmethod(cur_class, $3); method_enter($2, $3, $5.head, $5.n); }
       compound_stmt
@@ -1535,13 +1569,19 @@ field_declarator:
           }
           free($1);
       }
-    | IDENT '[' conditional_expr ']' {
+    | IDENT '[' { $<typ>$ = cur_base; } conditional_expr ']' array_suffix {
           /* size is any constant expression: a literal, an enum constant, or a
-             non-type template parameter (a sentinel int, resolved at instantiation) */
+             non-type template parameter (a sentinel int, resolved at instantiation);
+             more dimensions follow as a declarator's do (#131: `int m[2][3];`) */
           long v;
-          if (!const_eval($3, &v)) msg_error(yylineno, MSG_ERR_FIELD_SIZE_CONST);
+          if (!const_eval($4, &v)) msg_error(yylineno, MSG_ERR_FIELD_SIZE_CONST);
+          if (v <= 0) msg_error(yylineno, MSG_ERR_ARRAY_SIZE_POS, v);
+          cur_base = $<typ>3;
+          dimlist_t dl; dl.n = 0;
+          DIM_ADD(dl, (int)v);
+          for (int i = 0; i < $6.n; i++) DIM_ADD(dl, $6.dims[i]);
           warn_wide(cur_base, $1, yylineno);
-          t_struct_add_field(cur_struct, $1, t_array(cur_base, (int)v));
+          t_struct_add_field(cur_struct, $1, build_array_type(cur_base, dl.dims, dl.n));
           free($1);
       }
     | '*' IDENT {
@@ -1549,7 +1589,9 @@ field_declarator:
           free($2);
       }
     | IDENT ':' INT_LIT {
-          /* bitfield `name : width` (e.g. unsigned flags : 3) */
+          /* bitfield `name : width` (e.g. unsigned flags : 3), of 1 to the
+             word's bits (#131: `int a : 40;` left word 0 empty) */
+          if ($3 < 1 || $3 > seal_bits()) msg_error(yylineno, MSG_ERR_BITFIELD_WIDTH, $1, (int)$3, seal_bits());
           t_struct_add_bitfield(cur_struct, $1, cur_base, (int)$3);
           free($1);
       }
@@ -1642,6 +1684,7 @@ array_suffix:
           cur_base = $<typ>3;
           long v;
           if (!const_eval($4, &v)) msg_error(yylineno, MSG_ERR_ARRAY_SIZE_CONST);
+          if (v <= 0) msg_error(yylineno, MSG_ERR_ARRAY_SIZE_POS, v);   /* #131: int a[-2] */
           $$ = $1; DIM_ADD($$, (int)v);   /* enum/macro/sizeof/arith ok */
       }
     ;
@@ -1847,7 +1890,12 @@ init_item_list:
 /* ----- function definition ------------------------------------------------ */
 
 function_def:
-      decl_specifiers pointers IDENT '(' param_list ')' {
+      decl_specifiers pointers TEMPLATE_NAME '(' {
+          /* a function named like a function template: C++ overloads the two,
+             cppcomp keeps one name per template (#131: "syntax error") */
+          msg_error(yylineno, MSG_ERR_TEMPLATE_AND_FUNC, $3);
+      }
+    | decl_specifiers pointers IDENT '(' param_list ')' {
           /* return type comes from $1 (a stack value): cur_base would be
              clobbered by the params' and body's own base_type reductions. */
           type *ret = apply_pointers($1, $2);
@@ -2089,6 +2137,10 @@ local_decl:
               s->decls = $2.head;
               /* publish names in current local scope */
               for (decl *d = $2.head; d; d = d->next) {
+                  /* C++ refuses a second declaration of a name in one block,
+                     and a local named like a parameter in the function's body
+                     (#131: the second one won, the parameter was lost) */
+                  if (st_find_redecl(d->name)) msg_error(d->line, MSG_ERR_REDECL, d->name);
                   st_add(SK_LOCAL_VAR, d->name, NULL, d->dtype);
                   warn_wide(d->dtype, d->name, d->line);
                   /* `const int X = expr;` / `constexpr int X = expr;` whose
@@ -2102,6 +2154,11 @@ local_decl:
           }
           ts_typedef = 0; ts_sclass = SC_NONE; ts_is_const = 0;
           $$ = s;
+      }
+    | decl_specifiers ';' {
+          /* `struct P { int a; };` in a function declares the type only (#131) */
+          ts_typedef = 0; ts_sclass = SC_NONE; ts_is_const = 0;
+          $$ = ast_stmt(S_DECL, yylineno);
       }
     ;
 
@@ -2145,24 +2202,34 @@ iteration_stmt:
     | KW_DO stmt KW_WHILE '(' expr ')' ';' {
           stmt *s = ast_stmt(S_DOWHILE, yylineno); s->e1 = $5; s->body = $2; $$ = s;
       }
-    | KW_FOR '(' opt_expr ';' opt_expr ';' opt_expr ')' stmt {
+    | for_open opt_expr ';' opt_expr ';' opt_expr ')' stmt {
+          st_pop_scope();
           stmt *s = ast_stmt(S_FOR, yylineno);
-          if ($3) { stmt *is = ast_stmt(S_EXPR, yylineno); is->e1 = $3; s->init_stmt = is; }
-          s->e1 = $5; s->e2 = $7; s->body = $9;
-          $$ = s;
-      }
-    | KW_FOR '(' local_decl opt_expr ';' opt_expr ')' stmt {
-          stmt *s = ast_stmt(S_FOR, yylineno);
-          s->init_stmt = $3;
+          if ($2) { stmt *is = ast_stmt(S_EXPR, yylineno); is->e1 = $2; s->init_stmt = is; }
           s->e1 = $4; s->e2 = $6; s->body = $8;
           $$ = s;
       }
-    | KW_FOR '(' decl_specifiers pointers IDENT ':' IDENT ')' stmt {  /* range-for, by value */
-          $$ = make_range_for(apply_pointers($3, $4), $5, $7, $9, yylineno); free($7);
+    | for_open local_decl opt_expr ';' opt_expr ')' stmt {
+          st_pop_scope();
+          stmt *s = ast_stmt(S_FOR, yylineno);
+          s->init_stmt = $2;
+          s->e1 = $3; s->e2 = $5; s->body = $7;
+          $$ = s;
       }
-    | KW_FOR '(' decl_specifiers '&' IDENT ':' IDENT ')' stmt {       /* range-for, by reference */
-          $$ = make_range_for(t_ref($3), $5, $7, $9, yylineno); free($7);
+    | for_open decl_specifiers pointers IDENT ':' IDENT ')' stmt {  /* range-for, by value */
+          st_pop_scope();
+          $$ = make_range_for(apply_pointers($2, $3), $4, $6, $8, yylineno); free($6);
       }
+    | for_open decl_specifiers '&' IDENT ':' IDENT ')' stmt {       /* range-for, by reference */
+          st_pop_scope();
+          $$ = make_range_for(t_ref($2), $4, $6, $8, yylineno); free($6);
+      }
+    ;
+
+/* `for (`: the loop's own scope, where its variable lives, as in C++ (two
+   loops of one block may both declare k) */
+for_open:
+      KW_FOR '(' { st_push_scope(); }
     ;
 
 opt_expr:

@@ -56,6 +56,7 @@ sym  *st_find_tag(const char *tag);
 
 sym  *st_find       (const char *name);
 sym  *st_find_local (const char *name);
+sym  *st_find_redecl(const char *name);   // what a local declaration of name would redeclare
 int   st_hide_scopes  (void);          // hide the open scopes (inline expansion); returns
 void  st_restore_floor(int old);       // what st_restore_floor takes back
 

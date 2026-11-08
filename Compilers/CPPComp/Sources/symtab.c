@@ -16,6 +16,7 @@ static sym **tagscopes;                // struct tags (separate namespace)
 static int   scope_n, scope_cap;
 static int   scope_floor = 1;          // st_find looks from the top down to here, then global
 static char *cur_func;
+static int   func_scope = -1;          // the scope of the parameters of cur_func, -1 before it opens
 
 void st_init(void)
 {
@@ -32,6 +33,7 @@ void st_push_scope(void)
         XGROW(tagscopes, scope_n, scope_cap);
     }
     scopes[scope_n] = NULL; tagscopes[scope_n] = NULL;
+    if (cur_func && func_scope < 0) func_scope = scope_n;   // the first one a function opens
     scope_n++;
 }
 
@@ -45,9 +47,10 @@ void st_enter_func(const char *fn)
 {
     if (cur_func) free(cur_func);
     cur_func = xstrdup(fn);
+    func_scope = -1;
 }
 
-void st_leave_func(void) { if (cur_func) { free(cur_func); cur_func = NULL; } }
+void st_leave_func(void) { if (cur_func) { free(cur_func); cur_func = NULL; } func_scope = -1; }
 int  st_in_func   (void) { return cur_func != NULL; }
 
 const char *st_current_func(void) { return cur_func; }
@@ -65,7 +68,10 @@ static sym *new_sym(sym_kind kind, const char *name, const char *asm_name, type 
 sym *st_add(sym_kind kind, const char *name, const char *asm_name, type *t)
 {
     sym *s = new_sym(kind, name, asm_name, t);
-    int slot = (kind == SK_GLOBAL_VAR || kind == SK_FUNC || kind == SK_TYPEDEF || kind == SK_STRUCT_TAG)
+    // a typedef in a function body is the block's own (#131: it was seen
+    // in main too); a struct tag, a function and a global are the file's
+    int slot = (kind == SK_GLOBAL_VAR || kind == SK_FUNC || kind == SK_STRUCT_TAG ||
+                (kind == SK_TYPEDEF && !cur_func))
               ? 0
               : scope_n - 1;
     if (kind == SK_STRUCT_TAG) {
@@ -119,6 +125,19 @@ sym *st_find_local(const char *name)
     int i = scope_n - 1;
     for (sym *s = scopes[i]; s; s = s->next)
         if (strcmp(s->name, name) == 0) return s;
+    return NULL;
+}
+
+// what a declaration of name in the current block would redeclare: a name of
+// this block, or a parameter when the block is the function's body (C++
+// refuses both; #131: the parameter was silently lost), or NULL
+sym *st_find_redecl(const char *name)
+{
+    sym *s = st_find_local(name);
+    if (s) return s;
+    if (func_scope >= 0 && scope_n - 1 == func_scope + 1)
+        for (s = scopes[func_scope]; s; s = s->next)
+            if (s->kind == SK_PARAM && strcmp(s->name, name) == 0) return s;
     return NULL;
 }
 

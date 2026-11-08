@@ -88,7 +88,7 @@ See [Text on the keyboard and the screen](#text-on-the-keyboard-and-the-screen).
 | pointers, references | one word; a pointer counts in words, and `p + n` steps `n` elements of the type it points to |
 | arrays | up to 8 dimensions; `int t[N] "file.txt";` initialises one from a file, as in C± |
 | `enum`, `enum class` | the name is a type (`Color c = GREEN;`); a value is any integer constant (`= -1`, `= A + 1`, `= 1 << 3`); an underlying type (`enum class E : unsigned`) is accepted, and every enum is one word |
-| `struct`, `class`, `union`, bitfields | as in C++ |
+| `struct`, `class`, `union`, bitfields | as in C++, also declared first (`class Node;`) and defined later, or defined inside a function; a field may be an array of up to 8 dimensions; a bitfield has 1 to the word's bits |
 | `auto` | for a local with an initializer, and in a range-for |
 
 **Constant data in the data memory.** A string literal, and a global
@@ -128,7 +128,11 @@ tests its mantissa, because SAPHO's zero float is not an all-zero word.
   `int`), then a conversion (between integer types, integer and float, one
   pointer type to another). `char`, `bool`, `unsigned` and `int` are told
   apart (`f('A')` calls `f(char)`), `'A'` is a `char`, `true` a `bool`, and
-  a reference parameter (`int&`) matches by the type it refers to.
+  a reference parameter (`int&`) matches by the type it refers to. Two
+  overloads that fit equally well make the call ambiguous, an error, as in
+  C++. Unlike C++, a virtual method cannot be overloaded, a plain function
+  cannot share a function template's name, and a function pointer cannot
+  take an overloaded function: each gives its own message.
 - **Recursion works**: a function that can reach itself gets a stack frame
   on a 1024-word call stack, built only when the program has one. A call
   whose frame does not fit ends the program, as a stack overflow ends a C++
@@ -289,8 +293,8 @@ exist in C± only) are errors.
 Exceptions (`try`, `catch`, `throw`), `typeid` and RTTI, `friend`,
 `decltype`, multiple inheritance, variadic functions, lambdas inside a
 function or with captures, template specialization and default template
-arguments, `std::string`, file streams, `printf`, and more than one source
-file (use `#include`). Most of these stop the compiler with "syntax error"
+arguments, `std::string`, file streams, `printf`, the functional cast
+`int(f)` (write `(int)f`), and more than one source file (use `#include`). Most of these stop the compiler with "syntax error"
 at the line; a variadic function has its own message. GitHub issue #43 keeps
 the list of the forms not accepted yet, and issue #31 the functions of
 C±'s library that C++ lacks (`fin`, `fout`, `sin` and the rest).

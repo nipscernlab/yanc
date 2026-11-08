@@ -17,7 +17,8 @@
 // out(0, line[0]), line[2], line[3] -> 101 10 0  fgets: "ef", Enter, the end
 //
 // and on the screen (toma_1.txt): put('A'), write("xyz", 2), oct 8 then dec
-// 9, and puts("ok"), which adds the Enter: A x y 1 0 blank 9 o k Enter.
+// 9, 1.2e45 (#131: the exponent stopped at 38), and puts("ok"), which adds
+// the Enter: "Axy10 9 1.2e+45 ok" and Enter.
 
 #define YANC_LINK_SYNC 0
 #define YANC_ECHO 0
@@ -48,6 +49,6 @@ void main(void)
     out(0, line[0]); out(0, line[2]); out(0, line[3]);
     cout.put('A');
     cout.write("xyz", 2);
-    cout << oct << 8 << dec << ' ' << 9;
+    cout << oct << 8 << dec << ' ' << 9 << ' ' << 1.2e45f << ' ';
     puts("ok");
 }

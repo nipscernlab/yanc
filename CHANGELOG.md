@@ -51,6 +51,20 @@ tags consumed by Aurora.
   `ignore`, `getchar`, `fgets`, and `cout.put`, `write`, `oct`, `puts`.
   The regression now also compares what a test wrote on link k with its
   `golden_toma_k.txt`.
+- **cppcomp: the forms the manual promises, and the refusals it owes
+  (#131).** A class declared first (`class Node;`) and defined later is
+  one type; a field may have two or more dimensions; a struct or class may
+  be defined inside a function; `"ab" "cd"` is one string; a method may
+  return `const char *`; `f(7).x` reads a member of the struct a call
+  returns; a struct a call returns initializes a parameter with no copy,
+  as C++17 has it; and a typedef inside a function stays there. Refused
+  now, each with its message: an array of size 0 or less, a name declared
+  twice in one block or named like a parameter in the function's body, a
+  bitfield wider than the word, an overloaded virtual method, `&f` of an
+  overloaded `f`, a call two overloads fit equally well, and a function
+  named like a function template. `cout << float` writes exponents up to
+  45 (it stopped at 38). Each `for` has its own scope, as in C++. Tested
+  by test112, test111 and nine NegTests.
 - **cppcomp tidied (#133).** One helper makes a compiler temporary
   (`new_temp_as`), one ranks how arguments fit an overload (`args_fit`),
   and `new` calls a constructor as every other object creation does. The
