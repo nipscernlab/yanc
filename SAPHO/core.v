@@ -217,36 +217,40 @@ assign                     out = mem[pmenoum];
 // Flags
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 
-reg             fl_full = 0;
-reg [NADDR-1:0] fl_max  = 0; // pointer high-water mark
-reg [NADDR-1:0] pointeri;    // NADDR-wide (matches pointer) -- a 32-bit integer
-                             // here would make `pointeri = pointer` a width-
-                             // mismatched assign that Verilator flags WIDTHEXPAND.
+// The words the stack holds, counted apart from the pointer: a full stack of
+// a power-of-two DEPTH has its pointer wrapped to 0, which the hardware reads
+// right (the top is mem[pointer - 1]) but a monitor cannot tell from empty.
+// One bit wider than the pointer, so DEPTH fits.
+localparam [NADDR:0] FULL = DEPTH[NADDR:0];
+reg  [NADDR:0] fl_cnt  = 0;
+wire [NADDR:0] fl_nxt  = rst  ? {(NADDR+1){1'b0}} :
+                         push ? fl_cnt + 1'b1      :
+                         pop  ? fl_cnt - 1'b1      : fl_cnt;
 
-// pointeri is a pure combinational copy of the pointer -- no self-reference,
-// so it is fine under Verilator.
-always @ (*) pointeri = pointer;
+reg            fl_full = 0;  // a push with DEPTH words held, or a pop with none
+reg            fl_top;       // DEPTH words held now: the stack is full, which a
+                             // program at its deepest point is, with no harm
+reg  [NADDR:0] fl_max  = 0;  // the most words held
+reg  [NADDR+1:0] pointeri;   // the words held, for the waveform: a sign bit on
+                             // top, as gen_gtkw shows it as a signed number
 
-// fl_full ("stack ever overflowed", sticky) and fl_max (pointer high-water mark)
-// are STATE: an always @(*) that reads its own output is a latch / comb loop
-// that Verilator flags as UNOPTFLAT and may mis-evaluate. Register them on the
-// clock instead, but evaluate the conditions on the pointer's NEXT value
-// (pointer_nxt = exactly what the pointer register takes this same edge). The
-// flag/max update then lands in the SAME cycle the pointer changes -- bit-for-
-// bit the waveform the async version produced, identical across the Icarus and
-// the Verilator runs. They never reset, accumulating over the whole run (stats).
-wire [NADDR-1:0] pointer_nxt = rst  ? zero    :
-                               push ? pmaisum :
-                               pop  ? pmenoum : pointer;
+// pointeri is a pure combinational copy -- no self-reference, so it is fine
+// under Verilator.
+always @ (*) pointeri = {1'b0, fl_cnt};
+always @ (*) fl_top   = (fl_cnt == FULL);
 
-// fl_full looks at the pointer BEFORE the edge: a push at DEPTH-1 (the stack
-// reaches DEPTH) or a pop at 0. Testing pointer_nxt >= DEPTH missed a
-// power-of-two DEPTH, whose NADDR-bit pointer wraps to 0 instead of reaching
-// DEPTH (the old wrap test, (pointer_nxt+um)-pointer_nxt != 1, is evaluated at
-// 32 bits and never fired). fl_max still wraps there: it is a display aid.
+// fl_full ("stack ever overflowed", sticky) and fl_max are STATE: an always
+// @(*) that reads its own output is a latch / comb loop that Verilator flags
+// as UNOPTFLAT and may mis-evaluate. They are registered on the clock, and
+// fl_max on the count's NEXT value, so it changes in the same cycle as the
+// pointer, in Icarus and Verilator alike. They never reset (stats of the run).
+// fl_full rises on a real overflow (issue #145): before, it rose when the
+// stack became full, so asmcomp gave every stack a word more than the
+// program needs to keep a correct program below it.
 always @ (posedge clk) begin
-	if (!rst && ((push && pointer == DEPTH-1) || (!push && pop && pointer == zero))) fl_full <= 1'b1;
-	if ( pointer_nxt >  fl_max                                       ) fl_max  <= pointer_nxt;
+	fl_cnt <= fl_nxt;
+	if (!rst && ((push && fl_cnt == FULL) || (!push && pop && fl_cnt == {(NADDR+1){1'b0}}))) fl_full <= 1'b1;
+	if (fl_nxt > fl_max) fl_max <= fl_nxt;
 end
 
 `endif // ---------------------------------------------------------------------
@@ -349,7 +353,7 @@ wire [MINSTW-1:0] stack_out;
 
 generate
 	if (CAL) begin : isp_blk
-		stack #($clog2(SDEPTH), SDEPTH, MINSTW) isp(clk, rst, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
+		stack #((SDEPTH > 1) ? $clog2(SDEPTH) : 1, SDEPTH, MINSTW) isp(clk, rst, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
 	end
 endgenerate
 
@@ -1038,7 +1042,7 @@ wire              sp_push = id_dsp_push;
 wire              sp_pop  = id_dsp_pop;
 wire [NUBITS-1:0] sp_in, sp_data;
 
-stack #(.NADDR($clog2(DDEPTH)),
+stack #(.NADDR((DDEPTH > 1) ? $clog2(DDEPTH) : 1),   // a 1-word stack still has a 1-bit pointer
         .DEPTH(DDEPTH),
         .NBITS(NUBITS)) sp(clk, rst, sp_push, sp_pop, sp_in, sp_data);
 

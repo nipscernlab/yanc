@@ -290,10 +290,12 @@ hw_check() {   # hw_check <hardware.txt> <top.v>
     return 0
 }
 
-# A stack that reaches its depth in an Icarus run: the simulation's fl_full
-# (core.v, stack; it catches a wrapping pointer too) went to 1 in the VCD.
-# With the depths asmcomp works out (peak + 1) it never should; a declared
-# depth that is too small shows up here even when the outputs happen to match.
+# A stack that overflows in an Icarus run: the simulation's fl_full (core.v,
+# stack: a push with the stack full or a pop of an empty one, counted apart
+# from the pointer, which wraps at a full power-of-two depth) went to 1 in the
+# VCD. With the depths asmcomp works out (the peak itself, #145) it never
+# should; a declared depth that is too small shows up here even when the
+# outputs happen to match.
 # Returns 1 when a flag fired, 0 otherwise (and when there is no VCD).
 mk_list() {   # mk_list <VAR> [prefix]: a source list of the Makefile, the only place it is written
     local f

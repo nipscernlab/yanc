@@ -1229,11 +1229,13 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth, const char **why_o
     {
         int d = c.maxd[0], s = c.maxc[0];
         if (itr >= 0 && itr < n) { d += c.maxd[c.entry[itr]]; s += c.maxc[c.entry[itr]]; }  // on top of any point
-        // one word more than the deepest point: the simulation's overflow flag
-        // (core.v, stack) fires when the pointer reaches DEPTH; at least 2, the
-        // stack's pointer has $clog2(DEPTH) bits
-        *ddepth = d + 1 < 2 ? 2 : d + 1;
-        *sdepth = s + 1 < 2 ? 2 : s + 1;
+        // the deepest point, a word per word held: the simulation's flag
+        // (core.v, stack) rises on an overflow, a push with DEPTH words held.
+        // It used to rise when the stack became full, and every depth was one
+        // word more than the program needs (#145). At least 1: a stack exists
+        // whether the program uses it or not.
+        *ddepth = d < 1 ? 1 : d;
+        *sdepth = s < 1 ? 1 : s;
         ret = 1;
     }
     if (why_out) *why_out = why;

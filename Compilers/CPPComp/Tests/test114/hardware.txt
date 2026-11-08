@@ -1,1 +1,1 @@
-SDEPTH 6
+SDEPTH 5

@@ -244,8 +244,8 @@ int asm_is_norm(const char *mn);                  // its ALU result goes through
 // a callee's net effect is its depth at RET (negative: it pops its
 // arguments), and a call adds the callee's peak to the caller's depth there.
 // The interrupt can arrive anywhere, so its peaks add to the program's.
-// Each depth written is the peak + 1 (the simulation's overflow flag fires
-// when the pointer reaches DEPTH), at least 2.
+// Each depth written is the peak, at least 1: the simulation's overflow flag
+// rises only when a push finds the stack full (#145).
 //
 // asmcomp calls it for a stack the .asm does not declare (#SDEPTH / #NDSTAC
 // left out, in any front end or by hand); a declared depth stays. Recursion,

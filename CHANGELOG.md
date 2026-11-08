@@ -44,6 +44,19 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **Each stack exactly as deep as the program goes (#145).** asmcomp gave
+  every stack it sized a word more than the program's deepest point: the
+  simulation's `fl_full` rose when a stack became full, not when it
+  overflowed, and the regression fails a run that raises it. `fl_full` now
+  rises on an overflow (a push with the stack full, a pop of an empty one),
+  counted in simulation apart from the pointer, which wraps at a full
+  power-of-two depth and still reads the right word; the hardware is the
+  same. So `asm_depth` returns the peak itself, at least 1, and a stack's
+  pointer has at least one bit. Every processor whose depths are worked out
+  loses a word of each stack (cmm_depth: 4 and 3 to 3 and 2). The waveform
+  shows each stack's words held (`pointeri`, no longer a wrapping pointer),
+  a new `fl_top` while it is full, and `fl_full` labelled as the overflow
+  it is.
 - **SAPHO's Verilog passes Verilator's lint, and the regression keeps it so
   (#35).** `verilator --lint-only -Wall` on sapho_all gave 50 warnings.
   The dead ones are gone: `sw` and `mem_wrb` (processor.v), `rf`, and the
