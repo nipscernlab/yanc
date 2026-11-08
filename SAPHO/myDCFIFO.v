@@ -47,6 +47,13 @@ module myDCFIFO
 
 localparam A = $clog2(LENGTH);                    // address bits; pointers have A+1
 
+// a LENGTH outside the rule (a power of two, at least 4) names this module,
+// which does not exist: every tool stops there with the rule in its message
+// (#180; Verilog-2001 has no $error)
+generate if (LENGTH < 4 || LENGTH != (1 << A)) begin : length_check
+	myDCFIFO_LENGTH_must_be_a_power_of_two_at_least_4 length_rule ();
+end endgenerate
+
 function [A:0] gray2bin(input [A:0] g);
 	integer i;
 	begin

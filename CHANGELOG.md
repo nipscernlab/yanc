@@ -198,6 +198,13 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **myFIFO and myDCFIFO refuse a LENGTH they cannot hold (#180).** The
+  pointers have `$clog2(LENGTH)` bits and wrap only at a power of two: a
+  myFIFO of LENGTH 100 accepted 126 words and lost 26, with full, empty and
+  usedw all coherent. A LENGTH that is not a power of two (or below 2 for
+  myFIFO, 4 for myDCFIFO) now stops the elaboration with the rule in the
+  message, by naming a module that does not exist (Verilog-2001 has no
+  `$error`). `docs/peripherals.md` says the rule for both.
 - **SAPHO: a RET in decode no longer wins over a reset or an interrupt
   (#164, #166).** The return address overrode the fetch address that
   prefetch had already chosen, 0 in a reset and the #ITRAD address in an

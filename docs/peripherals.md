@@ -21,13 +21,19 @@ without waiting for each word to be taken.
 
 - `myFIFO`: one clock. Ports `clk`, `sclr`, `data`, `wrreq`, `full`, `q`,
   `rdreq`, `empty`, `almost_empty`, `usedw`; parameters `WORD`, `LENGTH`,
-  `ALMOST`. It holds `LENGTH - 1` words.
+  `ALMOST`. It holds `LENGTH - 1` words; `LENGTH` is a power of two, at
+  least 2.
 - `myDCFIFO`: two clocks, ports in the style of the Quartus `dcfifo`:
   `aclr`; `wrclk`, `data`, `wrreq`, `wrfull`, `wrusedw` on the writer's
   side; `rdclk`, `rdreq`, `q`, `rdempty`, `rdalmost_empty`, `rdusedw` on the
-  reader's. It holds `LENGTH` words (a power of two); a word shows up on the
+  reader's. It holds `LENGTH` words (a power of two, at least 4); a word shows up on the
   reader's side 2 to 3 reader cycles after it is written. Hold `aclr` for a
   few cycles of the slower clock.
+
+A `LENGTH` outside those rules stops the elaboration, in every tool, with
+the rule in the message (`myFIFO_LENGTH_must_be_a_power_of_two_at_least_2`):
+the pointers wrap only at a power of two, and a `myFIFO` of 100 accepted
+126 words and lost 26 of them without a sign.
 
 In both, the word on `data` is stored in the cycle `wrreq` is 1, `q` shows
 the oldest word, and `rdreq` moves to the next. Wired to two SAPHOs (as the
