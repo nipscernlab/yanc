@@ -141,6 +141,15 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **cppcomp: the waveform shows a condition on its own line (#87).** A
+  statement took the line the parser was on when it finished it: the test
+  of an `if`, a `while` or a `for` showed on the line of its closing brace,
+  and an `if` without `else`, finished only on the next token, on the line
+  after it. `if`, `switch`, `while`, `do`, `for`, `case`, `default` and a
+  label now take the line they start on (the `while` of a `do`). The
+  programs do not change; over the 115 C++ tests, the instructions on a
+  line that cannot have produced them, by `Scripts/wave_map.py`'s rules for
+  C±, fall from 2773 to 1851, and the jumps among them from 281 to 2.
 - **The stack depths of a loop of seven `else if` (#54).** The passes on
   the `.asm` read a line as at most 8 words, and the chain ends on one line
   of seven labels and the jump back: the jump lost its target, the walk

@@ -29,6 +29,9 @@
 
 #include "y.tab.h"
 
+// every token's line, for the grammar's @n (a statement's first line)
+#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
+
 extern unit *g_unit;   // populated by parser/main, used here to record pragmas
 extern int  g_lit_uns; // set alongside yylval.ival for INT_LIT, read by the parser
 

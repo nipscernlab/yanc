@@ -861,6 +861,11 @@ static type *class_close(void)
 }
 %}
 
+/* @1.first_line: the line a statement starts on (CPPComp.l sets it from
+   yylineno). yylineno itself is past the statement when it is reduced, and
+   an `if` without else is reduced on the next token, a line later (#87) */
+%locations
+
 %union {
     long    ival;
     char   *sval;
@@ -2172,13 +2177,13 @@ expr_stmt:
 
 selection_stmt:
       KW_IF '(' expr ')' stmt %prec IFX {
-          stmt *s = ast_stmt(S_IF, yylineno); s->e1 = $3; s->body = $5; s->body2 = NULL; $$ = s;
+          stmt *s = ast_stmt(S_IF, @1.first_line); s->e1 = $3; s->body = $5; s->body2 = NULL; $$ = s;
       }
     | KW_IF '(' expr ')' stmt KW_ELSE stmt {
-          stmt *s = ast_stmt(S_IF, yylineno); s->e1 = $3; s->body = $5; s->body2 = $7; $$ = s;
+          stmt *s = ast_stmt(S_IF, @1.first_line); s->e1 = $3; s->body = $5; s->body2 = $7; $$ = s;
       }
     | KW_SWITCH '(' expr ')' stmt {
-          stmt *s = ast_stmt(S_SWITCH, yylineno); s->e1 = $3; s->body = $5; $$ = s;
+          stmt *s = ast_stmt(S_SWITCH, @1.first_line); s->e1 = $3; s->body = $5; $$ = s;
       }
     ;
 
@@ -2188,44 +2193,44 @@ labeled_stmt:
              ival, which `-1` (a unary minus) did not have (#128) */
           long v;
           if (!const_eval($2, &v)) msg_error(yylineno, MSG_ERR_CASE_CONST);
-          stmt *s = ast_stmt(S_CASE, yylineno); s->e1 = ast_int_lit(v, $2->line); s->body = $4; $$ = s;
+          stmt *s = ast_stmt(S_CASE, @1.first_line); s->e1 = ast_int_lit(v, $2->line); s->body = $4; $$ = s;
       }
     | KW_DEFAULT ':' stmt {
-          stmt *s = ast_stmt(S_DEFAULT, yylineno); s->body = $3; $$ = s;
+          stmt *s = ast_stmt(S_DEFAULT, @1.first_line); s->body = $3; $$ = s;
       }
     | IDENT ':' stmt {
-          stmt *s = ast_stmt(S_LABEL, yylineno); s->label = $1; s->body = $3; $$ = s;
+          stmt *s = ast_stmt(S_LABEL, @1.first_line); s->label = $1; s->body = $3; $$ = s;
       }
     ;
 
 iteration_stmt:
       KW_WHILE '(' expr ')' stmt {
-          stmt *s = ast_stmt(S_WHILE, yylineno); s->e1 = $3; s->body = $5; $$ = s;
+          stmt *s = ast_stmt(S_WHILE, @1.first_line); s->e1 = $3; s->body = $5; $$ = s;
       }
     | KW_DO stmt KW_WHILE '(' expr ')' ';' {
-          stmt *s = ast_stmt(S_DOWHILE, yylineno); s->e1 = $5; s->body = $2; $$ = s;
+          stmt *s = ast_stmt(S_DOWHILE, @3.first_line);   /* its test is the while's */ s->e1 = $5; s->body = $2; $$ = s;
       }
     | for_open opt_expr ';' opt_expr ';' opt_expr ')' stmt {
           st_pop_scope();
-          stmt *s = ast_stmt(S_FOR, yylineno);
+          stmt *s = ast_stmt(S_FOR, @1.first_line);
           if ($2) { stmt *is = ast_stmt(S_EXPR, yylineno); is->e1 = $2; s->init_stmt = is; }
           s->e1 = $4; s->e2 = $6; s->body = $8;
           $$ = s;
       }
     | for_open local_decl opt_expr ';' opt_expr ')' stmt {
           st_pop_scope();
-          stmt *s = ast_stmt(S_FOR, yylineno);
+          stmt *s = ast_stmt(S_FOR, @1.first_line);
           s->init_stmt = $2;
           s->e1 = $3; s->e2 = $5; s->body = $7;
           $$ = s;
       }
     | for_open decl_specifiers pointers IDENT ':' IDENT ')' stmt {  /* range-for, by value */
           st_pop_scope();
-          $$ = make_range_for(apply_pointers($2, $3), $4, $6, $8, yylineno); free($6);
+          $$ = make_range_for(apply_pointers($2, $3), $4, $6, $8, @1.first_line); free($6);
       }
     | for_open decl_specifiers '&' IDENT ':' IDENT ')' stmt {       /* range-for, by reference */
           st_pop_scope();
-          $$ = make_range_for(t_ref($2), $4, $6, $8, yylineno); free($6);
+          $$ = make_range_for(t_ref($2), $4, $6, $8, @1.first_line); free($6);
       }
     ;
 
