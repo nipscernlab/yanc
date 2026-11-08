@@ -58,6 +58,14 @@ tags consumed by Aurora.
   a new `fl_top` while it is full, and the overflow under its own name:
   `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
   that reads the old name (AURORA's waveform) has to change with it.
+- **F_ROT without the normaliser (#159).** `sqrt()`'s first guess built
+  the mantissa 1 and let the normaliser shift it up; the result is an exact
+  power of two, always in range, so `ula_frot` now writes the final word and
+  F_ROT is a term of the output mux. It gives the old results on every
+  16-bit word at the three levels. Yosys: F_ROT alone 72 to 66 LUT4 (78 to
+  66 at level 0); with F_ADD within noise. Like #158, it takes one leg off
+  the leading-zero count, on the float add's path; the clock is not
+  measured.
 - **F_SCL and XPO at the exponent's width (#161).** F_SCL (`exp()`,
   `ldexp`) added k to the exponent and compared at the word's width; a k
   wider than EXP+1 bits saturates whatever the exponent, so it now adds at

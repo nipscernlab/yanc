@@ -51,3 +51,5 @@ lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*Bits of signal are not used:
 lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*Bits of signal are not used: 'ye'*"
 lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*Bits of signal are not used: 'e_rnd'*"
 lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*'zer'*"
+// F_ROT's final exponent is computed at EXP+2 bits and always fits EXP (#159)
+lint_off -rule UNUSEDSIGNAL -file "*ula.v" -match "*Bits of signal are not used: 'e_fin'*"

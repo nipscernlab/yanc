@@ -66,6 +66,7 @@ module ula_mux
 	 input     [NUBITS-1:0] shl , shr , srs ,        // <<, >> and >>>
 	 // operations from the normalization circuit
 	 input     [NUBITS-1:0] smx ,                    // float-only with denorm.
+	 input     [NUBITS-1:0] frot,                    // F_ROT, final (#159)
 	 // special operations (exponent surgery)
 	 input     [NUBITS-1:0] fscl, xpo , xpom,        // F_SCL/SF_SCL, XPO, XPO_M
 	 // outputs: every operation, and the ones that do not go through the
@@ -122,6 +123,7 @@ wire [NUBITS-1:0] t42; generate if ((EQU) != 0) begin : g42 assign t42 = (op == 
 wire [NUBITS-1:0] t43; generate if ((SHL) != 0) begin : g43 assign t43 = (op == 6'd43) ? shl   : {NUBITS{1'b0}}; end else begin : g43 assign t43 = {NUBITS{1'b0}}; end endgenerate   // SHL
 wire [NUBITS-1:0] t44; generate if ((SHR) != 0) begin : g44 assign t44 = (op == 6'd44) ? shr   : {NUBITS{1'b0}}; end else begin : g44 assign t44 = {NUBITS{1'b0}}; end endgenerate   // SHR
 wire [NUBITS-1:0] t45; generate if ((SRS) != 0) begin : g45 assign t45 = (op == 6'd45) ? srs   : {NUBITS{1'b0}}; end else begin : g45 assign t45 = {NUBITS{1'b0}}; end endgenerate   // SRS
+wire [NUBITS-1:0] t46; generate if ((F_ROT) != 0) begin : g46 assign t46 = (op == 6'd46) ? frot  : {NUBITS{1'b0}}; end else begin : g46 assign t46 = {NUBITS{1'b0}}; end endgenerate   // F_ROT
 wire [NUBITS-1:0] t49; generate if ((F_SCL) != 0) begin : g49 assign t49 = (op == 6'd49) ? fscl  : {NUBITS{1'b0}}; end else begin : g49 assign t49 = {NUBITS{1'b0}}; end endgenerate   // F_SCL
 wire [NUBITS-1:0] t50; generate if ((XPO) != 0) begin : g50 assign t50 = (op == 6'd50) ? xpo   : {NUBITS{1'b0}}; end else begin : g50 assign t50 = {NUBITS{1'b0}}; end endgenerate   // XPO
 wire [NUBITS-1:0] t51; generate if ((XPO_M) != 0) begin : g51 assign t51 = (op == 6'd51) ? xpom  : {NUBITS{1'b0}}; end else begin : g51 assign t51 = {NUBITS{1'b0}}; end endgenerate   // XPO_M
@@ -129,16 +131,15 @@ wire [NUBITS-1:0] t51; generate if ((XPO_M) != 0) begin : g51 assign t51 = (op =
 assign out_fast = t0 | t1 | t2 | t4 | t6 | t8 | t9 | t10 | t11 | t12 | t13 | t14 | t15 |
                   t16 | t17 | t18 | t19 | t20 | t21 | t22 | t23 | t24 | t27 | t28 | t29 | t30 |
                   t31 | t32 | t33 | t34 | t35 | t36 | t37 | t38 | t39 | t40 | t41 | t42 | t43 |
-                  t44 | t45 | t49 | t50 | t51;
+                  t44 | t45 | t46 | t49 | t50 | t51;
 
 // the 2-input mux, only when the program has a normalised operation
-generate if ((F_ADD | F_MLT | F_DIV | I2F | I2F_M | F_ROT | F_SU1 | F_SU2) != 0) begin : norm_out
+generate if ((F_ADD | F_MLT | F_DIV | I2F | I2F_M | F_SU1 | F_SU2) != 0) begin : norm_out
 	wire is_norm = (((F_ADD) != 0) & (op == 6'd3)) |
 	                 (((F_MLT) != 0) & (op == 6'd5)) |
 	                 (((F_DIV) != 0) & (op == 6'd7)) |
 	                 (((I2F) != 0) & (op == 6'd25)) |
 	                 (((I2F_M) != 0) & (op == 6'd26)) |
-	                 (((F_ROT) != 0) & (op == 6'd46)) |
 	                 (((F_SU1) != 0) & (op == 6'd47)) |
 	                 (((F_SU2) != 0) & (op == 6'd48));
 	assign out = (is_norm) ? smx : out_fast;
@@ -288,7 +289,7 @@ module ula_norm
 	parameter EXP    =  8,
 	parameter FROUND =  0,
 	parameter G      =  0,                 // extra low bits carried by the mantissa (3 when FROUND = 2)
-	parameter LZC    =  1,                 // some instantiated operator needs the leading-zero count (F_ADD, I2F, F_ROT; F_MLT/F_DIV at level 0)
+	parameter LZC    =  1,                 // some instantiated operator needs the leading-zero count (F_ADD, I2F; F_MLT/F_DIV at level 0)
 	parameter DIR    =  0                  // some instantiated operator takes the direct path (F_MLT/F_DIV at FROUND >= 1)
 )(
 	 input [MAN+EXP+G+2:0] in,             // {s, e[EXP+1:0], m[MAN+G-1:0]}: needs a leading-zero count
@@ -412,14 +413,13 @@ module norm_mux
 	// the normalised operations the program has: an input is built into the
 	// muxes only when its operation is there
 	parameter F_ADD  =  0, F_SU1 = 0, F_SU2 = 0, F_MLT = 0, F_DIV = 0,
-	parameter I2F    =  0, I2F_M = 0, F_ROT = 0
+	parameter I2F    =  0, I2F_M = 0
 )(
 	 input [         5:0] op  ,
 	 input [NUBITS+G+1:0] fadd,           // operator outputs carry a 2-bit-wider exponent and G extra mantissa bits
 	 input [NUBITS+G+1:0] fmlt,
 	 input [NUBITS+G+1:0] fdiv,
 	 input [NUBITS+G+1:0] i2f , i2fm,
-	 input [NUBITS+G+1:0] frot,
 	output [NUBITS  -1:0] out
 );
 
@@ -437,11 +437,10 @@ wire [W2-1:0] l5 ; generate if ((F_MLT) != 0 && FROUND == 0) begin : gl5  assign
 wire [W2-1:0] l7 ; generate if ((F_DIV) != 0 && FROUND == 0) begin : gl7  assign l7  = (op == 6'd7 ) ? fdiv : {W2{1'b0}}; end else begin : gl7  assign l7  = {W2{1'b0}}; end endgenerate   // F_DIV
 wire [W2-1:0] l25; generate if ((I2F  ) != 0) begin : gl25 assign l25 = (op == 6'd25) ? i2f  : {W2{1'b0}}; end else begin : gl25 assign l25 = {W2{1'b0}}; end endgenerate   //   I2F
 wire [W2-1:0] l26; generate if ((I2F_M) != 0) begin : gl26 assign l26 = (op == 6'd26) ? i2fm : {W2{1'b0}}; end else begin : gl26 assign l26 = {W2{1'b0}}; end endgenerate   //   I2F_M
-wire [W2-1:0] l46; generate if ((F_ROT) != 0) begin : gl46 assign l46 = (op == 6'd46) ? frot : {W2{1'b0}}; end else begin : gl46 assign l46 = {W2{1'b0}}; end endgenerate   // F_ROT
 wire [W2-1:0] l47; generate if ((F_SU1) != 0) begin : gl47 assign l47 = (op == 6'd47) ? fadd : {W2{1'b0}}; end else begin : gl47 assign l47 = {W2{1'b0}}; end endgenerate   // F_SU1 (the same addition circuit)
 wire [W2-1:0] l48; generate if ((F_SU2) != 0) begin : gl48 assign l48 = (op == 6'd48) ? fadd : {W2{1'b0}}; end else begin : gl48 assign l48 = {W2{1'b0}}; end endgenerate   // F_SU2 (the same addition circuit)
 
-wire [W2-1:0] imux_l = l3 | l5 | l7 | l25 | l26 | l46 | l47 | l48;
+wire [W2-1:0] imux_l = l3 | l5 | l7 | l25 | l26 | l47 | l48;
 
 // operands already aligned to their top bit by the operator (FROUND >= 1):
 // they skip the leading-zero count and go straight to rounding/saturation
@@ -1457,11 +1456,10 @@ endmodule
 module ula_frot
 #(
 	parameter MAN = 23,
-	parameter EXP =  8,
-	parameter G   =  0
+	parameter EXP =  8
 )(
-	 input [MAN+EXP    :0] in,
-	output [MAN+EXP+G+2:0] out                                // exponent 2 bits wider, G extra mantissa bits (see ula_norm)
+	 input [MAN+EXP:0] in,
+	output [MAN+EXP:0] out                                    // the float word, final
 );
 
 wire                  s_in  = in[MAN+EXP      ];
@@ -1475,13 +1473,15 @@ localparam integer          M_1   = MAN-1;
 localparam signed [EXP+1:0] MAN_1 = M_1[EXP+1:0];
 localparam signed [EXP+1:0] TWO   = 2;            // a bare 2 is a 32-bit integer
 wire signed [EXP+1:0] e_out = ($signed({{2{e_in[EXP-1]}}, e_in}) + MAN_1) / TWO;
-wire        [MAN-1:0] m_one = 1;
-wire        [MAN+G-1:0] m_out;                               // exact: the G extra bits are zero
+// The result is the power of two 2^e_out, written here as the normaliser wrote
+// it: the mantissa 100...0 (its top bit set) and the exponent e_out - (MAN-1).
+// It is exact and always in range (e_out - (MAN-1) lies within the exponent's
+// limits since MAN < 2^(EXP-1)), so nothing is left to count, round or
+// saturate: F_ROT is a term of the output mux, not a normaliser input (#159).
+wire signed [EXP+1:0] e_fin = e_out - MAN_1;
+wire        [MAN-1:0] m_top = {1'b1, {(MAN-1){1'b0}}};
 
-generate if (G != 0) begin : ext assign m_out = {m_one, {G{1'b0}}}; end
-         else            begin : nox assign m_out = m_one;             end endgenerate
-
-assign out = {s_out, e_out, m_out};
+assign out = {s_out, e_fin[EXP-1:0], m_top};
 
 endmodule
 
@@ -1980,9 +1980,9 @@ generate if ((SRS) != 0) begin : op_srs assign srs = sh_out; end else begin : op
 
 // F_ROT ----------------------------------------------------------------------
 
-wire signed [NUBITS+G+1:0] frot;
+wire signed [NUBITS-1:0] frot;
 
-generate if ((F_ROT) != 0) begin : op_frot ula_frot #(NBMANT,NBEXPO,G) my_frot(in2, frot); end else begin : op_frot assign frot = {NUBITS+G+2{1'b0}}; end endgenerate
+generate if ((F_ROT) != 0) begin : op_frot ula_frot #(NBMANT,NBEXPO) my_frot(in2, frot); end else begin : op_frot assign frot = {NUBITS{1'b0}}; end endgenerate
 
 // F_SCL / XPO / XPO_M --------------------------------------------------------
 // XPO reads in2 (acc), XPO_M reads in1 (memory) -- mirrors F2I/F2I_M.
@@ -2003,11 +2003,11 @@ generate if ((XPO_M) != 0) begin : op_xpom ula_xpo #(NBMANT,NBEXPO) my_xpom(in1,
 
 wire signed [NUBITS-1:0] smx;
 
-generate if ((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_MLT | F_DIV | F_ROT) != 0) begin : op_smx norm_mux #(NUBITS,NBMANT,NBEXPO,FROUND,G,
-	((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_ROT) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC: someone needs the leading-zero count
-	(FROUND != 0) && ((F_MLT | F_DIV) != 0),                                                            // DIR: someone takes the direct path
-	F_ADD, F_SU1, F_SU2, F_MLT, F_DIV, I2F, I2F_M, F_ROT)
-	norm_mux(op, fadd, fmlt, fdiv, i2f, i2fm, frot, smx); end else begin : op_smx assign smx = {NUBITS{1'b0}}; end endgenerate
+generate if ((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_MLT | F_DIV) != 0) begin : op_smx norm_mux #(NUBITS,NBMANT,NBEXPO,FROUND,G,
+	((I2F | I2F_M | F_ADD | F_SU1 | F_SU2) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC: someone needs the leading-zero count
+	(FROUND != 0) && ((F_MLT | F_DIV) != 0),                                                    // DIR: someone takes the direct path
+	F_ADD, F_SU1, F_SU2, F_MLT, F_DIV, I2F, I2F_M)
+	norm_mux(op, fadd, fmlt, fdiv, i2f, i2fm, smx); end else begin : op_smx assign smx = {NUBITS{1'b0}}; end endgenerate
 
 // main mux -------------------------------------------------------------------
 
@@ -2047,7 +2047,7 @@ ula_mux #(.NUBITS(NUBITS),
                            .shr(shr),
                            .srs(srs),
                            .smx(smx),
-                           .fscl(fscl),.xpo(xpo),.xpom(xpom),
+                           .fscl(fscl),.xpo(xpo),.xpom(xpom),.frot(frot),
                            .out(out),.out_fast(out_fast));
 
 // ----------------------------------------------------------------------------
