@@ -1783,17 +1783,28 @@ wire signed [NUBITS+G+1:0] i2fm;
 
 generate if ((I2F_M) != 0) begin : op_i2fm ula_i2f #(NUBITS,NBMANT,NBEXPO,FROUND,G) my_i2fm(in1, i2fm); end else begin : op_i2fm assign i2fm = {NUBITS+G+2{1'b0}}; end endgenerate
 
-// F2I ------------------------------------------------------------------------
+// F2I and F2I_M --------------------------------------------------------------
+// One converter for both (#153): F2I converts in2 (the accumulator), F2I_M in1
+// (the memory word), and only one operation runs per cycle. With both in the
+// program, a mux picks the operand by the operation (F2I_M is op 28); with one,
+// the converter takes that operand directly and no mux is built. Two converters
+// cost 317 LUT4 more than one (Yosys, 32 bits, #FROUND 2, 2026-11-08), the mux
+// about 32.
 
-wire signed [NUBITS-1:0] f2i;
+wire signed [NUBITS-1:0] f2i_in, f2i_out;
 
-generate if ((F2I) != 0) begin : op_f2i ula_f2i #(NBMANT,NBEXPO,FROUND) my_f2i (in2, f2i); end else begin : op_f2i assign f2i = {NUBITS{1'b0}}; end endgenerate
+generate
+	if      ((F2I) != 0 && (F2I_M) != 0) begin : f2i_src assign f2i_in = (op == 6'd28) ? in1 : in2; end
+	else if ((F2I_M) != 0)               begin : f2i_src assign f2i_in = in1;                       end
+	else                                 begin : f2i_src assign f2i_in = in2;                       end
+endgenerate
 
-// F2I_M ----------------------------------------------------------------------
+generate if ((F2I | F2I_M) != 0) begin : op_f2i ula_f2i #(NBMANT,NBEXPO,FROUND) my_f2i (f2i_in, f2i_out); end else begin : op_f2i assign f2i_out = {NUBITS{1'b0}}; end endgenerate
 
-wire signed [NUBITS-1:0] f2im;
-
-generate if ((F2I_M) != 0) begin : op_f2im ula_f2i #(NBMANT,NBEXPO,FROUND) my_f2im (in1, f2im); end else begin : op_f2im assign f2im = {NUBITS{1'b0}}; end endgenerate
+// the output mux keeps one leg per operation (t27, t28), each under its own
+// parameter, both reading the one converter
+wire signed [NUBITS-1:0] f2i  = f2i_out;
+wire signed [NUBITS-1:0] f2im = f2i_out;
 
 // AND ------------------------------------------------------------------------
 
