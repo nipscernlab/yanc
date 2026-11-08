@@ -8,6 +8,16 @@ tags consumed by Aurora.
 
 ## [Unreleased]
 
+## [v9.3] – 2026-11-07
+
+cppcomp audited (#128 to #134): programs that compiled and computed a
+wrong result, crashes and silent limits, a preprocessor and a lexer that
+read C++ as C++, messages that name the right place, the forms the manual
+promises, and a test for each. Names of up to 1000 characters, as in C±
+(#66). A new jump, `JNZ` (#78), and `myADV7513Text`, the text screen
+through an HDMI transmitter. The opcodes from 18 on moved one place:
+take `SAPHO/` and asmcomp from the same release.
+
 ### Added
 - **`myADV7513Text`, the text screen through an ADV7513 HDMI transmitter.** `SAPHO/myADV7513Text.v` is
   `myVGAText` (the same words, `toma` link and pins) plus the I2C writes
@@ -40,17 +50,6 @@ tags consumed by Aurora.
   `static_assert`, the casts, `##`, `__VA_ARGS__`, `#pragma once`,
   `#warning`; test109: the `#pragma yanc` settings on a 16-bit processor;
   test110: the enums) and eight refusals the manual promises.
-- **cppcomp: a method's default arguments (#134).** A call of a method
-  that is neither virtual nor overloaded, with fewer arguments than
-  parameters, pushed no default: `q.f(2)` with `int f(int n = 1, int d =
-  -1)` gave n a word off the stack, and `cin.ignore(2)` read past the line.
-  Every method call now pushes its arguments through one function. Found
-  by test111, which runs `<iostream>` and `<cstdio>` on the links
-  (`YANC_LINK_SYNC 0`, input from `cade_0.txt`): `cin >>` of int,
-  unsigned, float, char and a word, `fail`, `clear`, `peek`, `get`,
-  `ignore`, `getchar`, `fgets`, and `cout.put`, `write`, `oct`, `puts`.
-  The regression now also compares what a test wrote on link k with its
-  `golden_toma_k.txt`.
 - **cppcomp: the forms the manual promises, and the refusals it owes
   (#131).** A class declared first (`class Node;`) and defined later is
   one type; a field may have two or more dimensions; a struct or class may
@@ -116,6 +115,17 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **cppcomp: a method's default arguments (#134).** A call of a method
+  that is neither virtual nor overloaded, with fewer arguments than
+  parameters, pushed no default: `q.f(2)` with `int f(int n = 1, int d =
+  -1)` gave n a word off the stack, and `cin.ignore(2)` read past the line.
+  Every method call now pushes its arguments through one function. Found
+  by test111, which runs `<iostream>` and `<cstdio>` on the links
+  (`YANC_LINK_SYNC 0`, input from `cade_0.txt`): `cin >>` of int,
+  unsigned, float, char and a word, `fail`, `clear`, `peek`, `get`,
+  `ignore`, `getchar`, `fgets`, and `cout.put`, `write`, `oct`, `puts`.
+  The regression now also compares what a test wrote on link k with its
+  `golden_toma_k.txt`.
 - **cppcomp: programs that compiled and computed a wrong result (#128).**
   The cppcomp audit of 2026-11-07 found them; each is now right and
   checked by a test (test99 to test104):
@@ -3486,7 +3496,8 @@ history).
   MinGW-w64, packages them in `yanc-bin-vN.zip`, and publishes the zip
   as a release asset.
 
-[Unreleased]: https://github.com/nipscernlab/yanc/compare/v9.2...HEAD
+[Unreleased]: https://github.com/nipscernlab/yanc/compare/v9.3...HEAD
+[v9.3]: https://github.com/nipscernlab/yanc/releases/tag/v9.3
 [v9.2]: https://github.com/nipscernlab/yanc/releases/tag/v9.2
 [v9.1]: https://github.com/nipscernlab/yanc/releases/tag/v9.1
 [v9.0]: https://github.com/nipscernlab/yanc/releases/tag/v9.0
