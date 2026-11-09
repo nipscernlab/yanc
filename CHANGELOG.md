@@ -280,6 +280,17 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **The rounding-error monitors show a division's real error (#183).**
+  `delta_int` and `delta_float`, simulation only, compared the ALU's
+  output with the inputs of the same cycle, but a division's result comes
+  out STG-1 cycles after the inputs that started it, and at `QUO`, `REM`
+  and `F_QUO` in1 is `mem[0]`: the waveform showed noise for every
+  division. The monitor now keeps the inputs of the last cycles and, on
+  the word that reads a division, compares with those of the division
+  that started it; on the start it shows 0. The dividers' cycle counts
+  are in `ula.v` once (`IDIV_STG`, `FDIV_STG`), for the dividers and the
+  monitor. `Scripts/hw/tb_div_monitor.sh`, in the regression, checks
+  100 / -7, 100 % -7 and 10.0 / 3.0. Nothing changes in hardware.
 - **A `#PRACA` pulse empties both stacks (#188).** The pulse only sent
   the fetch to the `#PRACA` point: the return addresses of the functions
   it left and the words on the data stack stayed, so each pulse in the

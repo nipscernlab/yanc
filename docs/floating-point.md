@@ -88,4 +88,6 @@ int, or build a float from bits: the square-root example of
 The processor's simulation exposes `delta_float` (and `delta_int`): the
 rounding error of each ALU operation against the exact value. Added to the
 waveform, it shows the error each operation commits and how it accumulates
-along a loop.
+along a loop. A division shows its error on the word that reads the result
+(`QUO`, `REM`, `F_QUO`), a few cycles after the division starts, and 0 on
+the cycle that starts it.

@@ -1698,18 +1698,23 @@ generate if ((F_MLT) != 0) begin : op_fmlt ula_fmlt #(NBMANT,NBEXPO,FROUND,G) my
 
 // DIV / MOD ------------------------------------------------------------------
 // one divider for both, five cycles (see ula_idiv): DIV/MOD start it, QUO/REM
-// read it four words later
+// read it four words later. The cycle counts of the two dividers are here
+// once, for the dividers and the simulation's rounding-error monitor (#183);
+// the compilers' copies are ASM_DIV_WORDS_INT and ASM_DIV_WORDS_FLT.
+
+localparam IDIV_STG = 5;
+localparam FDIV_STG = 4;
 
 wire signed [NUBITS-1:0] div, mod;
 
-generate if ((DIV | MOD) != 0) begin : op_idiv ula_idiv #(.NUBITS(NUBITS), .BOTH((DIV != 0) && (MOD != 0))) my_idiv(in1, in2, div, mod, clk, op == 6'd8); end else begin : op_idiv assign div = {NUBITS{1'b0}}; assign mod = {NUBITS{1'b0}}; end endgenerate
+generate if ((DIV | MOD) != 0) begin : op_idiv ula_idiv #(.NUBITS(NUBITS), .STG(IDIV_STG), .BOTH((DIV != 0) && (MOD != 0))) my_idiv(in1, in2, div, mod, clk, op == 6'd8); end else begin : op_idiv assign div = {NUBITS{1'b0}}; assign mod = {NUBITS{1'b0}}; end endgenerate
 
 // F_DIV ----------------------------------------------------------------------
 // four cycles (see ula_fdiv): F_DIV starts it, F_QUO reads it three words later
 
 wire signed [NUBITS+G+1:0] fdiv;
 
-generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(NBMANT,NBEXPO,FROUND,G) my_fdiv(in1, in2, fdiv, clk); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'b0}}; end endgenerate
+generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(.MAN(NBMANT), .EXP(NBEXPO), .FROUND(FROUND), .G(G), .STG(FDIV_STG)) my_fdiv(in1, in2, fdiv, clk); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'b0}}; end endgenerate
 
 // SGN ------------------------------------------------------------------------
 
@@ -2058,6 +2063,28 @@ ula_mux #(.NUBITS(NUBITS),
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 
+// the inputs and the operation of the last cycles -----------------------------
+// A division's result reaches out STG-1 cycles after the inputs that started
+// it (the dividers above): at QUO / REM / F_QUO, in1 is mem[0] and in2 the
+// accumulator of that cycle, not the division's. The monitor compares out
+// with the inputs of STG-1 cycles before, and only when the operation then
+// was a division too (the start); on the start itself it shows 0 (#183).
+localparam HIST = ((IDIV_STG > FDIV_STG) ? IDIV_STG : FDIV_STG) - 1;
+reg [NUBITS-1:0] h_in1 [1:HIST];
+reg [NUBITS-1:0] h_in2 [1:HIST];
+reg [       5:0] h_op  [1:HIST];
+integer hj;
+initial for (hj = 1; hj <= HIST; hj = hj + 1) begin h_in1[hj] = 0; h_in2[hj] = 0; h_op[hj] = 0; end
+always @ (posedge clk) begin
+	h_in1[1] <= in1; h_in2[1] <= in2; h_op[1] <= op;
+	for (hj = 2; hj <= HIST; hj = hj + 1) begin
+		h_in1[hj] <= h_in1[hj-1]; h_in2[hj] <= h_in2[hj-1]; h_op[hj] <= h_op[hj-1];
+	end
+end
+wire [NUBITS-1:0] idv1 = h_in1[IDIV_STG-1], idv2 = h_in2[IDIV_STG-1];   // DIV / MOD that started it
+wire [NUBITS-1:0] fdv1 = h_in1[FDIV_STG-1], fdv2 = h_in2[FDIV_STG-1];   // F_DIV that started it
+wire [       5:0] iop  = h_op [IDIV_STG-1], fop  = h_op [FDIV_STG-1];
+
 // get the signed mantissa and the exponent of inputs and output --------------
 
 // signed mantissa = +/- the NBMANT-bit magnitude. Width is NBMANT+1 (sign +
@@ -2072,6 +2099,8 @@ reg signed [NBMANT:0] sm_out;   // signed mantissa of out
 reg signed [NBEXPO-1:0] e_in1;  // exponent of in1
 reg signed [NBEXPO-1:0] e_in2;  // exponent of in2
 reg signed [NBEXPO-1:0] e_ouu;  // exponent of out
+reg signed [NBMANT:0]   sm_fd1, sm_fd2;   // the same for F_DIV's inputs (fdv1, fdv2)
+reg signed [NBEXPO-1:0] e_fd1,  e_fd2;
 
 // asmcomp checks the float format only when the program uses float, so a
 // processor without float may carry an NBMANT/NBEXPO that does not fit the
@@ -2084,8 +2113,13 @@ always @ (*) sm_out = (out[NBMANT+NBEXPO]) ? -$signed({1'b0, out[NBMANT-1:0]}) :
 always @ (*) e_in1  = $signed(in1[NBMANT+NBEXPO-1:NBMANT]);
 always @ (*) e_in2  = $signed(in2[NBMANT+NBEXPO-1:NBMANT]);
 always @ (*) e_ouu  = $signed(out[NBMANT+NBEXPO-1:NBMANT]);
+always @ (*) sm_fd1 = (fdv1[NBMANT+NBEXPO]) ? -$signed({1'b0, fdv1[NBMANT-1:0]}) : $signed({1'b0, fdv1[NBMANT-1:0]});
+always @ (*) sm_fd2 = (fdv2[NBMANT+NBEXPO]) ? -$signed({1'b0, fdv2[NBMANT-1:0]}) : $signed({1'b0, fdv2[NBMANT-1:0]});
+always @ (*) e_fd1  = $signed(fdv1[NBMANT+NBEXPO-1:NBMANT]);
+always @ (*) e_fd2  = $signed(fdv2[NBMANT+NBEXPO-1:NBMANT]);
 end else begin : fview
 initial begin sm_in1 = 0; sm_in2 = 0; sm_out = 0; e_in1 = 0; e_in2 = 0; e_ouu = 0; end
+initial begin sm_fd1 = 0; sm_fd2 = 0; e_fd1 = 0; e_fd2 = 0; end
 end endgenerate
 
 // get the real values of inputs and output -----------------------------------
@@ -2093,6 +2127,8 @@ end endgenerate
 real r_in1; always @ (*) r_in1 = sm_in1*$pow(2.0,e_in1); // real value of in1
 real r_in2; always @ (*) r_in2 = sm_in2*$pow(2.0,e_in2); // real value of in2
 real r_out; always @ (*) r_out = sm_out*$pow(2.0,e_ouu); // real value of out
+real r_fd1; always @ (*) r_fd1 = sm_fd1*$pow(2.0,e_fd1); // real value of F_DIV's in1
+real r_fd2; always @ (*) r_fd2 = sm_fd2*$pow(2.0,e_fd2); // real value of F_DIV's in2
 
 // compute rounding error for float -------------------------------------------
 
@@ -2102,7 +2138,7 @@ always @ (*) begin
 	case (op)
 		3      : delta_float = (r_in1 + r_in2) - r_out; // addition
 		5      : delta_float = (r_in1 * r_in2) - r_out; // multiplication
-		7      : delta_float = (r_in1 / r_in2) - r_out; // division
+		7      : delta_float = (fop == 6'd7) ? (r_fd1 / r_fd2) - r_out : 0; // division (F_QUO)
 		47	   : delta_float = (r_in2 - r_in1) - r_out; // subtraction
 		48	   : delta_float = (r_in1 - r_in2) - r_out; // subtraction
 		default: delta_float = 0;
@@ -2116,11 +2152,17 @@ real in2r; always @ (*) in2r = in2;
 
 real val_add; always @ (*) val_add = in1r + in2r;
 real val_mlt; always @ (*) val_mlt = in1r * in2r;
-real val_div; always @ (*) val_div = in1r / in2r;
+// a division: the inputs of the DIV / MOD that started it (QUO / REM read
+// it IDIV_STG-1 cycles later, and one start serves both)
+wire signed [NUBITS-1:0] idv1s = idv1, idv2s = idv2;
+wire                     idiv_read = (iop == 6'd6) || (iop == 6'd8);
+real idv1r; always @ (*) idv1r = idv1s;
+real idv2r; always @ (*) idv2r = idv2s;
+real val_div; always @ (*) val_div = idv1r / idv2r;
 // integer remainder: compute it on the integer inputs (same value as the real
 // modulo for integer operands) -- a real `%` makes Verilator implicitly convert
 // real->int (REALCVT) and is non-standard Verilog anyway.
-real val_mod; always @ (*) val_mod = in1 % in2;
+real val_mod; always @ (*) val_mod = idv1s % idv2s;
 
 real delta_int;
 
@@ -2128,8 +2170,8 @@ always @ (*) begin
 	case (op)
 		2      : delta_int = val_add - out; // addition
 		4      : delta_int = val_mlt - out; // multiplication
-		6      : delta_int = val_div - out; // division
-		8      : delta_int = val_mod - out; // remainder
+		6      : delta_int = idiv_read ? val_div - out : 0; // division (QUO)
+		8      : delta_int = idiv_read ? val_mod - out : 0; // remainder (REM)
 		25     : delta_int = in2   - r_out; // int to float with acc
 		26	   : delta_int = in1   - r_out; // int to float with mem
 		27     : delta_int = r_in2   - out; // float to int with acc
