@@ -64,7 +64,6 @@ module prefetch
 	parameter              NBOPCO     = 7,
 	parameter              NBOPER     = 9,
 	parameter [MINSTW-1:0] ITRADD     = 0,
-	parameter [MINSTW-1:0] TOAQUIADDR = 0,
 	parameter              CAL        = 0,
 	parameter              JIZ        = 0,
 	parameter              JNZ        = 0,
@@ -84,8 +83,7 @@ module prefetch
 	 input                        is_um     ,
 	output                        isp_push  ,
 	output                        isp_pop   ,
-	 input                        itr       ,
-	output                        cheguei
+	 input                        itr
 );
 
 // flow-control opcodes, as numbered in Compilers/common/isa.tsv (check_isa.py
@@ -162,14 +160,6 @@ end else begin : itr_fetch
 assign instr_addr = (rst) ? {MINSTW{1'b0}} :                  (pc_load) ? jmp_addr : pc_instr;
 
 end endgenerate
-
-// #TOAQUI marker: asserts cheguei whenever the address being fetched equals
-// TOAQUIADDR - i.e. the instruction at the marker is about to be executed.
-// Using `instr_addr` (the address presented to instruction memory THIS cycle)
-// is the clean choice: pc_instr (the PC register) transiently passes over the
-// marker every loop back-edge because addr<=val+1 in the PC, which would cause
-// spurious cheguei pulses on plain JMPs.
-generate if (TOAQUIADDR>0) begin : toaqui_pin assign cheguei = (instr_addr == TOAQUIADDR); end else begin : toaqui_pin assign cheguei = 1'b0; end endgenerate
 
 endmodule
 
@@ -331,7 +321,6 @@ prefetch #(.MINSTW(MINSTW),
            .NBOPCO(NBOPCO),
            .NBOPER(NBOPER),
            .ITRADD(ITRADD),
-           .TOAQUIADDR(TOAQUIADDR),
 		   .CAL   (CAL   ),
 		   .JIZ   (JIZ   ),
 		   .JNZ   (JNZ   ),
@@ -340,15 +329,27 @@ prefetch #(.MINSTW(MINSTW),
                                pf_instr, pf_addr,
                                acc,
                                pf_isp_push, pf_isp_pop,
-                               itr, cheguei);
+                               itr);
 
 // Instruction stack
+
+// A #PRACA pulse empties the stack, as a reset does (#188): the pulse restarts
+// the program at ITRADD, where asmcomp checks that both stacks are empty, so
+// every word held when it came (the return addresses of the routines it left,
+// and the push of a CAL in decode) is dropped. Without that, each pulse in a
+// routine left its words behind and the pointer climbed past DEPTH. Only with
+// #ITRAD; the data stack does the same (core, below).
+wire stk_clr;
+generate
+	if (ITRADD > 0) begin : isp_clr assign stk_clr = rst | itr; end
+	else            begin : isp_clr assign stk_clr = rst;       end
+endgenerate
 
 wire [MINSTW-1:0] stack_out;
 
 generate
 	if (CAL) begin : isp_blk
-		stack #((SDEPTH > 1) ? $clog2(SDEPTH) : 1, SDEPTH, MINSTW) isp(clk, rst, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
+		stack #((SDEPTH > 1) ? $clog2(SDEPTH) : 1, SDEPTH, MINSTW) isp(clk, stk_clr, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
 	end
 endgenerate
 
@@ -371,6 +372,18 @@ generate
 	end else begin : ret_addr
 		assign addr =  pf_addr;
 	end
+endgenerate
+
+// #TOAQUI marker: cheguei is 1 while the address fetched is TOAQUIADDR, i.e.
+// the instruction at the marker is about to be executed. It compares addr,
+// the address the instruction memory gets, after the return address of a
+// RET: prefetch's own choice, which it compared before, is not the return
+// address on a RET, so a marker reached through a return never raised it
+// (#189). Nor is the PC register: it holds the address fetched in the
+// previous cycle plus 1 (module pc), the next one in sequence.
+generate
+	if (TOAQUIADDR > 0) begin : toaqui_pin assign cheguei = (addr == TOAQUIADDR); end
+	else                begin : toaqui_pin assign cheguei = 1'b0;                  end
 endgenerate
 
 endmodule
@@ -560,7 +573,7 @@ module core
 	parameter  NBOPCO = 7,               // Number of opcode bits (do not change without updating the instr_decoder)
 	parameter  NBOPER = 9,               // Operand width (bits)
 	parameter  ITRADD     = 0,           // Interrupt address (PC jumps here while itr=1)
-	parameter  TOAQUIADDR = 0,           // #TOAQUI marker address (cheguei pulses when pc_instr == TOAQUIADDR)
+	parameter  TOAQUIADDR = 0,           // #TOAQUI marker address (cheguei is 1 while the address fetched is TOAQUIADDR)
 
 	// memories
 	parameter  MDATAW = 9,               // Number of address bits for data memory
@@ -887,6 +900,22 @@ generate for (k = 0; k < NLINK; k = k + 1) begin : lnk
 		end
 		assign toma[k] = rT;
 		assign tgo [k] = rW & (c_in == rT);
+`ifdef YANC_SIM_VIS // --------------------------------------------------------
+		// A #PRACA pulse while this TOM waits leaves rW (and rD) as they are:
+		// the first TOM k after the restart finds rW set, offers nothing new
+		// and goes on once the partner takes the word offered before the
+		// pulse, so the new word is lost (#188). The hardware cannot undo it
+		// (the partner may already have seen T flip), so the simulation says
+		// so; an exception code of its own is left to #36.
+		if (ITRADD > 0) begin : itr_warn
+			reg itr_q = 1'b0;
+			always @ (posedge clk) begin
+				itr_q <= itr;
+				if (!rst && itr && !itr_q && rW)
+					$display("Warning: a #PRACA pulse at %0t while toma(%0d) waits: the first toma(%0d) after the restart hands over the word offered before the pulse (#188)", $time, k, k);
+			end
+		end
+`endif // ---------------------------------------------------------------------
 	end else begin : t
 		assign toffer[k] = 1'b0;
 		assign toma  [k] = 1'b0;
@@ -1065,9 +1094,17 @@ wire              sp_push = id_dsp_push;
 wire              sp_pop  = id_dsp_pop;
 wire [NUBITS-1:0] sp_in, sp_data;
 
+// a #PRACA pulse empties it, as the instruction stack (instr_fetch): the push
+// or pop of the instruction in decode is dropped with the rest (#188)
+wire              sp_clr;
+generate
+	if (ITRADD > 0) begin : sp_clr_sel assign sp_clr = rst | itr; end
+	else            begin : sp_clr_sel assign sp_clr = rst;       end
+endgenerate
+
 stack #(.NADDR((DDEPTH > 1) ? $clog2(DDEPTH) : 1),   // a 1-word stack still has a 1-bit pointer
         .DEPTH(DDEPTH),
-        .NBITS(NUBITS)) sp(clk, rst, sp_push, sp_pop, sp_in, sp_data);
+        .NBITS(NUBITS)) sp(clk, sp_clr, sp_push, sp_pop, sp_in, sp_data);
 
 // ALU input controls ---------------------------------------------------------
 

@@ -124,8 +124,12 @@ clock of one processor alone: the link costs no frequency.
   program is compiled alone), and the value arrives wrong.
 - **No deadlock check.** Two processors each waiting for the other wait
   forever; the order of `toma` and `cade` is the program's responsibility.
-- **No `itr` during a wait.** The `#PRACA` restart while a processor waits in
-  `toma` or `cade` leaves the pair out of step.
+- **No `itr` during a `toma`.** The `#PRACA` restart while a processor
+  waits in `toma(k, x)` leaves that offer pending: the first `toma(k, ...)`
+  after the restart hands over the word offered before the pulse, and its
+  own word is lost. The simulation prints a warning when this happens
+  ([Directives](directives.md)). A restart during a `cade` leaves nothing
+  pending.
 
 ### Simulating one processor alone
 

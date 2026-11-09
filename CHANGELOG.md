@@ -280,6 +280,59 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **F_SCL saturates as the normaliser does (#184).** At `#FROUND` 1 and
+  2 the normaliser makes a result below the range the zero and one above
+  it the largest float, while F_SCL (`x * 2^k`, used by `exp()`) stopped
+  the exponent at its ends and kept the mantissa: `exp()` of a very
+  negative x gave about `m * 2^-128`, not 0. F_SCL now follows the
+  normaliser at those levels. At every level a zero stays a zero: at
+  level 0 adding k to its exponent made a zero with a large exponent, and
+  `ldexp(0, 200) + 1.0` gave 0 because F_ADD shifted the 1.0 out. Level 0
+  keeps its exponent stopping at the ends, now written in
+  `docs/floating-point.md`. `Scripts/hw/tb_scl.sh`, in the regression,
+  checks each case at the three levels, and tb_ula's reference follows
+  the new rule.
+- **The rounding-error monitors show a division's real error (#183).**
+  `delta_int` and `delta_float`, simulation only, compared the ALU's
+  output with the inputs of the same cycle, but a division's result comes
+  out STG-1 cycles after the inputs that started it, and at `QUO`, `REM`
+  and `F_QUO` in1 is `mem[0]`: the waveform showed noise for every
+  division. The monitor now keeps the inputs of the last cycles and, on
+  the word that reads a division, compares with those of the division
+  that started it; on the start it shows 0. The dividers' cycle counts
+  are in `ula.v` once (`IDIV_STG`, `FDIV_STG`), for the dividers and the
+  monitor. `Scripts/hw/tb_div_monitor.sh`, in the regression, checks
+  100 / -7, 100 % -7 and 10.0 / 3.0. Nothing changes in hardware.
+- **A `#PRACA` pulse empties both stacks (#188).** The pulse only sent
+  the fetch to the `#PRACA` point: the return addresses of the functions
+  it left and the words on the data stack stayed, so each pulse in the
+  middle of a function left them behind. With a stack whose depth is a
+  power of two the pointer wrapped over them; with any other depth it
+  climbed past the stack, and the return address went X after three
+  pulses with `#SDEPTH 3`. `core.v` now empties both stacks while `itr` is
+  1, as the reset does, with priority over the push or pop of the
+  instruction in decode (only in a processor with `#ITRAD`). The rules
+  that go with it: cmmcomp refuses a `#PRACA` outside `main`, and asmcomp
+  refuses a program whose stacks are not empty right before the `#ITRAD`
+  point (new messages `MSG_ERR_PRACA_NOT_MAIN`, `MSG_ERR_ITRAD_DATA`,
+  `MSG_ERR_ITRAD_CALL`, `MSG_WARN_ITRAD_UNCHECKED`, pt and en). asm_depth
+  no longer adds the peaks after the point on top of the program's: each
+  stack is as deep as the deeper of the two paths, so ProcDTW's data
+  stack goes from 3 words to 2. A pulse during a `toma` wait is not
+  undone (the first `toma` after the restart hands over the word offered
+  before the pulse); the simulation warns of it, and an exception code
+  waits for #36. `Scripts/hw/tb_praca_restart.sh`, in the regression,
+  pulses six times with both stacks full at depth 3 and checks the `toma`
+  case; NegTests `praca_not_main`, `itrad_data` and `itrad_call` check the
+  refusals.
+- **`cheguei` rises at a `#TOAQUI` point reached through a return
+  (#189).** The pin compared the address prefetch chose, and on a `RET`
+  the return address is chosen after it, in instr_fetch: a marker right
+  after a call, which the program reaches only through the callee's `RET`,
+  never raised `cheguei`. It now compares the address the instruction
+  memory gets. `Scripts/hw/tb_toaqui_return.sh`, in the regression, checks
+  that `cheguei` follows that address cycle by cycle on such a marker; the
+  project pass ITR (a marker reached by a jump) still sees it 9 times.
 - **The text screens check their limits (#182).** myVGAText and
   myADV7513Text read a character from `w[6:0]` and myADV7513Text counts
   its writes in `c[10:7]`, so a NUBITS below 8 or a WAIT_BITS below 11

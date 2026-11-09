@@ -193,17 +193,28 @@ function signed [NUBITS-1:0] ref_f2i;
 	end
 endfunction
 
-// F_SCL: in2 * 2^in1, the exponent saturating at the ends of its range; a
-// zero stays the canonical zero at #FROUND >= 1
+// F_SCL: in2 * 2^in1. A zero stays a zero (at #FROUND 0 with its sign, at
+// >= 1 the canonical zero). At #FROUND 0 the exponent saturates at the ends
+// of its range and the mantissa stays; at >= 1, as the normaliser, a result
+// below the range is the canonical zero and one above it the largest float
+// of the sign (#184)
 function [NUBITS-1:0] ref_scl;
 	input signed [NUBITS-1:0] k;
 	input        [NUBITS-1:0] w;
 	reg signed [NUBITS+1:0] e;
 	begin
 		e = f_exp(w) + k;
-		if (e > EMAX) e = EMAX;
-		if (e < EMIN) e = EMIN;
-		ref_scl = (FROUND != 0 && f_man(w) == 0) ? ZERO : {f_sgn(w), e[EXP-1:0], f_man(w)};
+		if (f_man(w) == 0)
+			ref_scl = (FROUND != 0) ? ZERO : {f_sgn(w), EMIN[EXP-1:0], f_man(w)};
+		else if (FROUND != 0 && e < EMIN)
+			ref_scl = ZERO;
+		else if (FROUND != 0 && e > EMAX)
+			ref_scl = {f_sgn(w), EMAX[EXP-1:0], {MAN{1'b1}}};
+		else begin
+			if (e > EMAX) e = EMAX;
+			if (e < EMIN) e = EMIN;
+			ref_scl = {f_sgn(w), e[EXP-1:0], f_man(w)};
+		end
 	end
 endfunction
 

@@ -584,6 +584,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: já tem uma interrupção rolando em outro ponto antes desse!\n", \
       "Error on line %d: there's already an interrupt going on somewhere else before this one!\n")
 
+#define MSG_ERR_PRACA_NOT_MAIN \
+    M("Erro na linha %d: #PRACA dentro de %s. O #PRACA é o ponto onde o pulso de itr recomeça o programa, com as duas pilhas vazias: ele fica na main.\n", \
+      "Error on line %d: #PRACA inside %s. #PRACA is the point where the itr pulse restarts the program, with both stacks empty: it goes in main.\n")
+
 #define MSG_ERR_DUP_TOAQUI \
     M("Erro na linha %d: #TOAQUI repetido (só pode um)\n", \
       "Error on line %d: duplicate #TOAQUI marker (only one allowed)\n")

@@ -133,8 +133,10 @@ other clock: it can say full longer than needed (safe), never less
    the burst (a multiplexer on the accumulator path, in every processor
    that uses the burst).
 2. **Which rule against the full FIFO** (section 4).
-3. **Interrupts.** **Fact:** an interrupt during a `TOM`/`CAD` wait puts a
-   pair out of step (`toma-and-cade.md` section 6). A `#PRACA` restart
+3. **Interrupts.** **Fact** (measured with #188, `toma-and-cade.md`
+   section 6): a `#PRACA` restart during a `TOM` wait loses that `TOM`'s
+   next word (the first `TOM` after the restart hands over the one offered
+   before the pulse); during a `CAD` wait it leaves nothing pending. A restart
    during a burst leaves part of the array sent; the same advice (do not
    interrupt during a burst) or a rule.
 4. **Several bursts at once.** One size/pointer pair serves one transfer at

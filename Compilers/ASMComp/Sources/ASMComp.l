@@ -283,19 +283,26 @@ int main(int argc, char *argv[])
   // (asm_depth, Compilers/common/asm_share.h); when that cannot be worked out
   // (recursion, ...) it keeps the default, and the stacks may then be most
   // of the processor (#54): a warning, not an Info line
+  // A program with #ITRAD walks it even with both depths set: a #PRACA pulse
+  // empties both stacks (core.v), so they must be empty right before the
+  // #ITRAD point on every path of the program that reaches it, or the pulse
+  // would drop words the code after it still needs (#188).
   int d_how = ddepth_set ? ASM_DEPTH_SET : ASM_DEPTH_DEFAULT;
   int s_how = sdepth_set ? ASM_DEPTH_SET : ASM_DEPTH_DEFAULT;
-  if (!sdepth_set || !ddepth_set)
+  if (!sdepth_set || !ddepth_set || itr_addr != 0)
   {
-    int s, d;
+    int s, d, held = 0;
     const char *why = NULL;
-    if (asm_depth(a.input, &s, &d, &why) > 0)
+    if (asm_depth(a.input, &s, &d, &held, &why) > 0)
     {
+      if (held < 0) fatal(MSG_ERR_ITRAD_CALL);
+      if (held > 0) fatal(MSG_ERR_ITRAD_DATA, held);
       if (!sdepth_set) { sdepth = s; s_how = ASM_DEPTH_WORKED; }
       if (!ddepth_set) { ddepth = d; d_how = ASM_DEPTH_WORKED; }
-      printf(MSG_INFO_STACK_DEPTHS, sdepth, ddepth);
+      if (!sdepth_set || !ddepth_set) printf(MSG_INFO_STACK_DEPTHS, sdepth, ddepth);
     }
-    else if (why) printf(MSG_WARN_STACK_DEFAULT, why, sdepth_set ? ddepth : sdepth);
+    else if (why && (!sdepth_set || !ddepth_set)) printf(MSG_WARN_STACK_DEFAULT, why, sdepth_set ? ddepth : sdepth);
+    else if (why) printf(MSG_WARN_ITRAD_UNCHECKED, why);
   }
 
   eval_finish();                             // finalize the assembler

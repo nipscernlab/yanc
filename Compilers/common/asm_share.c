@@ -1092,6 +1092,9 @@ typedef struct {
     int *entry;        // instruction -> routine index (-1: not an entry)
     int *state;        // routine: 0 not yet, 1 being walked (a call back to it: recursion), 2 done
     int *net, *maxd, *maxc;
+    int  itr;          // the #ITRAD instruction (-1: none)
+    int  itr_held;     // words held right before it on a path that reaches it:
+                       // the data stack's, or -1 inside a routine a CAL enters
     const char *why;   // why the depths could not be worked out (NULL: they could)
 } dp_ctx;
 
@@ -1119,6 +1122,11 @@ static void dp_walk(dp_ctx *c, int r, int start)
     {
         int i = work[--nw], d = dep[i];
         const as_isa *x = &isa[c->op[i]];
+        // the program reaches the #ITRAD point on its own: the stacks must be
+        // empty there, as the pulse leaves them (#188); the walk that starts
+        // at it starts empty
+        if (i == c->itr && start != c->itr && c->itr_held == 0)
+            c->itr_held = (r != 0) ? -1 : d;
         if      (strcmp(x->stk, "push") == 0) d++;
         else if (strcmp(x->stk, "pop")  == 0) d--;
         if (d > maxd) maxd = d;
@@ -1149,7 +1157,7 @@ static void dp_walk(dp_ctx *c, int r, int start)
     free(dep); free(work);
 }
 
-int asm_depth(const char *asm_path, int *sdepth, int *ddepth, const char **why_out)
+int asm_depth(const char *asm_path, int *sdepth, int *ddepth, int *itr_held, const char **why_out)
 {
     FILE *f = fopen(asm_path, "r");
     if (!f) return -1;
@@ -1161,6 +1169,7 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth, const char **why_o
     int *op = NULL, *tgl = NULL, tgl_cap = 0, op_cap = 0;
     const char *why = NULL;
     *sdepth = *ddepth = 0;
+    if (itr_held) *itr_held = 0;
 
     for (int ln = 0; ln < lines.n && !why; ln++)       // parse: labels, #ITRAD, instructions
     {
@@ -1217,6 +1226,7 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth, const char **why_o
     c.net   = xcalloc(nr + 1, sizeof(int));
     c.maxd  = xcalloc(nr + 1, sizeof(int));
     c.maxc  = xcalloc(nr + 1, sizeof(int));
+    c.itr   = (itr >= 0 && itr < n) ? itr : -1;
     c.why   = why;
     if (!c.why && n > 0)
     {
@@ -1228,7 +1238,16 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth, const char **why_o
     if (!why && n > 0)
     {
         int d = c.maxd[0], s = c.maxc[0];
-        if (itr >= 0 && itr < n) { d += c.maxd[c.entry[itr]]; s += c.maxc[c.entry[itr]]; }  // on top of any point
+        // the pulse empties both stacks (core.v, #188): the code after the
+        // #ITRAD point starts from nothing, so the deeper of the two paths
+        // sizes each stack. Before, the pulse left whatever was held and its
+        // peaks were added on top of the program's.
+        if (itr >= 0 && itr < n)
+        {
+            int q = c.entry[itr];
+            if (c.maxd[q] > d) d = c.maxd[q];
+            if (c.maxc[q] > s) s = c.maxc[q];
+        }
         // the deepest point, a word per word held: the simulation's flag
         // (core.v, stack) rises on an overflow, a push with DEPTH words held.
         // It used to rise when the stack became full, and every depth was one
@@ -1236,6 +1255,7 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth, const char **why_o
         // whether the program uses it or not.
         *ddepth = d < 1 ? 1 : d;
         *sdepth = s < 1 ? 1 : s;
+        if (itr_held) *itr_held = c.itr_held;
         ret = 1;
     }
     if (why_out) *why_out = why;

@@ -54,7 +54,7 @@ writes only what it changes. A C++ program says the same with
 ## Markers
 
 These two go inside a function, as statements, at most once each per
-program; each adds a pin to the processor.
+program (`#PRACA` only in `main`); each adds a pin to the processor.
 
 | directive | pin | does |
 |---|---|---|
@@ -63,7 +63,28 @@ program; each adds a pin to the processor.
 
 `#PRACA` is a restart point, not an interrupt routine: nothing is saved,
 there is no return to where the program was, and holding `itr` at 1 keeps
-the processor on that point. `#TOAQUI` lets a testbench or other hardware
+the processor on that point. The intended use is a processor that runs its
+routine to the end and waits for an external pulse to run it again from
+that point; a pulse in the middle of the routine is the program's
+responsibility.
+
+- **The pulse empties both stacks**, as the reset does: the return
+  addresses of the functions it left and the words waiting on the data
+  stack are dropped, so the code after `#PRACA` starts with nothing on
+  either. Each stack is then as deep as the deeper of the two paths, the
+  program's and the one after `#PRACA`, not their sum.
+- **`#PRACA` goes in `main`**, the only function no call enters; cmmcomp
+  refuses it anywhere else. asmcomp checks that both stacks are empty right
+  before the point on every path of the program that reaches it, and
+  refuses the program otherwise. That covers a hand-written `.asm`, where
+  the point is `#ITRAD`.
+- **Variables keep their values**: a global the program counts in goes on
+  counting across restarts.
+- **A `toma` wait is not undone.** A pulse while the processor waits in
+  `toma(k, x)` leaves that offer pending: the first `toma(k, ...)` after the
+  restart hands over the word offered before the pulse, and its own word is
+  never offered. The simulation prints a warning when this happens. A `cade`
+  wait leaves nothing pending. Do not let a pulse arrive during a `toma`. `#TOAQUI` lets a testbench or other hardware
 see that the program has reached a place, for example the end of an
 initialisation.
 

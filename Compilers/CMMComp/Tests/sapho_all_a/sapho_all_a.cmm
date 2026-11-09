@@ -17,8 +17,8 @@
 // (ILI/ISI), the #PRACA interrupt entry and the #TOAQUI pin, with both stacks
 // 8 deep and used to 7: seven nested calls (n1 -> ... -> n7) and seven words
 // waiting on the data stack (a right-nested chain of subtractions). The
-// depths are declared: #PRACA is the top of main, so asmcomp would add the
-// interrupt's peaks to the program's (2 * 7 + 1). It reads one
+// depths are declared, 8 each (asmcomp would work out 7, the peak: a
+// #PRACA pulse empties both stacks, #188). It reads one
 // constant from port 0 (the input file repeats it for each read) and folds
 // every result into s. The 32 bits of s are folded into 4 (XOR of its eight
 // nibbles), for a board that shows the result on four LEDs, and sent to the
