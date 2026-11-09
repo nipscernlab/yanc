@@ -770,12 +770,18 @@ endmodule
 // divisor: every row finds that it fits, an all-ones quotient that the sign
 // correction leaves -1 (dividend >= 0) or makes 1 (dividend < 0), and the
 // dividend as the remainder; the manual defines it so (issue #34).
+// (*) Re-measured after #157 put pick_rem before the one negator (#193):
+// cmm_cov_acc (DIV and MOD), Cyclone V 5CSEMA5F31C6, Quartus 23.1, seed 1,
+// 2026-11-09, worst slack of each group at a 10 ns clock: -14.17, -14.10,
+// -13.32, -14.00 ns, and -10.82 for the last one, which carries POST. POST10
+// is not short: the last group has about a row (3.3 ns) to spare. One seed;
+// moving a row into it is left to a fit across seeds.
 
 module ula_idiv
 #(
 	parameter NUBITS = 32,
 	parameter PRE10  = 15,                                    // see div_array: the magnitudes count here
-	parameter POST10 = 28,                                    //   and the sign correction there
+	parameter POST10 = 28,                                    //   and the sign correction there (*)
 	parameter STG    =  5,                                    // cycles (Compilers/common ASM_DIV_WORDS_INT)
 	parameter BOTH   =  0                                     // 1: the program reads both (DIV and MOD)
 )(
