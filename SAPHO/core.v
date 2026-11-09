@@ -64,7 +64,6 @@ module prefetch
 	parameter              NBOPCO     = 7,
 	parameter              NBOPER     = 9,
 	parameter [MINSTW-1:0] ITRADD     = 0,
-	parameter [MINSTW-1:0] TOAQUIADDR = 0,
 	parameter              CAL        = 0,
 	parameter              JIZ        = 0,
 	parameter              JNZ        = 0,
@@ -84,8 +83,7 @@ module prefetch
 	 input                        is_um     ,
 	output                        isp_push  ,
 	output                        isp_pop   ,
-	 input                        itr       ,
-	output                        cheguei
+	 input                        itr
 );
 
 // flow-control opcodes, as numbered in Compilers/common/isa.tsv (check_isa.py
@@ -162,14 +160,6 @@ end else begin : itr_fetch
 assign instr_addr = (rst) ? {MINSTW{1'b0}} :                  (pc_load) ? jmp_addr : pc_instr;
 
 end endgenerate
-
-// #TOAQUI marker: asserts cheguei whenever the address being fetched equals
-// TOAQUIADDR - i.e. the instruction at the marker is about to be executed.
-// Using `instr_addr` (the address presented to instruction memory THIS cycle)
-// is the clean choice: pc_instr (the PC register) transiently passes over the
-// marker every loop back-edge because addr<=val+1 in the PC, which would cause
-// spurious cheguei pulses on plain JMPs.
-generate if (TOAQUIADDR>0) begin : toaqui_pin assign cheguei = (instr_addr == TOAQUIADDR); end else begin : toaqui_pin assign cheguei = 1'b0; end endgenerate
 
 endmodule
 
@@ -331,7 +321,6 @@ prefetch #(.MINSTW(MINSTW),
            .NBOPCO(NBOPCO),
            .NBOPER(NBOPER),
            .ITRADD(ITRADD),
-           .TOAQUIADDR(TOAQUIADDR),
 		   .CAL   (CAL   ),
 		   .JIZ   (JIZ   ),
 		   .JNZ   (JNZ   ),
@@ -340,7 +329,7 @@ prefetch #(.MINSTW(MINSTW),
                                pf_instr, pf_addr,
                                acc,
                                pf_isp_push, pf_isp_pop,
-                               itr, cheguei);
+                               itr);
 
 // Instruction stack
 
@@ -383,6 +372,18 @@ generate
 	end else begin : ret_addr
 		assign addr =  pf_addr;
 	end
+endgenerate
+
+// #TOAQUI marker: cheguei is 1 while the address fetched is TOAQUIADDR, i.e.
+// the instruction at the marker is about to be executed. It compares addr,
+// the address the instruction memory gets, after the return address of a
+// RET: prefetch's own choice, which it compared before, is not the return
+// address on a RET, so a marker reached through a return never raised it
+// (#189). Nor is the PC register: it holds the address fetched in the
+// previous cycle plus 1 (module pc), the next one in sequence.
+generate
+	if (TOAQUIADDR > 0) begin : toaqui_pin assign cheguei = (addr == TOAQUIADDR); end
+	else                begin : toaqui_pin assign cheguei = 1'b0;                  end
 endgenerate
 
 endmodule
@@ -572,7 +573,7 @@ module core
 	parameter  NBOPCO = 7,               // Number of opcode bits (do not change without updating the instr_decoder)
 	parameter  NBOPER = 9,               // Operand width (bits)
 	parameter  ITRADD     = 0,           // Interrupt address (PC jumps here while itr=1)
-	parameter  TOAQUIADDR = 0,           // #TOAQUI marker address (cheguei pulses when pc_instr == TOAQUIADDR)
+	parameter  TOAQUIADDR = 0,           // #TOAQUI marker address (cheguei is 1 while the address fetched is TOAQUIADDR)
 
 	// memories
 	parameter  MDATAW = 9,               // Number of address bits for data memory

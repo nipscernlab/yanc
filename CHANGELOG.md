@@ -302,6 +302,14 @@ tags consumed by Aurora.
   pulses six times with both stacks full at depth 3 and checks the `toma`
   case; NegTests `praca_not_main`, `itrad_data` and `itrad_call` check the
   refusals.
+- **`cheguei` rises at a `#TOAQUI` point reached through a return
+  (#189).** The pin compared the address prefetch chose, and on a `RET`
+  the return address is chosen after it, in instr_fetch: a marker right
+  after a call, which the program reaches only through the callee's `RET`,
+  never raised `cheguei`. It now compares the address the instruction
+  memory gets. `Scripts/hw/tb_toaqui_return.sh`, in the regression, checks
+  that `cheguei` follows that address cycle by cycle on such a marker; the
+  project pass ITR (a marker reached by a jump) still sees it 9 times.
 - **The text screens check their limits (#182).** myVGAText and
   myADV7513Text read a character from `w[6:0]` and myADV7513Text counts
   its writes in `c[10:7]`, so a NUBITS below 8 or a WAIT_BITS below 11
