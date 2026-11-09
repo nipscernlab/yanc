@@ -3,5 +3,10 @@
 # may have. FF: the acc (8), the PC (2), out_en (1), the ULA op (1).
 # Yosys 0.56 counted LUT 19 here (2026-11-02, ef0f5a19); 0.66 counts 18 on
 # the HDL of that commit too, so the step is the version's (2026-11-08).
+# #169 (39ccc61c) took it to 19: the PC now adds 1 to the address the fetch
+# chose, and that address carries the fetch's reset term, which the PC's own
+# reset makes redundant but Yosys does not remove (without that term, 18).
+# Quartus 23.1 maps both to 7 ALMs; the same commit saves 8 LUT4 on a program
+# with CAL, RET and #ITRAD (2026-11-08).
 FF 12
-LUT 18
+LUT 19

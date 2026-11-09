@@ -63,7 +63,10 @@ tags consumed by Aurora.
   what to load, a second mux that always gave the same address. The PC now
   loads the fetched address + 1; `pc_lval`, `pcl` and prefetch's `pc_l` are
   gone. Yosys: a program with a call, a return and an interrupt point 44 to
-  36 LUT4 (8-bit addresses); simple programs unchanged.
+  36 LUT4 (8-bit addresses). The smallest processor, sapho_min, went from
+  18 to 19 LUT4: the fetched address carries the fetch's reset term, which
+  the PC's own reset makes redundant but Yosys keeps; Quartus maps both to
+  7 ALMs, and `cells.txt` now holds 19.
 - **A link writer offers the accumulator itself, without an interrupt
   (#171).** `toma_dado`'s register loaded the same value as the accumulator
   on the same edge, and the accumulator holds it while TOM waits; only an
