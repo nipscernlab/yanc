@@ -344,11 +344,23 @@ prefetch #(.MINSTW(MINSTW),
 
 // Instruction stack
 
+// A #PRACA pulse empties the stack, as a reset does (#188): the pulse restarts
+// the program at ITRADD, where asmcomp checks that both stacks are empty, so
+// every word held when it came (the return addresses of the routines it left,
+// and the push of a CAL in decode) is dropped. Without that, each pulse in a
+// routine left its words behind and the pointer climbed past DEPTH. Only with
+// #ITRAD; the data stack does the same (core, below).
+wire stk_clr;
+generate
+	if (ITRADD > 0) begin : isp_clr assign stk_clr = rst | itr; end
+	else            begin : isp_clr assign stk_clr = rst;       end
+endgenerate
+
 wire [MINSTW-1:0] stack_out;
 
 generate
 	if (CAL) begin : isp_blk
-		stack #((SDEPTH > 1) ? $clog2(SDEPTH) : 1, SDEPTH, MINSTW) isp(clk, rst, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
+		stack #((SDEPTH > 1) ? $clog2(SDEPTH) : 1, SDEPTH, MINSTW) isp(clk, stk_clr, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
 	end
 endgenerate
 
@@ -887,6 +899,22 @@ generate for (k = 0; k < NLINK; k = k + 1) begin : lnk
 		end
 		assign toma[k] = rT;
 		assign tgo [k] = rW & (c_in == rT);
+`ifdef YANC_SIM_VIS // --------------------------------------------------------
+		// A #PRACA pulse while this TOM waits leaves rW (and rD) as they are:
+		// the first TOM k after the restart finds rW set, offers nothing new
+		// and goes on once the partner takes the word offered before the
+		// pulse, so the new word is lost (#188). The hardware cannot undo it
+		// (the partner may already have seen T flip), so the simulation says
+		// so; an exception code of its own is left to #36.
+		if (ITRADD > 0) begin : itr_warn
+			reg itr_q = 1'b0;
+			always @ (posedge clk) begin
+				itr_q <= itr;
+				if (!rst && itr && !itr_q && rW)
+					$display("Warning: a #PRACA pulse at %0t while toma(%0d) waits: the first toma(%0d) after the restart hands over the word offered before the pulse (#188)", $time, k, k);
+			end
+		end
+`endif // ---------------------------------------------------------------------
 	end else begin : t
 		assign toffer[k] = 1'b0;
 		assign toma  [k] = 1'b0;
@@ -1065,9 +1093,17 @@ wire              sp_push = id_dsp_push;
 wire              sp_pop  = id_dsp_pop;
 wire [NUBITS-1:0] sp_in, sp_data;
 
+// a #PRACA pulse empties it, as the instruction stack (instr_fetch): the push
+// or pop of the instruction in decode is dropped with the rest (#188)
+wire              sp_clr;
+generate
+	if (ITRADD > 0) begin : sp_clr_sel assign sp_clr = rst | itr; end
+	else            begin : sp_clr_sel assign sp_clr = rst;       end
+endgenerate
+
 stack #(.NADDR((DDEPTH > 1) ? $clog2(DDEPTH) : 1),   // a 1-word stack still has a 1-bit pointer
         .DEPTH(DDEPTH),
-        .NBITS(NUBITS)) sp(clk, rst, sp_push, sp_pop, sp_in, sp_data);
+        .NBITS(NUBITS)) sp(clk, sp_clr, sp_push, sp_pop, sp_in, sp_data);
 
 // ALU input controls ---------------------------------------------------------
 

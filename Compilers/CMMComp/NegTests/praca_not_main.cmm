@@ -1,0 +1,17 @@
+#NUBITS 16
+#NUIOIN 1
+#NUIOOU 1
+
+// Negative fixture: #PRACA is the restart point of the itr pulse, which
+// empties both stacks, so it goes in main (#188). In f the call stack holds
+// f's return address there.
+void f()
+{
+#PRACA
+    out(0, 1);
+}
+
+void main()
+{
+    f();
+}

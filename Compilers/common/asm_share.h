@@ -243,9 +243,18 @@ int asm_is_norm(const char *mn);                  // its ALU result goes through
 // same on every path into an instruction (isa.tsv's stack column: push / pop),
 // a callee's net effect is its depth at RET (negative: it pops its
 // arguments), and a call adds the callee's peak to the caller's depth there.
-// The interrupt can arrive anywhere, so its peaks add to the program's.
-// Each depth written is the peak, at least 1: the simulation's overflow flag
-// rises only when a push finds the stack full (#145).
+// A #PRACA pulse empties both stacks (core.v, #188), so the code after the
+// #ITRAD point starts from nothing and each stack is as deep as the deeper of
+// the two paths. Each depth written is the peak, at least 1: the
+// simulation's overflow flag rises only when a push finds the stack full
+// (#145).
+//
+// *itr_held (when not NULL) tells whether the stacks are empty right before
+// the #ITRAD point on the paths of the program that reach it: 0 they are (or
+// no path reaches it), N > 0 the data stack holds N words there, -1 it is
+// inside a routine a CAL enters (the call stack holds its return address).
+// asmcomp refuses the program unless it is 0: the pulse would drop those
+// words.
 //
 // asmcomp calls it for a stack the .asm does not declare (#SDEPTH / #NDSTAC
 // left out, in any front end or by hand); a declared depth stays. Recursion,
@@ -254,7 +263,7 @@ int asm_is_norm(const char *mn);                  // its ALU result goes through
 // keeps its default (128) with a warning.
 // Returns 1 with *sdepth / *ddepth set, 0 when they could not be worked out
 // (both 0), -1 on an I/O error.
-int asm_depth(const char *asm_path, int *sdepth, int *ddepth, const char **why_out);
+int asm_depth(const char *asm_path, int *sdepth, int *ddepth, int *itr_held, const char **why_out);
 
 // ****************************************************************************
 // asm_passes -- the passes a compiler runs on its .asm, in their one order ----

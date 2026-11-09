@@ -226,7 +226,13 @@ What the reading said:
   deadlock below. Two alternatives were set aside for v7.0 and wait for a
   real case: hold `itr` until the wait ends (small hardware, but an absent
   partner then blocks the interrupt forever), or reset the link on both
-  sides (a wire between the partners).
+  sides (a wire between the partners). Measured with #188 (2026-11-09,
+  `Scripts/hw/tb_praca_restart.sh`): after the restart the first `toma` on
+  the link finds W set, offers nothing and goes on once the partner takes
+  the word offered before the pulse, so the pair is back in step but that
+  `toma`'s own word is lost. A `cade` left by the pulse leaves nothing
+  pending (C flips only when the word is taken). The simulation warns of a
+  pulse during a `toma` wait; an exception code for it waits for #36.
 - **Deadlock**: both sides in `toma` (or both in `cade`) wait forever, as in
   Go; the program's responsibility. A simulation could flag it.
 - **Two clocks**: implemented in simulation (`LINKAS`, section 8); the

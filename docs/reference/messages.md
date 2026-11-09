@@ -98,6 +98,7 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: a continue outside a loop goes nowhere!
 - Error on line <n>: function '<name>' calls itself (<name>). Recursion doesn't fly in C±. Really want recursion? Use SAPHO's C++ compiler.
 - Error on line <n>: there's already an interrupt going on somewhere else before this one!
+- Error on line <n>: #PRACA inside <name>. #PRACA is the point where the itr pulse restarts the program, with both stacks empty: it goes in main.
 - Error on line <n>: duplicate #TOAQUI marker (only one allowed)
 - Error on line <n>: #WAVE takes a variable, and '<name>' isn't one
 - Error: option '<name>' needs a value.
@@ -316,6 +317,8 @@ value. What the common ones mean and how to get past them is in
 - Error: the exponent is too short for the mantissa (NBMANT <n>, NBEXPO <n>). You need NBMANT < 2^(NBEXPO-1): with no hidden bit, 1.0 is 2^(NBMANT-1) x 2^-(NBMANT-1), and that exponent has to fit. Widen NBEXPO or narrow NBMANT.
 - Error: #FFTSIZ <n> is out of range. v[k) reverses 1 to 30 low bits of the index.
 - Error: #FFTSIZ <n> reverses <n> bits of the index in v[k), but the data memory has <n> words (<n> address bits). The array of a 2^<n>-point FFT has 2^<n> words: make the array longer or #FFTSIZ smaller.
+- Error: the data stack holds <n> word(s) right before the #ITRAD point (C±'s #PRACA). The itr pulse empties both stacks, and the code after that point would lose those words: put #PRACA where the data stack is empty, between two statements.
+- Error: the #ITRAD point (C±'s #PRACA) is in a routine a CAL enters, and the call stack holds its return address there. The itr pulse empties both stacks: the #ITRAD point goes in the code address 0 reaches without a CAL (in C±, in main).
 - Error: #NUBITS <n> is past 32. A SAPHO word is at most 32 bits.
 - Error: <name> <name>: the operand of LDI/ILI/STI/ISI is an array name or an integer base address.
 - Error: <name> takes <n> words: it must be followed by <n> NOP and the read of its result (expected <name>, found <name>). The compilers write the sequence; in a hand-written .asm, write it out.
@@ -348,6 +351,7 @@ value. What the common ones mean and how to get past them is in
 ### Warnings
 
 - Warning: the stack depths cannot be worked out from the program (<name>); each stack it does not set keeps <n> words, which can be much of the processor. #SDEPTH and #NDSTAC (in C++, #pragma yanc sdepth and ndstac) set them.
+- Warning: whether the stacks are empty at the #ITRAD point could not be checked (<name>). The itr pulse empties both stacks, and whatever they hold is lost.
 - Heads up: there's <n> extra lines hanging around in file '<name>'!
 - Heads up: input port <n> isn't being used. Burning hardware for nothing!
 - Heads up: output port <n> isn't being used. Burning hardware for nothing!

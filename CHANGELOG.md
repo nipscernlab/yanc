@@ -280,6 +280,28 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **A `#PRACA` pulse empties both stacks (#188).** The pulse only sent
+  the fetch to the `#PRACA` point: the return addresses of the functions
+  it left and the words on the data stack stayed, so each pulse in the
+  middle of a function left them behind. With a stack whose depth is a
+  power of two the pointer wrapped over them; with any other depth it
+  climbed past the stack, and the return address went X after three
+  pulses with `#SDEPTH 3`. `core.v` now empties both stacks while `itr` is
+  1, as the reset does, with priority over the push or pop of the
+  instruction in decode (only in a processor with `#ITRAD`). The rules
+  that go with it: cmmcomp refuses a `#PRACA` outside `main`, and asmcomp
+  refuses a program whose stacks are not empty right before the `#ITRAD`
+  point (new messages `MSG_ERR_PRACA_NOT_MAIN`, `MSG_ERR_ITRAD_DATA`,
+  `MSG_ERR_ITRAD_CALL`, `MSG_WARN_ITRAD_UNCHECKED`, pt and en). asm_depth
+  no longer adds the peaks after the point on top of the program's: each
+  stack is as deep as the deeper of the two paths, so ProcDTW's data
+  stack goes from 3 words to 2. A pulse during a `toma` wait is not
+  undone (the first `toma` after the restart hands over the word offered
+  before the pulse); the simulation warns of it, and an exception code
+  waits for #36. `Scripts/hw/tb_praca_restart.sh`, in the regression,
+  pulses six times with both stacks full at depth 3 and checks the `toma`
+  case; NegTests `praca_not_main`, `itrad_data` and `itrad_call` check the
+  refusals.
 - **The text screens check their limits (#182).** myVGAText and
   myADV7513Text read a character from `w[6:0]` and myADV7513Text counts
   its writes in `c[10:7]`, so a NUBITS below 8 or a WAIT_BITS below 11

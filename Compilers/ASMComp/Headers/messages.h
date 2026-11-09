@@ -140,6 +140,18 @@ void fatal(const char *fmt, ...);
     M("Erro: #FFTSIZ %d inverte %d bits do índice em v[k), mas a memória de dados tem %d palavras (%d bits de endereço). O vetor de uma FFT de 2^%d pontos tem 2^%d palavras: aumente o vetor ou diminua #FFTSIZ.\n", \
       "Error: #FFTSIZ %d reverses %d bits of the index in v[k), but the data memory has %d words (%d address bits). The array of a 2^%d-point FFT has 2^%d words: make the array longer or #FFTSIZ smaller.\n")
 
+#define MSG_ERR_ITRAD_DATA \
+    M("Erro: a pilha de dados guarda %d palavra(s) logo antes do ponto #ITRAD (o #PRACA do C±). O pulso de itr esvazia as duas pilhas, e o código depois desse ponto perderia essas palavras: ponha o #PRACA onde a pilha de dados está vazia, entre dois comandos.\n", \
+      "Error: the data stack holds %d word(s) right before the #ITRAD point (C±'s #PRACA). The itr pulse empties both stacks, and the code after that point would lose those words: put #PRACA where the data stack is empty, between two statements.\n")
+
+#define MSG_ERR_ITRAD_CALL \
+    M("Erro: o ponto #ITRAD (o #PRACA do C±) está numa rotina que um CAL chama, e a pilha de chamadas guarda o endereço de retorno dela ali. O pulso de itr esvazia as duas pilhas: o ponto #ITRAD fica no código que o endereço 0 alcança sem CAL (em C±, na main).\n", \
+      "Error: the #ITRAD point (C±'s #PRACA) is in a routine a CAL enters, and the call stack holds its return address there. The itr pulse empties both stacks: the #ITRAD point goes in the code address 0 reaches without a CAL (in C±, in main).\n")
+
+#define MSG_WARN_ITRAD_UNCHECKED \
+    M("Atenção: não foi possível ver se as pilhas estão vazias no ponto #ITRAD (%s). O pulso de itr esvazia as duas pilhas, e o que estiver nelas se perde.\n", \
+      "Warning: whether the stacks are empty at the #ITRAD point could not be checked (%s). The itr pulse empties both stacks, and whatever they hold is lost.\n")
+
 #define MSG_ERR_NUBITS_WIDE \
     M("Erro: #NUBITS %d passa de 32. A palavra do SAPHO tem no máximo 32 bits.\n", \
       "Error: #NUBITS %d is past 32. A SAPHO word is at most 32 bits.\n")

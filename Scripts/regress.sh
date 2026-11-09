@@ -1738,7 +1738,9 @@ fi
 # checks that the decoder drives no memory write and no input read in reset
 # (#165); Scripts/hw/tb_nrm.sh NRM against the division for every 8-bit
 # input and NUGAIN 1 to 64 (#160); Scripts/hw/tb_ret_priority.sh that a RET in decode does not win over
-# a reset or an interrupt (#164, #166); Scripts/hw/tb_fft_size.sh the FFT's
+# a reset or an interrupt (#164, #166); Scripts/hw/tb_praca_restart.sh that a
+# #PRACA pulse empties both stacks, and warns during a TOM wait (#188);
+# Scripts/hw/tb_fft_size.sh the FFT's
 # addressing with an array that is the whole data memory, and asmcomp's
 # refusal of a smaller one (#168). Scripts/hw/tb_keyps2.sh
 # checks SAPHO/myKeyPS2.v alone (both layouts, two clocks, three queue sizes);
@@ -1748,7 +1750,7 @@ fi
 if [ "$CPP_ONLY" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
     echo ""
     echo "==> unit testbenches (ALU, keyboard, screen)"
-    for t in tb_ula tb_alu tb_nrm tb_dec_reset tb_ret_priority tb_fft_size tb_keyps2 tb_vgatext tb_adv7513text; do
+    for t in tb_ula tb_alu tb_nrm tb_dec_reset tb_ret_priority tb_praca_restart tb_fft_size tb_keyps2 tb_vgatext tb_adv7513text; do
         t_arg=""; [ "$t" = tb_vgatext ] && t_arg=8          # one width: about 3 minutes each
         [ "$t" = tb_adv7513text ] && t_arg=8:1:11               # one configuration: about 2 minutes
         if t_out=$(bash "$ROOT/Scripts/hw/$t.sh" $t_arg 2>&1); then
@@ -1966,12 +1968,13 @@ fi
 # ---- 4b2. float format (and #FFTSIZ) refused by asmcomp ----------------------
 # cmmcomp accepts these two; asmcomp must stop on the float format (TODO item
 # 3), checked only because they use float (Tests/cmm_nofloat is the other side:
-# no float, a format that does not add up, accepted).
+# no float, a format that does not add up, accepted). The two itrad_ fixtures:
+# a stack not empty right before the #ITRAD point (#188).
 if [ "$CPP_ONLY" -eq 0 ]; then
     echo ""
     echo "==> float format (asmcomp)"
     neg_work="$SCRATCH/work_neg"
-    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short" "fpfmt_wide|is past 32" "fftsiz_wide|#FFTSIZ 40 is out of range"; do
+    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short" "fpfmt_wide|is past 32" "fftsiz_wide|#FFTSIZ 40 is out of range" "itrad_data|holds 1 word(s) right before the #ITRAD point" "itrad_call|is in a routine a CAL enters"; do
         fixture="${fe%%|*}"; expect="${fe#*|}"; name="asm:$fixture"
         neg_listed+=("$fixture.cmm" "$fixture.asm")
         rm -rf "$neg_work"; mkdir -p "$neg_work/p"
