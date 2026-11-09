@@ -539,9 +539,9 @@ end
 // the link and the words --------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-localparam IDLE = 2'd0, FILL = 2'd1;        // FILL: writing spaces (clear or scroll)
+localparam IDLE = 1'b0, FILL = 1'b1;        // FILL: writing spaces (clear or scroll); two states, one bit (#182)
 
-reg [1:0]  state;
+reg        state;
 reg        c;                               // the block's C bit
 reg [1:0]  pend;                            // -127's arguments: 1 = the line next, 2 = the column next
 reg [4:0]  arg_l;
