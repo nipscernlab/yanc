@@ -1742,7 +1742,8 @@ fi
 # #PRACA pulse empties both stacks, and warns during a TOM wait (#188);
 # Scripts/hw/tb_toaqui_return.sh that cheguei rises at a #TOAQUI point reached
 # through a RET (#189); Scripts/hw/tb_div_monitor.sh that the rounding-error
-# monitors show a division's real error (#183);
+# monitors show a division's real error (#183); Scripts/hw/tb_scl.sh F_SCL at
+# the ends of the exponent's range, at every #FROUND level (#184);
 # Scripts/hw/tb_fft_size.sh the FFT's
 # addressing with an array that is the whole data memory, and asmcomp's
 # refusal of a smaller one (#168). Scripts/hw/tb_keyps2.sh
@@ -1753,7 +1754,7 @@ fi
 if [ "$CPP_ONLY" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
     echo ""
     echo "==> unit testbenches (ALU, keyboard, screen)"
-    for t in tb_ula tb_alu tb_nrm tb_dec_reset tb_ret_priority tb_praca_restart tb_toaqui_return tb_div_monitor tb_fft_size tb_keyps2 tb_vgatext tb_adv7513text; do
+    for t in tb_ula tb_alu tb_nrm tb_dec_reset tb_ret_priority tb_praca_restart tb_toaqui_return tb_div_monitor tb_scl tb_fft_size tb_keyps2 tb_vgatext tb_adv7513text; do
         t_arg=""; [ "$t" = tb_vgatext ] && t_arg=8          # one width: about 3 minutes each
         [ "$t" = tb_adv7513text ] && t_arg=8:1:11               # one configuration: about 2 minutes
         if t_out=$(bash "$ROOT/Scripts/hw/$t.sh" $t_arg 2>&1); then

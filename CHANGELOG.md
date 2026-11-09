@@ -280,6 +280,18 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **F_SCL saturates as the normaliser does (#184).** At `#FROUND` 1 and
+  2 the normaliser makes a result below the range the zero and one above
+  it the largest float, while F_SCL (`x * 2^k`, used by `exp()`) stopped
+  the exponent at its ends and kept the mantissa: `exp()` of a very
+  negative x gave about `m * 2^-128`, not 0. F_SCL now follows the
+  normaliser at those levels. At every level a zero stays a zero: at
+  level 0 adding k to its exponent made a zero with a large exponent, and
+  `ldexp(0, 200) + 1.0` gave 0 because F_ADD shifted the 1.0 out. Level 0
+  keeps its exponent stopping at the ends, now written in
+  `docs/floating-point.md`. `Scripts/hw/tb_scl.sh`, in the regression,
+  checks each case at the three levels, and tb_ula's reference follows
+  the new rule.
 - **The rounding-error monitors show a division's real error (#183).**
   `delta_int` and `delta_float`, simulation only, compared the ALU's
   output with the inputs of the same cycle, but a division's result comes

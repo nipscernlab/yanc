@@ -1522,11 +1522,26 @@ localparam signed [EXP+1:0] EMAX = {3'b000, {(EXP-1){1'b1}}};   //  127 for EXP=
 localparam signed [EXP+1:0] EMIN = {3'b111, {(EXP-1){1'b0}}};   // -128 for EXP=8
 wire                  hi    = (k_fit) ? (esum > EMAX) : ~in1[MAN+EXP];
 wire                  lo    = (k_fit) ? (esum < EMIN) :  in1[MAN+EXP];
-wire signed [EXP-1:0] e_out = (hi) ? EMAX[EXP-1:0] :
-                              (lo) ? EMIN[EXP-1:0] : esum[EXP-1:0];
-wire                  zero  = (FROUND != 0) & (m == {MAN{1'b0}}); // FROUND >= 1: zero stays canonical (+0)
+// A zero stays the zero at every level: adding k to its exponent made, at
+// level 0, a zero with a large exponent, and F_ADD then aligned the other
+// operand to it and shifted it out (ldexp(0, 200) + 1.0 gave 0). At level 0
+// it keeps its sign, as the normaliser's zero does.
+wire                  zero  = (m == {MAN{1'b0}});
 
-assign out = (zero) ? {1'b0, EMIN[EXP-1:0], m} : {s, e_out, m};
+generate if (FROUND == 0) begin : legacy
+	// the exponent saturates at its ends and the mantissa stays (the
+	// normaliser wraps instead; docs/floating-point.md)
+	wire signed [EXP-1:0] e_out = (hi) ? EMAX[EXP-1:0] :
+	                              (lo) ? EMIN[EXP-1:0] : esum[EXP-1:0];
+	assign out = (zero) ? {s, EMIN[EXP-1:0], m} : {s, e_out, m};
+end else begin : ranged
+	// the normaliser's policy (ula_norm, #184): below the range the result
+	// is the canonical zero, above it the largest float of the sign. It kept
+	// the mantissa at the clamped exponent, m * 2^EMIN for an underflow
+	// (exp() of a very negative x) and m * 2^EMAX for an overflow.
+	assign out = (zero | lo) ? {1'b0, EMIN[EXP-1:0], {MAN{1'b0}}} :
+	             (hi)        ? {s,    EMAX[EXP-1:0], {MAN{1'b1}}} : {s, esum[EXP-1:0], m};
+end endgenerate
 
 endmodule
 

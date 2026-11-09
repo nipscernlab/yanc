@@ -61,6 +61,13 @@ with the sign of the quotient (`1.0 / 0.0` and `0.0 / 0.0` alike); at level
 0 the result is not defined. An int divided by zero is not defined at any
 level.
 
+**Scaling by a power of two** (`F_SCL`, `x * 2^k` with `k` an int, which
+`exp()` uses) follows the same rule at levels 1 and 2: a result below the
+range is zero, one above it the largest float with the sign of `x`. At
+level 0 it does not wrap as the other operations do: the exponent stops at
+its ends and the mantissa stays, so `1.0 * 2^-200` gives the smallest
+exponent with the mantissa of 1.0. A zero stays zero at every level.
+
 Even at level 2, adding the same constant again and again drifts: the same
 bits are dropped at every step, so the errors do not cancel. Measured, 1000
 additions of `0.001` end 240, 177 and 78 units of the last place away from
