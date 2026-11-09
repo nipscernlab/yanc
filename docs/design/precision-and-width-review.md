@@ -428,7 +428,8 @@ bits up in a continuous assign and from 64 bits up in a procedural one, and
 the only division form the HDL used (`ula_div`, `ula_nrm`; `F_DIV` is an
 explicit array), is right at 32/64/128/256, as is every other operator
 (since the dividers were cut into stages, `DIV`/`MOD` are an explicit array
-too and the datapath has no `/` left; note of 2026-10-27, issue #29); procedural `/` is also
+too; note of 2026-10-27, issue #29; `ula_nrm` became a shift on 2026-11-08,
+issue #160, and the one `/` left is `ula_frot`'s halving of an exponent); procedural `/` is also
 the only slow one (~52 ms per 256-bit divide). Verilator is right everywhere
 except `INT_MIN / -1` at exactly 32 and 64 bits, which it returns as 0 (a guard
 against the host's divide trap) where Icarus returns `INT_MIN`, so the two

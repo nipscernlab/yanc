@@ -21,13 +21,19 @@ without waiting for each word to be taken.
 
 - `myFIFO`: one clock. Ports `clk`, `sclr`, `data`, `wrreq`, `full`, `q`,
   `rdreq`, `empty`, `almost_empty`, `usedw`; parameters `WORD`, `LENGTH`,
-  `ALMOST`. It holds `LENGTH - 1` words.
+  `ALMOST`. It holds `LENGTH - 1` words; `LENGTH` is a power of two, at
+  least 2.
 - `myDCFIFO`: two clocks, ports in the style of the Quartus `dcfifo`:
   `aclr`; `wrclk`, `data`, `wrreq`, `wrfull`, `wrusedw` on the writer's
   side; `rdclk`, `rdreq`, `q`, `rdempty`, `rdalmost_empty`, `rdusedw` on the
-  reader's. It holds `LENGTH` words (a power of two); a word shows up on the
+  reader's. It holds `LENGTH` words (a power of two, at least 4); a word shows up on the
   reader's side 2 to 3 reader cycles after it is written. Hold `aclr` for a
   few cycles of the slower clock.
+
+A `LENGTH` outside those rules stops the elaboration, in every tool, with
+the rule in the message (`myFIFO_LENGTH_must_be_a_power_of_two_at_least_2`):
+the pointers wrap only at a power of two, and a `myFIFO` of 100 accepted
+126 words and lost 26 of them without a sign.
 
 In both, the word on `data` is stored in the cycle `wrreq` is 1, `q` shows
 the oldest word, and `rdreq` moves to the next. Wired to two SAPHOs (as the
@@ -149,10 +155,11 @@ program a character nobody typed. The queue is emptied.
 does not have to be any particular one: the testbench runs the block at 2
 and at 25 MHz. The block samples the keyboard's 10 to 17 kHz clock, so keep
 the processor well above that (a few MHz). `ps2_clk` is filtered: a new
-level counts only after it holds for 8 cycles of `clk` (320 ns at 25 MHz),
-so a slow or ringing edge on the open-drain line does not count twice.
-`CLK_KHZ` only sizes the 1 ms after which a frame cut in the middle (noise,
-a keyboard plugged in with the board on) is forgotten.
+level counts only after it holds for about 320 ns of `clk` (8 cycles up to
+25 MHz, 32 at 100 MHz, never fewer than 8), so a slow or ringing edge on the
+open-drain line does not count twice. `CLK_KHZ` sizes that filter and the
+1 ms after which a frame cut in the middle (noise, a keyboard plugged in
+with the board on) is forgotten.
 
 **Size**, measured with Quartus 24.1 on a Cyclone IV E (DE2-115), `DEPTH` 4:
 294 logic elements and 99 registers, no memory bits. The queue stays in

@@ -23,7 +23,7 @@ writes only what it changes. A C++ program says the same with
 | `#NUIOOU n` | 1 | the number of output ports | `nuioou` |
 | `#FROUND n` | 0 (C++: 2) | how float operations round: 0, 1 or 2 (see [Floating point](floating-point.md)) | always 2 |
 | `#NUGAIN n` | 128 | the divisor of `norm(x)`; a power of two | (no effect) |
-| `#FFTSIZ n` | 3 | how many low bits of the index `v[k)` reverses: 1 to 30 | (C± only) |
+| `#FFTSIZ n` | 3 | how many low bits of the index `v[k)` reverses: 1 to 30, and no more than the data memory's address bits (an FFT array of 2^n words has to fit) | (C± only) |
 | `#NDSTAC n` | worked out | the data stack depth | `ndstac` |
 | `#SDEPTH n` | worked out | the call stack depth | `sdepth` |
 
@@ -38,12 +38,16 @@ writes only what it changes. A C++ program says the same with
   hardware: a power of two is a shift, any other value would be a divider
   on the processor's critical path, so the compilers refuse it.
 - **The stacks are sized from the program** when `#NDSTAC` and `#SDEPTH` are
-  left out: as deep as the program goes, which is usually a few words. Give
+  left out: exactly as deep as the program goes, with no word to spare,
+  which is usually a few words. Give
   them only to reserve more. When the depth cannot be worked out (a C++
   function that calls itself back), the stack keeps 128 words and asmcomp
   says so with a warning: give the depth then, since two stacks of 128 words
-  can be most of a small processor. A stack that overflows in simulation
-  shows on the waveform's `fl_full` signal.
+  can be most of a small processor. In simulation the waveform shows, for
+  each stack, the words it holds, `fl_top` while it is full (as a program
+  is at its deepest point) and `fl_overflow` from the first push past full or
+  pop of an empty stack, an overflow; the regression fails any run that
+  raises `fl_overflow`.
 - **The processor's name** is the source file's: there is no directive for
   it (`#PRNAME` is an error since v7.1).
 

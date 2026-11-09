@@ -46,7 +46,7 @@ my_program_tb.rst
 @24
 +{Data Stack Max} my_program_tb.proc.p_my_program.core.sp.fl_max
 @28
-+{Data Stack Overflow} my_program_tb.proc.p_my_program.core.sp.fl_full
++{Data Stack Overflow} my_program_tb.proc.p_my_program.core.sp.fl_overflow
 @1401200
 -Stack
 @c00200

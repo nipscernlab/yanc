@@ -99,7 +99,7 @@ Options, in order of cost:
 ### 1.3 Stack overflow and underflow are silent
 
 Both `stack` instances wrap the pointer modulo `DEPTH`; the only detection is
-the simulation-only `fl_full` flag. On hardware a deep call chain or a long
+the simulation-only `fl_overflow` flag. On hardware a deep call chain or a long
 expression silently corrupts the stack.
 
 Two fixes that fit the philosophy: (a) **let the compilers size the stacks**

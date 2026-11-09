@@ -36,15 +36,15 @@ Info: ULA resource -> || operator
 Info: ULA resource -> > operator for float
 Info: ULA resource -> < operator for float
 Info: ULA resource -> ~ operator
-Info: stack depths from the program: SDEPTH 2, NDSTAC 7
+Info: stack depths from the program: SDEPTH 1, NDSTAC 6
 Info: using 59% of the Assembly Instruction Set
 Info: using 72% of the ULA operations
 Processor cmm_cov_ops
   word          32 bits
   float         23 mantissa and 8 exponent bits
   multiplier    int and float; divider int and float
-  data stack    7 words (worked out from the program)
-  call stack    2 words (worked out from the program)
+  data stack    6 words (worked out from the program)
+  call stack    1 words (worked out from the program)
   memories      14784 instructions, 49 data words
 Sweet: the processor is good to go.
 ## variables

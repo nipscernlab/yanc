@@ -5,15 +5,15 @@ Info: 56 instructions and 16 variables were found
 Info: ULA resource -> integer adder
 Info: adding data output handling
 Info: ULA resource -> integer multiplier
-Info: stack depths from the program: SDEPTH 2, NDSTAC 3
+Info: stack depths from the program: SDEPTH 1, NDSTAC 2
 Info: using 7% of the Assembly Instruction Set
 Info: using 5% of the ULA operations
 Processor cmm_reorder
   word          16 bits
   float         no
   multiplier    int; divider no
-  data stack    3 words (worked out from the program)
-  call stack    2 words (worked out from the program)
+  data stack    2 words (worked out from the program)
+  call stack    1 words (worked out from the program)
   memories      56 instructions, 16 data words
 Sweet: the processor is good to go.
 ## variables

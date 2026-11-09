@@ -12,15 +12,15 @@ Info: ULA resource -> float-point adder
 Info: ULA resource -> float to int converter
 Info: ULA resource -> < operator for float
 Info: adding array handling
-Info: stack depths from the program: SDEPTH 2, NDSTAC 3
+Info: stack depths from the program: SDEPTH 1, NDSTAC 2
 Info: using 16% of the Assembly Instruction Set
 Info: using 13% of the ULA operations
 Processor cmm_names_1000
   word          32 bits
   float         23 mantissa and 8 exponent bits
   multiplier    float; divider no
-  data stack    3 words (worked out from the program)
-  call stack    2 words (worked out from the program)
+  data stack    2 words (worked out from the program)
+  call stack    1 words (worked out from the program)
   memories      75 instructions, 30 data words
 Sweet: the processor is good to go.
 ## variables

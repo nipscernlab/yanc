@@ -605,6 +605,16 @@ void eval_finish()
     if (opc_norm() && nubits < 63 && (long long)nugain > (1LL << (nubits-1)) - 1)
         fatal(MSG_ERR_NUGAIN_RANGE, nugain, nubits, (int)((1LL << (nubits-1)) - 1));
 
+    // v[k) reverses the index's low FFTSIZ bits; the data memory must have at
+    // least that many address bits, or the hardware's address is a reversed
+    // part-select (#168). A memory of exactly 2^FFTSIZ words is fine (core.v)
+    if (opc_fft())
+    {
+        int mdataw = 0;
+        while ((1 << mdataw) < n_dat) mdataw++;
+        if (fftsiz > mdataw) fatal(MSG_ERR_FFTSIZ_MEM, fftsiz, fftsiz, n_dat, mdataw, fftsiz, fftsiz);
+    }
+
     // finalize simulation ----------------------------------------------------
 
     sim_finish();

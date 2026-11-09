@@ -33,7 +33,7 @@
 #      must appear, and no other warning may. An optional hardware.txt (in
 #      both phases) holds the generated processor's parameters: see hw_check.
 #      Every Icarus run, in both phases, also fails when a stack reached its
-#      depth (fl_full in the VCD): see stack_check. The waveform's tables
+#      depth (fl_overflow in the VCD): see stack_check. The waveform's tables
 #      of every test, and the VCD of every Icarus run, go through
 #      Scripts/wave_map.py as in the CMM phase, without its rules of the
 #      source line, which are written for C± (GitHub issue #87).
@@ -290,10 +290,12 @@ hw_check() {   # hw_check <hardware.txt> <top.v>
     return 0
 }
 
-# A stack that reaches its depth in an Icarus run: the simulation's fl_full
-# (core.v, stack; it catches a wrapping pointer too) went to 1 in the VCD.
-# With the depths asmcomp works out (peak + 1) it never should; a declared
-# depth that is too small shows up here even when the outputs happen to match.
+# A stack that overflows in an Icarus run: the simulation's fl_overflow (core.v,
+# stack: a push with the stack full or a pop of an empty one, counted apart
+# from the pointer, which wraps at a full power-of-two depth) went to 1 in the
+# VCD. With the depths asmcomp works out (the peak itself, #145) it never
+# should; a declared depth that is too small shows up here even when the
+# outputs happen to match.
 # Returns 1 when a flag fired, 0 otherwise (and when there is no VCD).
 mk_list() {   # mk_list <VAR> [prefix]: a source list of the Makefile, the only place it is written
     local f
@@ -303,7 +305,7 @@ mk_list() {   # mk_list <VAR> [prefix]: a source list of the Makefile, the only 
 stack_check() {   # stack_check <tb.vcd>
     [ -f "$1" ] || return 0
     awk '{ sub(/\r$/, "") }
-         !hdr && $1 == "$var" && $5 == "fl_full" { id[$4] = 1; next }
+         !hdr && $1 == "$var" && $5 == "fl_overflow" { id[$4] = 1; next }
          $1 == "$enddefinitions"                 { hdr = 1; next }
          hdr && substr($0, 1, 1) == "1" && (substr($0, 2) in id) { fired = 1; exit }
          END { exit fired ? 1 : 0 }' "$1"
@@ -543,7 +545,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
         if ! stack_check "$tmp/${prname}_tb.vcd"; then
-            echo "FAIL ($prname): a stack reached its depth in the simulation (fl_full)"
+            echo "FAIL ($prname): a stack overflowed in the simulation (fl_overflow)"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
         if [ -f "$tmp/${prname}_tb.vcd" ] && ! python3 "$ROOT/Scripts/wave_map.py" "$out" "$prname" --vcd "$tmp/${prname}_tb.vcd" >/dev/null; then
@@ -1538,7 +1540,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             [ $died -eq 1 ] && vvp_once_more "$base" "$od/$prname.vvp"
             popd >/dev/null
             if ! stack_check "$od/${prname}_tb.vcd"; then
-                echo "FAIL ($base): a stack reached its depth in the simulation (fl_full)"
+                echo "FAIL ($base): a stack overflowed in the simulation (fl_overflow)"
                 fail=$((fail+1)); failed_names+=("$base"); continue
             fi
             if [ -f "$od/${prname}_tb.vcd" ] && ! python3 "$ROOT/Scripts/wave_map.py" "$od" "$prname" --vcd "$od/${prname}_tb.vcd" >/dev/null; then
@@ -1732,7 +1734,13 @@ fi
 # operation number and checks every result against a reference derived in the
 # testbench, never blessed; Scripts/hw/tb_alu.sh does the same
 # for the shared shifter, the integer divider, F2I and the float comparison as
-# blocks, in four formats. Both at every #FROUND level. Scripts/hw/tb_keyps2.sh
+# blocks, in four formats. Both at every #FROUND level. Scripts/hw/tb_dec_reset.sh
+# checks that the decoder drives no memory write and no input read in reset
+# (#165); Scripts/hw/tb_nrm.sh NRM against the division for every 8-bit
+# input and NUGAIN 1 to 64 (#160); Scripts/hw/tb_ret_priority.sh that a RET in decode does not win over
+# a reset or an interrupt (#164, #166); Scripts/hw/tb_fft_size.sh the FFT's
+# addressing with an array that is the whole data memory, and asmcomp's
+# refusal of a smaller one (#168). Scripts/hw/tb_keyps2.sh
 # checks SAPHO/myKeyPS2.v alone (both layouts, two clocks, three queue sizes);
 # Scripts/hw/tb_vgatext.sh 8, SAPHO/myVGAText.v alone with an 8-bit word;
 # Scripts/hw/tb_adv7513text.sh 8:1:11, SAPHO/myADV7513Text.v alone, its I2C writes
@@ -1740,7 +1748,7 @@ fi
 if [ "$CPP_ONLY" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
     echo ""
     echo "==> unit testbenches (ALU, keyboard, screen)"
-    for t in tb_ula tb_alu tb_keyps2 tb_vgatext tb_adv7513text; do
+    for t in tb_ula tb_alu tb_nrm tb_dec_reset tb_ret_priority tb_fft_size tb_keyps2 tb_vgatext tb_adv7513text; do
         t_arg=""; [ "$t" = tb_vgatext ] && t_arg=8          # one width: about 3 minutes each
         [ "$t" = tb_adv7513text ] && t_arg=8:1:11               # one configuration: about 2 minutes
         if t_out=$(bash "$ROOT/Scripts/hw/$t.sh" $t_arg 2>&1); then

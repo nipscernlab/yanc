@@ -13,15 +13,15 @@ Info: ULA resource -> == operator
 Info: ULA resource -> > operator for int
 Info: ULA resource -> < operator for int
 Info: ULA resource -> float-point adder
-Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: stack depths from the program: SDEPTH 1, NDSTAC 1
 Info: using 15% of the Assembly Instruction Set
 Info: using 22% of the ULA operations
 Processor cmm_cmpforms
   word          32 bits
   float         23 mantissa and 8 exponent bits
   multiplier    no; divider no
-  data stack    2 words (worked out from the program)
-  call stack    2 words (worked out from the program)
+  data stack    1 words (worked out from the program)
+  call stack    1 words (worked out from the program)
   memories      311 instructions, 14 data words
 Sweet: the processor is good to go.
 ## variables

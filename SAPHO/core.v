@@ -27,8 +27,7 @@ module pc
 	parameter NBITS = 8
 )(
 	 input                 clk , rst,
-	 input                 load,
-	 input     [NBITS-1:0] data,
+	 input     [NBITS-1:0] data,       // the address fetched this cycle
 	output reg [NBITS-1:0] addr = 0
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
@@ -36,18 +35,23 @@ module pc
 `endif // ---------------------------------------------------------------------
 );
 
-wire [NBITS-1:0] um  = {{NBITS-1{1'b0}}, {1'b1}};
-wire [NBITS-1:0] val = (load) ? data : addr;
+wire [NBITS-1:0] um  = 1'b1;   // zero-extended; {{NBITS-1{..}}, ..} was a zero-width
+                               // replication for a 2-word program (#167), as in stack
+// The next address is the one fetched now + 1. It used to be computed again
+// here, from a load flag and a value of its own (instr_fetch's pc_lval),
+// a second copy of the fetch's choice that always gave the same address
+// (#169): no jump, the PC itself; a jump, CAL or a waiting TOM/CAD, its
+// target; RET, the stack's top; an interrupt, ITRADD.
 
 // synchronous reset: FPGA-friendly (maps to the FF's dedicated sync clear, no
 // recovery/removal timing on the reset net)
 always @ (posedge clk) begin
 	if (rst) addr <= 0;
-	else     addr <= val + um;
+	else     addr <= data + um;
 end
 
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
-assign sim = val;
+assign sim = data;
 `endif // ---------------------------------------------------------------------
 
 endmodule
@@ -77,7 +81,6 @@ module prefetch
 	output    [NBOPER       -1:0] operand   ,
 	 input    [NBOPCO+NBOPER-1:0] mem_instr ,
 	output    [MINSTW       -1:0] instr_addr,
-	output                        pc_l      ,
 	 input                        is_um     ,
 	output                        isp_push  ,
 	output                        isp_pop   ,
@@ -152,12 +155,10 @@ generate if ((TOM) != 0 || (CAD) != 0) begin : jmp_tgt assign jmp_addr = (pc_sel
 
 generate if (ITRADD>0) begin : itr_fetch
 
-assign pc_l       =  itr  | pc_load;
 assign instr_addr = (rst) ? {MINSTW{1'b0}} : (itr) ? ITRADD : (pc_load) ? jmp_addr : pc_instr;
 
 end else begin : itr_fetch
 
-assign pc_l       =         pc_load;
 assign instr_addr = (rst) ? {MINSTW{1'b0}} :                  (pc_load) ? jmp_addr : pc_instr;
 
 end endgenerate
@@ -217,36 +218,40 @@ assign                     out = mem[pmenoum];
 // Flags
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
 
-reg             fl_full = 0;
-reg [NADDR-1:0] fl_max  = 0; // pointer high-water mark
-reg [NADDR-1:0] pointeri;    // NADDR-wide (matches pointer) -- a 32-bit integer
-                             // here would make `pointeri = pointer` a width-
-                             // mismatched assign that Verilator flags WIDTHEXPAND.
+// The words the stack holds, counted apart from the pointer: a full stack of
+// a power-of-two DEPTH has its pointer wrapped to 0, which the hardware reads
+// right (the top is mem[pointer - 1]) but a monitor cannot tell from empty.
+// One bit wider than the pointer, so DEPTH fits.
+localparam [NADDR:0] FULL = DEPTH[NADDR:0];
+reg  [NADDR:0] fl_cnt  = 0;
+wire [NADDR:0] fl_nxt  = rst  ? {(NADDR+1){1'b0}} :
+                         push ? fl_cnt + 1'b1      :
+                         pop  ? fl_cnt - 1'b1      : fl_cnt;
 
-// pointeri is a pure combinational copy of the pointer -- no self-reference,
-// so it is fine under Verilator.
-always @ (*) pointeri = pointer;
+reg            fl_overflow = 0;  // a push with DEPTH words held, or a pop with none
+reg            fl_top;       // DEPTH words held now: the stack is full, which a
+                             // program at its deepest point is, with no harm
+reg  [NADDR:0] fl_max  = 0;  // the most words held
+reg  [NADDR+1:0] pointeri;   // the words held, for the waveform: a sign bit on
+                             // top, as gen_gtkw shows it as a signed number
 
-// fl_full ("stack ever overflowed", sticky) and fl_max (pointer high-water mark)
-// are STATE: an always @(*) that reads its own output is a latch / comb loop
-// that Verilator flags as UNOPTFLAT and may mis-evaluate. Register them on the
-// clock instead, but evaluate the conditions on the pointer's NEXT value
-// (pointer_nxt = exactly what the pointer register takes this same edge). The
-// flag/max update then lands in the SAME cycle the pointer changes -- bit-for-
-// bit the waveform the async version produced, identical across the Icarus and
-// the Verilator runs. They never reset, accumulating over the whole run (stats).
-wire [NADDR-1:0] pointer_nxt = rst  ? zero    :
-                               push ? pmaisum :
-                               pop  ? pmenoum : pointer;
+// pointeri is a pure combinational copy -- no self-reference, so it is fine
+// under Verilator.
+always @ (*) pointeri = {1'b0, fl_cnt};
+always @ (*) fl_top   = (fl_cnt == FULL);
 
-// fl_full looks at the pointer BEFORE the edge: a push at DEPTH-1 (the stack
-// reaches DEPTH) or a pop at 0. Testing pointer_nxt >= DEPTH missed a
-// power-of-two DEPTH, whose NADDR-bit pointer wraps to 0 instead of reaching
-// DEPTH (the old wrap test, (pointer_nxt+um)-pointer_nxt != 1, is evaluated at
-// 32 bits and never fired). fl_max still wraps there: it is a display aid.
+// fl_overflow ("stack ever overflowed", sticky) and fl_max are STATE: an always
+// @(*) that reads its own output is a latch / comb loop that Verilator flags
+// as UNOPTFLAT and may mis-evaluate. They are registered on the clock, and
+// fl_max on the count's NEXT value, so it changes in the same cycle as the
+// pointer, in Icarus and Verilator alike. They never reset (stats of the run).
+// fl_overflow rises on a real overflow (issue #145). Before, named fl_full,
+// it rose when the stack became full, so asmcomp gave every stack a word
+// more than the program needs to keep a correct program below it.
 always @ (posedge clk) begin
-	if (!rst && ((push && pointer == DEPTH-1) || (!push && pop && pointer == zero))) fl_full <= 1'b1;
-	if ( pointer_nxt >  fl_max                                       ) fl_max  <= pointer_nxt;
+	fl_cnt <= fl_nxt;
+	if (!rst && ((push && fl_cnt == FULL) || (!push && pop && fl_cnt == {(NADDR+1){1'b0}}))) fl_overflow <= 1'b1;
+	if (fl_nxt > fl_max) fl_max <= fl_nxt;
 end
 
 `endif // ---------------------------------------------------------------------
@@ -290,20 +295,14 @@ module instr_fetch
 
 // Program Counter
 
-wire              pc_load;
-wire [MINSTW-1:0] pc_lval;
 wire [MINSTW-1:0] pc_addr;
-wire [MINSTW-1:0] pcl;
 
-generate
-	if (ITRADD>0) begin : pcl_sel assign pcl = (itr) ? addr : pc_lval; end
-	else          begin : pcl_sel assign pcl = pc_lval;                 end
-endgenerate
-
+// the PC follows the address fetched (addr, below): one choice of the next
+// address, not two (#169)
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
-pc #(MINSTW) pc (clk, rst, pc_load, pcl, pc_addr, pc_sim_val);
+pc #(MINSTW) pc (clk, rst, addr, pc_addr, pc_sim_val);
 `else
-pc #(MINSTW) pc (clk, rst, pc_load, pcl, pc_addr);
+pc #(MINSTW) pc (clk, rst, addr, pc_addr);
 `endif // ---------------------------------------------------------------------
 
 // Instruction prefetch
@@ -339,7 +338,7 @@ prefetch #(.MINSTW(MINSTW),
 		   .TOM   (TOM   ),
 		   .CAD   (CAD   )) pf(rst, tom_go, cad_go, self_addr, pf_self, pc_addr, opcode, operand,
                                pf_instr, pf_addr,
-                               pc_load , acc,
+                               acc,
                                pf_isp_push, pf_isp_pop,
                                itr, cheguei);
 
@@ -349,29 +348,26 @@ wire [MINSTW-1:0] stack_out;
 
 generate
 	if (CAL) begin : isp_blk
-		stack #($clog2(SDEPTH), SDEPTH, MINSTW) isp(clk, rst, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
-	end
-endgenerate
-
-// what the PC loads on a jump: the operand, the return address, or the
-// waiting TOM/CAD's own address (each term only when its block exists)
-generate
-	if (CAL && (TOM || CAD)) begin : pcl_val
-		assign pc_lval = (pf_isp_pop) ? stack_out : (pf_self) ? self_addr : instr[MINSTW-1:0];
-	end else if (CAL) begin : pcl_val
-		assign pc_lval = (pf_isp_pop) ? stack_out : instr[MINSTW-1:0];
-	end else if (TOM || CAD) begin : pcl_val
-		assign pc_lval = (pf_self) ? self_addr : instr[MINSTW-1:0];
-	end else begin : pcl_val
-		assign pc_lval = instr[MINSTW-1:0];
+		stack #((SDEPTH > 1) ? $clog2(SDEPTH) : 1, SDEPTH, MINSTW) isp(clk, rst, pf_isp_push, pf_isp_pop, pc_addr, stack_out);
 	end
 endgenerate
 
 // External interface
 
+// A RET takes the return address only when neither a reset nor an interrupt
+// does: prefetch has already put them first in pf_addr (0 and ITRADD), and a
+// RET here used to override both (#164, #166), so a reset or an interrupt
+// pulse with a RET in decode went to the return address. The interrupt term
+// exists only with #ITRAD.
+wire ret_go;
+generate
+	if (ITRADD > 0) begin : ret_go_sel assign ret_go = pf_isp_pop & ~rst & ~itr; end
+	else            begin : ret_go_sel assign ret_go = pf_isp_pop & ~rst;        end
+endgenerate
+
 generate
 	if (CAL) begin : ret_addr
-		assign addr = (pf_isp_pop) ? stack_out : pf_addr;
+		assign addr = (ret_go) ? stack_out : pf_addr;
 	end else begin : ret_addr
 		assign addr =  pf_addr;
 	end
@@ -390,8 +386,11 @@ module ula_in1_ctrl
 	output [NUBITS-1:0] out
 );
 
+// stkr has no reset: popr, which picks it, is reset, so its value in and
+// right after a reset is never read; a reset it does not need can keep a
+// tool from packing it (#172)
 reg popr;              always @ (posedge clk) if (rst) popr <= 1'b0; else popr <= pop;
-reg [NUBITS-1:0] stkr; always @ (posedge clk) if (rst) stkr <= 0;    else stkr <= stack;
+reg [NUBITS-1:0] stkr; always @ (posedge clk) stkr <= stack;
 
 assign out = (popr) ? stkr : mem;
 
@@ -409,8 +408,9 @@ module ula_in2_ctrl
 	output [NUBITS-1:0] out
 );
 
+// ior has no reset, as stkr: req_inr, which picks it, is reset (#172)
 reg               req_inr; always @ (posedge clk) if (rst) req_inr <= 1'b0; else req_inr <= req_in;
-reg  [NUBITS-1:0] ior    ; always @ (posedge clk) if (rst) ior     <= 0;    else ior     <=  io_in;
+reg  [NUBITS-1:0] ior    ; always @ (posedge clk) ior <= io_in;
 
 assign out = (req_inr) ? ior : acc;
 
@@ -437,7 +437,14 @@ generate
 		integer i;
 		always @ (*) for (i = 0; i < FFTSIZ; i = i+1) aux[i] = offset[FFTSIZ-1-i];
 
-		wire [MDATAW-1:0] add = (fft) ? {offset[MDATAW-1:FFTSIZ], aux} : offset;
+		// the index's low FFTSIZ bits reversed (the FFT's order); the bits above
+		// them, when the data memory has any, kept. A memory of exactly
+		// 2^FFTSIZ words (an FFT array and nothing else) has none above:
+		// offset[MDATAW-1:FFTSIZ] was then a reversed part-select that Icarus
+		// refuses (#168). asmcomp refuses a smaller memory.
+		wire [MDATAW-1:0] add;
+		if (FFTSIZ < MDATAW) begin : keep_hi assign add = (fft) ? {offset[MDATAW-1:FFTSIZ], aux} : offset; end
+		else                 begin : all_rev assign add = (fft) ? aux[MDATAW-1:0]                  : offset; end
 
 		assign out = (use_oft) ?    add + addr: addr;
 	end else begin : fft_offset
@@ -501,7 +508,8 @@ module io_ctrl
 	parameter    INN = 0,
 	parameter  F_INN = 0,
 	parameter  P_INN = 0,
-	parameter PF_INN = 0
+	parameter PF_INN = 0,
+	parameter    OUT = 0
 )(
 	input                   clk, rst,
 	input                   req_in, out_en,
@@ -510,8 +518,8 @@ module io_ctrl
 	output                  en_in,
 	output     [NBIOIN-1:0] addr_in,
 
-	output reg              en_out,
-	output reg [NBIOOU-1:0] addr_out
+	output                  en_out,
+	output     [NBIOOU-1:0] addr_out
 );
 
 localparam AW = (NBOPER > NBIOIN) ? ((NBOPER > NBIOOU) ? NBOPER : NBIOOU)
@@ -521,8 +529,20 @@ wire [AW-1:0] addr = opnd;                         // zero-extended when narrowe
 generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : en_in_sel   assign en_in   = req_in;           end else begin : en_in_sel   assign en_in   =         1'b0  ; end endgenerate
 generate if ((INN | F_INN | P_INN | PF_INN) != 0) begin : addr_in_sel assign addr_in = addr[NBIOIN-1:0]; end else begin : addr_in_sel assign addr_in = {NBIOIN{1'b0}}; end endgenerate
 
-always @ (posedge clk) if (rst) en_out   <= 1'b0; else en_out   <= out_en;
-always @ (posedge clk) if (rst) addr_out <= 0;    else addr_out <= addr[NBIOOU-1:0];
+// the output side only with OUT (#172): a program that only reads had both
+// registers, addr_out loading the operand of every instruction. The port
+// number now loads in OUT's cycle alone and holds until the next OUT.
+generate if ((OUT) != 0) begin : out_side
+	reg              en_r   = 1'b0;
+	reg [NBIOOU-1:0] addr_r = 0;
+	always @ (posedge clk) if (rst) en_r   <= 1'b0; else en_r   <= out_en;
+	always @ (posedge clk) if (rst) addr_r <= 0;    else if (out_en) addr_r <= addr[NBIOOU-1:0];
+	assign en_out   = en_r;
+	assign addr_out = addr_r;
+end else begin : out_side
+	assign en_out   = 1'b0;
+	assign addr_out = {NBIOOU{1'b0}};
+end endgenerate
 
 endmodule
 
@@ -825,6 +845,13 @@ localparam N_CAD   = n_ones(CADS);
 localparam TOM_REG = ((TOMS & ~LSYNC) != 0);   // a synchronized TOM link: toma_dado is a register
 
 wire [NLINK-1:0] tgo, cgo;     // per link: TOM k / CAD k may go on
+
+// the link number: TOM k and CAD k carry it in their operand, and asmcomp
+// makes NLINK the highest number used + 1, so its low LW bits are the whole
+// number. The selects compare and index those bits, not the whole operand
+// (#172).
+localparam        LW  = (NLINK > 1) ? $clog2(NLINK) : 1;
+wire     [LW-1:0] lnum = if_operand[LW-1:0];
 wire [NLINK-1:0] toffer;       // per link: this cycle T flips
 wire             tom_offer = |toffer;
 
@@ -843,7 +870,7 @@ generate for (k = 0; k < NLINK; k = k + 1) begin : lnk
 			always @ (posedge clk) begin s1 <= valeu[k]; s2 <= s1; end
 			assign c_in = s2;
 		end
-		if (N_TOM > 1) begin : sel assign me = (if_opcode == OP_TOM) & (if_operand == k); end
+		if (N_TOM > 1) begin : sel assign me = (if_opcode == OP_TOM) & (lnum == k); end
 		else           begin : sel assign me = (if_opcode == OP_TOM);                      end
 		assign toffer[k] = me & ~rW;
 		always @ (posedge clk) begin
@@ -877,7 +904,7 @@ generate for (k = 0; k < NLINK; k = k + 1) begin : lnk
 			always @ (posedge clk) begin s1 <= taqui[k]; s2 <= s1; end
 			assign t_in = s2;
 		end
-		if (N_CAD > 1) begin : sel assign me = (if_opcode == OP_CAD) & (if_operand == k); end
+		if (N_CAD > 1) begin : sel assign me = (if_opcode == OP_CAD) & (lnum == k); end
 		else           begin : sel assign me = (if_opcode == OP_CAD);                      end
 		always @ (posedge clk) begin
 			if      (rst              ) rC <= 1'b0;
@@ -895,9 +922,9 @@ end endgenerate
 // the go of the TOM / CAD in decode: with one link of the kind its bit alone
 // (the others are 0), with more the operand picks it
 generate
-	if (N_TOM > 1) begin : tom_go_sel assign tom_go = tgo[if_operand]; end
+	if (N_TOM > 1) begin : tom_go_sel assign tom_go = tgo[lnum]; end
 	else           begin : tom_go_sel assign tom_go = |tgo;            end
-	if (N_CAD > 1) begin : cad_go_sel assign cad_go = cgo[if_operand]; end
+	if (N_CAD > 1) begin : cad_go_sel assign cad_go = cgo[lnum]; end
 	else           begin : cad_go_sel assign cad_go = |cgo;            end
 endgenerate
 
@@ -910,7 +937,7 @@ localparam CAD_ONE = first_one(CADS);
 
 wire [NUBITS-1:0] cad_word;
 generate
-	if (N_CAD > 1) begin : cad_word_sel assign cad_word = cade_dado[if_operand*NUBITS +: NUBITS]; end
+	if (N_CAD > 1) begin : cad_word_sel assign cad_word = cade_dado[lnum*NUBITS +: NUBITS]; end
 	else           begin : cad_word_sel assign cad_word = cade_dado[CAD_ONE   *NUBITS +: NUBITS]; end
 endgenerate
 
@@ -1038,7 +1065,7 @@ wire              sp_push = id_dsp_push;
 wire              sp_pop  = id_dsp_pop;
 wire [NUBITS-1:0] sp_in, sp_data;
 
-stack #(.NADDR($clog2(DDEPTH)),
+stack #(.NADDR((DDEPTH > 1) ? $clog2(DDEPTH) : 1),   // a 1-word stack still has a 1-bit pointer
         .DEPTH(DDEPTH),
         .NBITS(NUBITS)) sp(clk, rst, sp_push, sp_pop, sp_in, sp_data);
 
@@ -1146,7 +1173,14 @@ always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out; // synchronous 
 // Only _sync links: the out bus itself (TOM keeps it there while it loops).
 // Any synchronized TOM link: a register loaded in the cycle T flips, so it is
 // already still when the partner sees T.
-generate if (TOM != 0 && TOM_REG) begin : toma_reg
+// Without an interrupt that register is the accumulator (#171): racc loads
+// the same ula_out on the same edge, and holds it while TOM loops (its ALU
+// operation passes the accumulator, and no input comes in); the writer
+// leaves TOM only once the value was taken. An interrupt can leave TOM
+// mid-wait and change the accumulator, so with #ITRAD rD stays.
+generate if (TOM != 0 && TOM_REG && ITRADD == 0) begin : toma_reg
+	assign toma_dado = racc;
+end else if (TOM != 0 && TOM_REG) begin : toma_reg
 	reg [NUBITS-1:0] rD = 0;
 	always @ (posedge clk) if (tom_offer) rD <= ula_out;
 	assign toma_dado = rD;
@@ -1192,7 +1226,8 @@ io_ctrl #(.NBOPER(NBOPER),
 		     .INN(   INN),
 		   .F_INN( F_INN),
 		   .P_INN( P_INN),
-		  .PF_INN(PF_INN)) io(clk, rst, id_req_in, id_out_en,
+		  .PF_INN(PF_INN),
+		     .OUT(   OUT)) io(clk, rst, id_req_in, id_out_en,
                               if_operand,
                               req_in, addr_in, out_en, addr_out);
 end else begin : io_ports

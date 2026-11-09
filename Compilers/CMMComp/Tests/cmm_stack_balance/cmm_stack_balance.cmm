@@ -7,7 +7,7 @@
 // Three statements that used to leave the data stack or the accumulator in
 // a wrong state (cmmcomp audit, 2026-10-30), each run 40 times in a loop, so
 // that a word left on the stack every turn fills it (the regression checks
-// fl_full) and a lost value shows in the output:
+// fl_overflow) and a lost value shows in the output:
 //
 //   copy(k + 1, j)       copy() of an expression left the acc marked busy:
 //                        the next load pushed a word nobody popped

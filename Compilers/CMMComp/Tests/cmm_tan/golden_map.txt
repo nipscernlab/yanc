@@ -20,15 +20,15 @@ Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point absolute operation
 Info: ULA resource -> < operator for float
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
-Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: stack depths from the program: SDEPTH 1, NDSTAC 1
 Info: using 14% of the Assembly Instruction Set
 Info: using 22% of the ULA operations
 Processor cmm_tan
   word          32 bits
   float         23 mantissa and 8 exponent bits
   multiplier    float; divider float
-  data stack    2 words (worked out from the program)
-  call stack    2 words (worked out from the program)
+  data stack    1 words (worked out from the program)
+  call stack    1 words (worked out from the program)
   memories      98 instructions, 22 data words
 Sweet: the processor is good to go.
 ## variables

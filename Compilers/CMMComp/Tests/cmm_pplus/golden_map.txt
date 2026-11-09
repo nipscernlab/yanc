@@ -16,15 +16,15 @@ Info: adding array handling
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> > operator for int
 Info: ULA resource -> < operator for int
-Info: stack depths from the program: SDEPTH 2, NDSTAC 3
+Info: stack depths from the program: SDEPTH 1, NDSTAC 2
 Info: using 16% of the Assembly Instruction Set
 Info: using 19% of the ULA operations
 Processor cmm_pplus
   word          32 bits
   float         23 mantissa and 8 exponent bits
   multiplier    int and float; divider no
-  data stack    3 words (worked out from the program)
-  call stack    2 words (worked out from the program)
+  data stack    2 words (worked out from the program)
+  call stack    1 words (worked out from the program)
   memories      247 instructions, 45 data words
 Sweet: the processor is good to go.
 ## variables

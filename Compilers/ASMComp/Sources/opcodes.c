@@ -1057,6 +1057,9 @@ int opc_tom() {return  find_opc("TOM") != -1;}
 // checks whether the CAL instruction is present
 int opc_cal() {return  find_opc("CAL") != -1;}
 
+// checks whether the FFT's bit-reversed addressing is used: ILI or ISI (v[k))
+int opc_fft() {return find_opc("ILI") != -1 || find_opc("ISI") != -1;}
+
 // checks whether norm() is used: NRM, NRM_M or P_NRM_M (x / NUGAIN)
 int opc_norm() {return find_opc("NRM") != -1 || find_opc("NRM_M") != -1 || find_opc("P_NRM_M") != -1;}
 

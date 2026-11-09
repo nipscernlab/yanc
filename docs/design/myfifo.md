@@ -61,6 +61,9 @@ assign usedw =  addr_w - addr_r;
 ```
 
 Capacity stays LENGTH-1 words (one slot tells full from empty), as before.
+LENGTH is a power of two, at least 2, and any other stops the elaboration
+(#180): the pointers have $clog2(LENGTH) bits and wrap only at the power of
+two, so a LENGTH of 100 accepted 126 words and lost 26.
 
 ## Checks (2026-10-09)
 

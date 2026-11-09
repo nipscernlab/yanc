@@ -1,8 +1,8 @@
 // A loop of seven `else if` (#54). Its chain ends on one .asm line that
 // holds seven labels and the jump back; the passes read a line as at most 8
 // words, so the jump's target was lost and the stack depths fell back to 128
-// words each. hardware.txt checks the depths the processor gets now, 2 and
-// 2; the outputs are what C++ gives for the input 1..8 (input_0.txt).
+// words each. hardware.txt checks the depths the processor gets now, 1 and
+// 1 (#145: no word to spare); the outputs are what C++ gives for the input 1..8 (input_0.txt).
 
 int main()
 {

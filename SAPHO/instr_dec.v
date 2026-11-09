@@ -285,7 +285,16 @@ wire [13:0] ctl = d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 |
                   d104 | d105 | d106 | d107 | d108;
 
 
-assign {push, pop, mem_wr, req_in, out_en, ldi, sti, fft} = ctl[7:0];
+// mem_wr and req_in leave the processor as they are (the data memory's write
+// enable, the read of the input port's FIFO), and the instruction memory has
+// no reset: a SET in decode wrote memory during a reset, an INN popped a word
+// that was lost (#165). They are held at 0 in reset, a gate each. out_en is
+// registered with a reset in io_ctrl; push and pop act on a stack whose
+// pointer the reset already holds.
+wire mem_wr_d, req_in_d;
+assign {push, pop, mem_wr_d, req_in_d, out_en, ldi, sti, fft} = ctl[7:0];
+assign mem_wr = mem_wr_d & ~rst;
+assign req_in = req_in_d & ~rst;
 
 // the ALU operation is registered; a synchronous reset to 0 = pass-acc is a
 // harmless NOP for the ALU while the rest of the pipeline is being reset

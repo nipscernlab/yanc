@@ -44,6 +44,122 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **Each stack exactly as deep as the program goes (#145).** asmcomp gave
+  every stack it sized a word more than the program's deepest point: the
+  simulation's `fl_full` rose when a stack became full, not when it
+  overflowed, and the regression fails a run that raises it. `fl_full` now
+  rises on an overflow (a push with the stack full, a pop of an empty one),
+  counted in simulation apart from the pointer, which wraps at a full
+  power-of-two depth and still reads the right word; the hardware is the
+  same. So `asm_depth` returns the peak itself, at least 1, and a stack's
+  pointer has at least one bit. Every processor whose depths are worked out
+  loses a word of each stack (cmm_depth: 4 and 3 to 3 and 2). The waveform
+  shows each stack's words held (`pointeri`, no longer a wrapping pointer),
+  a new `fl_top` while it is full, and the overflow under its own name:
+  `fl_full` is now `fl_overflow`, an error and never a normal state. A tool
+  that reads the old name (AURORA's waveform) has to change with it.
+- **One choice of the next instruction's address (#169).** The fetch
+  address was chosen in prefetch and instr_fetch, and the PC chose again
+  what to load, a second mux that always gave the same address. The PC now
+  loads the fetched address + 1; `pc_lval`, `pcl` and prefetch's `pc_l` are
+  gone. Yosys: a program with a call, a return and an interrupt point 44 to
+  36 LUT4 (8-bit addresses). The smallest processor, sapho_min, went from
+  18 to 19 LUT4: the fetched address carries the fetch's reset term, which
+  the PC's own reset makes redundant but Yosys keeps; Quartus maps both to
+  7 ALMs, and `cells.txt` now holds 19.
+- **A link writer offers the accumulator itself, without an interrupt
+  (#171).** `toma_dado`'s register loaded the same value as the accumulator
+  on the same edge, and the accumulator holds it while TOM waits; only an
+  interrupt, which can leave TOM mid-wait, tells them apart. Without
+  `#ITRAD` the register is gone: 32 flip-flops fewer in a 32-bit writer
+  (link_envia 82 to 50, lk_fan_w 83 to 51, Yosys). The LINK, LINK2 (two
+  clocks) and LINK3 projects give their sequences.
+- **No reset on the ALU's two input data registers (#172).** `stkr` (the
+  popped word) and `ior` (the word read from a port) were reset, though the
+  registers that pick them (`popr`, `req_inr`) are, so their value in and
+  right after a reset is never read. No area changes in Yosys (a
+  synchronous reset is free in its flip-flop); in simulation both show X
+  until their first load, which reaches no output.
+- **The link number on its own bits (#172).** With two or more links of a
+  kind, TOM k and CAD k compared the whole operand with each k and indexed
+  by it; asmcomp makes NLINK the highest number + 1, so the low
+  `$clog2(NLINK)` bits are the number. Yosys: the fan-out processor of
+  LINK3 228 to 224 LUT4, the fan-in one 1664 to 1662; LINK3 simulates to
+  its sequences.
+- **io_ctrl builds its output side only with OUT (#172).** A program that
+  only reads had `en_out` and `addr_out`, the latter loading every
+  instruction's operand; they now exist only with OUT, and `addr_out` loads
+  in OUT's cycle and holds. No area changes (synthesis already removed them,
+  since the generated top leaves them unconnected); the RTL now says what is
+  built, and the port number stops toggling between outputs.
+- **The normaliser's shift without its dead cap (#163).** The shift was
+  the leading-zero count held at W-1, but the count passes W-1 only for a
+  zero mantissa, and then the result does not read it. The cap, a compare
+  and a mux between the count and the shift on the float add's path, is
+  gone; no result changes (I2F on every 16-bit word, 200,000 F_ADD and
+  F_SU2 pairs, three levels). The clock is not measured.
+- **F_ROT without the normaliser (#159).** `sqrt()`'s first guess built
+  the mantissa 1 and let the normaliser shift it up; the result is an exact
+  power of two, always in range, so `ula_frot` now writes the final word and
+  F_ROT is a term of the output mux. It gives the old results on every
+  16-bit word at the three levels. Yosys: F_ROT alone 72 to 66 LUT4 (78 to
+  66 at level 0); with F_ADD within noise. Like #158, it takes one leg off
+  the leading-zero count, on the float add's path; the clock is not
+  measured.
+- **F_SCL and XPO at the exponent's width (#161).** F_SCL (`exp()`,
+  `ldexp`) added k to the exponent and compared at the word's width; a k
+  wider than EXP+1 bits saturates whatever the exponent, so it now adds at
+  EXP+2 bits and saturates a wider k by its sign. XPO (`log()`) adds its
+  constant at EXP+1 bits and sign-extends. Both give the old results on
+  every case tried (1,076,224 F_SCL cases and all 65,536 XPO words at 16
+  bits). Yosys (32 bits): F_SCL 175 to 110 LUT4; XPO unchanged, synthesis
+  already narrowed it.
+- **F2I shifts with the shifter of SHL, SHR and SRS (#156).** F2I shifts
+  the mantissa by the exponent with a barrel shifter of its own, the same
+  circuit as `ula_shift`'s, and the two never run in the same cycle. When
+  a program has both, `ula_shift` does F2I's shift too, as an SHL or an
+  SHR, behind muxes on its word and amount. Yosys (LUT4, 32 bits, `#FROUND`
+  2): SHL and F2I 561 to 492, SRS and F2I 612 to 534; either alone
+  unchanged. A program with F2I and SRS only, simulated against the float
+  format's definition, converts 11 values right.
+- **One negator for NEG, NEG_M, ABS and ABS_M (#157).** The four were four
+  modules, one negator each on the accumulator or the memory word, and one
+  runs per cycle. They now share one negator, behind an operand mux only
+  when the program has a memory form and an accumulator form; ABS is the
+  negator's output or its input by the sign. Yosys (LUT4, 32 bits): NEG and
+  NEG_M 200 to 166, the four 223 to 197; one form alone, and NEG with ABS
+  (which synthesis already merged), unchanged. `ula_neg` and `ula_abs` are
+  gone. The integer divider, which negated its quotient and its remainder
+  apart though one is read per cycle (QUO or REM), picks first and negates
+  once when the program has DIV and MOD: 2697 to 2663.
+- **NRM as a shift (#160).** `ula_nrm` was `in/NUGAIN`; NUGAIN is a power
+  of two, so it is now `in >>> K` with 1 added back to a negative input that
+  has a remainder, which truncates toward zero as the division did. It
+  saves nothing: Yosys (107 to 107 LUT4) and Quartus (sapho_all, 3189 to
+  3190 ALMs) already turned the division into that; it keeps the datapath
+  free of a `/` whose cost depends on the synthesiser.
+  `Scripts/hw/tb_nrm.sh`, in the regression, checks it against the division
+  for every 8-bit input and NUGAIN 1 to 64.
+- **No F_MLT or F_DIV leg before the normaliser's leading-zero count at
+  `#FROUND` 1 and 2 (#158).** At those levels both always take the direct
+  path, but their legs in front of the count were built and read by
+  nothing; they sat on the float add's path, the processor's slowest. Now
+  built only at level 0. Area (Yosys, LUT4) moves within its noise, from -36
+  to +5; level 0 is unchanged. The clock is not measured yet.
+- **One int-to-float converter for I2F and I2F_M (#154).** The same as
+  #153 for the other direction: one `ula_i2f` behind an operand mux when a
+  program has both forms (I2F also serves F_INN and PF_INN). A program with
+  both goes from 667 to 521 LUTs at `#FROUND` 2 and from 322 to 297 at
+  level 0 (Yosys, 32 bits, LUT4), the converter being cheap at level 0;
+  one form alone is unchanged. `tb_ula` passes at every format and level.
+- **One float-to-int converter for F2I and F2I_M (#153).** The ALU built
+  two `ula_f2i`, one on the accumulator (F2I) and one on the memory word
+  (F2I_M), though one operation runs per cycle. A program with both now
+  gets one converter behind a 32-bit operand mux; a program with one form
+  is as before, with no mux. Measured with Yosys (32 bits, LUT4): a program
+  with both goes from 705 to 423 LUTs at `#FROUND` 2 and from 699 to 417 at
+  level 0; one form alone is unchanged. `tb_ula` passes at every format and
+  level.
 - **SAPHO's Verilog passes Verilator's lint, and the regression keeps it so
   (#35).** `verilator --lint-only -Wall` on sapho_all gave 50 warnings.
   The dead ones are gone: `sw` and `mem_wrb` (processor.v), `rf`, and the
@@ -164,6 +280,52 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **The text screens check their limits (#182).** myVGAText and
+  myADV7513Text read a character from `w[6:0]` and myADV7513Text counts
+  its writes in `c[10:7]`, so a NUBITS below 8 or a WAIT_BITS below 11
+  indexed past their words without a sign; both now stop the elaboration
+  with the rule in the message. myADV7513Text's write count was in two
+  places (NREGS and the `cfg` table, whose default stood for write 10):
+  write 10 has its own line now, and a NREGS that does not match the table
+  stops the elaboration too. tb_vgatext and tb_adv7513text pass.
+- **myKeyPS2 filters `ps2_clk` for the same time at any clock (#182).**
+  The filter held a new level for a fixed 8 cycles, 320 ns at 25 MHz but
+  only 80 ns at 100 MHz, while the frame timeout already followed
+  `CLK_KHZ`. It now holds about 320 ns, never fewer than 8 cycles, so the
+  clocks up to 25 MHz are unchanged. tb_keyps2 passes in its 8
+  configurations and at 100 MHz.
+- **An FFT array that is the whole data memory (#168).** v[k) reverses the
+  index's low `#FFTSIZ` bits and keeps the ones above, which a memory of
+  exactly 2^FFTSIZ words does not have: a program whose only data was an
+  8-word FFT array with `#FFTSIZ 3` stopped Icarus with a reversed
+  part-select. `core.v` now reverses the whole index then, and asmcomp
+  refuses, with a message, an `#FFTSIZ` wider than the data memory's
+  address. `Scripts/hw/tb_fft_size.sh`, in the regression, checks both.
+- **myFIFO and myDCFIFO refuse a LENGTH they cannot hold (#180).** The
+  pointers have `$clog2(LENGTH)` bits and wrap only at a power of two: a
+  myFIFO of LENGTH 100 accepted 126 words and lost 26, with full, empty and
+  usedw all coherent. A LENGTH that is not a power of two (or below 2 for
+  myFIFO, 4 for myDCFIFO) now stops the elaboration with the rule in the
+  message, by naming a module that does not exist (Verilog-2001 has no
+  `$error`). `docs/peripherals.md` says the rule for both.
+- **SAPHO: a RET in decode no longer wins over a reset or an interrupt
+  (#164, #166).** The return address overrode the fetch address that
+  prefetch had already chosen, 0 in a reset and the #ITRAD address in an
+  interrupt: a reset in the middle of a run with a RET in decode went to
+  the return address (from a stack the same edge empties), and an interrupt
+  pulse was lost. The RET now takes effect only without either.
+  `Scripts/hw/tb_ret_priority.sh`, run by the regression, builds a program
+  with a call and an #ITRAD point and checks both: before the fix both went
+  to address 4, the return address. Cost, measured with Yosys on that
+  program: 5 LUT4 (39 to 44); the fix of #165 cost 2 (33 to 35).
+- **SAPHO: no memory write and no input read during a reset (#165).** The
+  instruction memory has no reset, so an instruction can sit in decode
+  while `rst` is 1, and the decoder drove the data memory's write enable and
+  the input FIFO's read from it: a reset in the middle of a run with a SET
+  or STI in decode wrote a word, and with an INN popped one that was lost.
+  `mem_wr` and `req_in` are now held at 0 in reset, a gate each.
+  `Scripts/hw/tb_dec_reset.sh`, run by the regression, checks it: the old
+  decoder fails all five cases (SET, SET_P, STI, INN, P_INN in reset).
 - **cppcomp: the waveform shows a condition on its own line (#87).** A
   statement took the line the parser was on when it finished it: the test
   of an `if`, a `while` or a `for` showed on the line of its closing brace,
