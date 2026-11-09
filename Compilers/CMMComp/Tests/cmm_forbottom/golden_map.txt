@@ -10,15 +10,15 @@ Info: ULA resource -> > operator for int
 Info: ULA resource -> == operator
 Info: ULA resource -> ^ operator
 Info: ULA resource -> modulo computation (not recomended for high frequency opperation)
-Info: stack depths from the program: SDEPTH 2, NDSTAC 2
+Info: stack depths from the program: SDEPTH 1, NDSTAC 1
 Info: using 9% of the Assembly Instruction Set
 Info: using 16% of the ULA operations
 Processor cmm_forbottom
   word          32 bits
   float         no
   multiplier    no; divider int
-  data stack    2 words (worked out from the program)
-  call stack    2 words (worked out from the program)
+  data stack    1 words (worked out from the program)
+  call stack    1 words (worked out from the program)
   memories      150 instructions, 13 data words
 Sweet: the processor is good to go.
 ## variables

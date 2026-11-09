@@ -10,15 +10,15 @@ Info: adding data input handling
 Info: adding stack memory for function calls
 Info: adding data output handling
 Info: ULA resource -> integer adder
-Info: stack depths from the program: SDEPTH 4, NDSTAC 3
+Info: stack depths from the program: SDEPTH 3, NDSTAC 2
 Info: using 7% of the Assembly Instruction Set
 Info: using 2% of the ULA operations
 Processor cmm_depth
   word          32 bits
   float         no
   multiplier    no; divider no
-  data stack    3 words (worked out from the program)
-  call stack    4 words (worked out from the program)
+  data stack    2 words (worked out from the program)
+  call stack    3 words (worked out from the program)
   memories      25 instructions, 7 data words
 Sweet: the processor is good to go.
 ## variables
@@ -33,22 +33,22 @@ lang C+-
 ## listing
 // -1: INTERNAL
 0 NOP
-// 23: int x = in(0);
+// 24: int x = in(0);
 1 INN 0
-// 24: out(0, top(x, 2, 3));
+// 25: out(0, top(x, 2, 3));
 2 P_LOD 2
 3 P_LOD 3
 4 CAL top
 5 OUT 0
-// 21: while (1)
+// 22: while (1)
 6 JMP __Lwh1
 // -3: END
 7 JMP fim
-// 15: int leaf(int a, int b) { return a + b; }
+// 16: int leaf(int a, int b) { return a + b; }
 8 SET_P leaf_b
 9 ADD leaf_b
 10 RET
-// 16: int mid(int a) { return leaf(a, 1) + leaf(a, 2); }
+// 17: int mid(int a) { return leaf(a, 1) + leaf(a, 2); }
 11 SET mid_a
 12 P_LOD 1
 13 CAL leaf
@@ -57,7 +57,7 @@ lang C+-
 16 CAL leaf
 17 S_ADD
 18 RET
-// 17: int top(int a, int b, int c) { return mid(a) + b + c; }
+// 18: int top(int a, int b, int c) { return mid(a) + b + c; }
 19 SET_P top_c
 20 SET_P top_b
 21 CAL mid

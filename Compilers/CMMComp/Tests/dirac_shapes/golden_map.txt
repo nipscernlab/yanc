@@ -40,15 +40,15 @@ Info: ULA resource -> float-point negative operation
 Info: ULA resource -> int to float converter
 Info: adding data input handling
 Info: adding stack memory for function calls
-Info: stack depths from the program: SDEPTH 2, NDSTAC 6
+Info: stack depths from the program: SDEPTH 1, NDSTAC 5
 Info: using 27% of the Assembly Instruction Set
 Info: using 22% of the ULA operations
 Processor dirac_shapes
   word          32 bits
   float         23 mantissa and 8 exponent bits
   multiplier    int and float; divider no
-  data stack    6 words (worked out from the program)
-  call stack    2 words (worked out from the program)
+  data stack    5 words (worked out from the program)
+  call stack    1 words (worked out from the program)
   memories      1761 instructions, 101 data words
 Sweet: the processor is good to go.
 ## variables

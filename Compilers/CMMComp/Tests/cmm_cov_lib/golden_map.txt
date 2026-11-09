@@ -76,15 +76,15 @@ Info: ULA resource -> root-square approximation for float
 Info: ULA resource -> & operator
 Info: ULA resource -> float scale by a power of two (2^k)
 Info: ULA resource -> base-2 exponent extraction of float
-Info: stack depths from the program: SDEPTH 2, NDSTAC 5
+Info: stack depths from the program: SDEPTH 1, NDSTAC 4
 Info: using 45% of the Assembly Instruction Set
 Info: using 55% of the ULA operations
 Processor cmm_cov_lib
   word          32 bits
   float         23 mantissa and 8 exponent bits
   multiplier    float; divider float
-  data stack    5 words (worked out from the program)
-  call stack    2 words (worked out from the program)
+  data stack    4 words (worked out from the program)
+  call stack    1 words (worked out from the program)
   memories      10226 instructions, 109 data words
 Sweet: the processor is good to go.
 ## variables

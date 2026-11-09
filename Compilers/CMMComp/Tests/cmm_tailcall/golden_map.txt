@@ -13,15 +13,15 @@ Info: ULA resource -> integer adder
 Info: ULA resource -> integer negative operation
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> < operator for int
-Info: stack depths from the program: SDEPTH 3, NDSTAC 2
+Info: stack depths from the program: SDEPTH 2, NDSTAC 1
 Info: using 8% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
 Processor cmm_tailcall
   word          32 bits
   float         no
   multiplier    int; divider no
-  data stack    2 words (worked out from the program)
-  call stack    3 words (worked out from the program)
+  data stack    1 words (worked out from the program)
+  call stack    2 words (worked out from the program)
   memories      36 instructions, 7 data words
 Sweet: the processor is good to go.
 ## variables
