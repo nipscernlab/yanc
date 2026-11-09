@@ -144,6 +144,9 @@ tags consumed by Aurora.
   (Yosys SAT, 16 mixes at levels 0 and 2), and `tb_ula` passes. The
   integer divider keeps its own `|in2|`: sharing it saves 41 only with DIV,
   ABS and ABS_M, and would put the mux before the divider's first row.
+  Quartus 23.1 on `sapho_all` (Cyclone V 5CSEMA5F31C6, seed 1): 3285 to
+  3255 ALMs, Fmax 37.10 to 37.07 MHz, within one seed's noise; the worst
+  path is the float add's, which the change does not touch.
 - **NRM as a shift (#160).** `ula_nrm` was `in/NUGAIN`; NUGAIN is a power
   of two, so it is now `in >>> K` with 1 added back to a negative input that
   has a remainder, which truncates toward zero as the division did. It
