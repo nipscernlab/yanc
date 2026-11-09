@@ -1731,11 +1731,35 @@ wire signed [NUBITS+G+1:0] fdiv;
 
 generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(.MAN(NBMANT), .EXP(NBEXPO), .FROUND(FROUND), .G(G), .STG(FDIV_STG)) my_fdiv(in1, in2, fdiv, clk); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'b0}}; end endgenerate
 
+// The negators' operand (#193) ------------------------------------------------
+// SGN, NEG, NEG_M, ABS, ABS_M, I2F and I2F_M each negate one operand: in2
+// (the accumulator) or, for the _M forms (ops 12, 16 and 26), in1 (the memory
+// word); one of them runs per cycle. When the program needs a mux to pick that
+// operand (an _M form and a plain one, of NEG/ABS or of I2F), all of them read
+// the one mux, which in each one's cycle picks its own operand: synthesis then
+// finds the same -x in each and keeps one negator. Without a mux each reads its
+// operand directly, and synthesis already merges the negators that read the
+// same wire. Measured (Yosys, 32 bits, 2026-11-09; LUT4, the mean of abc,
+// abc -fast and abc9, since one mapping alone moves by about 10 on the same
+// logic): SGN, NEG and NEG_M 210 -> 176 at every #FROUND; I2F, I2F_M, ABS and
+// ABS_M 607 -> 509 at #FROUND 2 and 370 -> 339 at 0; the other mixes of SGN,
+// NEG and I2F move by less than the mapping does. The integer divider keeps
+// its own |in2|: sharing it would save 41 in a program with DIV, ABS and ABS_M
+// and put this mux before the divider's first row (see ula_idiv, PRE10).
+
+localparam HAS_NEG2 = (NEG | ABS)   != 0;   // a form on in2
+localparam HAS_NEG1 = (NEG_M | ABS_M) != 0; // a form on in1
+localparam U_MUX    = (HAS_NEG1 && HAS_NEG2) || ((I2F) != 0 && (I2F_M) != 0);
+
+wire                     u_m  = ((NEG_M) != 0 && op == 6'd12) || ((ABS_M) != 0 && op == 6'd16) || ((I2F_M) != 0 && op == 6'd26);
+wire signed [NUBITS-1:0] u_in = (u_m) ? in1 : in2;          // read only when U_MUX
+
 // SGN ------------------------------------------------------------------------
 
 wire signed [NUBITS-1:0] sgn;
+wire signed [NUBITS-1:0] sgn_in = (U_MUX) ? u_in : in2;      // in2 in SGN's cycle either way
 
-generate if ((SGN) != 0) begin : op_sgn ula_sgn #(NUBITS) my_sgn(in1, in2, sgn); end else begin : op_sgn assign sgn = {NUBITS{1'b0}}; end endgenerate
+generate if ((SGN) != 0) begin : op_sgn ula_sgn #(NUBITS) my_sgn(in1, sgn_in, sgn); end else begin : op_sgn assign sgn = {NUBITS{1'b0}}; end endgenerate
 
 // F_SGN ----------------------------------------------------------------------
 
@@ -1747,16 +1771,14 @@ generate if ((F_SGN) != 0) begin : op_fsgn ula_fsgn #(NBMANT,NBEXPO,FROUND) my_f
 // One negator for the four (#157): NEG is -x and ABS is (x < 0) ? -x : x, on
 // in2 (the accumulator) or, for the _M forms (ops 12 and 16), on in1 (the
 // memory word), and one of them runs per cycle. A mux picks the operand only
-// when the program has an _M form and a plain one. Measured (Yosys, LUT4, 32
-// bits): NEG and NEG_M cost 90 more than NEG alone with a negator each.
-
-localparam HAS_NEG2 = (NEG | ABS)   != 0;   // a form on in2
-localparam HAS_NEG1 = (NEG_M | ABS_M) != 0; // a form on in1
+// when the program needs one (see the negators' operand above). Measured
+// (Yosys, LUT4, 32 bits): NEG and NEG_M cost 90 more than NEG alone with a
+// negator each.
 
 wire signed [NUBITS-1:0] na_in, na_neg;
 
 generate
-	if      (HAS_NEG1 && HAS_NEG2) begin : na_src assign na_in = (op == 6'd12 || op == 6'd16) ? in1 : in2; end
+	if      (U_MUX)                begin : na_src assign na_in = u_in;                                      end
 	else if (HAS_NEG1)             begin : na_src assign na_in = in1;                                       end
 	else                           begin : na_src assign na_in = in2;                                       end
 endgenerate
@@ -1835,14 +1857,15 @@ generate if ((NRM_M) != 0) begin : op_nrmm ula_nrm #(NUBITS,NUGAIN) my_nrmm(in1,
 // One converter for both (#154), as for F2I: I2F converts in2 (the
 // accumulator; F_INN and PF_INN too, which read a port into it), I2F_M in1
 // (the memory word), one per cycle. With both, a mux picks the operand by the
-// operation (I2F_M is op 26); with one, no mux. Two converters cost 213 LUT4
+// operation (I2F_M is op 26), the one the negators share (#193, above); with
+// one, no mux, unless NEG/ABS need it. Two converters cost 213 LUT4
 // more than one at #FROUND 2 and 78 at level 0 (Yosys, 32 bits, 2026-11-08).
 
 wire signed [NUBITS-1    :0] i2f_in;
 wire signed [NUBITS+G+1  :0] i2f_out;
 
 generate
-	if      ((I2F) != 0 && (I2F_M) != 0) begin : i2f_src assign i2f_in = (op == 6'd26) ? in1 : in2; end
+	if      (U_MUX)                      begin : i2f_src assign i2f_in = u_in;                      end
 	else if ((I2F_M) != 0)               begin : i2f_src assign i2f_in = in1;                       end
 	else                                 begin : i2f_src assign i2f_in = in2;                       end
 endgenerate
