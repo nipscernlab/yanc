@@ -280,6 +280,14 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **asmcomp refuses a one-instruction program (#190).** It said "good to
+  go" and wrote a processor whose instruction memory has one word, so its
+  address has 0 bits and `core.v` did not elaborate (`operand[-1:0]`). The
+  data memory is padded to 2 words in that case; the instruction memory is
+  not, since no program the compilers write has one instruction (each
+  starts with a NOP at address 0) and a padding word would disagree with
+  the waveform's tables. New message `MSG_ERR_ONE_INSTRUCTION`, pt and en;
+  NegTests `one_instruction` checks it.
 - **F_SCL saturates as the normaliser does (#184).** At `#FROUND` 1 and
   2 the normaliser makes a result below the range the zero and one above
   it the largest float, while F_SCL (`x * 2^k`, used by `exp()`) stopped

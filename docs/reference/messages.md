@@ -306,6 +306,7 @@ value. What the common ones mean and how to get past them is in
 ### Errors
 
 - Error: the program has no instruction, so there is no processor to make.
+- Error: the program has a single instruction. The instruction memory needs at least 2 words (its address would have 0 bits); a one-instruction program does nothing, and the compilers always start with a NOP at address 0.
 - Error: where the heck is the file <name>?
 - Error: couldn't open the file '<name>' for the life of me!!
 - Error: couldn't create the file <name>/app\_log.txt.
