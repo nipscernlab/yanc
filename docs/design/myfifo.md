@@ -181,7 +181,13 @@ at 128 x 16:
   each, "Total block memory bits: 4,096" (2 x 2048), so block RAM. For
   `myFIFO` it warns that it added pass-through logic for a read and a write
   on one address in one cycle (issue #8); `myDCFIFO` gets the usual
-  dual-clock warning.
+  dual-clock warning. The pass-through is needed (2026-11-10, #8): a
+  model of the RAM without it (the read address register absorbed into the
+  RAM, the old word on a read and a write of one address) fails case C3 of
+  `Scripts/hw/tb_fifo.v`, a word written into an empty FIFO and read in
+  the next cycle (it reads the word left there before), while `myFIFO.v`
+  passes all three. So `ramstyle "no_rw_check"` would break the FIFO, and
+  the warning stays (docs/multiprocessor.md lists it).
 - **Vivado 2025.2, Zynq-7010:** distributed RAM, `RAM64M` x 12 each, the
   usual choice for a RAM this small.
 

@@ -59,6 +59,10 @@ always @ (posedge clk) begin
 	end
 end
 
+// show-ahead: q is the oldest word. Quartus absorbs addr_r into the RAM and
+// adds pass-through logic for a read and a write of one address (Warning
+// 276020): it is needed, since a word written into an empty FIFO is read
+// in the next cycle (tb_fifo.v case C3 fails without it; #8)
 always @ (*) q = mem[addr_r];
 
 assign full         =  (addr_w+1'b1 == addr_r);
