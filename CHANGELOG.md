@@ -166,6 +166,19 @@ tags consumed by Aurora.
   Quartus 23.1 on `sapho_all` (Cyclone V 5CSEMA5F31C6, seed 1): 3285 to
   3255 ALMs, Fmax 37.10 to 37.07 MHz, within one seed's noise; the worst
   path is the float add's, which the change does not touch.
+- **I2F counts and shifts once (#155).** At `#FROUND` 1 and 2 I2F counted
+  the leading zeros of the bits above the mantissa and shifted, and its
+  result went through the normaliser's count and shift again. In a program
+  with no add (F_ADD, F_SU1, F_SU2), I2F now counts the whole word and its
+  result takes the normaliser's direct path, as F_MLT and F_DIV do, so the
+  ALU builds one count and one shift, not two. With an add the count is
+  built anyway, and I2F stays as it was. Yosys (32 bits, LUT4, mean of
+  three mappings): I2F 373 to 302 at level 1 and 442 to 345 at level 2;
+  I2F and I2F_M 408 to 335 and 482 to 377; I2F and F_MLT at level 2, 2030
+  to 1966; I2F and F_ADD unchanged (1028, 1031). Proved equivalent to the
+  ALU before (Yosys SAT, every mix with the new path at levels 1 and 2, the
+  rest at level 0); a wrong exponent is caught. `tb_ula` runs once more at
+  levels 1 and 2 without the adds, the only ALU that builds the new path.
 - **NRM as a shift (#160).** `ula_nrm` was `in/NUGAIN`; NUGAIN is a power
   of two, so it is now `in >>> K` with 1 added back to a negative input that
   has a remainder, which truncates toward zero as the division did. It

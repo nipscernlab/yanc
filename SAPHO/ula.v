@@ -417,7 +417,8 @@ module norm_mux
 	// the normalised operations the program has: an input is built into the
 	// muxes only when its operation is there
 	parameter F_ADD  =  0, F_SU1 = 0, F_SU2 = 0, F_MLT = 0, F_DIV = 0,
-	parameter I2F    =  0, I2F_M = 0
+	parameter I2F    =  0, I2F_M = 0,
+	parameter I2F_D  =  0                 // 1: I2F arrives aligned and takes the direct path (#155)
 )(
 	 input [         5:0] op  ,
 	 input [NUBITS+G+1:0] fadd,           // operator outputs carry a 2-bit-wider exponent and G extra mantissa bits
@@ -439,21 +440,25 @@ localparam W2 = NUBITS+G+2;
 wire [W2-1:0] l3 ; generate if ((F_ADD) != 0) begin : gl3  assign l3  = (op == 6'd3 ) ? fadd : {W2{1'b0}}; end else begin : gl3  assign l3  = {W2{1'b0}}; end endgenerate   // F_ADD
 wire [W2-1:0] l5 ; generate if ((F_MLT) != 0 && FROUND == 0) begin : gl5  assign l5  = (op == 6'd5 ) ? fmlt : {W2{1'b0}}; end else begin : gl5  assign l5  = {W2{1'b0}}; end endgenerate   // F_MLT
 wire [W2-1:0] l7 ; generate if ((F_DIV) != 0 && FROUND == 0) begin : gl7  assign l7  = (op == 6'd7 ) ? fdiv : {W2{1'b0}}; end else begin : gl7  assign l7  = {W2{1'b0}}; end endgenerate   // F_DIV
-wire [W2-1:0] l25; generate if ((I2F  ) != 0) begin : gl25 assign l25 = (op == 6'd25) ? i2f  : {W2{1'b0}}; end else begin : gl25 assign l25 = {W2{1'b0}}; end endgenerate   //   I2F
-wire [W2-1:0] l26; generate if ((I2F_M) != 0) begin : gl26 assign l26 = (op == 6'd26) ? i2fm : {W2{1'b0}}; end else begin : gl26 assign l26 = {W2{1'b0}}; end endgenerate   //   I2F_M
+wire [W2-1:0] l25; generate if ((I2F  ) != 0 && I2F_D == 0) begin : gl25 assign l25 = (op == 6'd25) ? i2f  : {W2{1'b0}}; end else begin : gl25 assign l25 = {W2{1'b0}}; end endgenerate   //   I2F
+wire [W2-1:0] l26; generate if ((I2F_M) != 0 && I2F_D == 0) begin : gl26 assign l26 = (op == 6'd26) ? i2fm : {W2{1'b0}}; end else begin : gl26 assign l26 = {W2{1'b0}}; end endgenerate   //   I2F_M
 wire [W2-1:0] l47; generate if ((F_SU1) != 0) begin : gl47 assign l47 = (op == 6'd47) ? fadd : {W2{1'b0}}; end else begin : gl47 assign l47 = {W2{1'b0}}; end endgenerate   // F_SU1 (the same addition circuit)
 wire [W2-1:0] l48; generate if ((F_SU2) != 0) begin : gl48 assign l48 = (op == 6'd48) ? fadd : {W2{1'b0}}; end else begin : gl48 assign l48 = {W2{1'b0}}; end endgenerate   // F_SU2 (the same addition circuit)
 
 wire [W2-1:0] imux_l = l3 | l5 | l7 | l25 | l26 | l47 | l48;
 
 // operands already aligned to their top bit by the operator (FROUND >= 1):
-// they skip the leading-zero count and go straight to rounding/saturation
-wire               use_d = (FROUND != 0) & ((op == 6'd5) | (op == 6'd7));   // F_MLT, F_DIV
+// they skip the leading-zero count and go straight to rounding/saturation.
+// I2F too with I2F_D, which the ALU sets when no add needs the count (#155)
+wire               use_d = (FROUND != 0) & ((op == 6'd5) | (op == 6'd7) |   // F_MLT, F_DIV
+                           ((I2F_D != 0) & ((op == 6'd25) | (op == 6'd26))));  // I2F, I2F_M
 
 wire [W2-1:0] d5 ; generate if ((F_MLT) != 0) begin : gd5  assign d5  = (op == 6'd5 ) ? fmlt : {W2{1'b0}}; end else begin : gd5  assign d5  = {W2{1'b0}}; end endgenerate   // F_MLT
 wire [W2-1:0] d7 ; generate if ((F_DIV) != 0) begin : gd7  assign d7  = (op == 6'd7 ) ? fdiv : {W2{1'b0}}; end else begin : gd7  assign d7  = {W2{1'b0}}; end endgenerate   // F_DIV
+wire [W2-1:0] d25; generate if ((I2F  ) != 0 && I2F_D != 0) begin : gd25 assign d25 = (op == 6'd25) ? i2f  : {W2{1'b0}}; end else begin : gd25 assign d25 = {W2{1'b0}}; end endgenerate   //   I2F
+wire [W2-1:0] d26; generate if ((I2F_M) != 0 && I2F_D != 0) begin : gd26 assign d26 = (op == 6'd26) ? i2fm : {W2{1'b0}}; end else begin : gd26 assign d26 = {W2{1'b0}}; end endgenerate   //   I2F_M
 
-wire [W2-1:0] imux_d = d5 | d7;
+wire [W2-1:0] imux_d = d5 | d7 | d25 | d26;
 
 // perform the normalization
 ula_norm #(NBMANT,NBEXPO,FROUND,G,LZC,DIR) ula_norm (imux_l, imux_d, use_d, out);
@@ -1077,6 +1082,12 @@ endmodule
 // +-2^(MAN-1) wraps silently). FROUND >= 1 converts the whole word: the
 // magnitude is pre-aligned here so that its top MAN bits (plus the G extra
 // bits) go to ula_norm, which truncates (level 1) or rounds (level 2) them.
+// Without ALIGN the count here covers only the bits above the mantissa, and
+// an int that fits the mantissa leaves the rest of the count to ula_norm's;
+// with ALIGN (#155) the count covers the whole word, the result arrives with
+// its leading one on top, and it takes ula_norm's direct path, so a program
+// whose only counted operation is I2F builds one count and one shift, not
+// two. The two give the same bits.
 
 module ula_i2f
 #(
@@ -1084,7 +1095,8 @@ module ula_i2f
 	parameter MAN    = 23,
 	parameter EXP    =  8,
 	parameter FROUND =  0,
-	parameter G      =  0
+	parameter G      =  0,
+	parameter ALIGN  =  0                                     // 1: align fully, for ula_norm's direct path
 )(
 	input  signed [NUBITS-1   :0] in,
 	output        [MAN+EXP+G+2:0] out                         // exponent 2 bits wider, G extra mantissa bits (see ula_norm)
@@ -1104,15 +1116,21 @@ generate if (FROUND == 0) begin : legacy
 	assign e_out = 0;
 	assign m_out = lm;                                       // G is 0 at this level
 end else begin : full
-	localparam LZW = $clog2(T+1);
+	localparam LZW = (ALIGN != 0) ? $clog2(NUBITS+1) : $clog2(T+1);
 	wire [NUBITS-1:0] neg = -in;
 	wire [NUBITS-1:0] mag = (in[NUBITS-1]) ? neg : in;      // unsigned magnitude (2^(NUBITS-1) for the most negative int)
-	wire [T-1     :0] top = mag[NUBITS-1:MAN];
-	// leading zeros of the top field, saturating at T (int fits the mantissa)
-	integer k, lzi;
-	always @ (*) begin lzi = T; for (k = 0; k < T; k = k+1) if (top[k]) lzi = T-1-k; end
-	wire [LZW-1   :0] lz   = lzi[LZW-1:0];
-	wire [NUBITS-1:0] magn = mag << lz;                      // leading one at bit NUBITS-1 (or int << T when it fits)
+	wire [LZW-1   :0] lz;
+	if (ALIGN != 0) begin : whole
+		// leading zeros of the whole word (NUBITS for 0, which zman reads as zero)
+		ula_lzc #(NUBITS, LZW) lzc (mag, lz);
+	end else begin : top_only
+		wire [T-1     :0] top = mag[NUBITS-1:MAN];
+		// leading zeros of the top field, saturating at T (int fits the mantissa)
+		integer k, lzi;
+		always @ (*) begin lzi = T; for (k = 0; k < T; k = k+1) if (top[k]) lzi = T-1-k; end
+		assign lz = lzi[LZW-1:0];
+	end
+	wire [NUBITS-1:0] magn = mag << lz;                      // leading one at bit NUBITS-1 (without ALIGN, int << T when it fits)
 	wire [MAN-1   :0] mnt  = magn[NUBITS-1:T];
 	wire [T-1     :0] xtr  = magn[T-1:0];                    // the bits below the mantissa
 	assign s_out = in[NUBITS-1];
@@ -1889,7 +1907,13 @@ generate
 	else                                 begin : i2f_src assign i2f_in = in2;                       end
 endgenerate
 
-generate if ((I2F | I2F_M) != 0) begin : op_i2f ula_i2f #(NUBITS,NBMANT,NBEXPO,FROUND,G) my_i2f (i2f_in, i2f_out); end else begin : op_i2f assign i2f_out = {NUBITS+G+2{1'b0}}; end endgenerate
+// I2F aligns itself and takes the normaliser's direct path when no add needs
+// the leading-zero count anyway (#155): then the normaliser builds no count
+// for I2F, and I2F's own count covers the whole word. With an add the count
+// is there already, and I2F keeps its short count of the top field.
+localparam I2F_D = (FROUND != 0) && ((F_ADD | F_SU1 | F_SU2) == 0);
+
+generate if ((I2F | I2F_M) != 0) begin : op_i2f ula_i2f #(NUBITS,NBMANT,NBEXPO,FROUND,G,I2F_D ? 1 : 0) my_i2f (i2f_in, i2f_out); end else begin : op_i2f assign i2f_out = {NUBITS+G+2{1'b0}}; end endgenerate
 
 // norm_mux keeps one leg per operation (l25, l26), each under its parameter
 wire signed [NUBITS+G+1:0] i2f  = i2f_out;
@@ -2068,9 +2092,9 @@ generate if ((XPO_M) != 0) begin : op_xpom ula_xpo #(NBMANT,NBEXPO) my_xpom(in1,
 wire signed [NUBITS-1:0] smx;
 
 generate if ((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_MLT | F_DIV) != 0) begin : op_smx norm_mux #(NUBITS,NBMANT,NBEXPO,FROUND,G,
-	((I2F | I2F_M | F_ADD | F_SU1 | F_SU2) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC: someone needs the leading-zero count
-	(FROUND != 0) && ((F_MLT | F_DIV) != 0),                                                    // DIR: someone takes the direct path
-	F_ADD, F_SU1, F_SU2, F_MLT, F_DIV, I2F, I2F_M)
+	((F_ADD | F_SU1 | F_SU2) != 0) || (!I2F_D && (I2F | I2F_M) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC: someone needs the leading-zero count
+	(FROUND != 0) && ((F_MLT | F_DIV) != 0 || (I2F_D && (I2F | I2F_M) != 0)),                             // DIR: someone takes the direct path
+	F_ADD, F_SU1, F_SU2, F_MLT, F_DIV, I2F, I2F_M, I2F_D ? 1 : 0)
 	norm_mux(op, fadd, fmlt, fdiv, i2f, i2fm, smx); end else begin : op_smx assign smx = {NUBITS{1'b0}}; end endgenerate
 
 // main mux -------------------------------------------------------------------
