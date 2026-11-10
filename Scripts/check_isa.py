@@ -32,11 +32,18 @@ literal, which is the part that stays true when the HDL is edited:
      the STG defaults of ula_idiv and ula_fdiv, and the words the compilers
      give a division (ASM_DIV_WORDS_INT, ASM_DIV_WORDS_FLT in asm_share.h).
      A divider one stage longer than the compilers think makes QUO, REM and
-     F_QUO read the result a cycle early, with nothing to say so (#185).
+     F_QUO read the result a cycle early, with nothing to say so (#185),
+ 13. the ALU operation numbers agree: each row of instr_dec.v runs the ALU
+     operation its mnemonic names (PF_X and SF_X run F_X, P_X and S_X run X,
+     X_V runs X, a few listed in ULA_IRREGULAR), the names being those of
+     ula.v's output muxes, and every other 6'dN in ula.v names operation N on
+     its line, in the code or in the comment (#174). core.v's flow opcodes
+     are checked in every module that writes them (OP_TOM and OP_CAD are in
+     two).
 
-It does NOT verify what each row of instr_dec.v does (its ALU operation and
-control lines) nor ula.v: that is execution, the instruction-set simulator of
-issue #32. Generating the decode rows from the table is issue #33.
+It does NOT verify the control lines of each row of instr_dec.v nor what
+ula.v computes: that is execution, the instruction-set simulator of issue
+#32. Generating the decode rows from the table is issue #33.
 
 usage: python3 Scripts/check_isa.py [repo-root]     (exit 1 on any mismatch)
 """
@@ -189,9 +196,60 @@ def read_lexer(path):
 
 
 def read_core_flow(path):
-    """core.v: its flow-control opcode localparams, name -> value."""
+    """core.v: its flow-control opcode localparams, name -> every value given.
+
+    OP_TOM and OP_CAD are written in two modules (prefetch and core): each
+    copy is returned, so a wrong one cannot hide behind the other (#174)."""
     text = open(path, encoding='utf-8', errors='replace').read()
-    return {m.group(1): int(m.group(2)) for m in re.finditer(r"\bOP_(JMP|JIZ|JNZ|CAL|RET|TOM|CAD)\s*=\s*(\d+)", text)}
+    out = {}
+    for m in re.finditer(r"\bOP_(JMP|JIZ|JNZ|CAL|RET|TOM|CAD)\s*=\s*(\d+)", text):
+        out.setdefault(m.group(1), []).append(int(m.group(2)))
+    return out
+
+
+# ---- the ALU operation numbers (#174) ----------------------------------------
+# instr_dec.v gives each row an ALU operation, {6'dN, ...}, and ula.v selects
+# on op == 6'dN in many places. The names come from ula_mux and norm_mux in
+# ula.v: each line `wire [..] tN ... // NAME` (lN, dN in norm_mux) is
+# operation N, and NAME is the parameter that gates it (NOP and LOD have none).
+ULA_LINE = re.compile(r"^\s*wire\s*\[[^\]]*\]\s*([tld])(\d+)\s*[;=](.*?)//\s*(\w+)")
+# the mnemonics whose ALU operation is not the one their name gives: the
+# indirect loads and POP load (LOD), F_INN and PF_INN convert the port's word
+# (I2F)
+ULA_IRREGULAR = {'LDI': 'LOD', 'ILI': 'LOD', 'SET_P': 'LOD', 'POP': 'LOD',
+                 'F_INN': 'I2F', 'PF_INN': 'I2F'}
+
+
+def read_ula_ops(text, bad):
+    """ula.v: ALU operation number -> its name, from the output muxes."""
+    ops = {}
+    for line in text.splitlines():
+        m = ULA_LINE.match(line)
+        if not m:
+            continue
+        n, body, name = int(m.group(2)), m.group(3), m.group(4)
+        lit = re.findall(r"6'd(\d+)", body)
+        if lit and any(int(x) != n for x in lit):
+            bad.append(f'ula.v: {m.group(1)}{n} ({name}) selects op {", ".join(lit)}')
+        gate = re.search(r"if\s*\(\(\s*(\w+)\s*\)\s*!=\s*0", body)
+        if gate and gate.group(1) != name:
+            bad.append(f'ula.v: {m.group(1)}{n} is gated by {gate.group(1)} but named {name}')
+        if ops.setdefault(n, name) != name:
+            bad.append(f'ula.v: op {n} is {ops[n]} in one mux and {name} in another')
+    return ops
+
+
+def alu_name(mn):
+    """The ALU operation a mnemonic's name implies: PF_X and SF_X are F_X,
+    P_X and S_X are X, X_V is X."""
+    if mn in ULA_IRREGULAR:
+        return ULA_IRREGULAR[mn]
+    b = mn
+    for pre, to in (('PF_', 'F_'), ('SF_', 'F_'), ('P_', ''), ('S_', '')):
+        if b.startswith(pre):
+            b = to + b[len(pre):]
+            break
+    return b[:-2] if b.endswith('_V') else b
 
 
 # a row of instr_dec.v: generate if ((NAME) != 0) ... (opcode == 7'dN) ? {6'dALU, ...}
@@ -257,8 +315,12 @@ def main():
     for m in FLOW:
         if m not in table:
             bad.append(f'the table is missing {m}')
-        elif got.get(m) != table[m][0]:
-            bad.append(f'core.v has OP_{m} = {got.get(m)}, the table puts {m} at {table[m][0]}')
+        elif not got.get(m):
+            bad.append(f'core.v has no OP_{m}, the table puts {m} at {table[m][0]}')
+        else:
+            for v in got[m]:
+                if v != table[m][0]:
+                    bad.append(f'core.v has OP_{m} = {v}, the table puts {m} at {table[m][0]}')
     # an opcode must fit the 7 bits of the instruction word (NBITS_OPC in
     # asmcomp's eval.c, NBOPCO in SAPHO/): core.v compares the flow opcodes
     # NBOPCO bits wide, so any number that fits is safe there
@@ -385,8 +447,30 @@ def main():
         elif int(m.group(1)) != want:
             bad.append(f'opcodes.c has {name} {m.group(1)}, the code has {want}')
 
-    # 12: the dividers' cycle counts, in the HDL and in the compilers
+    # 13: the ALU operation numbers: instr_dec.v's {6'dN, ...} and every
+    # 6'dN in ula.v, against the output muxes' names (#174)
     ula = open(os.path.join(root, 'SAPHO', 'ula.v'), encoding='utf-8', errors='replace').read()
+    ops = read_ula_ops(ula, bad)
+    by_name = {v: k for k, v in ops.items()}
+    dec_text = open(dec_p, encoding='utf-8', errors='replace').read()
+    for m in re.finditer(DEC_ROW, dec_text):
+        mn, n = m.group(1), int(m.group(3))
+        want = by_name.get(alu_name(mn), 0)
+        if n != want:
+            bad.append(f'instr_dec.v: {mn} runs ALU op {n} ({ops.get(n, "unknown")}), '
+                       f'its name says {want} ({ops.get(want, "?")})')
+    # every other 6'dN in ula.v names its operation on the same line (in the
+    # code or in the comment), so a wrong number shows as a name that is not
+    # there
+    for k, line in enumerate(ula.splitlines(), 1):
+        for lit in re.findall(r"6'd(\d+)", line):
+            name = ops.get(int(lit))
+            if name is None:
+                bad.append(f'ula.v:{k}: op 6\'d{lit} is no ALU operation')
+            elif not re.search(r'(?<![A-Z_])' + name + r'(?![A-Z_0-9])', line):
+                bad.append(f'ula.v:{k}: op 6\'d{lit} is {name}, which the line does not name')
+
+    # 12: the dividers' cycle counts, in the HDL and in the compilers
     ash = open(os.path.join(root, 'Compilers', 'common', 'asm_share.h'),
                encoding='utf-8', errors='replace').read()
     for kind, lp, mod, define in (('integer', 'IDIV_STG', 'ula_idiv', 'ASM_DIV_WORDS_INT'),
@@ -411,8 +495,8 @@ def main():
             print(f'  {b}', file=sys.stderr)
         return 1
     print(f'check_isa: {len(table)} mnemonics, {len(opcodes)} opcodes '
-          f'(0..{opcodes[-1]}); ASMComp.l, core.v, instr_dec.v, asm_share.c, the effect columns '
-          f"and the dividers' cycles agree")
+          f'(0..{opcodes[-1]}); ASMComp.l, core.v, instr_dec.v, asm_share.c, the effect columns, '
+          f"the ALU operation numbers and the dividers' cycles agree")
     return 0
 
 

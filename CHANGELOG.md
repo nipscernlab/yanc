@@ -21,6 +21,13 @@ tags consumed by Aurora.
   `core`'s `MDATAW`/`MINSTW` defaults are 6, the `$clog2` of `processor`'s
   64 words, as its one default set says (they were 9; the generated
   processor always passes both, so no processor changes).
+- **The ALU operation numbers are checked (#174).** `Scripts/check_isa.py`
+  takes the operations' names from `ula.v`'s output muxes and fails when a
+  row of `instr_dec.v` runs another operation than its mnemonic names, or
+  when a `6'dN` anywhere in `ula.v` does not name operation N on its line;
+  the simulation's rounding-error `case` now writes its labels as `6'dN` with
+  their names, so it is checked too. `core.v`'s `OP_TOM` and `OP_CAD`, written
+  in two modules, are checked in both (only the last copy was).
 - **The C++ tests check their waveform's tables and tracks (#87, first
   part).** The CPP phase of `Scripts/regress.sh` runs `Scripts/wave_map.py`
   as the CMM phase does: the tables agree with each other and with the

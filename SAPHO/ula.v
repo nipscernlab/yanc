@@ -448,7 +448,7 @@ wire [W2-1:0] imux_l = l3 | l5 | l7 | l25 | l26 | l47 | l48;
 
 // operands already aligned to their top bit by the operator (FROUND >= 1):
 // they skip the leading-zero count and go straight to rounding/saturation
-wire               use_d = (FROUND != 0) & ((op == 6'd5) | (op == 6'd7));
+wire               use_d = (FROUND != 0) & ((op == 6'd5) | (op == 6'd7));   // F_MLT, F_DIV
 
 wire [W2-1:0] d5 ; generate if ((F_MLT) != 0) begin : gd5  assign d5  = (op == 6'd5 ) ? fmlt : {W2{1'b0}}; end else begin : gd5  assign d5  = {W2{1'b0}}; end endgenerate   // F_MLT
 wire [W2-1:0] d7 ; generate if ((F_DIV) != 0) begin : gd7  assign d7  = (op == 6'd7 ) ? fdiv : {W2{1'b0}}; end else begin : gd7  assign d7  = {W2{1'b0}}; end endgenerate   // F_DIV
@@ -2025,8 +2025,8 @@ wire signed [NUBITS-1:0] shl, shr, srs, sh_out;
 // cycles (ops 27, 28) as an SHL or an SHR, so it is built with both
 // directions; otherwise it is the program's shifts alone
 generate if (F2I_SH) begin : op_shift
-	wire              f2i_now = (op == 6'd27) | (op == 6'd28);
-	wire        [5:0] sh_op   = (f2i_now) ? ((f2i_xleft) ? 6'd43 : 6'd44) : op;
+	wire              f2i_now = (op == 6'd27) | (op == 6'd28);                  // F2I, F2I_M
+	wire        [5:0] sh_op   = (f2i_now) ? ((f2i_xleft) ? 6'd43 : 6'd44) : op; // as SHL, SHR
 	wire [NUBITS-1:0] sh_a    = (f2i_now) ? f2i_xword : in1;
 	wire [NUBITS-1:0] sh_b    = (f2i_now) ? {{(NUBITS-NBEXPO){1'b0}}, f2i_xamt} : in2;
 	ula_shift #(NUBITS,1,1,SRS) my_shift(sh_op, sh_a, sh_b, sh_out);
@@ -2193,11 +2193,11 @@ real delta_float;
 
 always @ (*) begin
 	case (op)
-		3      : delta_float = (r_in1 + r_in2) - r_out; // addition
-		5      : delta_float = (r_in1 * r_in2) - r_out; // multiplication
-		7      : delta_float = (fop == 6'd7) ? (r_fd1 / r_fd2) - r_out : 0; // division (F_QUO)
-		47	   : delta_float = (r_in2 - r_in1) - r_out; // subtraction
-		48	   : delta_float = (r_in1 - r_in2) - r_out; // subtraction
+		6'd3   : delta_float = (r_in1 + r_in2) - r_out; // F_ADD
+		6'd5   : delta_float = (r_in1 * r_in2) - r_out; // F_MLT
+		6'd7   : delta_float = (fop == 6'd7) ? (r_fd1 / r_fd2) - r_out : 0; // F_DIV, read by F_QUO
+		6'd47  : delta_float = (r_in2 - r_in1) - r_out; // F_SU1
+		6'd48  : delta_float = (r_in1 - r_in2) - r_out; // F_SU2
 		default: delta_float = 0;
 	endcase
 end
@@ -2212,7 +2212,7 @@ real val_mlt; always @ (*) val_mlt = in1r * in2r;
 // a division: the inputs of the DIV / MOD that started it (QUO / REM read
 // it IDIV_STG-1 cycles later, and one start serves both)
 wire signed [NUBITS-1:0] idv1s = idv1, idv2s = idv2;
-wire                     idiv_read = (iop == 6'd6) || (iop == 6'd8);
+wire                     idiv_read = (iop == 6'd6) || (iop == 6'd8);   // DIV, MOD
 real idv1r; always @ (*) idv1r = idv1s;
 real idv2r; always @ (*) idv2r = idv2s;
 real val_div; always @ (*) val_div = idv1r / idv2r;
@@ -2225,14 +2225,14 @@ real delta_int;
 
 always @ (*) begin
 	case (op)
-		2      : delta_int = val_add - out; // addition
-		4      : delta_int = val_mlt - out; // multiplication
-		6      : delta_int = idiv_read ? val_div - out : 0; // division (QUO)
-		8      : delta_int = idiv_read ? val_mod - out : 0; // remainder (REM)
-		25     : delta_int = in2   - r_out; // int to float with acc
-		26	   : delta_int = in1   - r_out; // int to float with mem
-		27     : delta_int = r_in2   - out; // float to int with acc
-		28     : delta_int = r_in1   - out; // float to int with mem
+		6'd2   : delta_int = val_add - out; // ADD
+		6'd4   : delta_int = val_mlt - out; // MLT
+		6'd6   : delta_int = idiv_read ? val_div - out : 0; // DIV, read by QUO
+		6'd8   : delta_int = idiv_read ? val_mod - out : 0; // MOD, read by REM
+		6'd25  : delta_int = in2   - r_out; // I2F, int to float with acc
+		6'd26  : delta_int = in1   - r_out; // I2F_M, int to float with mem
+		6'd27  : delta_int = r_in2   - out; // F2I, float to int with acc
+		6'd28  : delta_int = r_in1   - out; // F2I_M, float to int with mem
 		default: delta_int = 0;
 	endcase
 end
