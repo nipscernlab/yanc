@@ -374,6 +374,13 @@ void eval_init(int clk, int clk_n)
     // a program with no instruction makes no processor (and its memory's
     // address width, log2 of the size, would be undefined)
     if (n_ins < 1) fatal(MSG_ERR_NO_INSTRUCTIONS);
+    // nor does one instruction: the instruction memory's address is
+    // $clog2(MINSTS) bits (processor.v), 0 for one word, and core.v's
+    // operand[MINSTW-1:0] would not elaborate (#190). Unlike the data memory
+    // it is not padded: no program the compilers write has one instruction
+    // (each starts with a NOP at 0), so only a hand-written .asm gets here,
+    // and a padding word would disagree with the waveform's tables
+    if (n_ins < 2) fatal(MSG_ERR_ONE_INSTRUCTION);
 
     // A data memory needs at least 2 words: its address is $clog2(MDATAS)
     // bits wide (processor.v), and 1 word would make that 0 bits -- a [-1:0]

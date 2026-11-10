@@ -36,6 +36,10 @@ void fatal(const char *fmt, ...);
     M("Erro: o programa não tem nenhuma instrução, então não há processador pra gerar.\n", \
       "Error: the program has no instruction, so there is no processor to make.\n")
 
+#define MSG_ERR_ONE_INSTRUCTION \
+    M("Erro: o programa tem uma instrução só. A memória de instruções precisa de pelo menos 2 palavras (o endereço dela teria 0 bits); um programa de uma instrução não faz nada, e os compiladores sempre começam com um NOP no endereço 0.\n", \
+      "Error: the program has a single instruction. The instruction memory needs at least 2 words (its address would have 0 bits); a one-instruction program does nothing, and the compilers always start with a NOP at address 0.\n")
+
 #define MSG_ERR_FILE_WHERE \
     M("Erro: cadê o arquivo %s?\n", \
       "Error: where the heck is the file %s?\n")

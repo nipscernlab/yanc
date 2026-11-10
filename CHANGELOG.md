@@ -132,6 +132,21 @@ tags consumed by Aurora.
   gone. The integer divider, which negated its quotient and its remainder
   apart though one is read per cycle (QUO or REM), picks first and negates
   once when the program has DIV and MOD: 2697 to 2663.
+- **SGN and I2F share that negator (#193).** SGN negates the accumulator
+  and I2F, at `#FROUND` 1 and 2, takes its operand's magnitude: the same
+  `-x` as NEG and ABS. When a program needs an operand mux (a memory form
+  and an accumulator form, of NEG/ABS or of I2F), SGN, NEG, NEG_M, ABS,
+  ABS_M, I2F and I2F_M now read one mux, and synthesis keeps one negator.
+  Yosys (32 bits, LUT4, mean of three mappings, since one alone moves by
+  about 10 on the same logic): SGN, NEG and NEG_M 210 to 176; I2F, I2F_M,
+  ABS and ABS_M 607 to 509 at `#FROUND` 2 and 370 to 339 at level 0; other
+  mixes within the mappings' spread. Proved equivalent to the ALU before
+  (Yosys SAT, 16 mixes at levels 0 and 2), and `tb_ula` passes. The
+  integer divider keeps its own `|in2|`: sharing it saves 41 only with DIV,
+  ABS and ABS_M, and would put the mux before the divider's first row.
+  Quartus 23.1 on `sapho_all` (Cyclone V 5CSEMA5F31C6, seed 1): 3285 to
+  3255 ALMs, Fmax 37.10 to 37.07 MHz, within one seed's noise; the worst
+  path is the float add's, which the change does not touch.
 - **NRM as a shift (#160).** `ula_nrm` was `in/NUGAIN`; NUGAIN is a power
   of two, so it is now `in >>> K` with 1 added back to a negative input that
   has a remainder, which truncates toward zero as the division did. It
@@ -280,6 +295,14 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **asmcomp refuses a one-instruction program (#190).** It said "good to
+  go" and wrote a processor whose instruction memory has one word, so its
+  address has 0 bits and `core.v` did not elaborate (`operand[-1:0]`). The
+  data memory is padded to 2 words in that case; the instruction memory is
+  not, since no program the compilers write has one instruction (each
+  starts with a NOP at address 0) and a padding word would disagree with
+  the waveform's tables. New message `MSG_ERR_ONE_INSTRUCTION`, pt and en;
+  NegTests `one_instruction` checks it.
 - **F_SCL saturates as the normaliser does (#184).** At `#FROUND` 1 and
   2 the normaliser makes a result below the range the zero and one above
   it the largest float, while F_SCL (`x * 2^k`, used by `exp()`) stopped
