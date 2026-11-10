@@ -204,8 +204,8 @@ int asm_divk(const char *asm_path, const char *pc_path);
 // grows by that much), -1 on an I/O error.
 int asm_divseq(const char *asm_path, const char *pc_path);
 
-// The words of a division: the STG of its divider in SAPHO/ula.v (ula_idiv,
-// ula_fdiv); change both together.
+// The words of a division: the STG of its divider in SAPHO/ula.v (IDIV_STG,
+// FDIV_STG); Scripts/check_isa.py fails when the two disagree (#185).
 #define ASM_DIV_WORDS_INT 5                       // DIV / MOD
 #define ASM_DIV_WORDS_FLT 4                       // F_DIV
 

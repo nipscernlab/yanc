@@ -576,8 +576,9 @@ module core
 	parameter  TOAQUIADDR = 0,           // #TOAQUI marker address (cheguei is 1 while the address fetched is TOAQUIADDR)
 
 	// memories
-	parameter  MDATAW = 9,               // Number of address bits for data memory
-	parameter  MINSTW = 9,               // Number of address bits for instruction memory
+	// 6: $clog2 of processor.v's 64 words, the one default set (#185)
+	parameter  MDATAW = 6,               // Number of address bits for data memory
+	parameter  MINSTW = 6,               // Number of address bits for instruction memory
 	parameter  NBINST = NBOPCO + NBOPER, // Instruction-memory width (bits)
 
 	// -------------------------------------------------------------------------

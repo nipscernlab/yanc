@@ -27,7 +27,12 @@ literal, which is the part that stays true when the HDL is edited:
      number of opcode parameters in ASMComp.l and of ALU blocks in opcodes.c,
  10. every mnemonic is a three-character name, with at most a prefix
      (P_, F_, PF_, S_, SF_) and a suffix (_M, _V, _P), each after or before an
-     underscore: JIZ, F_ADD, P_NEG_M, SF_MLT, LDI_V.
+     underscore: JIZ, F_ADD, P_NEG_M, SF_MLT, LDI_V,
+ 12. the cycles of the two dividers agree: ula.v's IDIV_STG and FDIV_STG,
+     the STG defaults of ula_idiv and ula_fdiv, and the words the compilers
+     give a division (ASM_DIV_WORDS_INT, ASM_DIV_WORDS_FLT in asm_share.h).
+     A divider one stage longer than the compilers think makes QUO, REM and
+     F_QUO read the result a cycle early, with nothing to say so (#185).
 
 It does NOT verify what each row of instr_dec.v does (its ALU operation and
 control lines) nor ula.v: that is execution, the instruction-set simulator of
@@ -380,13 +385,34 @@ def main():
         elif int(m.group(1)) != want:
             bad.append(f'opcodes.c has {name} {m.group(1)}, the code has {want}')
 
+    # 12: the dividers' cycle counts, in the HDL and in the compilers
+    ula = open(os.path.join(root, 'SAPHO', 'ula.v'), encoding='utf-8', errors='replace').read()
+    ash = open(os.path.join(root, 'Compilers', 'common', 'asm_share.h'),
+               encoding='utf-8', errors='replace').read()
+    for kind, lp, mod, define in (('integer', 'IDIV_STG', 'ula_idiv', 'ASM_DIV_WORDS_INT'),
+                                  ('float', 'FDIV_STG', 'ula_fdiv', 'ASM_DIV_WORDS_FLT')):
+        got = {}
+        m = re.search(r'localparam\s+' + lp + r'\s*=\s*(\d+)\s*;', ula)
+        got[f'ula.v {lp}'] = m and int(m.group(1))
+        m = re.search(r'module\s+' + mod + r'\b.*?parameter\s+STG\s*=\s*(\d+)', ula, re.S)
+        got[f'ula.v {mod} STG default'] = m and int(m.group(1))
+        m = re.search(r'#define\s+' + define + r'\s+(\d+)', ash)
+        got[f'asm_share.h {define}'] = m and int(m.group(1))
+        missing = [k for k, v in got.items() if v is None]
+        if missing:
+            bad.append(f"the {kind} divider's cycles: not found in " + ', '.join(missing))
+        elif len(set(got.values())) != 1:
+            bad.append(f"the {kind} divider's cycles disagree: " +
+                       ', '.join(f'{k} {v}' for k, v in got.items()))
+
     if bad:
         print('check_isa: the instruction set does not agree with itself', file=sys.stderr)
         for b in bad:
             print(f'  {b}', file=sys.stderr)
         return 1
     print(f'check_isa: {len(table)} mnemonics, {len(opcodes)} opcodes '
-          f'(0..{opcodes[-1]}); ASMComp.l, core.v, instr_dec.v, asm_share.c and the effect columns agree')
+          f'(0..{opcodes[-1]}); ASMComp.l, core.v, instr_dec.v, asm_share.c, the effect columns '
+          f"and the dividers' cycles agree")
     return 0
 
 

@@ -162,6 +162,12 @@ module instr_dec
 // form (ula_mux), so the decoder grows with the program and no input is a
 // don't care (docs/design/README.md). All 0 = pass-acc, no push, no pop, no
 // write.
+// The rows compare the opcode with 7-bit constants (7'd...), not with
+// NBOPCO-bit ones: the opcode field is 7 bits everywhere (#173), so any other
+// NBOPCO stops the elaboration here (#185).
+generate if (NBOPCO != 7) begin : nbopco_check
+    instr_dec_NBOPCO_must_be_7 nbopco_rule ();
+end endgenerate
 // memory and stack
 wire [13:0] d1  ; generate if ((LOD     ) != 0) begin : g1   assign d1   = (opcode == 7'd1  ) ? {6'd1 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g1   assign d1   = 14'd0; end endgenerate
 wire [13:0] d2  ; generate if ((P_LOD   ) != 0) begin : g2   assign d2   = (opcode == 7'd2  ) ? {6'd1 , 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g2   assign d2   = 14'd0; end endgenerate

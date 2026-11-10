@@ -601,11 +601,14 @@ end else if (G == 0) begin : keep_lsb
 	assign s_out = s_mlt;
 	assign e_out = e_top - {{EXP+1{1'b0}}, ~top};
 	assign m_out = (top) ? mult[2*MAN-1:MAN] : mult[2*MAN-2:MAN-1];
-end else begin : keep_lsb_sticky
-	// same, with two more product bits and the OR of the rest as sticky (G = 3)
+end else if (G == 3) begin : keep_lsb_sticky
+	// same, with two more product bits and the OR of the rest as sticky; the
+	// slices are written for G = 3, so any other G stops the elaboration (#185)
 	assign s_out = s_mlt;
 	assign e_out = e_top - {{EXP+1{1'b0}}, ~top};
 	assign m_out = (top) ? {mult[2*MAN-1:MAN-2], |mult[MAN-3:0]} : {mult[2*MAN-2:MAN-3], |mult[MAN-4:0]};
+end else begin : g_check
+	ula_fmlt_G_must_be_0_or_3 g_rule ();
 end endgenerate
 
 assign out = {s_out, e_out, m_out};
@@ -1114,10 +1117,14 @@ end else begin : full
 	wire [T-1     :0] xtr  = magn[T-1:0];                    // the bits below the mantissa
 	assign s_out = in[NUBITS-1];
 	assign e_out = T[EXP+1:0] - {{(EXP+2-LZW){1'b0}}, lz};  // weight of mnt's LSB
-	if (G != 0) begin : rne
+	// guard, round and sticky are written for G = 3: any other G stops the
+	// elaboration (#185)
+	if (G == 3) begin : rne
 		assign m_out = {mnt, xtr[T-1], xtr[T-2], |xtr[T-3:0]}; // guard, round, sticky
-	end else begin : trunc
+	end else if (G == 0) begin : trunc
 		assign m_out = mnt;
+	end else begin : g_check
+		ula_i2f_G_must_be_0_or_3 g_rule ();
 	end
 end endgenerate
 
@@ -1724,7 +1731,9 @@ generate if ((F_MLT) != 0) begin : op_fmlt ula_fmlt #(NBMANT,NBEXPO,FROUND,G) my
 // one divider for both, five cycles (see ula_idiv): DIV/MOD start it, QUO/REM
 // read it four words later. The cycle counts of the two dividers are here
 // once, for the dividers and the simulation's rounding-error monitor (#183);
-// the compilers' copies are ASM_DIV_WORDS_INT and ASM_DIV_WORDS_FLT.
+// the compilers' copies are ASM_DIV_WORDS_INT and ASM_DIV_WORDS_FLT, and
+// Scripts/check_isa.py fails when they disagree with these or with the STG
+// defaults of ula_idiv and ula_fdiv (#185).
 
 localparam IDIV_STG = 5;
 localparam FDIV_STG = 4;

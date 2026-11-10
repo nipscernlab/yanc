@@ -9,6 +9,18 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **Values kept in step by hand are now checked (#185).**
+  `Scripts/check_isa.py` (step 3 of the regression) fails when the cycles of
+  a divider disagree: `IDIV_STG`/`FDIV_STG` in `ula.v`, the `STG` defaults of
+  `ula_idiv`/`ula_fdiv` and the words the compilers give a division
+  (`ASM_DIV_WORDS_INT`/`_FLT`). A divider one stage longer than the
+  compilers think made QUO, REM and F_QUO read a cycle early, silently.
+  `ula_fmlt` and `ula_i2f`, whose rounding bits are written for G = 3, stop
+  the elaboration at any G other than 0 or 3, and `instr_dec` at any
+  `NBOPCO` other than 7, since its rows compare 7-bit constants (#173).
+  `core`'s `MDATAW`/`MINSTW` defaults are 6, the `$clog2` of `processor`'s
+  64 words, as its one default set says (they were 9; the generated
+  processor always passes both, so no processor changes).
 - **The C++ tests check their waveform's tables and tracks (#87, first
   part).** The CPP phase of `Scripts/regress.sh` runs `Scripts/wave_map.py`
   as the CMM phase does: the tables agree with each other and with the
