@@ -63,7 +63,7 @@ assign usedw =  addr_w - addr_r;
 Capacity stays LENGTH-1 words (one slot tells full from empty), as before.
 LENGTH is a power of two, at least 2, and any other stops the elaboration
 (#180): the pointers have $clog2(LENGTH) bits and wrap only at the power of
-two, so a LENGTH of 100 accepted 126 words and lost 26.
+two, so a LENGTH of 100 accepted 127 words and 27 of them read back wrong.
 
 ## Checks (2026-10-09)
 
@@ -252,7 +252,7 @@ lines to be written and checked on the board):
   Quartus and Vivado (`set_clock_groups -asynchronous`,
   docs/design/toma-and-cade-links.md section 10); the board run is still to come.
 
-## For the documentation (issue #40)
+## For the documentation: myDCFIFO (issue #40)
 
 The user-facing text says: when the two SAPHOs run on different clocks use
 `myDCFIFO` (ports in the table above); wire the writer's `out_en` bit to
@@ -261,7 +261,7 @@ port and `q` on another, with `rdreq` from that port's `req_in`; hold
 `aclr` for a few cycles of the slower clock; a word takes 2-3 reader cycles
 to show up; capacity is LENGTH words; the Quartus constraints.
 
-## For the documentation (issue #40)
+## For the documentation: myFIFO (issue #40)
 
 The user-facing text says: wire `wrreq` to the writer's `out_en` bit and
 `data` to its `out`; the word is taken in that cycle; `q` shows the oldest

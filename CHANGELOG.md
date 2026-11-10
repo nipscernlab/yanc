@@ -379,8 +379,8 @@ tags consumed by Aurora.
   address. `Scripts/hw/tb_fft_size.sh`, in the regression, checks both.
 - **myFIFO and myDCFIFO refuse a LENGTH they cannot hold (#180).** The
   pointers have `$clog2(LENGTH)` bits and wrap only at a power of two: a
-  myFIFO of LENGTH 100 accepted 126 words and lost 26, with full, empty and
-  usedw all coherent. A LENGTH that is not a power of two (or below 2 for
+  myFIFO of LENGTH 100 accepted 127 words and 27 of them read back wrong,
+  with full, empty and usedw all coherent. A LENGTH that is not a power of two (or below 2 for
   myFIFO, 4 for myDCFIFO) now stops the elaboration with the rule in the
   message, by naming a module that does not exist (Verilog-2001 has no
   `$error`). `docs/peripherals.md` says the rule for both.

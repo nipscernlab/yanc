@@ -65,8 +65,9 @@ module ula_mux
 	 // bit-shift operations
 	 input     [NUBITS-1:0] shl , shr , srs ,        // <<, >> and >>>
 	 // operations from the normalization circuit
-	 input     [NUBITS-1:0] smx ,                    // float-only with denorm.
-	 input     [NUBITS-1:0] frot,                    // F_ROT, final (#159)
+	 input     [NUBITS-1:0] smx ,                    // the normaliser's output
+	 // F_ROT, final: it does not go through the normaliser (#159)
+	 input     [NUBITS-1:0] frot,
 	 // special operations (exponent surgery)
 	 input     [NUBITS-1:0] fscl, xpo , xpom,        // F_SCL/SF_SCL, XPO, XPO_M
 	 // outputs: every operation, and the ones that do not go through the
@@ -279,7 +280,8 @@ endmodule
 
 // The operators hand in an exponent 2 bits wider than the format, so an
 // overflow/underflow is still visible here. FROUND selects what to do with it:
-//   0 - legacy: the exponent wraps modulo 2^EXP, zero keeps the operand sign
+//   0 - legacy: the exponent wraps modulo 2^EXP, zero keeps the sign the
+//       operator hands in (F_ADD and F_MLT hand +0, F_DIV its operands' sign)
 //   1 - saturate on overflow, flush to canonical zero on underflow (and on zero)
 //   2 - as 1, plus round to nearest even on the G extra bits of the mantissa
 
@@ -1417,7 +1419,8 @@ endmodule
 // amount >= NUBITS still gives all zeros (SHL, SHR) or all sign bits (SRS),
 // as `<<`, `>>` and `>>>` do. The muxes exist only for the opcodes the
 // program has (a program with one shift builds the plain shifter it built
-// before).
+// before), except that F2I, when it shares this shifter (#156), asks for both
+// directions, so the ALU then builds it with SHL and SHR (op_shift, below).
 
 module ula_shift
 #(
@@ -1864,8 +1867,9 @@ generate if ((NRM_M) != 0) begin : op_nrmm ula_nrm #(NUBITS,NUGAIN) my_nrmm(in1,
 // accumulator; F_INN and PF_INN too, which read a port into it), I2F_M in1
 // (the memory word), one per cycle. With both, a mux picks the operand by the
 // operation (I2F_M is op 26), the one the negators share (#193, above); with
-// one, no mux, unless NEG/ABS need it. Two converters cost 213 LUT4
-// more than one at #FROUND 2 and 78 at level 0 (Yosys, 32 bits, 2026-11-08).
+// one, no mux, unless NEG/ABS need it. Sharing took a program with both from
+// 667 to 521 LUT4 at #FROUND 2 and from 322 to 297 at level 0, the mux
+// included (Yosys, 32 bits, CHANGELOG of #154).
 
 wire signed [NUBITS-1    :0] i2f_in;
 wire signed [NUBITS+G+1  :0] i2f_out;
@@ -2005,7 +2009,7 @@ generate if ((EQU) != 0) begin : op_equ ula_equ #(NUBITS) my_equ(in1, in2, equ);
 // SHL / SHR / SRS ------------------------------------------------------------
 
 // one right shifter serves the three shifts (see ula_shift); each opcode
-// still keeps its own mux input so an absent one stays x
+// still keeps its own mux input, and an absent one is 0
 wire signed [NUBITS-1:0] shl, shr, srs, sh_out;
 
 // with F2I sharing it, the shifter takes F2I's word and amount in F2I's
@@ -2050,7 +2054,7 @@ wire signed [NUBITS-1:0] xpom;
 
 generate if ((XPO_M) != 0) begin : op_xpom ula_xpo #(NBMANT,NBEXPO) my_xpom(in1, xpom); end else begin : op_xpom assign xpom = {NUBITS{1'b0}}; end endgenerate
 
-// denormalization mux --------------------------------------------------------
+// normaliser and its operand mux --------------------------------------------
 
 wire signed [NUBITS-1:0] smx;
 

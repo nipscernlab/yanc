@@ -104,10 +104,12 @@ function [15:0] cfg; input [3:0] n;
 	endcase
 endfunction
 
-// NREGS and the table say the same count (#182): write NREGS-1 has its own
+// NREGS and the end of the table agree (#182): write NREGS-1 has its own
 // line and none comes after it. The default used to stand for write 10, so
 // a write added to one and not the other repeated 0x16 without a word; now
-// the elaboration stops, on a module named after the rule.
+// the elaboration stops, on a module named after the rule. Only the end is
+// checked: a write removed in the middle still elaborates, and that line
+// falls to the default, a write of 0x00 to register 0x00.
 generate if (cfg(NREGS - 4'd1) == 16'h00_00 || cfg(NREGS) != 16'h00_00) begin : nregs_check
 	myADV7513Text_NREGS_must_match_the_cfg_table nregs_rule ();
 end endgenerate

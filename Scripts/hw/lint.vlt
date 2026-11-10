@@ -13,11 +13,11 @@ lint_off -rule DECLFILENAME
 lint_off -rule PROCASSINIT -file "*SAPHO*"
 
 // Widened on purpose, each said in a comment beside it: the leading-zero
-// count zero-extended to its output (ula.v), a signed exponent sign-extended
-// into a sum (ula.v, F_SCL and XPO), and 1'b1 zero-extended to a pointer's
-// width, which avoids a zero-width replication Vivado refuses (core.v).
+// count zero-extended to its output (ula.v) and 1'b1 zero-extended to a
+// pointer's width, which avoids a zero-width replication Vivado refuses
+// (core.v). F_SCL and XPO had a third, a signed exponent sign-extended into a
+// sum; since #161 they compute at the exponent's width and it is gone.
 lint_off -rule WIDTHEXPAND -file "*ula.v" -match "*'total'*"
-lint_off -rule WIDTHEXPAND -file "*ula.v" -match "*LHS's SIGNED generates*"
 lint_off -rule WIDTHEXPAND -file "*core.v" -match "*CONST '1'h1'*"
 
 // A port or a wire whose user is generated only for some programs: the

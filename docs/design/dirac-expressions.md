@@ -354,7 +354,8 @@ Three ways were weighed:
    function calls included, are computed before the loops (requirement 2).
    The interrupt (`#PRACA`) saves no context and does not come back to the
    point it left (Luciano, 2026-10-25; fact: `itr` forces the program
-   counter to `ITRADD` and no return address is kept, `SAPHO/core.v` 152).
+   counter to `ITRADD` and no return address is kept, `SAPHO/core.v`, the
+   `instr_addr` of module `prefetch`).
    So the compiler declares one global array,
    `__dirac_tmp`, whose size in words is the largest, over the statements
    of the program, of the blocks one statement has live at once (a block
