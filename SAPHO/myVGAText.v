@@ -124,7 +124,7 @@ reg [11:0] waddr;
 reg  [6:0] wdata;
 reg  [6:0] code;                            // stage 1: the code of the cell
 
-// read address: in the blanking cx and cy go past 79 and 29 (to 99 and 32) and
+// read address: in the blanking cx and cy go past 79 and 29 (to 99 and 31) and
 // the address past 2399; it is held at 0 there, outside the memory never
 wire [11:0] raddr = vis0 ? maddr(mline(cy, top), cx) : 12'd0;
 

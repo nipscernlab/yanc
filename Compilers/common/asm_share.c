@@ -903,11 +903,24 @@ const char *asm_div_read(const char *mn)
     return NULL;
 }
 
-int asm_div_words(const char *mn)
+int asm_div_kind(const char *mn)
 {
     const char *rd = asm_div_read(mn);
-    if (!rd) return 0;
-    return strcmp(rd, "F_QUO") == 0 ? ASM_DIV_WORDS_FLT : ASM_DIV_WORDS_INT;
+    return !rd ? 0 : strcmp(rd, "F_QUO") == 0 ? 2 : 1;
+}
+
+static int div_shared = 0;                 // the program has both: F_DIV runs in the integer array
+
+void asm_div_program(int has_int, int has_flt)
+{
+    div_shared = has_int && has_flt;
+}
+
+int asm_div_words(const char *mn)
+{
+    int k = asm_div_kind(mn);
+    if (k == 0) return 0;
+    return (k == 2 && !div_shared) ? ASM_DIV_WORDS_FLT : ASM_DIV_WORDS_INT;
 }
 
 // the mnemonic of a line, after its labels ("" if the line holds no instruction)
@@ -942,12 +955,16 @@ int asm_divseq(const char *asm_path, const char *pc_path)
     // the instruction each line holds (-1: none), and which divisions to expand
     int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));
     char (*mn)[32] = xmalloc((lines.n + 1) * sizeof(*mn));
-    int   n = 0;
+    int   n = 0, has_int = 0, has_flt = 0;
     for (int ln = 0; ln < lines.n; ln++)
     {
         line_mnemonic(lines.s[ln], mn[ln], sizeof(mn[ln]));
         ins_of[ln] = mn[ln][0] ? n++ : -1;
+        int k = mn[ln][0] ? asm_div_kind(mn[ln]) : 0;
+        if (k == 1) has_int = 1;
+        if (k == 2) has_flt = 1;
     }
+    asm_div_program(has_int, has_flt);                    // with both, F_DIV takes the integer's words
     char *expand = xcalloc(n + 1, 1);                     // per instruction: the words of its sequence (0: leave it)
     int   added = 0, added_pc = 0, ndiv = 0;
     for (int ln = 0; ln < lines.n; ln++)
@@ -995,7 +1012,7 @@ int asm_divseq(const char *asm_path, const char *pc_path)
     }
     printf(yanc_lang_en ? "Info: %d divisions, %d words each for DIV/MOD and %d for F_DIV (%d added)\n"
                         : "Info: %d divisões, %d palavras cada em DIV/MOD e %d em F_DIV (%d a mais)\n",
-           ndiv, ASM_DIV_WORDS_INT, ASM_DIV_WORDS_FLT, added);
+           ndiv, ASM_DIV_WORDS_INT, asm_div_words("F_DIV"), added);
 
 done:
     free(expand); free(mn); free(ins_of);

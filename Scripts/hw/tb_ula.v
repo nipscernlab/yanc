@@ -43,6 +43,13 @@ parameter EXP    =  8;
 parameter FROUND =  0;
 parameter NUGAIN = 128;
 parameter N      = 2000;
+// 0: the ALU without F_ADD, F_SU1 and F_SU2, where at FROUND >= 1 I2F aligns
+// itself and takes the normaliser's direct path (#155), a circuit the ALU
+// with every operation never builds
+parameter ADDS   = 1;
+// 0: without DIV and MOD, where F_DIV has its own array; with them it shares
+// the integer's (#151)
+parameter DIVS   = 1;
 
 localparam signed [EXP:0] EMIN = -(1 << (EXP-1));     // minimum exponent
 localparam signed [EXP:0] EMAX =  (1 << (EXP-1)) - 1; // maximum exponent
@@ -57,13 +64,13 @@ wire [NUBITS-1:0] out, out_fast;
 reg               clk = 0;
 
 ula #(.NUBITS(NUBITS), .NBMANT(MAN), .NBEXPO(EXP), .NUGAIN(NUGAIN), .FROUND(FROUND),
-      .ADD(1), .F_ADD(1), .MLT(1), .F_MLT(1), .DIV(1), .F_DIV(1), .MOD(1),
+      .ADD(1), .F_ADD(ADDS), .MLT(1), .F_MLT(1), .DIV(DIVS), .F_DIV(1), .MOD(DIVS),
       .SGN(1), .F_SGN(1), .NEG(1), .NEG_M(1), .F_NEG(1), .F_NEG_M(1),
       .ABS(1), .ABS_M(1), .F_ABS(1), .F_ABS_M(1), .PST(1), .PST_M(1), .F_PST(1), .F_PST_M(1),
       .NRM(1), .NRM_M(1), .I2F(1), .I2F_M(1), .F2I(1), .F2I_M(1),
       .AND(1), .ORR(1), .XOR(1), .INV(1), .INV_M(1), .LAN(1), .LOR(1), .LIN(1), .LIN_M(1),
       .LES(1), .F_LES(1), .GRE(1), .F_GRE(1), .EQU(1), .SHL(1), .SHR(1), .SRS(1),
-      .F_ROT(1), .F_SU1(1), .F_SU2(1), .F_SCL(1), .XPO(1), .XPO_M(1))
+      .F_ROT(1), .F_SU1(ADDS), .F_SU2(ADDS), .F_SCL(1), .XPO(1), .XPO_M(1))
     dut (.op(op), .in1(in1), .in2(in2), .out(out), .out_fast(out_fast), .clk(clk));
 
 // ------------------------------------------------------------ random ---
@@ -451,12 +458,13 @@ function is_round; input [5:0] o; is_round = (o == 3 || o == 5 || o == 7 || o ==
 // the divisions: their result is read STG-1 cycles after the operands
 function is_div; input [5:0] o; is_div = (o == 6 || o == 7 || o == 8); endfunction
 
-// every operation
-localparam NOPS = 52;
+// every operation (without ADDS, all but the three adds; without DIVS, but
+// DIV and MOD)
+localparam NOPS = 52 - ((ADDS != 0) ? 0 : 3) - ((DIVS != 0) ? 0 : 2);
 reg [5:0] ops [0:NOPS-1];
 initial begin : list
 	integer j, n; n = 0;
-	for (j = 0; j <= 51; j = j + 1) begin
+	for (j = 0; j <= 51; j = j + 1) if ((ADDS != 0 || !(j == 3 || j == 47 || j == 48)) && (DIVS != 0 || !(j == 6 || j == 8))) begin
 		if (n < NOPS) ops[n] = j;
 		n = n + 1;
 	end
@@ -507,7 +515,7 @@ initial begin
 			want = ref_op(op, in1, in2);
 			if (is_div(op)) begin
 				// the operands enter at this clock; NOPs with other operands; the read
-				lat = (op == 7) ? dut.op_fdiv.my_fdiv.STG - 1 : dut.op_idiv.my_idiv.STG - 1;
+				lat = (op == 7) ? dut.FDIV_STG - 1 : dut.IDIV_STG - 1;
 				clk = 1; #1; clk = 0; #1;
 				for (c = 1; c < lat; c = c + 1) begin
 					op = 0; in1 = rnd(0); in2 = rnd(0); #1; clk = 1; #1; clk = 0; #1;
@@ -524,9 +532,9 @@ initial begin
 		end
 	end
 	if (errs == 0)
-		$display("%0d/%0d/%0d FROUND=%0d: ok (%0d operations x %0d vectors)", NUBITS, MAN, EXP, FROUND, NOPS, N);
+		$display("%0d/%0d/%0d FROUND=%0d%0s%0s: ok (%0d operations x %0d vectors)", NUBITS, MAN, EXP, FROUND, (ADDS != 0) ? "" : " no adds", (DIVS != 0) ? "" : " no int div", NOPS, N);
 	else begin
-		$write("%0d/%0d/%0d FROUND=%0d: FAIL, %0d of %0d vectors; by op:", NUBITS, MAN, EXP, FROUND, errs, total);
+		$write("%0d/%0d/%0d FROUND=%0d%0s%0s: FAIL, %0d of %0d vectors; by op:", NUBITS, MAN, EXP, FROUND, (ADDS != 0) ? "" : " no adds", (DIVS != 0) ? "" : " no int div", errs, total);
 		for (j = 0; j < 64; j = j + 1) if (bad[j]) $write(" %0d:%0d", j, bad[j]);
 		$display("");
 	end

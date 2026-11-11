@@ -20,7 +20,9 @@ A processor contains only the hardware of the instructions its program
 uses. An integer division takes five words, `DIV k; NOP; NOP; NOP; QUO`
 (also `MOD`/`REM`), a float division four, `F_DIV k; NOP; NOP; F_QUO`:
 the compilers write it that way, because the dividers take five and four
-cycles. A `JIZ`, `JNZ`, `LDI` or `ILI` right after an operation whose result goes through the
+cycles. A program with both an integer and a float division has one
+divider for the two, and its float division takes five words too, one
+`NOP` more. A `JIZ`, `JNZ`, `LDI` or `ILI` right after an operation whose result goes through the
 float normaliser (`F_ADD`, `F_SU1`, `F_SU2`, `F_MLT`, `F_DIV`/`F_QUO`,
 `F_ROT`, `I2F`, `I2F_M`, `F_INN` and their stack, `P_` and `_V` forms) gets
 a `NOP` before it: the jump and the read index take the arithmetic unit
@@ -131,9 +133,9 @@ named, `addr` its address only).
 | `F_MLT` | 39 | data | rw | - | r | a = x * a |
 | `F_MLT_V` | 39 | offset | rw | - | r | as F_MLT, x at a constant offset from the name |
 | `SF_MLT` | 40 | none | rw | pop | - | a = x * a |
-| `F_DIV` | 41 | data | rw | - | r | starts x / a; read it with F_QUO three words later |
-| `F_QUO` | 41 | none | w | - | - | a = the quotient of the F_DIV three words before |
-| `SF_DIV` | 42 | none | rw | pop | - | starts x / a; read it with F_QUO three words later |
+| `F_DIV` | 41 | data | rw | - | r | starts x / a; read it with F_QUO three words later (four in a program with DIV or MOD) |
+| `F_QUO` | 41 | none | w | - | - | a = the quotient of the F_DIV three words before (four in a program with DIV or MOD) |
+| `SF_DIV` | 42 | none | rw | pop | - | starts x / a; read it with F_QUO three words later (four in a program with DIV or MOD) |
 | `F_SGN` | 43 | data | rw | - | r | a = a with the sign of x |
 | `SF_SGN` | 44 | none | rw | pop | - | a = a with the sign of x |
 | `F_SCL` | 45 | data | rw | - | r | a = a * 2^x (x an int, a a float) |

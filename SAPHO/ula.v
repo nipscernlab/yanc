@@ -65,8 +65,9 @@ module ula_mux
 	 // bit-shift operations
 	 input     [NUBITS-1:0] shl , shr , srs ,        // <<, >> and >>>
 	 // operations from the normalization circuit
-	 input     [NUBITS-1:0] smx ,                    // float-only with denorm.
-	 input     [NUBITS-1:0] frot,                    // F_ROT, final (#159)
+	 input     [NUBITS-1:0] smx ,                    // the normaliser's output
+	 // F_ROT, final: it does not go through the normaliser (#159)
+	 input     [NUBITS-1:0] frot,
 	 // special operations (exponent surgery)
 	 input     [NUBITS-1:0] fscl, xpo , xpom,        // F_SCL/SF_SCL, XPO, XPO_M
 	 // outputs: every operation, and the ones that do not go through the
@@ -279,7 +280,8 @@ endmodule
 
 // The operators hand in an exponent 2 bits wider than the format, so an
 // overflow/underflow is still visible here. FROUND selects what to do with it:
-//   0 - legacy: the exponent wraps modulo 2^EXP, zero keeps the operand sign
+//   0 - legacy: the exponent wraps modulo 2^EXP, zero keeps the sign the
+//       operator hands in (F_ADD and F_MLT hand +0, F_DIV its operands' sign)
 //   1 - saturate on overflow, flush to canonical zero on underflow (and on zero)
 //   2 - as 1, plus round to nearest even on the G extra bits of the mantissa
 
@@ -415,7 +417,8 @@ module norm_mux
 	// the normalised operations the program has: an input is built into the
 	// muxes only when its operation is there
 	parameter F_ADD  =  0, F_SU1 = 0, F_SU2 = 0, F_MLT = 0, F_DIV = 0,
-	parameter I2F    =  0, I2F_M = 0
+	parameter I2F    =  0, I2F_M = 0,
+	parameter I2F_D  =  0                 // 1: I2F arrives aligned and takes the direct path (#155)
 )(
 	 input [         5:0] op  ,
 	 input [NUBITS+G+1:0] fadd,           // operator outputs carry a 2-bit-wider exponent and G extra mantissa bits
@@ -437,21 +440,25 @@ localparam W2 = NUBITS+G+2;
 wire [W2-1:0] l3 ; generate if ((F_ADD) != 0) begin : gl3  assign l3  = (op == 6'd3 ) ? fadd : {W2{1'b0}}; end else begin : gl3  assign l3  = {W2{1'b0}}; end endgenerate   // F_ADD
 wire [W2-1:0] l5 ; generate if ((F_MLT) != 0 && FROUND == 0) begin : gl5  assign l5  = (op == 6'd5 ) ? fmlt : {W2{1'b0}}; end else begin : gl5  assign l5  = {W2{1'b0}}; end endgenerate   // F_MLT
 wire [W2-1:0] l7 ; generate if ((F_DIV) != 0 && FROUND == 0) begin : gl7  assign l7  = (op == 6'd7 ) ? fdiv : {W2{1'b0}}; end else begin : gl7  assign l7  = {W2{1'b0}}; end endgenerate   // F_DIV
-wire [W2-1:0] l25; generate if ((I2F  ) != 0) begin : gl25 assign l25 = (op == 6'd25) ? i2f  : {W2{1'b0}}; end else begin : gl25 assign l25 = {W2{1'b0}}; end endgenerate   //   I2F
-wire [W2-1:0] l26; generate if ((I2F_M) != 0) begin : gl26 assign l26 = (op == 6'd26) ? i2fm : {W2{1'b0}}; end else begin : gl26 assign l26 = {W2{1'b0}}; end endgenerate   //   I2F_M
+wire [W2-1:0] l25; generate if ((I2F  ) != 0 && I2F_D == 0) begin : gl25 assign l25 = (op == 6'd25) ? i2f  : {W2{1'b0}}; end else begin : gl25 assign l25 = {W2{1'b0}}; end endgenerate   //   I2F
+wire [W2-1:0] l26; generate if ((I2F_M) != 0 && I2F_D == 0) begin : gl26 assign l26 = (op == 6'd26) ? i2fm : {W2{1'b0}}; end else begin : gl26 assign l26 = {W2{1'b0}}; end endgenerate   //   I2F_M
 wire [W2-1:0] l47; generate if ((F_SU1) != 0) begin : gl47 assign l47 = (op == 6'd47) ? fadd : {W2{1'b0}}; end else begin : gl47 assign l47 = {W2{1'b0}}; end endgenerate   // F_SU1 (the same addition circuit)
 wire [W2-1:0] l48; generate if ((F_SU2) != 0) begin : gl48 assign l48 = (op == 6'd48) ? fadd : {W2{1'b0}}; end else begin : gl48 assign l48 = {W2{1'b0}}; end endgenerate   // F_SU2 (the same addition circuit)
 
 wire [W2-1:0] imux_l = l3 | l5 | l7 | l25 | l26 | l47 | l48;
 
 // operands already aligned to their top bit by the operator (FROUND >= 1):
-// they skip the leading-zero count and go straight to rounding/saturation
-wire               use_d = (FROUND != 0) & ((op == 6'd5) | (op == 6'd7));
+// they skip the leading-zero count and go straight to rounding/saturation.
+// I2F too with I2F_D, which the ALU sets when no add needs the count (#155)
+wire               use_d = (FROUND != 0) & ((op == 6'd5) | (op == 6'd7) |   // F_MLT, F_DIV
+                           ((I2F_D != 0) & ((op == 6'd25) | (op == 6'd26))));  // I2F, I2F_M
 
 wire [W2-1:0] d5 ; generate if ((F_MLT) != 0) begin : gd5  assign d5  = (op == 6'd5 ) ? fmlt : {W2{1'b0}}; end else begin : gd5  assign d5  = {W2{1'b0}}; end endgenerate   // F_MLT
 wire [W2-1:0] d7 ; generate if ((F_DIV) != 0) begin : gd7  assign d7  = (op == 6'd7 ) ? fdiv : {W2{1'b0}}; end else begin : gd7  assign d7  = {W2{1'b0}}; end endgenerate   // F_DIV
+wire [W2-1:0] d25; generate if ((I2F  ) != 0 && I2F_D != 0) begin : gd25 assign d25 = (op == 6'd25) ? i2f  : {W2{1'b0}}; end else begin : gd25 assign d25 = {W2{1'b0}}; end endgenerate   //   I2F
+wire [W2-1:0] d26; generate if ((I2F_M) != 0 && I2F_D != 0) begin : gd26 assign d26 = (op == 6'd26) ? i2fm : {W2{1'b0}}; end else begin : gd26 assign d26 = {W2{1'b0}}; end endgenerate   //   I2F_M
 
-wire [W2-1:0] imux_d = d5 | d7;
+wire [W2-1:0] imux_d = d5 | d7 | d25 | d26;
 
 // perform the normalization
 ula_norm #(NBMANT,NBEXPO,FROUND,G,LZC,DIR) ula_norm (imux_l, imux_d, use_d, out);
@@ -599,11 +606,14 @@ end else if (G == 0) begin : keep_lsb
 	assign s_out = s_mlt;
 	assign e_out = e_top - {{EXP+1{1'b0}}, ~top};
 	assign m_out = (top) ? mult[2*MAN-1:MAN] : mult[2*MAN-2:MAN-1];
-end else begin : keep_lsb_sticky
-	// same, with two more product bits and the OR of the rest as sticky (G = 3)
+end else if (G == 3) begin : keep_lsb_sticky
+	// same, with two more product bits and the OR of the rest as sticky; the
+	// slices are written for G = 3, so any other G stops the elaboration (#185)
 	assign s_out = s_mlt;
 	assign e_out = e_top - {{EXP+1{1'b0}}, ~top};
 	assign m_out = (top) ? {mult[2*MAN-1:MAN-2], |mult[MAN-3:0]} : {mult[2*MAN-2:MAN-3], |mult[MAN-4:0]};
+end else begin : g_check
+	ula_fmlt_G_must_be_0_or_3 g_rule ();
 end endgenerate
 
 assign out = {s_out, e_out, m_out};
@@ -618,7 +628,8 @@ endmodule
 // each division as `<div> x`, STG-2 NOPs and `<read>` (Compilers/common
 // asm_divseq, ASM_DIV_WORDS_*), and the last word, QUO / REM / F_QUO (an alias
 // of the division's own opcode), finds the first one's result at the end of
-// the array. Nothing waits: the
+// the array. A program with both an integer division and F_DIV has one array
+// for the two (ula_div_sh, #151), and its F_DIV takes the integer's 5 cycles. Nothing waits: the
 // cuts carry with the data everything the later parts need, so the inputs may
 // change every cycle.
 
@@ -801,20 +812,37 @@ div_array #(NUBITS,NUBITS,2,STG,PRE10,POST10) arr({(NUBITS+1){1'b0}}, a, b,
                                                 {in1[NUBITS-1] ^ in2[NUBITS-1], in1[NUBITS-1]},
                                                 q, r, sg, clk);
 
-// The ALU reads one result per cycle, the quotient (QUO) or the remainder
-// (REM). With both in the program (BOTH), the magnitude and its sign are
-// picked first and negated once, one negator instead of two (#157); with one,
-// the other output is unread and synthesis drops it. tb_alu, which checks
-// both at once, uses BOTH = 0.
+idiv_out #(NUBITS,BOTH) outs(q, r[NUBITS-1:0], sg, pick_rem, quo, rem);
+
+endmodule
+
+// the signed results of the integer array: the quotient and the remainder from
+// their magnitudes. The ALU reads one result per cycle, the quotient (QUO) or
+// the remainder (REM). With both in the program (BOTH), the magnitude and its
+// sign are picked first and negated once, one negator instead of two (#157);
+// with one, the other output is unread and synthesis drops it. tb_alu, which
+// checks both at once, uses BOTH = 0.
+
+module idiv_out
+#(
+	parameter NUBITS = 32,
+	parameter BOTH   =  0
+)(
+	 input        [NUBITS-1:0] q, r,                          // the magnitudes
+	 input        [       1:0] sg,                            // {quotient negative, remainder negative}
+	 input                     pick_rem,
+	output signed [NUBITS-1:0] quo, rem
+);
+
 generate if (BOTH != 0) begin : one_neg
-	wire [NUBITS-1:0] mag = (pick_rem) ? r[NUBITS-1:0] : q;
-	wire              ng  = (pick_rem) ? sg[0]         : sg[1];
+	wire [NUBITS-1:0] mag = (pick_rem) ? r     : q;
+	wire              ng  = (pick_rem) ? sg[0] : sg[1];
 	wire [NUBITS-1:0] res = (ng) ? -mag : mag;
 	assign quo = res;
 	assign rem = res;
 end else begin : two_neg
-	assign quo = sg[1] ? -q              : q;
-	assign rem = sg[0] ? -r[NUBITS-1:0] : r[NUBITS-1:0];
+	assign quo = sg[1] ? -q : q;
+	assign rem = sg[0] ? -r : r;
 end endgenerate
 
 endmodule
@@ -879,12 +907,34 @@ wire [EXP+3:0] side;
 div_array #(MAN,R,EXP+4,STG,PRE10,POST10) arr({2'b00, m1[MAN-1:1]}, {m1[0], {(R-1){1'b0}}}, m2,
                                             {s_in, e_in, dz_in}, q, rem, side, clk);
 
+fdiv_slice #(MAN,EXP,FROUND,G) slice(q, |rem, side, out);   // the sticky: remainder != 0
+
+endmodule
+
+// the float result from the quotient bits of the mantissas, the sticky (the
+// remainder is not zero) and what travelled with them (sign, exponent
+// difference, zero divisor) -------------------------------------------------
+
+module fdiv_slice
+#(
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0
+)(
+	 input [((FROUND == 0) ? MAN-1 : (G == 0) ? MAN : MAN+G-1):0] q,   // the K+1 quotient bits
+	 input                 stk,
+	 input [EXP+3      :0] side,                              // {sign, exponent difference, zero divisor}
+	output [MAN+EXP+G+2:0] out
+);
+
+localparam W = MAN+G;
+localparam K = (FROUND == 0) ? MAN-1 : (G == 0) ? MAN : MAN+G-1;
+localparam R = K+1;
+
 wire                  s_out = side[EXP+3];
 wire signed [EXP+1:0] e_dif = side[EXP+2:1];
 wire                  dz    = side[0];
-wire                  stk   = |rem;                       // remainder != 0
-
-// pick the slice ---------------------------------------------------------------
 
 wire signed [EXP+1:0] e_out;
 wire        [W-1  :0] m_out;
@@ -913,6 +963,78 @@ end else begin : ranged
 end endgenerate
 
 assign out = {s_out, e_out, m_out};
+
+endmodule
+
+// DIV / MOD and F_DIV in one array (#151) -------------------------------------
+// The integer array (NUBITS rows, an NUBITS-bit divisor) divides the
+// magnitudes for DIV/MOD and, when the division starts as an F_DIV (fdiv, op
+// 7), the mantissas as ula_fdiv does: the first remainder m1 >> 1, the rows
+// taking m1[0] and then zeros, the divisor m2. The float array's K+1 rows are
+// this array's first K+1, so the float quotient is the top K+1 quotient bits;
+// and the float remainder is nonzero exactly when a later row finds a
+// quotient bit or the last remainder is nonzero, which is the sticky. The two
+// never hold live data at once (a division is its whole sequence), so one
+// array serves them, and F_DIV takes the integer's STG cycles. Yosys (32
+// bits, LUT4) and Quartus 23.1 on sapho_all (Cyclone V, seed 1), 2026-11-10:
+// 3735 to 3105 LUT4 for DIV, MOD and F_DIV at #FROUND 2; 3255 to 2593 ALMs,
+// 1026 to 832 registers, Fmax 37.07 to 38.57 MHz (one seed each; the worst
+// path stays the float add's).
+
+module ula_div_sh
+#(
+	parameter NUBITS = 32,
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0,
+	parameter PRE10  = 15,                                    // see div_array, ula_idiv
+	parameter POST10 = 36,                                    //   and ula_fdiv: the longer of the two
+	parameter STG    =  5,
+	parameter BOTH   =  0                                     // as ula_idiv
+)(
+	 input signed [NUBITS-1   :0] in1, in2,
+	 input                        fdiv,                       // this cycle starts an F_DIV
+	output signed [NUBITS-1   :0] quo, rem,
+	output        [MAN+EXP+G+2:0] fout,                       // as ula_fdiv's out
+	 input                        clk,
+	 input                        pick_rem                    // as ula_idiv
+);
+
+localparam K = (FROUND == 0) ? MAN-1 : (G == 0) ? MAN : MAN+G-1;
+localparam R = K+1;                                       // the float quotient's bits (< NUBITS)
+
+// the integer operands, as ula_idiv
+wire [NUBITS-1:0] a = in1[NUBITS-1] ? -in1 : in1;
+wire [NUBITS-1:0] b = in2[NUBITS-1] ? -in2 : in2;
+wire [       1:0] iside = {in1[NUBITS-1] ^ in2[NUBITS-1], in1[NUBITS-1]};
+
+// the float operands, as ula_fdiv
+wire                  s1 = in1[MAN+EXP      ];
+wire                  s2 = in2[MAN+EXP      ];
+wire signed [EXP+1:0] e1 = {{2{in1[MAN+EXP-1]}}, in1[MAN+EXP-1:MAN]};
+wire signed [EXP+1:0] e2 = {{2{in2[MAN+EXP-1]}}, in2[MAN+EXP-1:MAN]};
+wire        [MAN-1:0] m1 = in1[MAN    -1:0  ];
+wire        [MAN-1:0] m2 = in2[MAN    -1:0  ];
+wire        [EXP+3:0] fside = {(s1 != s2), e1 - e2 - MAN[EXP+1:0], (m2 == {MAN{1'b0}})};
+
+// the array's inputs: the float's zero-extended (NUBITS > MAN in every format)
+wire [NUBITS  :0] r0_f = {{(NUBITS+2-MAN){1'b0}}, m1[MAN-1:1]};
+wire [NUBITS-1:0] nb_f = {m1[0], {(NUBITS-1){1'b0}}};
+wire [NUBITS-1:0] d_f  = {{(NUBITS-MAN){1'b0}}, m2};
+
+wire [NUBITS  :0] r0 = (fdiv) ? r0_f : {(NUBITS+1){1'b0}};
+wire [NUBITS-1:0] nb = (fdiv) ? nb_f : a;
+wire [NUBITS-1:0] dd = (fdiv) ? d_f  : b;
+
+wire [NUBITS-1:0] q;
+wire [NUBITS  :0] r;
+wire [EXP+5   :0] side;                                   // {fside, iside}
+
+div_array #(NUBITS,NUBITS,EXP+6,STG,PRE10,POST10) arr(r0, nb, dd, {fside, iside}, q, r, side, clk);
+
+idiv_out   #(NUBITS,BOTH)            ires (q, r[NUBITS-1:0], side[1:0], pick_rem, quo, rem);
+fdiv_slice #(MAN,EXP,FROUND,G)       fres (q[NUBITS-1 -: R], (|q[NUBITS-1-R:0]) | (|r), side[EXP+5:2], fout);
 
 endmodule
 
@@ -1072,6 +1194,12 @@ endmodule
 // +-2^(MAN-1) wraps silently). FROUND >= 1 converts the whole word: the
 // magnitude is pre-aligned here so that its top MAN bits (plus the G extra
 // bits) go to ula_norm, which truncates (level 1) or rounds (level 2) them.
+// Without ALIGN the count here covers only the bits above the mantissa, and
+// an int that fits the mantissa leaves the rest of the count to ula_norm's;
+// with ALIGN (#155) the count covers the whole word, the result arrives with
+// its leading one on top, and it takes ula_norm's direct path, so a program
+// whose only counted operation is I2F builds one count and one shift, not
+// two. The two give the same bits.
 
 module ula_i2f
 #(
@@ -1079,7 +1207,8 @@ module ula_i2f
 	parameter MAN    = 23,
 	parameter EXP    =  8,
 	parameter FROUND =  0,
-	parameter G      =  0
+	parameter G      =  0,
+	parameter ALIGN  =  0                                     // 1: align fully, for ula_norm's direct path
 )(
 	input  signed [NUBITS-1   :0] in,
 	output        [MAN+EXP+G+2:0] out                         // exponent 2 bits wider, G extra mantissa bits (see ula_norm)
@@ -1099,23 +1228,33 @@ generate if (FROUND == 0) begin : legacy
 	assign e_out = 0;
 	assign m_out = lm;                                       // G is 0 at this level
 end else begin : full
-	localparam LZW = $clog2(T+1);
+	localparam LZW = (ALIGN != 0) ? $clog2(NUBITS+1) : $clog2(T+1);
 	wire [NUBITS-1:0] neg = -in;
 	wire [NUBITS-1:0] mag = (in[NUBITS-1]) ? neg : in;      // unsigned magnitude (2^(NUBITS-1) for the most negative int)
-	wire [T-1     :0] top = mag[NUBITS-1:MAN];
-	// leading zeros of the top field, saturating at T (int fits the mantissa)
-	integer k, lzi;
-	always @ (*) begin lzi = T; for (k = 0; k < T; k = k+1) if (top[k]) lzi = T-1-k; end
-	wire [LZW-1   :0] lz   = lzi[LZW-1:0];
-	wire [NUBITS-1:0] magn = mag << lz;                      // leading one at bit NUBITS-1 (or int << T when it fits)
+	wire [LZW-1   :0] lz;
+	if (ALIGN != 0) begin : whole
+		// leading zeros of the whole word (NUBITS for 0, which zman reads as zero)
+		ula_lzc #(NUBITS, LZW) lzc (mag, lz);
+	end else begin : top_only
+		wire [T-1     :0] top = mag[NUBITS-1:MAN];
+		// leading zeros of the top field, saturating at T (int fits the mantissa)
+		integer k, lzi;
+		always @ (*) begin lzi = T; for (k = 0; k < T; k = k+1) if (top[k]) lzi = T-1-k; end
+		assign lz = lzi[LZW-1:0];
+	end
+	wire [NUBITS-1:0] magn = mag << lz;                      // leading one at bit NUBITS-1 (without ALIGN, int << T when it fits)
 	wire [MAN-1   :0] mnt  = magn[NUBITS-1:T];
 	wire [T-1     :0] xtr  = magn[T-1:0];                    // the bits below the mantissa
 	assign s_out = in[NUBITS-1];
 	assign e_out = T[EXP+1:0] - {{(EXP+2-LZW){1'b0}}, lz};  // weight of mnt's LSB
-	if (G != 0) begin : rne
+	// guard, round and sticky are written for G = 3: any other G stops the
+	// elaboration (#185)
+	if (G == 3) begin : rne
 		assign m_out = {mnt, xtr[T-1], xtr[T-2], |xtr[T-3:0]}; // guard, round, sticky
-	end else begin : trunc
+	end else if (G == 0) begin : trunc
 		assign m_out = mnt;
+	end else begin : g_check
+		ula_i2f_G_must_be_0_or_3 g_rule ();
 	end
 end endgenerate
 
@@ -1417,7 +1556,8 @@ endmodule
 // amount >= NUBITS still gives all zeros (SHL, SHR) or all sign bits (SRS),
 // as `<<`, `>>` and `>>>` do. The muxes exist only for the opcodes the
 // program has (a program with one shift builds the plain shifter it built
-// before).
+// before), except that F2I, when it shares this shifter (#156), asks for both
+// directions, so the ALU then builds it with SHL and SHR (op_shift, below).
 
 module ula_shift
 #(
@@ -1721,21 +1861,33 @@ generate if ((F_MLT) != 0) begin : op_fmlt ula_fmlt #(NBMANT,NBEXPO,FROUND,G) my
 // one divider for both, five cycles (see ula_idiv): DIV/MOD start it, QUO/REM
 // read it four words later. The cycle counts of the two dividers are here
 // once, for the dividers and the simulation's rounding-error monitor (#183);
-// the compilers' copies are ASM_DIV_WORDS_INT and ASM_DIV_WORDS_FLT.
+// the compilers' copies are ASM_DIV_WORDS_INT and ASM_DIV_WORDS_FLT, and
+// Scripts/check_isa.py fails when they disagree with these or with the STG
+// defaults of ula_idiv and ula_fdiv (#185).
 
-localparam IDIV_STG = 5;
-localparam FDIV_STG = 4;
+localparam IDIV_STG  = 5;
+localparam FDIV_ALONE = 4;                                    // F_DIV's own array
+// with an integer division in the program too, F_DIV shares its array (#151)
+localparam DIV_SH    = ((DIV | MOD) != 0) && ((F_DIV) != 0);
+localparam FDIV_STG  = (DIV_SH) ? IDIV_STG : FDIV_ALONE;
 
 wire signed [NUBITS-1:0] div, mod;
 
-generate if ((DIV | MOD) != 0) begin : op_idiv ula_idiv #(.NUBITS(NUBITS), .STG(IDIV_STG), .BOTH((DIV != 0) && (MOD != 0))) my_idiv(in1, in2, div, mod, clk, op == 6'd8); end else begin : op_idiv assign div = {NUBITS{1'b0}}; assign mod = {NUBITS{1'b0}}; end endgenerate
+wire signed [NUBITS+G+1:0] fdiv;
+
+generate if (DIV_SH) begin : op_div_sh
+	ula_div_sh #(.NUBITS(NUBITS), .MAN(NBMANT), .EXP(NBEXPO), .FROUND(FROUND), .G(G), .STG(IDIV_STG),
+	             .BOTH((DIV != 0) && (MOD != 0)))
+	    my_div(in1, in2, op == 6'd7, div, mod, fdiv, clk, op == 6'd8);   // F_DIV starts it; MOD reads the remainder
+end else begin : op_div_sh
+end endgenerate
+
+generate if (DIV_SH) begin : op_idiv end else if ((DIV | MOD) != 0) begin : op_idiv ula_idiv #(.NUBITS(NUBITS), .STG(IDIV_STG), .BOTH((DIV != 0) && (MOD != 0))) my_idiv(in1, in2, div, mod, clk, op == 6'd8); end else begin : op_idiv assign div = {NUBITS{1'b0}}; assign mod = {NUBITS{1'b0}}; end endgenerate
 
 // F_DIV ----------------------------------------------------------------------
 // four cycles (see ula_fdiv): F_DIV starts it, F_QUO reads it three words later
 
-wire signed [NUBITS+G+1:0] fdiv;
-
-generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(.MAN(NBMANT), .EXP(NBEXPO), .FROUND(FROUND), .G(G), .STG(FDIV_STG)) my_fdiv(in1, in2, fdiv, clk); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'b0}}; end endgenerate
+generate if (DIV_SH) begin : op_fdiv end else if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(.MAN(NBMANT), .EXP(NBEXPO), .FROUND(FROUND), .G(G), .STG(FDIV_STG)) my_fdiv(in1, in2, fdiv, clk); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'b0}}; end endgenerate
 
 // The negators' operand (#193) ------------------------------------------------
 // SGN, NEG, NEG_M, ABS, ABS_M, I2F and I2F_M each negate one operand: in2
@@ -1864,8 +2016,9 @@ generate if ((NRM_M) != 0) begin : op_nrmm ula_nrm #(NUBITS,NUGAIN) my_nrmm(in1,
 // accumulator; F_INN and PF_INN too, which read a port into it), I2F_M in1
 // (the memory word), one per cycle. With both, a mux picks the operand by the
 // operation (I2F_M is op 26), the one the negators share (#193, above); with
-// one, no mux, unless NEG/ABS need it. Two converters cost 213 LUT4
-// more than one at #FROUND 2 and 78 at level 0 (Yosys, 32 bits, 2026-11-08).
+// one, no mux, unless NEG/ABS need it. Sharing took a program with both from
+// 667 to 521 LUT4 at #FROUND 2 and from 322 to 297 at level 0, the mux
+// included (Yosys, 32 bits, CHANGELOG of #154).
 
 wire signed [NUBITS-1    :0] i2f_in;
 wire signed [NUBITS+G+1  :0] i2f_out;
@@ -1876,7 +2029,13 @@ generate
 	else                                 begin : i2f_src assign i2f_in = in2;                       end
 endgenerate
 
-generate if ((I2F | I2F_M) != 0) begin : op_i2f ula_i2f #(NUBITS,NBMANT,NBEXPO,FROUND,G) my_i2f (i2f_in, i2f_out); end else begin : op_i2f assign i2f_out = {NUBITS+G+2{1'b0}}; end endgenerate
+// I2F aligns itself and takes the normaliser's direct path when no add needs
+// the leading-zero count anyway (#155): then the normaliser builds no count
+// for I2F, and I2F's own count covers the whole word. With an add the count
+// is there already, and I2F keeps its short count of the top field.
+localparam I2F_D = (FROUND != 0) && ((F_ADD | F_SU1 | F_SU2) == 0);
+
+generate if ((I2F | I2F_M) != 0) begin : op_i2f ula_i2f #(NUBITS,NBMANT,NBEXPO,FROUND,G,I2F_D ? 1 : 0) my_i2f (i2f_in, i2f_out); end else begin : op_i2f assign i2f_out = {NUBITS+G+2{1'b0}}; end endgenerate
 
 // norm_mux keeps one leg per operation (l25, l26), each under its parameter
 wire signed [NUBITS+G+1:0] i2f  = i2f_out;
@@ -2005,15 +2164,15 @@ generate if ((EQU) != 0) begin : op_equ ula_equ #(NUBITS) my_equ(in1, in2, equ);
 // SHL / SHR / SRS ------------------------------------------------------------
 
 // one right shifter serves the three shifts (see ula_shift); each opcode
-// still keeps its own mux input so an absent one stays x
+// still keeps its own mux input, and an absent one is 0
 wire signed [NUBITS-1:0] shl, shr, srs, sh_out;
 
 // with F2I sharing it, the shifter takes F2I's word and amount in F2I's
 // cycles (ops 27, 28) as an SHL or an SHR, so it is built with both
 // directions; otherwise it is the program's shifts alone
 generate if (F2I_SH) begin : op_shift
-	wire              f2i_now = (op == 6'd27) | (op == 6'd28);
-	wire        [5:0] sh_op   = (f2i_now) ? ((f2i_xleft) ? 6'd43 : 6'd44) : op;
+	wire              f2i_now = (op == 6'd27) | (op == 6'd28);                  // F2I, F2I_M
+	wire        [5:0] sh_op   = (f2i_now) ? ((f2i_xleft) ? 6'd43 : 6'd44) : op; // as SHL, SHR
 	wire [NUBITS-1:0] sh_a    = (f2i_now) ? f2i_xword : in1;
 	wire [NUBITS-1:0] sh_b    = (f2i_now) ? {{(NUBITS-NBEXPO){1'b0}}, f2i_xamt} : in2;
 	ula_shift #(NUBITS,1,1,SRS) my_shift(sh_op, sh_a, sh_b, sh_out);
@@ -2050,14 +2209,14 @@ wire signed [NUBITS-1:0] xpom;
 
 generate if ((XPO_M) != 0) begin : op_xpom ula_xpo #(NBMANT,NBEXPO) my_xpom(in1, xpom); end else begin : op_xpom assign xpom = {NUBITS{1'b0}}; end endgenerate
 
-// denormalization mux --------------------------------------------------------
+// normaliser and its operand mux --------------------------------------------
 
 wire signed [NUBITS-1:0] smx;
 
 generate if ((I2F | I2F_M | F_ADD | F_SU1 | F_SU2 | F_MLT | F_DIV) != 0) begin : op_smx norm_mux #(NUBITS,NBMANT,NBEXPO,FROUND,G,
-	((I2F | I2F_M | F_ADD | F_SU1 | F_SU2) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC: someone needs the leading-zero count
-	(FROUND != 0) && ((F_MLT | F_DIV) != 0),                                                    // DIR: someone takes the direct path
-	F_ADD, F_SU1, F_SU2, F_MLT, F_DIV, I2F, I2F_M)
+	((F_ADD | F_SU1 | F_SU2) != 0) || (!I2F_D && (I2F | I2F_M) != 0) || (FROUND == 0 && (F_MLT | F_DIV) != 0),  // LZC: someone needs the leading-zero count
+	(FROUND != 0) && ((F_MLT | F_DIV) != 0 || (I2F_D && (I2F | I2F_M) != 0)),                             // DIR: someone takes the direct path
+	F_ADD, F_SU1, F_SU2, F_MLT, F_DIV, I2F, I2F_M, I2F_D ? 1 : 0)
 	norm_mux(op, fadd, fmlt, fdiv, i2f, i2fm, smx); end else begin : op_smx assign smx = {NUBITS{1'b0}}; end endgenerate
 
 // main mux -------------------------------------------------------------------
@@ -2180,11 +2339,11 @@ real delta_float;
 
 always @ (*) begin
 	case (op)
-		3      : delta_float = (r_in1 + r_in2) - r_out; // addition
-		5      : delta_float = (r_in1 * r_in2) - r_out; // multiplication
-		7      : delta_float = (fop == 6'd7) ? (r_fd1 / r_fd2) - r_out : 0; // division (F_QUO)
-		47	   : delta_float = (r_in2 - r_in1) - r_out; // subtraction
-		48	   : delta_float = (r_in1 - r_in2) - r_out; // subtraction
+		6'd3   : delta_float = (r_in1 + r_in2) - r_out; // F_ADD
+		6'd5   : delta_float = (r_in1 * r_in2) - r_out; // F_MLT
+		6'd7   : delta_float = (fop == 6'd7) ? (r_fd1 / r_fd2) - r_out : 0; // F_DIV, read by F_QUO
+		6'd47  : delta_float = (r_in2 - r_in1) - r_out; // F_SU1
+		6'd48  : delta_float = (r_in1 - r_in2) - r_out; // F_SU2
 		default: delta_float = 0;
 	endcase
 end
@@ -2199,7 +2358,7 @@ real val_mlt; always @ (*) val_mlt = in1r * in2r;
 // a division: the inputs of the DIV / MOD that started it (QUO / REM read
 // it IDIV_STG-1 cycles later, and one start serves both)
 wire signed [NUBITS-1:0] idv1s = idv1, idv2s = idv2;
-wire                     idiv_read = (iop == 6'd6) || (iop == 6'd8);
+wire                     idiv_read = (iop == 6'd6) || (iop == 6'd8);   // DIV, MOD
 real idv1r; always @ (*) idv1r = idv1s;
 real idv2r; always @ (*) idv2r = idv2s;
 real val_div; always @ (*) val_div = idv1r / idv2r;
@@ -2212,14 +2371,14 @@ real delta_int;
 
 always @ (*) begin
 	case (op)
-		2      : delta_int = val_add - out; // addition
-		4      : delta_int = val_mlt - out; // multiplication
-		6      : delta_int = idiv_read ? val_div - out : 0; // division (QUO)
-		8      : delta_int = idiv_read ? val_mod - out : 0; // remainder (REM)
-		25     : delta_int = in2   - r_out; // int to float with acc
-		26	   : delta_int = in1   - r_out; // int to float with mem
-		27     : delta_int = r_in2   - out; // float to int with acc
-		28     : delta_int = r_in1   - out; // float to int with mem
+		6'd2   : delta_int = val_add - out; // ADD
+		6'd4   : delta_int = val_mlt - out; // MLT
+		6'd6   : delta_int = idiv_read ? val_div - out : 0; // DIV, read by QUO
+		6'd8   : delta_int = idiv_read ? val_mod - out : 0; // MOD, read by REM
+		6'd25  : delta_int = in2   - r_out; // I2F, int to float with acc
+		6'd26  : delta_int = in1   - r_out; // I2F_M, int to float with mem
+		6'd27  : delta_int = r_in2   - out; // F2I, float to int with acc
+		6'd28  : delta_int = r_in1   - out; // F2I_M, float to int with mem
 		default: delta_int = 0;
 	endcase
 end

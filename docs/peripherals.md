@@ -30,10 +30,11 @@ without waiting for each word to be taken.
   reader's side 2 to 3 reader cycles after it is written. Hold `aclr` for a
   few cycles of the slower clock.
 
-A `LENGTH` outside those rules stops the elaboration, in every tool, with
-the rule in the message (`myFIFO_LENGTH_must_be_a_power_of_two_at_least_2`):
+A `LENGTH` outside those rules stops the elaboration, with the rule in the
+message (in Yosys, `synth` and `hierarchy -check` stop; `hierarchy` alone
+takes the missing module as an empty box and goes on) (`myFIFO_LENGTH_must_be_a_power_of_two_at_least_2`):
 the pointers wrap only at a power of two, and a `myFIFO` of 100 accepted
-126 words and lost 26 of them without a sign.
+127 words and 27 of them read back wrong, without a sign.
 
 In both, the word on `data` is stored in the cycle `wrreq` is 1, `q` shows
 the oldest word, and `rdreq` moves to the next. Wired to two SAPHOs (as the
@@ -103,7 +104,7 @@ Ctrl with any other key gives nothing.
 | `LAYOUT` | `"ABNT2"` | `"ABNT2"` or `"US"`: which symbol each key position gives |
 | `NUBITS` | 32 | width of the word `cade()` returns (the program's `#NUBITS`, at least 8) |
 | `DEPTH` | 4 | characters the block holds while the program does not read; one more is dropped |
-| `CLK_KHZ` | 25000 | the clock in kHz, only to count a 1 ms timeout (a wrong value just changes it) |
+| `CLK_KHZ` | 25000 | the clock in kHz, to count a 1 ms timeout and to size the `ps2_clk` filter, about 320 ns (a wrong value just changes them) |
 | `LINK_SYNC` | 0 | 0: the program's `cade_k` goes through two flip-flops of the block's clock, so the processor may be on any clock; 1: the processor on the block's clock, two cycles less a key |
 
 **Pins.**
@@ -161,7 +162,9 @@ open-drain line does not count twice. `CLK_KHZ` sizes that filter and the
 1 ms after which a frame cut in the middle (noise, a keyboard plugged in
 with the board on) is forgotten.
 
-**Size**, measured with Quartus 24.1 on a Cyclone IV E (DE2-115), `DEPTH` 4:
+**Size**, measured with Quartus 24.1 on a Cyclone IV E (DE2-115), `DEPTH` 4,
+before `LINK_SYNC` and before #182 resized the filter (the block as it is
+now is not measured):
 294 logic elements and 99 registers, no memory bits. The queue stays in
 flip-flops: the read is registered, so a synthesizer may use a memory
 block, but Quartus keeps memories this small in logic.
@@ -282,8 +285,9 @@ the clock at up to 88 to 100 MHz (three fitter seeds; the keyboard's table
 is the limit) for the 25 MHz asked. A 32-bit C++ SAPHO with `<iostream>`,
 the two blocks and a PLL takes 3,174 logic elements and runs at up to 27.7
 to 28.0 MHz, the limit being the SAPHO's own float ALU. These were measured
-before `LINK_SYNC`; at its default each block has two registers more (not
-measured).
+before `LINK_SYNC` and #182; at its default `LINK_SYNC` adds two registers
+to each block, and #182 changed the keyboard's filter and put `myVGAText`'s
+two states in one bit (none of this measured).
 
 **Why the word goes through a register.** The SAPHO puts the `toma` word
 straight out of its ALU. Decoded in the same cycle, the SAPHO's longest path

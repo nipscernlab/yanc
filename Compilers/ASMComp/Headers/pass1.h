@@ -15,6 +15,7 @@ void p1_direct(int next_state);
 void p1_itrad (void);
 void p1_toaqui(void);
 void p1_opcode(int next_state);
+void p1_divop (int next_state, int kind);   // a division: kind 1 integer, 2 float (#151)
 void p1_opernd(char *va);
 void p1_label (char *va);
 void p1_finish(void);

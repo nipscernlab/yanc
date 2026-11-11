@@ -63,7 +63,7 @@ assign usedw =  addr_w - addr_r;
 Capacity stays LENGTH-1 words (one slot tells full from empty), as before.
 LENGTH is a power of two, at least 2, and any other stops the elaboration
 (#180): the pointers have $clog2(LENGTH) bits and wrap only at the power of
-two, so a LENGTH of 100 accepted 126 words and lost 26.
+two, so a LENGTH of 100 accepted 127 words and 27 of them read back wrong.
 
 ## Checks (2026-10-09)
 
@@ -181,7 +181,13 @@ at 128 x 16:
   each, "Total block memory bits: 4,096" (2 x 2048), so block RAM. For
   `myFIFO` it warns that it added pass-through logic for a read and a write
   on one address in one cycle (issue #8); `myDCFIFO` gets the usual
-  dual-clock warning.
+  dual-clock warning. The pass-through is needed (2026-11-10, #8): a
+  model of the RAM without it (the read address register absorbed into the
+  RAM, the old word on a read and a write of one address) fails case C3 of
+  `Scripts/hw/tb_fifo.v`, a word written into an empty FIFO and read in
+  the next cycle (it reads the word left there before), while `myFIFO.v`
+  passes all three. So `ramstyle "no_rw_check"` would break the FIFO, and
+  the warning stays (docs/multiprocessor.md lists it).
 - **Vivado 2025.2, Zynq-7010:** distributed RAM, `RAM64M` x 12 each, the
   usual choice for a RAM this small.
 
@@ -252,7 +258,7 @@ lines to be written and checked on the board):
   Quartus and Vivado (`set_clock_groups -asynchronous`,
   docs/design/toma-and-cade-links.md section 10); the board run is still to come.
 
-## For the documentation (issue #40)
+## For the documentation: myDCFIFO (issue #40)
 
 The user-facing text says: when the two SAPHOs run on different clocks use
 `myDCFIFO` (ports in the table above); wire the writer's `out_en` bit to
@@ -261,7 +267,7 @@ port and `q` on another, with `rdreq` from that port's `req_in`; hold
 `aclr` for a few cycles of the slower clock; a word takes 2-3 reader cycles
 to show up; capacity is LENGTH words; the Quartus constraints.
 
-## For the documentation (issue #40)
+## For the documentation: myFIFO (issue #40)
 
 The user-facing text says: wire `wrreq` to the writer's `out_en` bit and
 `data` to its `out`; the word is taken in that cycle; `q` shows the oldest

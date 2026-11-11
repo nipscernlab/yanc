@@ -49,7 +49,7 @@ module myKeyPS2
 	parameter LAYOUT    = "ABNT2", // "ABNT2" (the default) or "US"
 	parameter NUBITS    = 32,      // width of the word cade() returns
 	parameter DEPTH     = 4,       // characters the queue holds
-	parameter CLK_KHZ   = 25000,   // the clock, to count the 1 ms frame timeout
+	parameter CLK_KHZ   = 25000,   // the clock: the 1 ms frame timeout and the ps2_clk filter
 	parameter LINK_SYNC = 0        // 1: the SAPHO on this block's clock (cade_sync)
 )
 (

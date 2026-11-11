@@ -19,9 +19,11 @@ is the add itself and the exponent alignment
 over `W = MAN+G` bits (26 at `#FROUND 2`: 23 + 3 extra bits), a left shift
 by that count, the exponent minus the count, then at `#FROUND 2` a
 round-to-nearest-even increment on the mantissa (a carry chain) with the
-range check in carry select. Eight operations go through it: `F_ADD`,
-`F_SU1`, `F_SU2`, `I2F`, `I2F_M`, `F_ROT`, and `F_MLT`/`F_DIV` (at
-`#FROUND 0` through the count, at 1 and 2 through the direct path). The
+range check in carry select. When this survey was made eight operations
+went through it: `F_ADD`, `F_SU1`, `F_SU2`, `I2F`, `I2F_M`, `F_ROT`, and
+`F_MLT`/`F_DIV` (at `#FROUND 0` through the count, at 1 and 2 through the
+direct path). Since #159 `F_ROT` does not; the measurements below are of
+the ALU of 2026-10-15, with it. The
 format has no hidden bit, so the leading one is stored.
 
 Where it stands (measured, note 4.3): on `sapho_all` with `pnorm`
@@ -127,7 +129,8 @@ normalising shift is 0 or 1.
 - `I2F`/`I2F_M`: the operator pre-aligns the magnitude; a shift in the
   normaliser happens only when the integer fits the mantissa, and then it
   is exact.
-- `F_ROT`: exact (the G extra bits are zero, says the code).
+- `F_ROT`: exact (the G extra bits are zero, says the code). It no longer
+  goes through the normaliser (#159).
 - `F_MLT`/`F_DIV` at `#FROUND` 1 and 2 take the direct path (no shift).
 
 If that holds, the increment can be computed on the two candidates (shift 0
@@ -249,7 +252,8 @@ from 3.1 to 4.5 ns in this placement and the path total is the same; the
 changed. Not fitted, and parked: `twopath`, `dsp`, `lza` (still built by
 `make_variants.py` and checked by `eq_fops.sh` if the question comes back). `lza` and `twopath` also
 take `F_ADD` out of the leading-zero path, so with them the count serves
-only `I2F`, `I2F_M`, `F_ROT` and `F_MLT`/`F_DIV` at `#FROUND 0`.
+only `I2F`, `I2F_M`, `F_ROT` and `F_MLT`/`F_DIV` at `#FROUND 0` (`F_ROT` no
+longer since #159, which took it out of the normaliser).
 
 ## Sources
 

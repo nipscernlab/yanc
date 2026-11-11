@@ -9,6 +9,25 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **Values kept in step by hand are now checked (#185).**
+  `Scripts/check_isa.py` (step 3 of the regression) fails when the cycles of
+  a divider disagree: `IDIV_STG`/`FDIV_STG` in `ula.v`, the `STG` defaults of
+  `ula_idiv`/`ula_fdiv` and the words the compilers give a division
+  (`ASM_DIV_WORDS_INT`/`_FLT`). A divider one stage longer than the
+  compilers think made QUO, REM and F_QUO read a cycle early, silently.
+  `ula_fmlt` and `ula_i2f`, whose rounding bits are written for G = 3, stop
+  the elaboration at any G other than 0 or 3, and `instr_dec` at any
+  `NBOPCO` other than 7, since its rows compare 7-bit constants (#173).
+  `core`'s `MDATAW`/`MINSTW` defaults are 6, the `$clog2` of `processor`'s
+  64 words, as its one default set says (they were 9; the generated
+  processor always passes both, so no processor changes).
+- **The ALU operation numbers are checked (#174).** `Scripts/check_isa.py`
+  takes the operations' names from `ula.v`'s output muxes and fails when a
+  row of `instr_dec.v` runs another operation than its mnemonic names, or
+  when a `6'dN` anywhere in `ula.v` does not name operation N on its line;
+  the simulation's rounding-error `case` now writes its labels as `6'dN` with
+  their names, so it is checked too. `core.v`'s `OP_TOM` and `OP_CAD`, written
+  in two modules, are checked in both (only the last copy was).
 - **The C++ tests check their waveform's tables and tracks (#87, first
   part).** The CPP phase of `Scripts/regress.sh` runs `Scripts/wave_map.py`
   as the CMM phase does: the tables agree with each other and with the
@@ -147,6 +166,37 @@ tags consumed by Aurora.
   Quartus 23.1 on `sapho_all` (Cyclone V 5CSEMA5F31C6, seed 1): 3285 to
   3255 ALMs, Fmax 37.10 to 37.07 MHz, within one seed's noise; the worst
   path is the float add's, which the change does not touch.
+- **I2F counts and shifts once (#155).** At `#FROUND` 1 and 2 I2F counted
+  the leading zeros of the bits above the mantissa and shifted, and its
+  result went through the normaliser's count and shift again. In a program
+  with no add (F_ADD, F_SU1, F_SU2), I2F now counts the whole word and its
+  result takes the normaliser's direct path, as F_MLT and F_DIV do, so the
+  ALU builds one count and one shift, not two. With an add the count is
+  built anyway, and I2F stays as it was. Yosys (32 bits, LUT4, mean of
+  three mappings): I2F 373 to 302 at level 1 and 442 to 345 at level 2;
+  I2F and I2F_M 408 to 335 and 482 to 377; I2F and F_MLT at level 2, 2030
+  to 1966; I2F and F_ADD unchanged (1028, 1031). Proved equivalent to the
+  ALU before (Yosys SAT, every mix with the new path at levels 1 and 2, the
+  rest at level 0); a wrong exponent is caught. `tb_ula` runs once more at
+  levels 1 and 2 without the adds, the only ALU that builds the new path.
+- **One divider array for DIV/MOD and F_DIV (#151).** The integer array and
+  the float one never hold live data at once. In a program with an integer
+  division and a float one, F_DIV now runs in the integer array (NUBITS
+  rows, the mantissas zero-extended; its quotient is the top rows', its
+  sticky the rest), and takes the integer's 5 cycles: the compilers give
+  such a program's F_DIV one `NOP` more (`asm_divseq`, `asm_div_program`),
+  and asmcomp's first pass tells its second what to expect. A program with
+  F_DIV alone keeps its own 4-stage array and its four words. Yosys (32
+  bits, LUT4, mean of three mappings): DIV, MOD and F_DIV 3735 to 3105 at
+  `#FROUND` 2, 3561 to 3102 at level 0. Quartus 23.1 on `sapho_all`
+  (Cyclone V 5CSEMA5F31C6, seed 1): 3255 to 2593 ALMs, 1026 to 832
+  registers, 3 DSP blocks before and after, Fmax 37.07 to 38.57 MHz (one
+  seed each, within the seeds' spread; the worst path is still the float
+  add's). Goldens changed on purpose, each by a `NOP` after every F_DIV and
+  the addresses that follow: `cmm_cov_ops` (234 F_DIV), `sapho_all`,
+  `sapho_all_a` and `sapho_all_b` (7 each), their `golden_map.txt` and
+  size baselines. `tb_ula` now runs every level once more without DIV and
+  MOD, so both dividers are simulated.
 - **NRM as a shift (#160).** `ula_nrm` was `in/NUGAIN`; NUGAIN is a power
   of two, so it is now `in >>> K` with 1 added back to a negative input that
   has a remainder, which truncates toward zero as the division did. It
@@ -379,8 +429,8 @@ tags consumed by Aurora.
   address. `Scripts/hw/tb_fft_size.sh`, in the regression, checks both.
 - **myFIFO and myDCFIFO refuse a LENGTH they cannot hold (#180).** The
   pointers have `$clog2(LENGTH)` bits and wrap only at a power of two: a
-  myFIFO of LENGTH 100 accepted 126 words and lost 26, with full, empty and
-  usedw all coherent. A LENGTH that is not a power of two (or below 2 for
+  myFIFO of LENGTH 100 accepted 127 words and 27 of them read back wrong,
+  with full, empty and usedw all coherent. A LENGTH that is not a power of two (or below 2 for
   myFIFO, 4 for myDCFIFO) now stops the elaboration with the rule in the
   message, by naming a module that does not exist (Verilog-2001 has no
   `$error`). `docs/peripherals.md` says the rule for both.

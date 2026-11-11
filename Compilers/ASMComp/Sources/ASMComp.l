@@ -201,7 +201,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    "QUO"   eval_opcode( 27, 0, yytext,    "DIV"  ); // integer quotient of the division four words before
    "REM"   eval_opcode( 29, 0, yytext,    "MOD"  ); // remainder of the division four words before
- "F_QUO"   eval_opcode( 41, 0, yytext,  "F_DIV"  ); // float quotient of the division three words before
+ "F_QUO"   eval_opcode( 41, 0, yytext,  "F_DIV"  ); // float quotient of the division three words before (four with DIV/MOD in the program)
 
    "LOD_V" eval_opcode(  1,22, yytext,    "LOD"  ); //   LOD with constant offset
  "P_LOD_V" eval_opcode(  2,22, yytext,  "P_LOD"  ); // P_LOD with constant offset

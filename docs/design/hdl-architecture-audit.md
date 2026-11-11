@@ -60,6 +60,10 @@ Keep all four. Everything below fits inside them.
 
 ### 1.1 The interrupt is a level-sensitive PC override
 
+(Quoted as the code stood on 2026-09-15: `pc_l` went in #169, and the
+fetch address is now one choice, `instr_addr` in `prefetch`. What the
+section says of the interrupt still holds.)
+
 `prefetch` (`core.v`): `pc_l = itr | pc_load; instr_addr = itr ? ITRADD : …`.
 As long as `itr` is high the fetch address is forced to `ITRADD` **every
 cycle**: the instruction at the vector is fetched and executed once per cycle

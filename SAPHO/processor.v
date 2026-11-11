@@ -113,7 +113,7 @@ module processor
 
 	// data flow
 	parameter ITRADD     = 0,           // Interrupt address (PC jumps here while itr=1)
-	parameter TOAQUIADDR = 0,           // #TOAQUI marker address (cheguei pulses when pc_instr == TOAQUIADDR)
+	parameter TOAQUIADDR = 0,           // #TOAQUI marker address (cheguei is 1 while the address fetched is TOAQUIADDR)
 
 	// memories
 	parameter IFILE  = "inst.mif",      // File containing the program to be run

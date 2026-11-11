@@ -5,10 +5,10 @@
 // Simulation-visibility guard: the program-counter tap (pc_sim_val) feeds the
 // waveform harness in the generated <proc>.v. It is compiled for Icarus
 // (predefines __ICARUS__) and for Verilator when the user passes
-// +define+YANC_TRACE, but never for synthesis. The stack-pointer flags and ULA
-// rounding-error blocks further down are gated the same way (YANC_SIM_VIS): the
-// self-referential fl_max assignment and the real modulo they use compile and
-// simulate fine under current Verilator, so they ride along with the harness.
+// +define+YANC_TRACE, but never for synthesis. The stack's flags further down
+// (fl_overflow and fl_max, registers that keep the worst case seen) are gated
+// the same way (YANC_SIM_VIS), so they ride along with the harness; ula.v
+// gates its rounding-error block with its own copy of this guard.
 `ifdef __ICARUS__
  `ifndef YANC_SIM_VIS
   `define YANC_SIM_VIS
@@ -163,7 +163,7 @@ end endgenerate
 
 endmodule
 
-// instruction stack ----------------------------------------------------------
+// stack: the instruction (return-address) stack and the data stack ---------
 
 module stack
 #(
@@ -576,8 +576,9 @@ module core
 	parameter  TOAQUIADDR = 0,           // #TOAQUI marker address (cheguei is 1 while the address fetched is TOAQUIADDR)
 
 	// memories
-	parameter  MDATAW = 9,               // Number of address bits for data memory
-	parameter  MINSTW = 9,               // Number of address bits for instruction memory
+	// 6: $clog2 of processor.v's 64 words, the one default set (#185)
+	parameter  MDATAW = 6,               // Number of address bits for data memory
+	parameter  MINSTW = 6,               // Number of address bits for instruction memory
 	parameter  NBINST = NBOPCO + NBOPER, // Instruction-memory width (bits)
 
 	// -------------------------------------------------------------------------
@@ -843,7 +844,8 @@ instr_fetch #(
 // other's instruction one cycle per turn and could miss one-cycle pulses.
 // Unless the program used a _sync form on link k (LSYNC[k]), the partner's
 // bit enters through two flip-flops on my clock, and the writer holds its
-// value in a register (toma_dado) loaded when T flips.
+// value still while T is seen: toma_dado is a register loaded when T flips,
+// the accumulator itself without #ITRAD (#171, toma_reg below).
 // Built only where needed: link k only with its TOMS/CADS bit; the operand is
 // compared and the links multiplexed only with TOM (or CAD) on two or more.
 

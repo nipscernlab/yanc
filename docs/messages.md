@@ -90,7 +90,8 @@ operators, exceptions, variadic functions (see
   program needs; a divider or a float divider is the slowest and largest.
 - **`N divisions, 5 words each for DIV/MOD and 4 for F_DIV`**: every
   division is written as five instructions (integer) or four (float),
-  because the dividers take that many clock cycles.
+  because the dividers take that many clock cycles. A program with both
+  kinds has one divider for the two, and the message says 5 for F_DIV.
 - **`N NOP inserted between a float operation and the JIZ/JNZ/LDI/ILI after
   it`** (asmcomp): a hand-written `.asm` tests a float result with `JIZ` or
   `JNZ`, or uses it as the index of `LDI`/`ILI`, right away; the jump and the

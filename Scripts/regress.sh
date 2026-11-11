@@ -1730,7 +1730,8 @@ if [ "$CPP_ONLY" -eq 0 ]; then
 fi
 
 # ---- 4a0. the ALU against what each operation means ---------------------------
-# Scripts/hw/tb_ula.sh drives the whole ula (every opcode on) through each
+# Scripts/hw/tb_ula.sh drives the whole ula (every opcode on, and at levels 1
+# and 2 once more without the adds, for I2F's direct path, #155) through each
 # operation number and checks every result against a reference derived in the
 # testbench, never blessed; Scripts/hw/tb_alu.sh does the same
 # for the shared shifter, the integer divider, F2I and the float comparison as

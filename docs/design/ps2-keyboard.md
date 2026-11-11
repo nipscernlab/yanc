@@ -106,7 +106,8 @@ Added for v9.1, after an audit of the block (Luciano, 2026-10-20: "implement
 everything you suggested"; what was left for later is in GitHub issue #3):
 
 15. **`ps2_clk` is filtered**: the synchronized wire must hold a new level
-    for `FILT` = 8 cycles before it counts (320 ns at 25 MHz; the keyboard
+    for `FILT` cycles before it counts, about 320 ns of the clock: 8 cycles
+    up to 25 MHz, more above, from `CLK_KHZ` since #182 (the keyboard
     holds each level 30 us at least). The lines are open drain with
     pull-ups; a slow or ringing edge crossing the threshold twice made an
     extra falling edge, one bit too many, the frame lost. Replaces the
@@ -133,9 +134,12 @@ everything you suggested"; what was left for later is in GitHub issue #3):
 **File and module.** `SAPHO/myKeyPS2.v`, module `myKeyPS2` (name: Luciano), beside
 `myFIFO.v`/`myDCFIFO.v`.
 
-**Parameters.** `NUBITS` (32): width of the word handed to `cade()`, the
-character zero-extended. `DEPTH` (4): characters the queue holds. `CLK_KHZ`
-(25000): the clock, only to size the frame timeout below.
+**Parameters.** `LAYOUT` ("ABNT2"): the key map, "ABNT2" or "US".
+`NUBITS` (32): width of the word handed to `cade()`, the character
+sign-extended (the special keys are -96 to -1). `DEPTH` (4): characters the
+queue holds. `CLK_KHZ` (25000): the clock, to size the frame timeout below
+and the `ps2_clk` filter (#182). `LINK_SYNC` (0): 1 when the SAPHO runs on
+this block's clock (`cade_sync`).
 
 **Pins.**
 
@@ -156,7 +160,7 @@ Ctrl+letter (decision 16).
 
 **Inside, in order.**
 1. Two flip-flops on `ps2_clk`/`ps2_dat`; `ps2_clk` filtered (a level counts
-   after 8 cycles, decision 15) and its falling edge taken from the filtered
+   after about 320 ns, 8 cycles up to 25 MHz, decision 15) and its falling edge taken from the filtered
    level.
 2. Receiver: 11-bit frame, start/parity/stop checked, a bad frame dropped
    (as Dênis). **New:** a timeout (no `ps2_clk` edge for about 1 ms
