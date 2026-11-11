@@ -33,7 +33,7 @@ cmm_cov_arr2d_rd 5256
 cmm_cov_arr2d_wr 9047
 cmm_cov_lib 9997
 cmm_cov_misc 517
-cmm_cov_ops 14784
+cmm_cov_ops 15018
 cmm_cov_ops2 10157
 cmm_cov_rest 2640
 cmm_csincos 184
@@ -120,9 +120,9 @@ procBlind  520
 procBlindOpt 520
 ProcDTW    227
 ResetCheck 20
-sapho_all  917
-sapho_all_a 920
-sapho_all_b 924
+sapho_all  919
+sapho_all_a 922
+sapho_all_b 926
 sapho_min  4
 Seno       62
 Sqrt       84

@@ -14,6 +14,7 @@
 #include "../Headers/pass1.h"
 #include "../Headers/messages.h"
 #include "../../common/xstr.h"
+#include "../../common/asm_share.h"
 
 // ----------------------------------------------------------------------------
 // the data-word table --------------------------------------------------------
@@ -144,6 +145,16 @@ void p1_opcode(int next_state)
     if (state == 0) n_ins++;
 }
 
+// a division (kind 1 integer, 2 float): a program with both has one array for
+// the two, and the second pass checks its F_DIV for the integer's words (#151)
+static int has_idiv = 0, has_fdiv = 0;
+
+void p1_divop(int next_state, int kind)
+{
+    if (kind == 1) has_idiv = 1; else has_fdiv = 1;
+    p1_opcode(next_state);
+}
+
 // a port or link number: the operand field has to hold the largest one
 // (eval_init sizes NBOPER with it, and io_ctrl reads the port from it)
 static void io_num(int k)
@@ -209,6 +220,8 @@ void p1_finish(void)
     fprintf(f_log, "n_dat %d\n", v_count);
     fprintf(f_log, "max_io %d\n", max_io);
     fclose (f_log);
+
+    asm_div_program(has_idiv, has_fdiv);       // the words the second pass wants after each division
 
     // no minimum here: a program with 2 or fewer data words (a button-to-LED
     // loop) is valid, and the second pass pads the data memory to the 2 words

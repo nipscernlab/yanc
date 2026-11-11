@@ -28,8 +28,8 @@ literal, which is the part that stays true when the HDL is edited:
  10. every mnemonic is a three-character name, with at most a prefix
      (P_, F_, PF_, S_, SF_) and a suffix (_M, _V, _P), each after or before an
      underscore: JIZ, F_ADD, P_NEG_M, SF_MLT, LDI_V,
- 12. the cycles of the two dividers agree: ula.v's IDIV_STG and FDIV_STG,
-     the STG defaults of ula_idiv and ula_fdiv, and the words the compilers
+ 12. the cycles of the two dividers agree: ula.v's IDIV_STG and FDIV_ALONE,
+     the STG defaults of ula_idiv, ula_div_sh and ula_fdiv, and the words the compilers
      give a division (ASM_DIV_WORDS_INT, ASM_DIV_WORDS_FLT in asm_share.h).
      A divider one stage longer than the compilers think makes QUO, REM and
      F_QUO read the result a cycle early, with nothing to say so (#185),
@@ -415,7 +415,7 @@ def main():
     app_p = os.path.join(root, 'Compilers', 'ASMComp', 'Sources', 'pass1.l')
     if os.path.exists(app_p):
         app_text = open(app_p, encoding='utf-8', errors='replace').read()
-        app_mn = set(re.findall(r'"([A-Z_0-9]+)"\s*p1_opcode\(', app_text))
+        app_mn = set(re.findall(r'"([A-Z_0-9]+)"\s*p1_(?:opcode|divop)\(', app_text))   # p1_divop: a division (#151)
         asm_mn = set(lexer)
         for mn in sorted(asm_mn - app_mn):
             bad.append(f'{mn}: in ASMComp.l but not in pass1.l (the first pass would not count it)')
@@ -473,13 +473,16 @@ def main():
     # 12: the dividers' cycle counts, in the HDL and in the compilers
     ash = open(os.path.join(root, 'Compilers', 'common', 'asm_share.h'),
                encoding='utf-8', errors='replace').read()
-    for kind, lp, mod, define in (('integer', 'IDIV_STG', 'ula_idiv', 'ASM_DIV_WORDS_INT'),
-                                  ('float', 'FDIV_STG', 'ula_fdiv', 'ASM_DIV_WORDS_FLT')):
+    # (the float group is F_DIV on its own array; in a program with an integer
+    # division too it shares the integer's, ula_div_sh, and takes its cycles)
+    for kind, lp, mods, define in (('integer', 'IDIV_STG', ('ula_idiv', 'ula_div_sh'), 'ASM_DIV_WORDS_INT'),
+                                   ('float', 'FDIV_ALONE', ('ula_fdiv',), 'ASM_DIV_WORDS_FLT')):
         got = {}
         m = re.search(r'localparam\s+' + lp + r'\s*=\s*(\d+)\s*;', ula)
         got[f'ula.v {lp}'] = m and int(m.group(1))
-        m = re.search(r'module\s+' + mod + r'\b.*?parameter\s+STG\s*=\s*(\d+)', ula, re.S)
-        got[f'ula.v {mod} STG default'] = m and int(m.group(1))
+        for mod in mods:
+            m = re.search(r'module\s+' + mod + r'\b.*?parameter\s+STG\s*=\s*(\d+)', ula, re.S)
+            got[f'ula.v {mod} STG default'] = m and int(m.group(1))
         m = re.search(r'#define\s+' + define + r'\s+(\d+)', ash)
         got[f'asm_share.h {define}'] = m and int(m.group(1))
         missing = [k for k, v in got.items() if v is None]

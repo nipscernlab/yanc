@@ -628,7 +628,8 @@ endmodule
 // each division as `<div> x`, STG-2 NOPs and `<read>` (Compilers/common
 // asm_divseq, ASM_DIV_WORDS_*), and the last word, QUO / REM / F_QUO (an alias
 // of the division's own opcode), finds the first one's result at the end of
-// the array. Nothing waits: the
+// the array. A program with both an integer division and F_DIV has one array
+// for the two (ula_div_sh, #151), and its F_DIV takes the integer's 5 cycles. Nothing waits: the
 // cuts carry with the data everything the later parts need, so the inputs may
 // change every cycle.
 
@@ -811,20 +812,37 @@ div_array #(NUBITS,NUBITS,2,STG,PRE10,POST10) arr({(NUBITS+1){1'b0}}, a, b,
                                                 {in1[NUBITS-1] ^ in2[NUBITS-1], in1[NUBITS-1]},
                                                 q, r, sg, clk);
 
-// The ALU reads one result per cycle, the quotient (QUO) or the remainder
-// (REM). With both in the program (BOTH), the magnitude and its sign are
-// picked first and negated once, one negator instead of two (#157); with one,
-// the other output is unread and synthesis drops it. tb_alu, which checks
-// both at once, uses BOTH = 0.
+idiv_out #(NUBITS,BOTH) outs(q, r[NUBITS-1:0], sg, pick_rem, quo, rem);
+
+endmodule
+
+// the signed results of the integer array: the quotient and the remainder from
+// their magnitudes. The ALU reads one result per cycle, the quotient (QUO) or
+// the remainder (REM). With both in the program (BOTH), the magnitude and its
+// sign are picked first and negated once, one negator instead of two (#157);
+// with one, the other output is unread and synthesis drops it. tb_alu, which
+// checks both at once, uses BOTH = 0.
+
+module idiv_out
+#(
+	parameter NUBITS = 32,
+	parameter BOTH   =  0
+)(
+	 input        [NUBITS-1:0] q, r,                          // the magnitudes
+	 input        [       1:0] sg,                            // {quotient negative, remainder negative}
+	 input                     pick_rem,
+	output signed [NUBITS-1:0] quo, rem
+);
+
 generate if (BOTH != 0) begin : one_neg
-	wire [NUBITS-1:0] mag = (pick_rem) ? r[NUBITS-1:0] : q;
-	wire              ng  = (pick_rem) ? sg[0]         : sg[1];
+	wire [NUBITS-1:0] mag = (pick_rem) ? r     : q;
+	wire              ng  = (pick_rem) ? sg[0] : sg[1];
 	wire [NUBITS-1:0] res = (ng) ? -mag : mag;
 	assign quo = res;
 	assign rem = res;
 end else begin : two_neg
-	assign quo = sg[1] ? -q              : q;
-	assign rem = sg[0] ? -r[NUBITS-1:0] : r[NUBITS-1:0];
+	assign quo = sg[1] ? -q : q;
+	assign rem = sg[0] ? -r : r;
 end endgenerate
 
 endmodule
@@ -889,12 +907,34 @@ wire [EXP+3:0] side;
 div_array #(MAN,R,EXP+4,STG,PRE10,POST10) arr({2'b00, m1[MAN-1:1]}, {m1[0], {(R-1){1'b0}}}, m2,
                                             {s_in, e_in, dz_in}, q, rem, side, clk);
 
+fdiv_slice #(MAN,EXP,FROUND,G) slice(q, |rem, side, out);   // the sticky: remainder != 0
+
+endmodule
+
+// the float result from the quotient bits of the mantissas, the sticky (the
+// remainder is not zero) and what travelled with them (sign, exponent
+// difference, zero divisor) -------------------------------------------------
+
+module fdiv_slice
+#(
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0
+)(
+	 input [((FROUND == 0) ? MAN-1 : (G == 0) ? MAN : MAN+G-1):0] q,   // the K+1 quotient bits
+	 input                 stk,
+	 input [EXP+3      :0] side,                              // {sign, exponent difference, zero divisor}
+	output [MAN+EXP+G+2:0] out
+);
+
+localparam W = MAN+G;
+localparam K = (FROUND == 0) ? MAN-1 : (G == 0) ? MAN : MAN+G-1;
+localparam R = K+1;
+
 wire                  s_out = side[EXP+3];
 wire signed [EXP+1:0] e_dif = side[EXP+2:1];
 wire                  dz    = side[0];
-wire                  stk   = |rem;                       // remainder != 0
-
-// pick the slice ---------------------------------------------------------------
 
 wire signed [EXP+1:0] e_out;
 wire        [W-1  :0] m_out;
@@ -923,6 +963,78 @@ end else begin : ranged
 end endgenerate
 
 assign out = {s_out, e_out, m_out};
+
+endmodule
+
+// DIV / MOD and F_DIV in one array (#151) -------------------------------------
+// The integer array (NUBITS rows, an NUBITS-bit divisor) divides the
+// magnitudes for DIV/MOD and, when the division starts as an F_DIV (fdiv, op
+// 7), the mantissas as ula_fdiv does: the first remainder m1 >> 1, the rows
+// taking m1[0] and then zeros, the divisor m2. The float array's K+1 rows are
+// this array's first K+1, so the float quotient is the top K+1 quotient bits;
+// and the float remainder is nonzero exactly when a later row finds a
+// quotient bit or the last remainder is nonzero, which is the sticky. The two
+// never hold live data at once (a division is its whole sequence), so one
+// array serves them, and F_DIV takes the integer's STG cycles. Yosys (32
+// bits, LUT4) and Quartus 23.1 on sapho_all (Cyclone V, seed 1), 2026-11-10:
+// 3735 to 3105 LUT4 for DIV, MOD and F_DIV at #FROUND 2; 3255 to 2593 ALMs,
+// 1026 to 832 registers, Fmax 37.07 to 38.57 MHz (one seed each; the worst
+// path stays the float add's).
+
+module ula_div_sh
+#(
+	parameter NUBITS = 32,
+	parameter MAN    = 23,
+	parameter EXP    =  8,
+	parameter FROUND =  0,
+	parameter G      =  0,
+	parameter PRE10  = 15,                                    // see div_array, ula_idiv
+	parameter POST10 = 36,                                    //   and ula_fdiv: the longer of the two
+	parameter STG    =  5,
+	parameter BOTH   =  0                                     // as ula_idiv
+)(
+	 input signed [NUBITS-1   :0] in1, in2,
+	 input                        fdiv,                       // this cycle starts an F_DIV
+	output signed [NUBITS-1   :0] quo, rem,
+	output        [MAN+EXP+G+2:0] fout,                       // as ula_fdiv's out
+	 input                        clk,
+	 input                        pick_rem                    // as ula_idiv
+);
+
+localparam K = (FROUND == 0) ? MAN-1 : (G == 0) ? MAN : MAN+G-1;
+localparam R = K+1;                                       // the float quotient's bits (< NUBITS)
+
+// the integer operands, as ula_idiv
+wire [NUBITS-1:0] a = in1[NUBITS-1] ? -in1 : in1;
+wire [NUBITS-1:0] b = in2[NUBITS-1] ? -in2 : in2;
+wire [       1:0] iside = {in1[NUBITS-1] ^ in2[NUBITS-1], in1[NUBITS-1]};
+
+// the float operands, as ula_fdiv
+wire                  s1 = in1[MAN+EXP      ];
+wire                  s2 = in2[MAN+EXP      ];
+wire signed [EXP+1:0] e1 = {{2{in1[MAN+EXP-1]}}, in1[MAN+EXP-1:MAN]};
+wire signed [EXP+1:0] e2 = {{2{in2[MAN+EXP-1]}}, in2[MAN+EXP-1:MAN]};
+wire        [MAN-1:0] m1 = in1[MAN    -1:0  ];
+wire        [MAN-1:0] m2 = in2[MAN    -1:0  ];
+wire        [EXP+3:0] fside = {(s1 != s2), e1 - e2 - MAN[EXP+1:0], (m2 == {MAN{1'b0}})};
+
+// the array's inputs: the float's zero-extended (NUBITS > MAN in every format)
+wire [NUBITS  :0] r0_f = {{(NUBITS+2-MAN){1'b0}}, m1[MAN-1:1]};
+wire [NUBITS-1:0] nb_f = {m1[0], {(NUBITS-1){1'b0}}};
+wire [NUBITS-1:0] d_f  = {{(NUBITS-MAN){1'b0}}, m2};
+
+wire [NUBITS  :0] r0 = (fdiv) ? r0_f : {(NUBITS+1){1'b0}};
+wire [NUBITS-1:0] nb = (fdiv) ? nb_f : a;
+wire [NUBITS-1:0] dd = (fdiv) ? d_f  : b;
+
+wire [NUBITS-1:0] q;
+wire [NUBITS  :0] r;
+wire [EXP+5   :0] side;                                   // {fside, iside}
+
+div_array #(NUBITS,NUBITS,EXP+6,STG,PRE10,POST10) arr(r0, nb, dd, {fside, iside}, q, r, side, clk);
+
+idiv_out   #(NUBITS,BOTH)            ires (q, r[NUBITS-1:0], side[1:0], pick_rem, quo, rem);
+fdiv_slice #(MAN,EXP,FROUND,G)       fres (q[NUBITS-1 -: R], (|q[NUBITS-1-R:0]) | (|r), side[EXP+5:2], fout);
 
 endmodule
 
@@ -1753,19 +1865,29 @@ generate if ((F_MLT) != 0) begin : op_fmlt ula_fmlt #(NBMANT,NBEXPO,FROUND,G) my
 // Scripts/check_isa.py fails when they disagree with these or with the STG
 // defaults of ula_idiv and ula_fdiv (#185).
 
-localparam IDIV_STG = 5;
-localparam FDIV_STG = 4;
+localparam IDIV_STG  = 5;
+localparam FDIV_ALONE = 4;                                    // F_DIV's own array
+// with an integer division in the program too, F_DIV shares its array (#151)
+localparam DIV_SH    = ((DIV | MOD) != 0) && ((F_DIV) != 0);
+localparam FDIV_STG  = (DIV_SH) ? IDIV_STG : FDIV_ALONE;
 
 wire signed [NUBITS-1:0] div, mod;
 
-generate if ((DIV | MOD) != 0) begin : op_idiv ula_idiv #(.NUBITS(NUBITS), .STG(IDIV_STG), .BOTH((DIV != 0) && (MOD != 0))) my_idiv(in1, in2, div, mod, clk, op == 6'd8); end else begin : op_idiv assign div = {NUBITS{1'b0}}; assign mod = {NUBITS{1'b0}}; end endgenerate
+wire signed [NUBITS+G+1:0] fdiv;
+
+generate if (DIV_SH) begin : op_div_sh
+	ula_div_sh #(.NUBITS(NUBITS), .MAN(NBMANT), .EXP(NBEXPO), .FROUND(FROUND), .G(G), .STG(IDIV_STG),
+	             .BOTH((DIV != 0) && (MOD != 0)))
+	    my_div(in1, in2, op == 6'd7, div, mod, fdiv, clk, op == 6'd8);   // F_DIV starts it; MOD reads the remainder
+end else begin : op_div_sh
+end endgenerate
+
+generate if (DIV_SH) begin : op_idiv end else if ((DIV | MOD) != 0) begin : op_idiv ula_idiv #(.NUBITS(NUBITS), .STG(IDIV_STG), .BOTH((DIV != 0) && (MOD != 0))) my_idiv(in1, in2, div, mod, clk, op == 6'd8); end else begin : op_idiv assign div = {NUBITS{1'b0}}; assign mod = {NUBITS{1'b0}}; end endgenerate
 
 // F_DIV ----------------------------------------------------------------------
 // four cycles (see ula_fdiv): F_DIV starts it, F_QUO reads it three words later
 
-wire signed [NUBITS+G+1:0] fdiv;
-
-generate if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(.MAN(NBMANT), .EXP(NBEXPO), .FROUND(FROUND), .G(G), .STG(FDIV_STG)) my_fdiv(in1, in2, fdiv, clk); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'b0}}; end endgenerate
+generate if (DIV_SH) begin : op_fdiv end else if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(.MAN(NBMANT), .EXP(NBEXPO), .FROUND(FROUND), .G(G), .STG(FDIV_STG)) my_fdiv(in1, in2, fdiv, clk); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'b0}}; end endgenerate
 
 // The negators' operand (#193) ------------------------------------------------
 // SGN, NEG, NEG_M, ABS, ABS_M, I2F and I2F_M each negate one operand: in2

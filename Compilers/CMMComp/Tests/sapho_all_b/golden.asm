@@ -510,6 +510,7 @@ LOD main_fy
 F_DIV main_fx
 NOP
 NOP
+NOP
 F_QUO
 F_MLT 4194304.0
 F2I
@@ -555,6 +556,7 @@ F_ADD 1.0
 P_LOD main_fy
 F_ADD 2.0
 SF_DIV
+NOP
 NOP
 NOP
 F_QUO
@@ -967,12 +969,14 @@ RET
               F_DIV __sqrt_num       // iteration 1
 NOP
 NOP
+NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 2
+NOP
 NOP
 NOP
 F_QUO
@@ -983,12 +987,14 @@ F_QUO
               F_DIV __sqrt_num       // iteration 3
 NOP
 NOP
+NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
                 PSH                // update x
               F_DIV __sqrt_num       // iteration 4
+NOP
 NOP
 NOP
 F_QUO
@@ -1055,6 +1061,7 @@ F_QUO
             LOD   __log_m
             F_ADD 1.0                    // m+1
             F_DIV __log_t1                 // u = (m-1)/(m+1)   [F_DIV X = X/acc]
+NOP
 NOP
 NOP
 F_QUO

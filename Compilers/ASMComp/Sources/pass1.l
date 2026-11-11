@@ -83,13 +83,13 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
  "F_MLT"   p1_opcode(18); // floating-point multiplication with memory
 "SF_MLT"   p1_opcode( 0); // floating-point multiplication with stack
 
-   "DIV"   p1_opcode(18); // fixed-point division with memory
- "S_DIV"   p1_opcode( 0); // fixed-point division with stack
- "F_DIV"   p1_opcode(18); // floating-point division with memory
-"SF_DIV"   p1_opcode( 0); // floating-point division with stack
+   "DIV"   p1_divop(18, 1); // fixed-point division with memory
+ "S_DIV"   p1_divop( 0, 1); // fixed-point division with stack
+ "F_DIV"   p1_divop(18, 2); // floating-point division with memory
+"SF_DIV"   p1_divop( 0, 2); // floating-point division with stack
 
-   "MOD"   p1_opcode(18); // fixed-point remainder with memory
- "S_MOD"   p1_opcode( 0); // fixed-point remainder with stack
+   "MOD"   p1_divop(18, 1); // fixed-point remainder with memory
+ "S_MOD"   p1_divop( 0, 1); // fixed-point remainder with stack
 
    "SGN"   p1_opcode(18); // fixed-point sign with memory
  "S_SGN"   p1_opcode( 0); // fixed-point sign with stack

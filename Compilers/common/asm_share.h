@@ -191,7 +191,9 @@ int asm_divk(const char *asm_path, const char *pc_path);
 // t+STG-1, while the ALU executes the division's last word. So every DIV /
 // S_DIV becomes `DIV x; NOP; NOP; NOP; QUO` (ula_idiv, 5 stages), MOD / S_MOD
 // `...; REM` and F_DIV / SF_DIV `F_DIV x; NOP; NOP; F_QUO` (ula_fdiv, 4
-// stages) (QUO, REM, F_QUO: aliases of the division's own opcode, no
+// stages), or with a NOP more in a program that also has DIV or MOD, whose
+// F_DIV shares the integer array (ula_div_sh, 5 stages, #151) (QUO, REM,
+// F_QUO: aliases of the division's own opcode, no
 // operand; the read is always the memory form, so a stack form is not popped
 // twice). A division already followed by its NOPs and its read is left
 // alone. Labels stay on the line they were on, so a jump still lands on the
@@ -205,12 +207,17 @@ int asm_divk(const char *asm_path, const char *pc_path);
 int asm_divseq(const char *asm_path, const char *pc_path);
 
 // The words of a division: the STG of its divider in SAPHO/ula.v (IDIV_STG,
-// FDIV_STG); Scripts/check_isa.py fails when the two disagree (#185).
+// FDIV_ALONE); Scripts/check_isa.py fails when the two disagree (#185). A
+// program with an integer division (DIV, S_DIV, MOD, S_MOD) and a float one
+// (F_DIV, SF_DIV) has one array for both, and its F_DIV takes the integer's
+// words (#151): asm_div_program says which program the words are for.
 #define ASM_DIV_WORDS_INT 5                       // DIV / MOD
-#define ASM_DIV_WORDS_FLT 4                       // F_DIV
+#define ASM_DIV_WORDS_FLT 4                       // F_DIV, on its own array
 
 const char *asm_div_read (const char *mn);        // QUO / REM / F_QUO, NULL if mn is no division
-int         asm_div_words(const char *mn);        // its words (above), 0 if mn is no division
+int         asm_div_kind (const char *mn);        // 1 an integer division, 2 a float one, 0 neither
+void        asm_div_program(int has_int, int has_flt);   // what the program divides (default: no sharing)
+int         asm_div_words(const char *mn);        // its words in that program, 0 if mn is no division
 
 // ****************************************************************************
 // asm_normnop -- a NOP between a normalised operation and a JIZ/JNZ/LDI/ILI --
