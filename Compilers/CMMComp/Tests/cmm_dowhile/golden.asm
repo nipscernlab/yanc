@@ -19,9 +19,7 @@ SET main_k
 @__Lwh3 LOD 20
 ADD main_k
 OUT 0
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 GRE 3
 JNZ __Lwh3
 @__Lwh3end LOD 0
@@ -32,16 +30,12 @@ JIZ __Lwh4end
 LOD 30
 ADD main_k
 OUT 0
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 GRE 10
 JNZ __Lwh4
 @__Lwh4end LOD 0
 SET main_k
-@__Lwh5 LOD main_k
-ADD 1
-SET main_k
+@__Lwh5 INC main_k
 LOD 3
 XOR main_k
 JIZ __Lwh5cont
@@ -63,14 +57,10 @@ MLT 10
 ADD 50
 ADD main_n
 OUT 0
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 GRE 5
 JNZ __Lwh7
-@__Lwh7end LOD main_k
-ADD 1
-SET main_k
+@__Lwh7end INC main_k
 GRE 3
 JIZ __Lwh1
 JMP __Lwh6

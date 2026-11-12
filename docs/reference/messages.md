@@ -325,6 +325,8 @@ value. What the common ones mean and how to get past them is in
 - Error: <name> takes <n> words: it must be followed by <n> NOP and the read of its result (expected <name>, found <name>). The compilers write the sequence; in a hand-written .asm, write it out.
 - Error: the operand of <name> is the link number, an integer from 0 to <n> (found '<name>').
 - Error: #LKSYNC <n>, but the program has no TOM or CAD on link <n>.
+- Error: <name> <name> writes its word the cycle after, and the instruction right after it (<name>) also writes the data memory, which has one write port. Put another instruction between them.
+- Error: <name> <name> writes its word the cycle after, and the instruction right after it (<name> <name>) reads that word before the write. Put another instruction between them.
 - Error: the program ends inside the sequence of <name> (NOPs and <name> are missing).
 - Error: #FROUND only takes 0 (legacy), 1 (truncation + saturation) or 2 (round to nearest even).
 - Error: line <n> of file '<name>' is empty! Kinda hard to work with that.

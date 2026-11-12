@@ -1,8 +1,9 @@
 ## messages
 Info: 146 assembly instructions generated
 Info: 1 divisions, 5 words each for DIV/MOD and 4 for F_DIV (4 added)
+Info: 8 increments made one INC each
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 150 instructions and 13 variables were found
+Info: 134 instructions and 13 variables were found
 Info: ULA resource -> integer adder
 Info: ULA resource -> < operator for int
 Info: adding data output handling
@@ -11,7 +12,7 @@ Info: ULA resource -> == operator
 Info: ULA resource -> ^ operator
 Info: ULA resource -> modulo computation (not recomended for high frequency opperation)
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 9% of the Assembly Instruction Set
+Info: using 10% of the Assembly Instruction Set
 Info: using 16% of the ULA operations
 Processor cmm_forbottom
   word          32 bits
@@ -19,7 +20,7 @@ Processor cmm_forbottom
   multiplier    no; divider int
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      150 instructions, 13 data words
+  memories      134 instructions, 13 data words
 Sweet: the processor is good to go.
 ## variables
 main k 1
@@ -35,156 +36,140 @@ lang C+-
 4 LOD main_s
 5 ADD main_k
 6 SET main_s
-7 LOD main_k
-8 ADD 1
-9 SET main_k
-10 LES 9
-11 JIZ __Lwh1
-12 LOD main_s
-13 OUT 0
+7 INC main_k
+8 LES 9
+9 JIZ __Lwh1
+10 LOD main_s
+11 OUT 0
 // 22: s = 0; for (k = 3; k <= 7; k++) { s = s + k; }            out(0, s);   // 3+..+7 = 25
-14 LOD 0
-15 SET main_s
-16 LOD 3
-17 SET main_k
-18 LOD main_s
-19 ADD main_k
-20 SET main_s
-21 LOD main_k
-22 ADD 1
-23 SET main_k
-24 LES 7
-25 JIZ __Lwh2
-26 LOD main_s
-27 OUT 0
+12 LOD 0
+13 SET main_s
+14 LOD 3
+15 SET main_k
+16 LOD main_s
+17 ADD main_k
+18 SET main_s
+19 INC main_k
+20 LES 7
+21 JIZ __Lwh2
+22 LOD main_s
+23 OUT 0
 // 23: s = 0; for (k = 9; k >= 2; k = k - 1) { s = s + k; }      out(0, s);   // 9+..+2 = 44
-28 LOD 0
-29 SET main_s
-30 LOD 9
-31 SET main_k
-32 LOD main_s
-33 ADD main_k
-34 SET main_s
-35 LOD main_k
-36 ADD -1
-37 SET main_k
-38 GRE 2
-39 JIZ __Lwh3
-40 LOD main_s
-41 OUT 0
+24 LOD 0
+25 SET main_s
+26 LOD 9
+27 SET main_k
+28 LOD main_s
+29 ADD main_k
+30 SET main_s
+31 LOD main_k
+32 ADD -1
+33 SET main_k
+34 GRE 2
+35 JIZ __Lwh3
+36 LOD main_s
+37 OUT 0
 // 24: s = 0; for (k = 9; k > 2; k = k - 1) { s = s + k; }       out(0, s);   // 9+..+3 = 42
-42 LOD 0
-43 SET main_s
-44 LOD 9
-45 SET main_k
-46 LOD main_s
-47 ADD main_k
-48 SET main_s
-49 LOD main_k
-50 ADD -1
-51 SET main_k
-52 GRE 3
-53 JIZ __Lwh4
-54 LOD main_s
-55 OUT 0
+38 LOD 0
+39 SET main_s
+40 LOD 9
+41 SET main_k
+42 LOD main_s
+43 ADD main_k
+44 SET main_s
+45 LOD main_k
+46 ADD -1
+47 SET main_k
+48 GRE 3
+49 JIZ __Lwh4
+50 LOD main_s
+51 OUT 0
 // 25: s = 0; for (k = 0; k != 6; k++) { s = s + k; }            out(0, s);   // 0+..+5 = 15
-56 LOD 0
+52 LOD 0
+53 SET main_s
+54 SET main_k
+55 LOD main_s
+56 ADD main_k
 57 SET main_s
-58 SET main_k
-59 LOD main_s
-60 ADD main_k
-61 SET main_s
-62 LOD main_k
-63 ADD 1
-64 SET main_k
-65 EQU 6
-66 JIZ __Lwh5
-67 LOD main_s
-68 OUT 0
+58 INC main_k
+59 EQU 6
+60 JIZ __Lwh5
+61 LOD main_s
+62 OUT 0
 // 26: s = 0; for (k = 0; k == 0; k++) { s = s + 7; }            out(0, s);   // one turn: 7
-69 LOD 0
-70 SET main_s
-71 SET main_k
+63 LOD 0
+64 SET main_s
+65 SET main_k
+66 LOD main_s
+67 ADD 7
+68 SET main_s
+69 INC main_k
+70 XOR 0
+71 JIZ __Lwh6
 72 LOD main_s
-73 ADD 7
-74 SET main_s
-75 LOD main_k
-76 ADD 1
-77 SET main_k
-78 XOR 0
-79 JIZ __Lwh6
-80 LOD main_s
-81 OUT 0
+73 OUT 0
 // 27: s = 0; for (k = 5; k < 3; k++) { s = s + 100; }           out(0, s);   // entry false: 0
-82 LOD 0
+74 LOD 0
+75 SET main_s
+76 LOD 5
+77 SET main_k
+78 LOD main_k
+79 GRE 3
+80 JIZ __Lwh7end
+81 LOD main_s
+82 ADD 100
 83 SET main_s
-84 LOD 5
-85 SET main_k
-86 LOD main_k
-87 GRE 3
-88 JIZ __Lwh7end
-89 LOD main_s
-90 ADD 100
-91 SET main_s
-92 LOD main_k
-93 ADD 1
-94 SET main_k
-95 JMP __Lwh7
-96 LOD main_s
-97 OUT 0
+84 INC main_k
+85 JMP __Lwh7
+86 LOD main_s
+87 OUT 0
 // 28: s = 0; for (k = 1; 10 >= k; k++) { s = s + k; }           out(0, s);   // mirrored: 1+..+10 = 55
-98 LOD 0
-99 SET main_s
-100 LOD 1
-101 SET main_k
-102 LOD main_s
-103 ADD main_k
-104 SET main_s
-105 LOD main_k
-106 ADD 1
-107 SET main_k
-108 LES 10
-109 JIZ __Lwh8
-110 LOD main_s
-111 OUT 0
+88 LOD 0
+89 SET main_s
+90 LOD 1
+91 SET main_k
+92 LOD main_s
+93 ADD main_k
+94 SET main_s
+95 INC main_k
+96 LES 10
+97 JIZ __Lwh8
+98 LOD main_s
+99 OUT 0
 // 29: s = 0; for (k = 0; k < 10; k++) { if (k % 3 == 0) continue; s = s + k; }  out(0, s);  // 1+2+4+5+7+8 = 27
-112 LOD 0
+100 LOD 0
+101 SET main_s
+102 SET main_k
+103 LOD 3
+104 MOD main_k
+105 NOP
+106 NOP
+107 NOP
+108 REM
+109 XOR 0
+110 JIZ __Lwh9cont
+111 LOD main_s
+112 ADD main_k
 113 SET main_s
-114 SET main_k
-115 LOD 3
-116 MOD main_k
-117 NOP
-118 NOP
-119 NOP
-120 REM
-121 XOR 0
-122 JIZ __Lwh9cont
-123 LOD main_s
-124 ADD main_k
-125 SET main_s
-126 LOD main_k
-127 ADD 1
-128 SET main_k
+114 INC main_k
+115 LES 9
+116 JIZ __Lwh9
+117 LOD main_s
+118 OUT 0
+// 30: s = 0; for (k = 0; k < 10; k++) { if (k == 6) break; s = s + k; }         out(0, s);  // 0+..+5 = 15
+119 LOD 0
+120 SET main_s
+121 SET main_k
+122 LOD 6
+123 XOR main_k
+124 JIZ __Lwh10end
+125 LOD main_s
+126 ADD main_k
+127 SET main_s
+128 INC main_k
 129 LES 9
-130 JIZ __Lwh9
+130 JIZ __Lwh10
 131 LOD main_s
 132 OUT 0
-// 30: s = 0; for (k = 0; k < 10; k++) { if (k == 6) break; s = s + k; }         out(0, s);  // 0+..+5 = 15
-133 LOD 0
-134 SET main_s
-135 SET main_k
-136 LOD 6
-137 XOR main_k
-138 JIZ __Lwh10end
-139 LOD main_s
-140 ADD main_k
-141 SET main_s
-142 LOD main_k
-143 ADD 1
-144 SET main_k
-145 LES 9
-146 JIZ __Lwh10
-147 LOD main_s
-148 OUT 0
 // -3: END
-149 JMP fim
+133 JMP fim

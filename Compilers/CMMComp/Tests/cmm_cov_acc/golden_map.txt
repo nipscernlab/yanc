@@ -6,11 +6,12 @@ Info: 453 assembly instructions generated
 Info: 6 divisions, 5 words each for DIV/MOD and 4 for F_DIV (24 added)
 Info: 2 variables written and never read removed (7 instructions)
 Info: 2 JIZ + JMP pairs made one JNZ each
+Info: 2 increments made one INC each
 Info: 18 variables share 11 data words (7 saved)
 Heads up: variable 'x' in function 'main' is never read, so it's out of the program and the waveform (#WAVE x, in the function, keeps it).
 Heads up: variable 'k' in function 'main' is never read, so it's out of the program and the waveform (#WAVE k, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 468 instructions and 37 variables were found
+Info: 464 instructions and 37 variables were found
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> integer divider (not recomended for high frequency opperation)
 Info: ULA resource -> integer adder
@@ -37,7 +38,7 @@ Processor cmm_cov_acc
   multiplier    int and float; divider int
   data stack    3 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      468 instructions, 37 data words
+  memories      464 instructions, 37 data words
 Sweet: the processor is good to go.
 ## variables
 main a 1
@@ -561,26 +562,22 @@ lang C+-
 444 SET __dk0_main
 445 P_F2I_M __dhf1_main
 446 STI_V iv 3
-447 LOD __dk0_main
-448 ADD 1
-449 SET __dk0_main
-450 JNZ __Ld0
-451 LOD_V iv 1
-452 OUT 0
+447 INC __dk0_main
+448 JNZ __Ld0
+449 LOD_V iv 1
+450 OUT 0
 // 80: fv # q|0>; fout(0, fv[1]);
-453 LOD 0
-454 MLT main_q
-455 SET __dhi1_main
-456 LOD -3
-457 SET __dk0_main
-458 P_I2F_M __dhi1_main
-459 STI_V fv 3
-460 LOD __dk0_main
-461 ADD 1
-462 SET __dk0_main
-463 JNZ __Ld1
-464 LOD_V fv 1
-465 F2I
-466 OUT 0
+451 LOD 0
+452 MLT main_q
+453 SET __dhi1_main
+454 LOD -3
+455 SET __dk0_main
+456 P_I2F_M __dhi1_main
+457 STI_V fv 3
+458 INC __dk0_main
+459 JNZ __Ld1
+460 LOD_V fv 1
+461 F2I
+462 OUT 0
 // -3: END
-467 JMP fim
+463 JMP fim

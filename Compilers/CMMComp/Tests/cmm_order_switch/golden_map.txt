@@ -5,9 +5,10 @@ Heads up on line 48: case index came out comp! Gonna truncate the real part.
 Info: 88 assembly instructions generated
 Info: 1 unreachable instructions removed
 Info: 2 JIZ + JMP pairs made one JNZ each
+Info: 1 increments made one INC each
 Info: 8 variables share 2 data words (6 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 85 instructions and 32 variables were found
+Info: 83 instructions and 32 variables were found
 Info: ULA resource -> integer adder
 Info: ULA resource -> integer multiplier
 Info: adding array handling
@@ -26,7 +27,7 @@ Processor cmm_order_switch
   multiplier    int; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      85 instructions, 32 data words
+  memories      83 instructions, 32 data words
 Sweet: the processor is good to go.
 ## variables
 main a 1
@@ -99,50 +100,48 @@ lang C+-
 46 F_ADD 1.0
 47 SET main_f
 // 31: for (k = 0; k < 4; k++) {
-48 LOD main_k
-49 ADD 1
-50 SET main_k
-51 LES 3
-52 JIZ __Lwh1
+48 INC main_k
+49 LES 3
+50 JIZ __Lwh1
 // 40: f = 2.25;
-53 LOD 2.25
-54 SET main_f
+51 LOD 2.25
+52 SET main_f
 // 41: switch (f) {
-55 F2I_M main_f
-56 SET __switch_exp
-57 I2F_M __switch_exp
-58 EQU 1.5
-59 JNZ __sw_body_2_1
-60 I2F_M __switch_exp
-61 EQU 2.0
-62 JIZ __sw_body_2_3
-63 JMP __sw_body_2_2
+53 F2I_M main_f
+54 SET __switch_exp
+55 I2F_M __switch_exp
+56 EQU 1.5
+57 JNZ __sw_body_2_1
+58 I2F_M __switch_exp
+59 EQU 2.0
+60 JIZ __sw_body_2_3
+61 JMP __sw_body_2_2
 // 42: case 1.5: out(0, 15); break;
-64 LOD 15
-65 OUT 0
-66 JMP __switch_end_2
+62 LOD 15
+63 OUT 0
+64 JMP __switch_end_2
 // 43: case 2.0: out(0, 2);  break;
-67 LOD 2
-68 OUT 0
-69 JMP __switch_end_2
+65 LOD 2
+66 OUT 0
+67 JMP __switch_end_2
 // 44: default:  out(0, 99);
-70 LOD 99
-71 OUT 0
+68 LOD 99
+69 OUT 0
 // 47: z = 3.5+1i;
-72 LOD 3.5
-73 SET main_z
-74 LOD 1.0
-75 SET main_z_i
+70 LOD 3.5
+71 SET main_z
+72 LOD 1.0
+73 SET main_z_i
 // 48: switch (z) {
-76 F2I_M main_z
-77 ADD -3
-78 JNZ __sw_body_3_2
+74 F2I_M main_z
+75 ADD -3
+76 JNZ __sw_body_3_2
 // 49: case 3:  out(0, 3); break;
-79 LOD 3
-80 OUT 0
-81 JMP fim
+77 LOD 3
+78 OUT 0
+79 JMP fim
 // 50: default: out(0, 99);
-82 LOD 99
-83 OUT 0
+80 LOD 99
+81 OUT 0
 // -3: END
-84 JMP fim
+82 JMP fim

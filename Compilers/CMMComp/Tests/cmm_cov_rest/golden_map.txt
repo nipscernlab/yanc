@@ -141,7 +141,7 @@ Info: ULA resource -> | operator
 Info: ULA resource -> << operator
 Info: ULA resource -> >> operator
 Info: stack depths from the program: SDEPTH 1, NDSTAC 4
-Info: using 30% of the Assembly Instruction Set
+Info: using 29% of the Assembly Instruction Set
 Info: using 30% of the ULA operations
 Processor cmm_cov_rest
   word          32 bits

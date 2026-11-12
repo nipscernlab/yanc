@@ -16,7 +16,7 @@ Info: ULA resource -> float-point sign computation (standard library)
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float scale by a power of two (2^k)
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 13% of the Assembly Instruction Set
+Info: using 12% of the Assembly Instruction Set
 Info: using 22% of the ULA operations
 Processor cmm_hyper
   word          32 bits

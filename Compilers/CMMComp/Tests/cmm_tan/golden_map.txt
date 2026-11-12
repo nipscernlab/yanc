@@ -21,7 +21,7 @@ Info: ULA resource -> float-point absolute operation
 Info: ULA resource -> < operator for float
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 14% of the Assembly Instruction Set
+Info: using 13% of the Assembly Instruction Set
 Info: using 22% of the ULA operations
 Processor cmm_tan
   word          32 bits

@@ -14,9 +14,10 @@ Heads up on line 59: if you don't want this warning, use 'fout'.
 Info: 221 assembly instructions generated
 Info: 1 divisions, 5 words each for DIV/MOD and 4 for F_DIV (3 added)
 Info: 13 JIZ + JMP pairs made one JNZ each
+Info: 13 increments made one INC each
 Info: 11 variables share 5 data words (6 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 211 instructions and 52 variables were found
+Info: 185 instructions and 51 variables were found
 Info: adding array handling
 Info: ULA resource -> integer adder
 Info: adding data input handling
@@ -29,7 +30,7 @@ Info: ULA resource -> < operator for int
 Info: ULA resource -> float-point adder
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
 Info: stack depths from the program: SDEPTH 1, NDSTAC 3
-Info: using 22% of the Assembly Instruction Set
+Info: using 24% of the Assembly Instruction Set
 Info: using 19% of the ULA operations
 Heads up: output port 1 isn't being used. Burning hardware for nothing!
 Processor proc_rls
@@ -38,7 +39,7 @@ Processor proc_rls
   multiplier    float; divider float
   data stack    3 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      211 instructions, 52 data words
+  memories      185 instructions, 51 data words
 Sweet: the processor is good to go.
 ## variables
 rls_update d 2
@@ -54,229 +55,203 @@ lang C+-
 2 SET __dk0_main
 3 P_LOD 0.0
 4 STI_V P 16
-5 LOD __dk0_main
-6 ADD 1
-7 SET __dk0_main
-8 JNZ __Ld0
-9 LOD -20
-10 SET __dk1_main
-11 P_LOD 1000.0
-12 STI_V P 20
-13 LOD __dk1_main
-14 ADD 5
-15 SET __dk1_main
-16 JNZ __Ld1
+5 INC __dk0_main
+6 JNZ __Ld0
+7 LOD -20
+8 SET __dk1_main
+9 P_LOD 1000.0
+10 STI_V P 20
+11 LOD __dk1_main
+12 ADD 5
+13 SET __dk1_main
+14 JNZ __Ld1
 // 38: w # |0>;
-17 LOD -4
-18 SET __dk0_main
-19 P_LOD 0.0
-20 STI_V w 4
-21 LOD __dk0_main
-22 ADD 1
-23 SET __dk0_main
-24 JNZ __Ld2
+15 LOD -4
+16 SET __dk0_main
+17 P_LOD 0.0
+18 STI_V w 4
+19 INC __dk0_main
+20 JNZ __Ld2
 // 42: int j = 0;
-25 LOD 0
-26 SET main_j
+21 LOD 0
+22 SET main_j
 // 48: x # fin(0)*0.001 -> |x>;
-27 LOD_V x 2
-28 SET_V x 3
-29 LOD_V x 1
-30 SET_V x 2
-31 LOD_V x 0
-32 SET_V x 1
-33 F_INN 0
-34 F_MLT 0.001
-35 SET x
+23 LOD_V x 2
+24 SET_V x 3
+25 LOD_V x 1
+26 SET_V x 2
+27 LOD_V x 0
+28 SET_V x 1
+29 F_INN 0
+30 F_MLT 0.001
+31 SET x
 // 49: x # fin(0)*0.001 -> |x>;
-36 LOD_V x 2
-37 SET_V x 3
-38 LOD_V x 1
-39 SET_V x 2
-40 LOD_V x 0
-41 SET_V x 1
-42 F_INN 0
-43 F_MLT 0.001
-44 SET x
+32 LOD_V x 2
+33 SET_V x 3
+34 LOD_V x 1
+35 SET_V x 2
+36 LOD_V x 0
+37 SET_V x 1
+38 F_INN 0
+39 F_MLT 0.001
+40 SET x
 // 50: x # fin(0)*0.001 -> |x>;
-45 LOD_V x 2
-46 SET_V x 3
-47 LOD_V x 1
-48 SET_V x 2
-49 LOD_V x 0
-50 SET_V x 1
-51 F_INN 0
-52 F_MLT 0.001
-53 SET x
+41 LOD_V x 2
+42 SET_V x 3
+43 LOD_V x 1
+44 SET_V x 2
+45 LOD_V x 0
+46 SET_V x 1
+47 F_INN 0
+48 F_MLT 0.001
+49 SET x
 // 51: x # fin(0)*0.001 -> |x>;
-54 LOD_V x 2
-55 SET_V x 3
-56 LOD_V x 1
-57 SET_V x 2
-58 LOD_V x 0
-59 SET_V x 1
-60 F_INN 0
-61 F_MLT 0.001
-62 SET x
+50 LOD_V x 2
+51 SET_V x 3
+52 LOD_V x 1
+53 SET_V x 2
+54 LOD_V x 0
+55 SET_V x 1
+56 F_INN 0
+57 F_MLT 0.001
+58 SET x
 // 55: rls_update(in(1)*0.001);
-63 INN 1
-64 I2F
-65 F_MLT 0.001
-66 CAL rls_update
+59 INN 1
+60 I2F
+61 F_MLT 0.001
+62 CAL rls_update
 // 59: out(0,1000.0|w>);
-67 LOD -4
-68 SET __dk0_main
-69 LDI_V w 4
-70 F_MLT 1000.0
-71 F2I
-72 OUT 0
-73 LOD __dk0_main
-74 ADD 1
-75 SET __dk0_main
-76 JNZ __Ld3
+63 LOD -4
+64 SET __dk0_main
+65 LDI_V w 4
+66 F_MLT 1000.0
+67 F2I
+68 OUT 0
+69 INC __dk0_main
+70 JNZ __Ld3
 // 61: j++;
-77 LOD main_j
-78 ADD 1
-79 SET main_j
+71 INC main_j
 // 43: while (j < 20)
-80 LES 19
-81 JIZ __Lwh1top
+72 LES 19
+73 JIZ __Lwh1top
 // -3: END
-82 JMP fim
+74 JMP fim
 // 11: void rls_update(float d)
-83 SET rls_update_d
+75 SET rls_update_d
 // 15: float e = d - <w|x>;
-84 LOD w
-85 F_MLT x
-86 P_LOD -3
-87 SET __dk0_rls_update
-88 LDI_V w 4
-89 P_LOD __dk0_rls_update
-90 LDI_V x 4
-91 SF_MLT
-92 SF_ADD
-93 P_LOD __dk0_rls_update
-94 ADD 1
-95 SET __dk0_rls_update
-96 JNZ __Ld4
-97 POP
-98 F_SU2 rls_update_d
-99 SET rls_update_e
+76 LOD w
+77 F_MLT x
+78 P_LOD -3
+79 SET __dk0_rls_update
+80 LDI_V w 4
+81 P_LOD __dk0_rls_update
+82 LDI_V x 4
+83 SF_MLT
+84 SF_ADD
+85 P_INC __dk0_rls_update
+86 JNZ __Ld4
+87 POP
+88 F_SU2 rls_update_d
+89 SET rls_update_e
 // 19: float Px[4] # |P|x>;
-100 LOD -4
-101 SET __dd2_rls_update
-102 LOD -16
-103 SET __dk0_rls_update
-104 LOD __dd2_rls_update
-105 P_LOD __dk0_rls_update
-106 LDI_V P 16
-107 F_MLT x
-108 P_LOD -3
-109 SET __dk1_rls_update
-110 ADD __dk0_rls_update
-111 LDI_V P 20
-112 P_LOD __dk1_rls_update
-113 LDI_V x 4
-114 SF_MLT
-115 SF_ADD
-116 P_LOD __dk1_rls_update
-117 ADD 1
-118 SET __dk1_rls_update
-119 JNZ __Ld6
-120 POP
-121 STI_V rls_update_Px 4
-122 LOD __dd2_rls_update
-123 ADD 1
-124 SET __dd2_rls_update
-125 LOD __dk0_rls_update
-126 ADD 4
-127 SET __dk0_rls_update
-128 JNZ __Ld5
+90 LOD -4
+91 SET __dd2_rls_update
+92 LOD -16
+93 SET __dk0_rls_update
+94 LOD __dd2_rls_update
+95 P_LOD __dk0_rls_update
+96 LDI_V P 16
+97 F_MLT x
+98 P_LOD -3
+99 SET __dk1_rls_update
+100 ADD __dk0_rls_update
+101 LDI_V P 20
+102 P_LOD __dk1_rls_update
+103 LDI_V x 4
+104 SF_MLT
+105 SF_ADD
+106 P_INC __dk1_rls_update
+107 JNZ __Ld6
+108 POP
+109 STI_V rls_update_Px 4
+110 INC __dd2_rls_update
+111 LOD __dk0_rls_update
+112 ADD 4
+113 SET __dk0_rls_update
+114 JNZ __Ld5
 // 20: float g     = 1.0/(0.99 + <x|Px>);
-129 LOD x
-130 F_MLT rls_update_Px
-131 P_LOD -3
-132 SET __dk0_rls_update
-133 LDI_V x 4
-134 P_LOD __dk0_rls_update
-135 LDI_V rls_update_Px 4
-136 SF_MLT
-137 SF_ADD
-138 P_LOD __dk0_rls_update
-139 ADD 1
-140 SET __dk0_rls_update
-141 JNZ __Ld7
-142 POP
-143 F_ADD 0.99
-144 F_DIV 1.0
-145 NOP
-146 NOP
-147 F_QUO
-148 SET rls_update_g
+115 LOD x
+116 F_MLT rls_update_Px
+117 P_LOD -3
+118 SET __dk0_rls_update
+119 LDI_V x 4
+120 P_LOD __dk0_rls_update
+121 LDI_V rls_update_Px 4
+122 SF_MLT
+123 SF_ADD
+124 P_INC __dk0_rls_update
+125 JNZ __Ld7
+126 POP
+127 F_ADD 0.99
+128 F_DIV 1.0
+129 NOP
+130 NOP
+131 F_QUO
+132 SET rls_update_g
 // 21: float K [4] # g|Px>;
-149 LOD -4
-150 SET __dk0_rls_update
-151 PSH
-152 LDI_V rls_update_Px 4
-153 F_MLT rls_update_g
-154 STI_V rls_update_K 4
-155 LOD __dk0_rls_update
-156 ADD 1
-157 SET __dk0_rls_update
-158 JNZ __Ld8
+133 LOD -4
+134 SET __dk0_rls_update
+135 PSH
+136 LDI_V rls_update_Px 4
+137 F_MLT rls_update_g
+138 STI_V rls_update_K 4
+139 INC __dk0_rls_update
+140 JNZ __Ld8
 // 25: w # |w> + e|K>;
-159 LOD -4
-160 SET __dk0_rls_update
-161 PSH
-162 LDI_V w 4
-163 P_LOD __dk0_rls_update
-164 LDI_V rls_update_K 4
-165 F_MLT rls_update_e
-166 SF_ADD
-167 STI_V w 4
-168 LOD __dk0_rls_update
-169 ADD 1
-170 SET __dk0_rls_update
-171 JNZ __Ld9
+141 LOD -4
+142 SET __dk0_rls_update
+143 PSH
+144 LDI_V w 4
+145 P_LOD __dk0_rls_update
+146 LDI_V rls_update_K 4
+147 F_MLT rls_update_e
+148 SF_ADD
+149 STI_V w 4
+150 INC __dk0_rls_update
+151 JNZ __Ld9
 // 29: P # |P| - |K><Px|;
-172 LOD -4
-173 SET __dd3_rls_update
-174 LOD -16
-175 SET __dk0_rls_update
-176 LOD __dd3_rls_update
-177 LDI_V rls_update_K 4
-178 SET __dhf2_rls_update
-179 LOD -4
-180 SET __dk1_rls_update
-181 ADD __dk0_rls_update
-182 PSH
-183 LDI_V P 20
-184 P_LOD __dk1_rls_update
-185 LDI_V rls_update_Px 4
-186 F_MLT __dhf2_rls_update
-187 SF_SU2
-188 STI_V P 20
-189 LOD __dk1_rls_update
-190 ADD 1
-191 SET __dk1_rls_update
-192 JNZ __Ld11
-193 LOD __dd3_rls_update
-194 ADD 1
-195 SET __dd3_rls_update
-196 LOD __dk0_rls_update
-197 ADD 4
-198 SET __dk0_rls_update
-199 JNZ __Ld10
+152 LOD -4
+153 SET __dd3_rls_update
+154 LOD -16
+155 SET __dk0_rls_update
+156 LOD __dd3_rls_update
+157 LDI_V rls_update_K 4
+158 SET __dhf2_rls_update
+159 LOD -4
+160 SET __dk1_rls_update
+161 ADD __dk0_rls_update
+162 PSH
+163 LDI_V P 20
+164 P_LOD __dk1_rls_update
+165 LDI_V rls_update_Px 4
+166 F_MLT __dhf2_rls_update
+167 SF_SU2
+168 STI_V P 20
+169 INC __dk1_rls_update
+170 JNZ __Ld11
+171 INC __dd3_rls_update
+172 LOD __dk0_rls_update
+173 ADD 4
+174 SET __dk0_rls_update
+175 JNZ __Ld10
 // 30: P # 1.010101|P|; // (1/0.99)
-200 LOD -16
-201 SET __dk0_rls_update
-202 PSH
-203 LDI_V P 16
-204 F_MLT 1.010101
-205 STI_V P 16
-206 LOD __dk0_rls_update
-207 ADD 1
-208 SET __dk0_rls_update
-209 JNZ __Ld12
+176 LOD -16
+177 SET __dk0_rls_update
+178 PSH
+179 LDI_V P 16
+180 F_MLT 1.010101
+181 STI_V P 16
+182 INC __dk0_rls_update
+183 JNZ __Ld12
 // 31: }
-210 RET
+184 RET

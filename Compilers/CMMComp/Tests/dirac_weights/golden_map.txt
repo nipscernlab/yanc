@@ -2,9 +2,10 @@
 Heads up on line 31: if you don't want this warning, use 'fout'.
 Info: 176 assembly instructions generated
 Info: 6 JIZ + JMP pairs made one JNZ each
+Info: 8 increments made one INC each
 Info: 18 variables share 9 data words (9 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 170 instructions and 77 variables were found
+Info: 154 instructions and 77 variables were found
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> integer adder
 Info: adding array handling
@@ -22,7 +23,7 @@ Processor dirac_weights
   multiplier    int and float; divider no
   data stack    4 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      170 instructions, 77 data words
+  memories      154 instructions, 77 data words
 Sweet: the processor is good to go.
 ## variables
 main k 1
@@ -55,157 +56,141 @@ lang C+-
 20 ADD 1
 21 P_LOD 1.0
 22 STI R
-23 LOD main_k
-24 ADD 1
-25 SET main_k
-26 LES 2
-27 JIZ __Lwh1
+23 INC main_k
+24 LES 2
+25 JIZ __Lwh1
 // 28: C # |M||P| + |M||Q| + |M||R| + |M||P|;
-28 LOD -9
-29 SET __dd10_main
-30 LOD -12
-31 SET __dk0_main
-32 LDI_V M 12
-33 SET __dhf6_main
-34 LOD __dk0_main
-35 LDI_V M 12
-36 SET __dhf7_main
-37 LOD __dk0_main
-38 LDI_V M 12
-39 SET __dhf8_main
-40 LOD __dk0_main
-41 LDI_V M 12
-42 SET __dhf9_main
-43 LOD -3
-44 SET __dk1_main
-45 ADD __dd10_main
-46 P_LOD __dk1_main
-47 LDI_V P 3
-48 F_MLT __dhf6_main
-49 P_LOD -9
-50 SET __dd11_main
-51 LOD -3
-52 SET __dk2_main
-53 ADD __dk0_main
-54 LDI_V M 16
-55 P_LOD __dd11_main
-56 ADD __dk1_main
-57 LDI_V P 15
-58 SF_MLT
-59 SF_ADD
-60 P_LOD __dd11_main
-61 ADD 3
-62 SET __dd11_main
-63 LOD __dk2_main
-64 ADD 1
-65 SET __dk2_main
-66 JNZ __Ld2
-67 POP
-68 P_LOD __dk1_main
-69 LDI_V Q 3
-70 F_MLT __dhf7_main
-71 P_LOD -9
-72 SET __dd12_main
-73 LOD -3
-74 SET __dk3_main
-75 ADD __dk0_main
-76 LDI_V M 16
-77 P_LOD __dd12_main
-78 ADD __dk1_main
-79 LDI_V Q 15
-80 SF_MLT
-81 SF_ADD
-82 P_LOD __dd12_main
-83 ADD 3
-84 SET __dd12_main
-85 LOD __dk3_main
-86 ADD 1
-87 SET __dk3_main
-88 JNZ __Ld3
-89 POP
-90 SF_ADD
-91 P_LOD __dk1_main
-92 LDI_V R 3
-93 F_MLT __dhf8_main
-94 P_LOD -9
-95 SET __dd13_main
-96 LOD -3
-97 SET __dk4_main
-98 ADD __dk0_main
-99 LDI_V M 16
-100 P_LOD __dd13_main
-101 ADD __dk1_main
-102 LDI_V R 15
-103 SF_MLT
-104 SF_ADD
-105 P_LOD __dd13_main
-106 ADD 3
-107 SET __dd13_main
-108 LOD __dk4_main
-109 ADD 1
-110 SET __dk4_main
-111 JNZ __Ld4
-112 POP
-113 SF_ADD
-114 P_LOD __dk1_main
-115 LDI_V P 3
-116 F_MLT __dhf9_main
-117 P_LOD -9
-118 SET __dd14_main
-119 LOD -3
-120 SET __dk5_main
-121 ADD __dk0_main
-122 LDI_V M 16
-123 P_LOD __dd14_main
-124 ADD __dk1_main
-125 LDI_V P 15
-126 SF_MLT
-127 SF_ADD
-128 P_LOD __dd14_main
-129 ADD 3
-130 SET __dd14_main
-131 LOD __dk5_main
-132 ADD 1
-133 SET __dk5_main
-134 JNZ __Ld5
-135 POP
-136 SF_ADD
-137 STI_V main_C 12
-138 LOD __dk1_main
-139 ADD 1
-140 SET __dk1_main
-141 JNZ __Ld1
-142 LOD __dd10_main
-143 ADD 3
-144 SET __dd10_main
-145 LOD __dk0_main
-146 ADD 4
-147 SET __dk0_main
-148 JNZ __Ld0
+26 LOD -9
+27 SET __dd10_main
+28 LOD -12
+29 SET __dk0_main
+30 LDI_V M 12
+31 SET __dhf6_main
+32 LOD __dk0_main
+33 LDI_V M 12
+34 SET __dhf7_main
+35 LOD __dk0_main
+36 LDI_V M 12
+37 SET __dhf8_main
+38 LOD __dk0_main
+39 LDI_V M 12
+40 SET __dhf9_main
+41 LOD -3
+42 SET __dk1_main
+43 ADD __dd10_main
+44 P_LOD __dk1_main
+45 LDI_V P 3
+46 F_MLT __dhf6_main
+47 P_LOD -9
+48 SET __dd11_main
+49 LOD -3
+50 SET __dk2_main
+51 ADD __dk0_main
+52 LDI_V M 16
+53 P_LOD __dd11_main
+54 ADD __dk1_main
+55 LDI_V P 15
+56 SF_MLT
+57 SF_ADD
+58 P_LOD __dd11_main
+59 ADD 3
+60 SET __dd11_main
+61 INC __dk2_main
+62 JNZ __Ld2
+63 POP
+64 P_LOD __dk1_main
+65 LDI_V Q 3
+66 F_MLT __dhf7_main
+67 P_LOD -9
+68 SET __dd12_main
+69 LOD -3
+70 SET __dk3_main
+71 ADD __dk0_main
+72 LDI_V M 16
+73 P_LOD __dd12_main
+74 ADD __dk1_main
+75 LDI_V Q 15
+76 SF_MLT
+77 SF_ADD
+78 P_LOD __dd12_main
+79 ADD 3
+80 SET __dd12_main
+81 INC __dk3_main
+82 JNZ __Ld3
+83 POP
+84 SF_ADD
+85 P_LOD __dk1_main
+86 LDI_V R 3
+87 F_MLT __dhf8_main
+88 P_LOD -9
+89 SET __dd13_main
+90 LOD -3
+91 SET __dk4_main
+92 ADD __dk0_main
+93 LDI_V M 16
+94 P_LOD __dd13_main
+95 ADD __dk1_main
+96 LDI_V R 15
+97 SF_MLT
+98 SF_ADD
+99 P_LOD __dd13_main
+100 ADD 3
+101 SET __dd13_main
+102 INC __dk4_main
+103 JNZ __Ld4
+104 POP
+105 SF_ADD
+106 P_LOD __dk1_main
+107 LDI_V P 3
+108 F_MLT __dhf9_main
+109 P_LOD -9
+110 SET __dd14_main
+111 LOD -3
+112 SET __dk5_main
+113 ADD __dk0_main
+114 LDI_V M 16
+115 P_LOD __dd14_main
+116 ADD __dk1_main
+117 LDI_V P 15
+118 SF_MLT
+119 SF_ADD
+120 P_LOD __dd14_main
+121 ADD 3
+122 SET __dd14_main
+123 INC __dk5_main
+124 JNZ __Ld5
+125 POP
+126 SF_ADD
+127 STI_V main_C 12
+128 INC __dk1_main
+129 JNZ __Ld1
+130 LOD __dd10_main
+131 ADD 3
+132 SET __dd10_main
+133 LOD __dk0_main
+134 ADD 4
+135 SET __dk0_main
+136 JNZ __Ld0
 // 29: for (int r = 0; r < 3; r++)
-149 LOD 0
-150 SET main_r
+137 LOD 0
+138 SET main_r
 // 30: for (int c = 0; c < 3; c++)
-151 LOD 0
-152 SET main_c
+139 LOD 0
+140 SET main_c
 // 31: out(0, C[r][c]);
-153 LOD main_r
-154 MLT 3
-155 ADD main_c
-156 LDI main_C
-157 F2I
-158 OUT 0
+141 LOD main_r
+142 MLT 3
+143 ADD main_c
+144 LDI main_C
+145 F2I
+146 OUT 0
 // 30: for (int c = 0; c < 3; c++)
-159 LOD main_c
-160 ADD 1
-161 SET main_c
-162 LES 2
-163 JIZ __Lwh3
+147 INC main_c
+148 LES 2
+149 JIZ __Lwh3
 // 29: for (int r = 0; r < 3; r++)
-164 LOD main_r
-165 ADD 1
-166 SET main_r
-167 LES 2
-168 JIZ __Lwh2
+150 INC main_r
+151 LES 2
+152 JIZ __Lwh2
 // -3: END
-169 JMP fim
+153 JMP fim

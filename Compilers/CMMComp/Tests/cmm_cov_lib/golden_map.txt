@@ -77,7 +77,7 @@ Info: ULA resource -> & operator
 Info: ULA resource -> float scale by a power of two (2^k)
 Info: ULA resource -> base-2 exponent extraction of float
 Info: stack depths from the program: SDEPTH 1, NDSTAC 4
-Info: using 45% of the Assembly Instruction Set
+Info: using 44% of the Assembly Instruction Set
 Info: using 55% of the ULA operations
 Processor cmm_cov_lib
   word          32 bits

@@ -100,5 +100,7 @@ operators, exceptions, variadic functions (see
 - **`N JIZ + JMP pairs made one JNZ each`** (cmmcomp, cppcomp): the bottom
   of a loop that tests at the bottom, `JIZ x; JMP y` with `x` right after
   the `JMP`, is written as `JNZ y`, one word less each.
+- **`N increments made one INC each`** (cmmcomp, cppcomp): `LOD k; ADD 1;
+  SET k` is written as `INC k`, two words less each (docs/design/inc-in-place.md).
 - **`stack depths from the program: SDEPTH n, NDSTAC n`**: the stacks are as
   deep as the program needs.

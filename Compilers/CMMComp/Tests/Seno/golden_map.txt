@@ -12,9 +12,10 @@ Info: constant 6.283185307 on line 31 approximated to 6.2831850051879883 (error 
 Heads up on line 15: variable 'idx' is int, but getting a float.
 Info: 62 assembly instructions generated
 Info: adding assembly macro for sin computation
+Info: 2 increments made one INC each
 Info: 13 variables share 5 data words (8 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 101 instructions and 2170 variables were found
+Info: 97 instructions and 2170 variables were found
 Info: filling array with 1000 values read from file "sin_x.txt"
 Info: largest approximation error in file 'sin_x.txt' is 0.00000023751831 on line 102
 Info: filling array with 1000 values read from file "sin_y.txt"
@@ -35,7 +36,7 @@ Info: ULA resource -> int to float converter
 Info: ULA resource -> & operator
 Info: ULA resource -> float-point negative operation
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 20% of the Assembly Instruction Set
+Info: using 21% of the Assembly Instruction Set
 Info: using 30% of the ULA operations
 Processor Seno
   word          32 bits
@@ -43,7 +44,7 @@ Processor Seno
   multiplier    float; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      101 instructions, 2170 data words
+  memories      97 instructions, 2170 data words
 Sweet: the processor is good to go.
 ## variables
 seno_LUT x 2
@@ -75,106 +76,102 @@ lang C+-
 11 F_SU1 main_y
 12 SET main_e
 // 34: j++;
-13 LOD main_j
-14 ADD 1
-15 SET main_j
+13 INC main_j
 // 29: while (j < 1000)
-16 LES 999
-17 JIZ __Lwh2top
+14 LES 999
+15 JIZ __Lwh2top
 // 37: j=0;
-18 LOD 0
-19 SET main_j
+16 LOD 0
+17 SET main_j
 // 40: y = seno_LUT(x[j]);
-20 LOD main_j
-21 LDI main_x
-22 CAL seno_LUT
-23 SET main_y
+18 LOD main_j
+19 LDI main_x
+20 CAL seno_LUT
+21 SET main_y
 // 41: t = a[j];
-24 LOD main_j
-25 LDI main_a
-26 SET main_t
+22 LOD main_j
+23 LDI main_a
+24 SET main_t
 // 42: e = t - y;
-27 F_SU1 main_y
-28 SET main_e
+25 F_SU1 main_y
+26 SET main_e
 // 43: j++;
-29 LOD main_j
-30 ADD 1
-31 SET main_j
+27 INC main_j
 // 38: while (j < 1000)
-32 LES 999
-33 JIZ __Lwh3top
+28 LES 999
+29 JIZ __Lwh3top
 // -3: END
-34 JMP fim
+30 JMP fim
 // 8: float seno_LUT(float x)
-35 SET seno_LUT_x
+31 SET seno_LUT_x
 // 12: while (abs(x) > 3.141592653589793) x = x - sign(x, 6.283185307);
-36 F_ABS_M seno_LUT_x
-37 F_LES 3.141592653589793
-38 JIZ __Lwh1end
-39 LOD 6.283185307
-40 F_SGN seno_LUT_x
-41 F_SU2 seno_LUT_x
-42 SET seno_LUT_x
-43 JMP __Lwh1
+32 F_ABS_M seno_LUT_x
+33 F_LES 3.141592653589793
+34 JIZ __Lwh1end
+35 LOD 6.283185307
+36 F_SGN seno_LUT_x
+37 F_SU2 seno_LUT_x
+38 SET seno_LUT_x
+39 JMP __Lwh1
 // 14: float idxf = abs(x * 47.746482927568);  // 150.0/pi;
-44 LOD seno_LUT_x
-45 F_MLT 47.746482927568
-46 F_ABS
-47 SET seno_LUT_idxf
+40 LOD seno_LUT_x
+41 F_MLT 47.746482927568
+42 F_ABS
+43 SET seno_LUT_idxf
 // 15: int idx = idxf;
-48 F2I_M seno_LUT_idxf
-49 SET seno_LUT_idx
+44 F2I_M seno_LUT_idxf
+45 SET seno_LUT_idx
 // 17: float v = Seno_LUT[idx];
-50 LDI seno_LUT_Seno_LUT
-51 SET seno_LUT_v
+46 LDI seno_LUT_Seno_LUT
+47 SET seno_LUT_v
 // 18: return sign(x, v + (Seno_LUT[idx+1] - v) * (idxf - idx));
-52 LOD seno_LUT_idx
-53 ADD 1
-54 LDI seno_LUT_Seno_LUT
-55 F_SU1 seno_LUT_v
-56 P_I2F_M seno_LUT_idx
-57 F_SU2 seno_LUT_idxf
-58 SF_MLT
-59 F_ADD seno_LUT_v
-60 F_SGN seno_LUT_x
-61 RET
+48 LOD seno_LUT_idx
+49 ADD 1
+50 LDI seno_LUT_Seno_LUT
+51 F_SU1 seno_LUT_v
+52 P_I2F_M seno_LUT_idx
+53 F_SU2 seno_LUT_idxf
+54 SF_MLT
+55 F_ADD seno_LUT_v
+56 F_SGN seno_LUT_x
+57 RET
 // library macros, no source line
-62 SET __sin_x
-63 F_MLT 0.3183098862
-64 SET __sin_q
-65 LOD 0.5
-66 F_SGN __sin_q
-67 F_ADD __sin_q
-68 F2I
-69 SET __sin_k
-70 AND 1
-71 JIZ __L_sin_even
-72 I2F_M __sin_k
-73 F_MLT 3.1415926536
-74 F_SU2 __sin_x
-75 F_NEG
-76 SET __sin_r
-77 F_MLT __sin_r
-78 SET __sin_w
-79 F_MLT -0.000184472138
-80 F_ADD 0.008309516704
-81 F_MLT __sin_w
-82 F_ADD -0.166651680787
-83 F_MLT __sin_w
-84 F_ADD 0.999997487148
-85 F_MLT __sin_r
-86 RET
-87 I2F_M __sin_k
-88 F_MLT 3.1415926536
-89 F_SU2 __sin_x
-90 SET __sin_r
-91 F_MLT __sin_r
-92 SET __sin_w
-93 F_MLT -0.000184472138
-94 F_ADD 0.008309516704
-95 F_MLT __sin_w
-96 F_ADD -0.166651680787
-97 F_MLT __sin_w
-98 F_ADD 0.999997487148
-99 F_MLT __sin_r
-100 RET
+58 SET __sin_x
+59 F_MLT 0.3183098862
+60 SET __sin_q
+61 LOD 0.5
+62 F_SGN __sin_q
+63 F_ADD __sin_q
+64 F2I
+65 SET __sin_k
+66 AND 1
+67 JIZ __L_sin_even
+68 I2F_M __sin_k
+69 F_MLT 3.1415926536
+70 F_SU2 __sin_x
+71 F_NEG
+72 SET __sin_r
+73 F_MLT __sin_r
+74 SET __sin_w
+75 F_MLT -0.000184472138
+76 F_ADD 0.008309516704
+77 F_MLT __sin_w
+78 F_ADD -0.166651680787
+79 F_MLT __sin_w
+80 F_ADD 0.999997487148
+81 F_MLT __sin_r
+82 RET
+83 I2F_M __sin_k
+84 F_MLT 3.1415926536
+85 F_SU2 __sin_x
+86 SET __sin_r
+87 F_MLT __sin_r
+88 SET __sin_w
+89 F_MLT -0.000184472138
+90 F_ADD 0.008309516704
+91 F_MLT __sin_w
+92 F_ADD -0.166651680787
+93 F_MLT __sin_w
+94 F_ADD 0.999997487148
+95 F_MLT __sin_r
+96 RET

@@ -1,13 +1,14 @@
 ## messages
 Info: 22 assembly instructions generated
+Info: 2 increments made one INC each
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 22 instructions and 7 variables were found
+Info: 18 instructions and 6 variables were found
 Info: ULA resource -> < operator for int
 Info: ULA resource -> integer adder
 Info: ULA resource -> integer multiplier
 Info: adding toma (TOM), which hands a value to the partner processor
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 6% of the Assembly Instruction Set
+Info: using 7% of the Assembly Instruction Set
 Info: using 8% of the ULA operations
 Processor link_envia
   word          32 bits
@@ -15,7 +16,7 @@ Processor link_envia
   multiplier    int; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      22 instructions, 7 data words
+  memories      18 instructions, 6 data words
 Sweet: the processor is good to go.
 ## variables
 main n 1
@@ -34,21 +35,17 @@ lang C+-
 5 LOD main_n
 6 LES main_k
 7 JIZ __Lwh2end
-8 LOD main_k
-9 ADD 1
-10 SET main_k
-11 JMP __Lwh2
+8 INC main_k
+9 JMP __Lwh2
 // 19: toma(0, n * 7 + 3);
-12 LOD main_n
-13 MLT 7
-14 ADD 3
-15 TOM 0
+10 LOD main_n
+11 MLT 7
+12 ADD 3
+13 TOM 0
 // 20: n++;
-16 LOD main_n
-17 ADD 1
-18 SET main_n
+14 INC main_n
 // 15: while (n < 16)
-19 LES 15
-20 JIZ __Lwh1top
+15 LES 15
+16 JIZ __Lwh1top
 // -3: END
-21 JMP fim
+17 JMP fim

@@ -106,9 +106,7 @@ LDI v
 P_LOD main_k
 LDI v_i
 CAL put
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 3
 JIZ __Lwh1
 @__Lwh1end @fim JMP fim

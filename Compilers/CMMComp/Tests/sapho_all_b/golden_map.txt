@@ -45,6 +45,7 @@ Info: adding assembly macro for natural-logarithm computation
 Info: 11 divisions, 5 words each for DIV/MOD and 5 for F_DIV (44 added)
 Info: 8 variables written and never read removed (36 instructions)
 Info: 1 JIZ + JMP pairs made one JNZ each
+Info: 2 increments made one INC each
 Info: 29 variables share 9 data words (20 saved)
 Heads up: global variable 'fa' is never read, so it's out of the program and the waveform (#WAVE fa keeps it).
 Heads up: variable 'v' in function 'n7' is never read, so it's out of the program and the waveform (#WAVE v, in the function, keeps it).
@@ -57,7 +58,7 @@ Heads up: variable 'v' in function 'n1' is never read, so it's out of the progra
 Heads up: variable 'fw' in function 'main' is never read, so it's out of the program and the waveform (#WAVE fw, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
 Info: implementing interruption handling
-Info: 1025 instructions and 70 variables were found
+Info: 1021 instructions and 70 variables were found
 Info: adding cade (CAD), which takes a value from the partner processor
 Info: adding data input handling
 Info: ULA resource -> ^ operator
@@ -100,7 +101,7 @@ Info: adding data output handling
 Info: ULA resource -> root-square approximation for float
 Info: ULA resource -> float scale by a power of two (2^k)
 Info: ULA resource -> base-2 exponent extraction of float
-Info: using 97% of the Assembly Instruction Set
+Info: using 96% of the Assembly Instruction Set
 Info: using 100% of the ULA operations
 Processor sapho_all_b
   word          32 bits
@@ -108,7 +109,7 @@ Processor sapho_all_b
   multiplier    int and float; divider int and float
   data stack    8 words (set by #NDSTAC)
   call stack    8 words (set by #SDEPTH)
-  memories      1025 instructions, 70 data words
+  memories      1021 instructions, 70 data words
 Sweet: the processor is good to go.
 ## variables
 global s 1
@@ -276,825 +277,825 @@ lang C+-
 112 LOD main_y
 113 LES main_x
 114 JIZ __Lif4else
-115 LOD s
-116 ADD 1
-117 SET s
+115 INC s
 // 103: if (x > y) s = s + 2;
-118 LOD main_y
-119 GRE main_x
-120 JIZ __Lif5else
-121 LOD s
-122 ADD 2
-123 SET s
+116 LOD main_y
+117 GRE main_x
+118 JIZ __Lif5else
+119 LOD s
+120 ADD 2
+121 SET s
 // 104: if (x == y) s = s + 4;
-124 LOD main_y
-125 EQU main_x
-126 JIZ __Lif6else
-127 LOD s
-128 ADD 4
-129 SET s
+122 LOD main_y
+123 EQU main_x
+124 JIZ __Lif6else
+125 LOD s
+126 ADD 4
+127 SET s
 // 107: t = (x + 1) + (y * 2);    s = s + t;
-130 LOD main_y
-131 MLT 2
-132 ADD main_x
-133 ADD 1
-134 SET main_t
-135 ADD s
-136 SET s
+128 LOD main_y
+129 MLT 2
+130 ADD main_x
+131 ADD 1
+132 SET main_t
+133 ADD s
+134 SET s
 // 108: t = (x + 1) * (y + 2);    s = s + t;
-137 LOD main_x
-138 ADD 1
-139 P_LOD main_y
-140 ADD 2
-141 S_MLT
-142 SET main_t
-143 ADD s
-144 SET s
+135 LOD main_x
+136 ADD 1
+137 P_LOD main_y
+138 ADD 2
+139 S_MLT
+140 SET main_t
+141 ADD s
+142 SET s
 // 109: t = (z - 1) / (y + 1);    s = s + t;
-145 LOD main_z
-146 ADD -1
-147 P_LOD main_y
-148 ADD 1
-149 S_DIV
+143 LOD main_z
+144 ADD -1
+145 P_LOD main_y
+146 ADD 1
+147 S_DIV
+148 NOP
+149 NOP
 150 NOP
-151 NOP
-152 NOP
-153 QUO
-154 SET main_t
-155 ADD s
-156 SET s
+151 QUO
+152 SET main_t
+153 ADD s
+154 SET s
 // 110: t = (z - 1) % (y + 1);    s = s + t;
-157 LOD main_z
-158 ADD -1
-159 P_LOD main_y
-160 ADD 1
-161 S_MOD
+155 LOD main_z
+156 ADD -1
+157 P_LOD main_y
+158 ADD 1
+159 S_MOD
+160 NOP
+161 NOP
 162 NOP
-163 NOP
-164 NOP
-165 REM
-166 SET main_t
-167 ADD s
-168 SET s
+163 REM
+164 SET main_t
+165 ADD s
+166 SET s
 // 111: t = (x + 1) & (y + 2);    s = s + t;
-169 LOD main_x
-170 ADD 1
-171 P_LOD main_y
-172 ADD 2
-173 S_AND
-174 SET main_t
-175 ADD s
-176 SET s
+167 LOD main_x
+168 ADD 1
+169 P_LOD main_y
+170 ADD 2
+171 S_AND
+172 SET main_t
+173 ADD s
+174 SET s
 // 112: t = (x + 1) | (y + 2);    s = s + t;
-177 LOD main_x
-178 ADD 1
-179 P_LOD main_y
-180 ADD 2
-181 S_ORR
-182 SET main_t
-183 ADD s
-184 SET s
+175 LOD main_x
+176 ADD 1
+177 P_LOD main_y
+178 ADD 2
+179 S_ORR
+180 SET main_t
+181 ADD s
+182 SET s
 // 113: t = (x + 1) ^ (y + 2);    s = s + t;
-185 LOD main_x
-186 ADD 1
-187 P_LOD main_y
-188 ADD 2
-189 S_XOR
-190 SET main_t
-191 ADD s
-192 SET s
+183 LOD main_x
+184 ADD 1
+185 P_LOD main_y
+186 ADD 2
+187 S_XOR
+188 SET main_t
+189 ADD s
+190 SET s
 // 114: t = (x + 1) && (y - 3);   s = s + t;
-193 LOD main_x
-194 ADD 1
-195 P_LOD main_y
-196 ADD -3
-197 S_LAN
-198 SET main_t
-199 ADD s
-200 SET s
+191 LOD main_x
+192 ADD 1
+193 P_LOD main_y
+194 ADD -3
+195 S_LAN
+196 SET main_t
+197 ADD s
+198 SET s
 // 115: t = (x - 7) || (y + 2);   s = s + t;
-201 LOD main_x
-202 ADD -7
-203 P_LOD main_y
-204 ADD 2
-205 S_LOR
-206 SET main_t
-207 ADD s
-208 SET s
+199 LOD main_x
+200 ADD -7
+201 P_LOD main_y
+202 ADD 2
+203 S_LOR
+204 SET main_t
+205 ADD s
+206 SET s
 // 116: t = (x + 1) << (y - 1);   s = s + t;
-209 LOD main_x
-210 ADD 1
-211 P_LOD main_y
-212 ADD -1
-213 S_SHL
-214 SET main_t
-215 ADD s
-216 SET s
+207 LOD main_x
+208 ADD 1
+209 P_LOD main_y
+210 ADD -1
+211 S_SHL
+212 SET main_t
+213 ADD s
+214 SET s
 // 117: t = (z - 1) >> (y - 1);   s = s + t;
-217 LOD main_z
+215 LOD main_z
+216 ADD -1
+217 P_LOD main_y
 218 ADD -1
-219 P_LOD main_y
-220 ADD -1
-221 S_SHR
-222 SET main_t
-223 ADD s
-224 SET s
+219 S_SHR
+220 SET main_t
+221 ADD s
+222 SET s
 // 118: t = (z - 1) >>> (y - 1);  s = s + t;
-225 LOD main_z
+223 LOD main_z
+224 ADD -1
+225 P_LOD main_y
 226 ADD -1
-227 P_LOD main_y
-228 ADD -1
-229 S_SRS
-230 SET main_t
-231 ADD s
-232 SET s
+227 S_SRS
+228 SET main_t
+229 ADD s
+230 SET s
 // 119: t = sign((y + 1), (z - 1));   s = s + t;
-233 LOD main_y
-234 ADD 1
-235 P_LOD main_z
-236 ADD -1
-237 S_SGN
-238 SET main_t
-239 ADD s
-240 SET s
+231 LOD main_y
+232 ADD 1
+233 P_LOD main_z
+234 ADD -1
+235 S_SGN
+236 SET main_t
+237 ADD s
+238 SET s
 // 120: if ((x + 1) < (y + 2)) s = s + 8;
-241 LOD main_x
-242 ADD 1
-243 P_LOD main_y
-244 ADD 2
-245 S_LES
-246 JIZ __Lif7else
-247 LOD s
-248 ADD 8
-249 SET s
+239 LOD main_x
+240 ADD 1
+241 P_LOD main_y
+242 ADD 2
+243 S_LES
+244 JIZ __Lif7else
+245 LOD s
+246 ADD 8
+247 SET s
 // 121: if ((x + 1) > (y + 2)) s = s + 16;
-250 LOD main_x
-251 ADD 1
-252 P_LOD main_y
-253 ADD 2
-254 S_GRE
-255 JIZ __Lif8else
-256 LOD s
-257 ADD 16
-258 SET s
+248 LOD main_x
+249 ADD 1
+250 P_LOD main_y
+251 ADD 2
+252 S_GRE
+253 JIZ __Lif8else
+254 LOD s
+255 ADD 16
+256 SET s
 // 122: if ((x + 1) == (y + 5)) s = s + 32;
-259 LOD main_x
-260 ADD 1
-261 P_LOD main_y
-262 ADD 5
-263 S_EQU
-264 JIZ __Lif9else
-265 LOD s
-266 ADD 32
-267 SET s
+257 LOD main_x
+258 ADD 1
+259 P_LOD main_y
+260 ADD 5
+261 S_EQU
+262 JIZ __Lif9else
+263 LOD s
+264 ADD 32
+265 SET s
 // 125: t = -(x + y);          s = s + t;
-268 LOD main_x
-269 ADD main_y
-270 NEG
-271 SET main_t
-272 ADD s
-273 SET s
+266 LOD main_x
+267 ADD main_y
+268 NEG
+269 SET main_t
+270 ADD s
+271 SET s
 // 126: t = -x;                s = s + t;
-274 NEG_M main_x
-275 SET main_t
-276 ADD s
-277 SET s
+272 NEG_M main_x
+273 SET main_t
+274 ADD s
+275 SET s
 // 127: t = (y + 1) - -x;      s = s + t;
-278 NEG_M main_x
-279 NEG
-280 ADD main_y
-281 ADD 1
-282 SET main_t
-283 ADD s
-284 SET s
+276 NEG_M main_x
+277 NEG
+278 ADD main_y
+279 ADD 1
+280 SET main_t
+281 ADD s
+282 SET s
 // 128: t = abs(z - 1);        s = s + t;
-285 LOD main_z
-286 ADD -1
-287 ABS
-288 SET main_t
-289 ADD s
-290 SET s
+283 LOD main_z
+284 ADD -1
+285 ABS
+286 SET main_t
+287 ADD s
+288 SET s
 // 129: t = abs(z);            s = s + t;
-291 ABS_M main_z
-292 SET main_t
-293 ADD s
-294 SET s
+289 ABS_M main_z
+290 SET main_t
+291 ADD s
+292 SET s
 // 130: t = (y + 1) - abs(z);  s = s + t;
-295 ABS_M main_z
-296 NEG
-297 ADD main_y
-298 ADD 1
-299 SET main_t
-300 ADD s
-301 SET s
+293 ABS_M main_z
+294 NEG
+295 ADD main_y
+296 ADD 1
+297 SET main_t
+298 ADD s
+299 SET s
 // 131: t = pset(z - 1);        s = s + t;
-302 LOD main_z
-303 ADD -1
-304 PST
-305 SET main_t
-306 ADD s
-307 SET s
+300 LOD main_z
+301 ADD -1
+302 PST
+303 SET main_t
+304 ADD s
+305 SET s
 // 132: t = pset(x);            s = s + t;
-308 PST_M main_x
-309 SET main_t
-310 ADD s
-311 SET s
+306 PST_M main_x
+307 SET main_t
+308 ADD s
+309 SET s
 // 133: t = (y + 1) - pset(z); s = s + t;
-312 PST_M main_z
-313 NEG
-314 ADD main_y
-315 ADD 1
-316 SET main_t
-317 ADD s
-318 SET s
+310 PST_M main_z
+311 NEG
+312 ADD main_y
+313 ADD 1
+314 SET main_t
+315 ADD s
+316 SET s
 // 134: t = norm(x * 1000);    s = s + t;
-319 LOD main_x
-320 MLT 1000
-321 NRM
-322 SET main_t
-323 ADD s
-324 SET s
+317 LOD main_x
+318 MLT 1000
+319 NRM
+320 SET main_t
+321 ADD s
+322 SET s
 // 135: t = norm(z);           s = s + t;
-325 NRM_M main_z
-326 SET main_t
-327 ADD s
-328 SET s
+323 NRM_M main_z
+324 SET main_t
+325 ADD s
+326 SET s
 // 136: t = (y + 1) - norm(x); s = s + t;
-329 NRM_M main_x
-330 NEG
-331 ADD main_y
-332 ADD 1
-333 SET main_t
-334 ADD s
-335 SET s
+327 NRM_M main_x
+328 NEG
+329 ADD main_y
+330 ADD 1
+331 SET main_t
+332 ADD s
+333 SET s
 // 137: t = ~(x + y);          s = s + t;
-336 LOD main_x
-337 ADD main_y
-338 INV
-339 SET main_t
-340 ADD s
-341 SET s
+334 LOD main_x
+335 ADD main_y
+336 INV
+337 SET main_t
+338 ADD s
+339 SET s
 // 138: t = ~x;                s = s + t;
-342 INV_M main_x
-343 SET main_t
-344 ADD s
-345 SET s
+340 INV_M main_x
+341 SET main_t
+342 ADD s
+343 SET s
 // 139: t = (y + 1) - ~x;      s = s + t;
-346 INV_M main_x
-347 NEG
-348 ADD main_y
-349 ADD 1
-350 SET main_t
-351 ADD s
-352 SET s
+344 INV_M main_x
+345 NEG
+346 ADD main_y
+347 ADD 1
+348 SET main_t
+349 ADD s
+350 SET s
 // 140: t = !(x - 7);          s = s + t;
-353 LOD main_x
-354 ADD -7
-355 LIN
-356 SET main_t
-357 ADD s
-358 SET s
+351 LOD main_x
+352 ADD -7
+353 LIN
+354 SET main_t
+355 ADD s
+356 SET s
 // 141: t = !x;                s = s + t;
-359 LIN_M main_x
-360 SET main_t
-361 ADD s
-362 SET s
+357 LIN_M main_x
+358 SET main_t
+359 ADD s
+360 SET s
 // 142: t = (y + 1) - !x;      s = s + t;
-363 LIN_M main_x
-364 NEG
-365 ADD main_y
-366 ADD 1
-367 SET main_t
-368 ADD s
-369 SET s
+361 LIN_M main_x
+362 NEG
+363 ADD main_y
+364 ADD 1
+365 SET main_t
+366 ADD s
+367 SET s
 // 148: t = (y * 2) - -x;      if (t + -x != y + y) s = s + 4096;
-370 LOD main_y
-371 MLT 2
-372 P_NEG_M main_x
-373 NEG
-374 S_ADD
-375 SET main_t
-376 NEG_M main_x
-377 ADD main_t
-378 P_LOD main_y
-379 ADD main_y
-380 S_XOR
-381 JIZ __Lif10else
-382 LOD s
-383 ADD 4096
-384 SET s
+368 LOD main_y
+369 MLT 2
+370 P_NEG_M main_x
+371 NEG
+372 S_ADD
+373 SET main_t
+374 NEG_M main_x
+375 ADD main_t
+376 P_LOD main_y
+377 ADD main_y
+378 S_XOR
+379 JIZ __Lif10else
+380 LOD s
+381 ADD 4096
+382 SET s
 // 149: t = (y * 2) - abs(z);  if (t + abs(z) != y + y) s = s + 4096;
-385 LOD main_y
-386 MLT 2
-387 P_ABS_M main_z
-388 NEG
-389 S_ADD
-390 SET main_t
-391 ABS_M main_z
-392 ADD main_t
-393 P_LOD main_y
-394 ADD main_y
-395 S_XOR
-396 JIZ __Lif11else
-397 LOD s
-398 ADD 4096
-399 SET s
+383 LOD main_y
+384 MLT 2
+385 P_ABS_M main_z
+386 NEG
+387 S_ADD
+388 SET main_t
+389 ABS_M main_z
+390 ADD main_t
+391 P_LOD main_y
+392 ADD main_y
+393 S_XOR
+394 JIZ __Lif11else
+395 LOD s
+396 ADD 4096
+397 SET s
 // 150: t = (y * 2) - pset(z); if (t + pset(z) != y + y) s = s + 4096;
-400 LOD main_y
-401 MLT 2
-402 P_PST_M main_z
-403 NEG
-404 S_ADD
-405 SET main_t
-406 PST_M main_z
-407 ADD main_t
-408 P_LOD main_y
-409 ADD main_y
-410 S_XOR
-411 JIZ __Lif12else
-412 LOD s
-413 ADD 4096
-414 SET s
+398 LOD main_y
+399 MLT 2
+400 P_PST_M main_z
+401 NEG
+402 S_ADD
+403 SET main_t
+404 PST_M main_z
+405 ADD main_t
+406 P_LOD main_y
+407 ADD main_y
+408 S_XOR
+409 JIZ __Lif12else
+410 LOD s
+411 ADD 4096
+412 SET s
 // 151: t = (y * 2) - norm(x); if (t + norm(x) != y + y) s = s + 4096;
-415 LOD main_y
-416 MLT 2
-417 P_NRM_M main_x
-418 NEG
-419 S_ADD
-420 SET main_t
-421 NRM_M main_x
-422 ADD main_t
-423 P_LOD main_y
-424 ADD main_y
-425 S_XOR
-426 JIZ __Lif13else
-427 LOD s
-428 ADD 4096
-429 SET s
+413 LOD main_y
+414 MLT 2
+415 P_NRM_M main_x
+416 NEG
+417 S_ADD
+418 SET main_t
+419 NRM_M main_x
+420 ADD main_t
+421 P_LOD main_y
+422 ADD main_y
+423 S_XOR
+424 JIZ __Lif13else
+425 LOD s
+426 ADD 4096
+427 SET s
 // 152: t = (y * 2) - ~x;      if (t + ~x != y + y) s = s + 4096;
-430 LOD main_y
-431 MLT 2
-432 P_INV_M main_x
-433 NEG
-434 S_ADD
-435 SET main_t
-436 INV_M main_x
-437 ADD main_t
-438 P_LOD main_y
-439 ADD main_y
-440 S_XOR
-441 JIZ __Lif14else
-442 LOD s
-443 ADD 4096
-444 SET s
+428 LOD main_y
+429 MLT 2
+430 P_INV_M main_x
+431 NEG
+432 S_ADD
+433 SET main_t
+434 INV_M main_x
+435 ADD main_t
+436 P_LOD main_y
+437 ADD main_y
+438 S_XOR
+439 JIZ __Lif14else
+440 LOD s
+441 ADD 4096
+442 SET s
 // 153: t = (y * 2) - !x;      if (t + !x != y + y) s = s + 4096;
-445 LOD main_y
-446 MLT 2
-447 P_LIN_M main_x
-448 NEG
-449 S_ADD
-450 SET main_t
-451 LIN_M main_x
-452 ADD main_t
-453 P_LOD main_y
-454 ADD main_y
-455 S_XOR
-456 JIZ __Lif15else
-457 LOD s
-458 ADD 4096
-459 SET s
+443 LOD main_y
+444 MLT 2
+445 P_LIN_M main_x
+446 NEG
+447 S_ADD
+448 SET main_t
+449 LIN_M main_x
+450 ADD main_t
+451 P_LOD main_y
+452 ADD main_y
+453 S_XOR
+454 JIZ __Lif15else
+455 LOD s
+456 ADD 4096
+457 SET s
 // 156: fw = fx + fy;     t = fw * 4194304.0;  s = s + t;
-460 LOD main_fx
-461 F_ADD main_fy
-462 F_MLT 4194304.0
-463 F2I
-464 SET main_t
-465 ADD s
-466 SET s
+458 LOD main_fx
+459 F_ADD main_fy
+460 F_MLT 4194304.0
+461 F2I
+462 SET main_t
+463 ADD s
+464 SET s
 // 157: fw = fx * fy;     t = fw * 4194304.0;  s = s + t;
-467 LOD main_fx
-468 F_MLT main_fy
-469 F_MLT 4194304.0
-470 F2I
-471 SET main_t
-472 ADD s
-473 SET s
+465 LOD main_fx
+466 F_MLT main_fy
+467 F_MLT 4194304.0
+468 F2I
+469 SET main_t
+470 ADD s
+471 SET s
 // 158: fw = fx / fy;     t = fw * 4194304.0;  s = s + t;
-474 LOD main_fy
-475 F_DIV main_fx
+472 LOD main_fy
+473 F_DIV main_fx
+474 NOP
+475 NOP
 476 NOP
-477 NOP
-478 NOP
-479 F_QUO
-480 F_MLT 4194304.0
-481 F2I
-482 SET main_t
-483 ADD s
-484 SET s
+477 F_QUO
+478 F_MLT 4194304.0
+479 F2I
+480 SET main_t
+481 ADD s
+482 SET s
 // 159: fw = fx - fy;     t = fw * 4194304.0;  s = s + t;
-485 LOD main_fx
-486 F_SU1 main_fy
-487 F_MLT 4194304.0
-488 F2I
-489 SET main_t
-490 ADD s
-491 SET s
+483 LOD main_fx
+484 F_SU1 main_fy
+485 F_MLT 4194304.0
+486 F2I
+487 SET main_t
+488 ADD s
+489 SET s
 // 160: fw = sign(fy, fz);    t = fw * 4194304.0;  s = s + t;
-492 LOD main_fz
-493 F_SGN main_fy
-494 F_MLT 4194304.0
-495 F2I
-496 SET main_t
-497 ADD s
-498 SET s
+490 LOD main_fz
+491 F_SGN main_fy
+492 F_MLT 4194304.0
+493 F2I
+494 SET main_t
+495 ADD s
+496 SET s
 // 161: fw = (fx + 1.0) + (fy * 2.0);   t = fw * 4194304.0;  s = s + t;
-499 LOD main_fx
-500 F_ADD 1.0
-501 P_LOD main_fy
-502 F_MLT 2.0
-503 SF_ADD
-504 F_MLT 4194304.0
-505 F2I
-506 SET main_t
-507 ADD s
-508 SET s
+497 LOD main_fx
+498 F_ADD 1.0
+499 P_LOD main_fy
+500 F_MLT 2.0
+501 SF_ADD
+502 F_MLT 4194304.0
+503 F2I
+504 SET main_t
+505 ADD s
+506 SET s
 // 162: fw = (fx + 1.0) * (fy + 2.0);   t = fw * 4194304.0;  s = s + t;
-509 LOD main_fx
-510 F_ADD 1.0
-511 P_LOD main_fy
-512 F_ADD 2.0
-513 SF_MLT
-514 F_MLT 4194304.0
-515 F2I
-516 SET main_t
-517 ADD s
-518 SET s
+507 LOD main_fx
+508 F_ADD 1.0
+509 P_LOD main_fy
+510 F_ADD 2.0
+511 SF_MLT
+512 F_MLT 4194304.0
+513 F2I
+514 SET main_t
+515 ADD s
+516 SET s
 // 163: fw = (fx + 1.0) / (fy + 2.0);   t = fw * 4194304.0;  s = s + t;
-519 LOD main_fx
-520 F_ADD 1.0
-521 P_LOD main_fy
-522 F_ADD 2.0
-523 SF_DIV
+517 LOD main_fx
+518 F_ADD 1.0
+519 P_LOD main_fy
+520 F_ADD 2.0
+521 SF_DIV
+522 NOP
+523 NOP
 524 NOP
-525 NOP
-526 NOP
-527 F_QUO
-528 F_MLT 4194304.0
-529 F2I
-530 SET main_t
-531 ADD s
-532 SET s
+525 F_QUO
+526 F_MLT 4194304.0
+527 F2I
+528 SET main_t
+529 ADD s
+530 SET s
 // 164: fw = (fx + 1.0) - (fy + 2.0);   t = fw * 4194304.0;  s = s + t;
-533 LOD main_fx
-534 F_ADD 1.0
-535 P_LOD main_fy
-536 F_ADD 2.0
-537 SF_SU2
-538 F_MLT 4194304.0
-539 F2I
-540 SET main_t
-541 ADD s
-542 SET s
+531 LOD main_fx
+532 F_ADD 1.0
+533 P_LOD main_fy
+534 F_ADD 2.0
+535 SF_SU2
+536 F_MLT 4194304.0
+537 F2I
+538 SET main_t
+539 ADD s
+540 SET s
 // 165: fw = fy - (fx * 2.0);           t = fw * 4194304.0;  s = s + t;
-543 LOD main_fx
-544 F_MLT 2.0
-545 F_SU2 main_fy
-546 F_MLT 4194304.0
-547 F2I
-548 SET main_t
-549 ADD s
-550 SET s
+541 LOD main_fx
+542 F_MLT 2.0
+543 F_SU2 main_fy
+544 F_MLT 4194304.0
+545 F2I
+546 SET main_t
+547 ADD s
+548 SET s
 // 166: fw = sign((fy + 1.0), (fz - 1.0));   t = fw * 4194304.0;  s = s + t;
-551 LOD main_fy
-552 F_ADD 1.0
-553 P_LOD main_fz
-554 F_SU1 1.0
-555 SF_SGN
-556 F_MLT 4194304.0
-557 F2I
-558 SET main_t
-559 ADD s
-560 SET s
+549 LOD main_fy
+550 F_ADD 1.0
+551 P_LOD main_fz
+552 F_SU1 1.0
+553 SF_SGN
+554 F_MLT 4194304.0
+555 F2I
+556 SET main_t
+557 ADD s
+558 SET s
 // 167: if (fx < fy) s = s + 64;
-561 LOD main_fx
-562 F_GRE main_fy
-563 JIZ __Lif16else
-564 LOD s
-565 ADD 64
-566 SET s
+559 LOD main_fx
+560 F_GRE main_fy
+561 JIZ __Lif16else
+562 LOD s
+563 ADD 64
+564 SET s
 // 168: if (fx > fy) s = s + 128;
-567 LOD main_fx
-568 F_LES main_fy
-569 JIZ __Lif17else
-570 LOD s
-571 ADD 128
-572 SET s
+565 LOD main_fx
+566 F_LES main_fy
+567 JIZ __Lif17else
+568 LOD s
+569 ADD 128
+570 SET s
 // 169: if ((fx + 1.0) < (fy + 2.0)) s = s + 256;
-573 LOD main_fx
-574 F_ADD 1.0
-575 P_LOD main_fy
-576 F_ADD 2.0
-577 SF_LES
-578 JIZ __Lif18else
-579 LOD s
-580 ADD 256
-581 SET s
+571 LOD main_fx
+572 F_ADD 1.0
+573 P_LOD main_fy
+574 F_ADD 2.0
+575 SF_LES
+576 JIZ __Lif18else
+577 LOD s
+578 ADD 256
+579 SET s
 // 170: if ((fx + 1.0) > (fy + 2.0)) s = s + 512;
-582 LOD main_fx
-583 F_ADD 1.0
-584 P_LOD main_fy
-585 F_ADD 2.0
-586 SF_GRE
-587 JIZ __Lif19else
-588 LOD s
-589 ADD 512
-590 SET s
+580 LOD main_fx
+581 F_ADD 1.0
+582 P_LOD main_fy
+583 F_ADD 2.0
+584 SF_GRE
+585 JIZ __Lif19else
+586 LOD s
+587 ADD 512
+588 SET s
 // 173: fw = -(fx + fy);   t = fw * 4194304.0;  s = s + t;
-591 LOD main_fx
-592 F_ADD main_fy
-593 F_NEG
-594 F_MLT 4194304.0
-595 F2I
-596 SET main_t
-597 ADD s
-598 SET s
+589 LOD main_fx
+590 F_ADD main_fy
+591 F_NEG
+592 F_MLT 4194304.0
+593 F2I
+594 SET main_t
+595 ADD s
+596 SET s
 // 174: fw = -fx;          t = fw * 4194304.0;  s = s + t;
-599 F_NEG_M main_fx
-600 F_MLT 4194304.0
-601 F2I
-602 SET main_t
-603 ADD s
-604 SET s
+597 F_NEG_M main_fx
+598 F_MLT 4194304.0
+599 F2I
+600 SET main_t
+601 ADD s
+602 SET s
 // 175: fw = (fy + 1.0) - -fx;     t = fw * 4194304.0;  s = s + t;
-605 LOD main_fy
-606 F_ADD 1.0
-607 PF_NEG_M main_fx
-608 SF_SU2
-609 F_MLT 4194304.0
-610 F2I
-611 SET main_t
-612 ADD s
-613 SET s
+603 LOD main_fy
+604 F_ADD 1.0
+605 PF_NEG_M main_fx
+606 SF_SU2
+607 F_MLT 4194304.0
+608 F2I
+609 SET main_t
+610 ADD s
+611 SET s
 // 176: fw = abs(fz - 1.0);   t = fw * 4194304.0;  s = s + t;
-614 LOD main_fz
-615 F_SU1 1.0
-616 F_ABS
-617 F_MLT 4194304.0
-618 F2I
-619 SET main_t
-620 ADD s
-621 SET s
+612 LOD main_fz
+613 F_SU1 1.0
+614 F_ABS
+615 F_MLT 4194304.0
+616 F2I
+617 SET main_t
+618 ADD s
+619 SET s
 // 177: fw = abs(fz);         t = fw * 4194304.0;  s = s + t;
-622 F_ABS_M main_fz
-623 F_MLT 4194304.0
-624 F2I
-625 SET main_t
-626 ADD s
-627 SET s
+620 F_ABS_M main_fz
+621 F_MLT 4194304.0
+622 F2I
+623 SET main_t
+624 ADD s
+625 SET s
 // 178: fw = (fy + 1.0) - abs(fz); t = fw * 4194304.0;  s = s + t;
-628 LOD main_fy
-629 F_ADD 1.0
-630 PF_ABS_M main_fz
-631 SF_SU2
-632 F_MLT 4194304.0
-633 F2I
-634 SET main_t
-635 ADD s
-636 SET s
+626 LOD main_fy
+627 F_ADD 1.0
+628 PF_ABS_M main_fz
+629 SF_SU2
+630 F_MLT 4194304.0
+631 F2I
+632 SET main_t
+633 ADD s
+634 SET s
 // 179: fw = pset(fz - 1.0);   t = fw * 4194304.0;  s = s + t;
-637 LOD main_fz
-638 F_SU1 1.0
-639 F_PST
-640 F_MLT 4194304.0
-641 F2I
-642 SET main_t
-643 ADD s
-644 SET s
+635 LOD main_fz
+636 F_SU1 1.0
+637 F_PST
+638 F_MLT 4194304.0
+639 F2I
+640 SET main_t
+641 ADD s
+642 SET s
 // 180: fw = pset(fx);         t = fw * 4194304.0;  s = s + t;
-645 F_PST_M main_fx
-646 F_MLT 4194304.0
-647 F2I
-648 SET main_t
-649 ADD s
-650 SET s
+643 F_PST_M main_fx
+644 F_MLT 4194304.0
+645 F2I
+646 SET main_t
+647 ADD s
+648 SET s
 // 181: fw = (fy + 1.0) - pset(fz); t = fw * 4194304.0;  s = s + t;
-651 LOD main_fy
-652 F_ADD 1.0
-653 PF_PST_M main_fz
-654 SF_SU2
-655 F_MLT 4194304.0
-656 F2I
-657 SET main_t
-658 ADD s
-659 SET s
+649 LOD main_fy
+650 F_ADD 1.0
+651 PF_PST_M main_fz
+652 SF_SU2
+653 F_MLT 4194304.0
+654 F2I
+655 SET main_t
+656 ADD s
+657 SET s
 // 184: fw = x + y;        t = fw * 4194304.0;  s = s + t;     // I2F (acc)
-660 LOD main_x
-661 ADD main_y
-662 I2F
-663 F_MLT 4194304.0
-664 F2I
-665 SET main_t
-666 ADD s
-667 SET s
+658 LOD main_x
+659 ADD main_y
+660 I2F
+661 F_MLT 4194304.0
+662 F2I
+663 SET main_t
+664 ADD s
+665 SET s
 // 185: fw = x;            t = fw * 4194304.0;  s = s + t;     // I2F_M
-668 I2F_M main_x
-669 F_MLT 4194304.0
-670 F2I
-671 SET main_t
-672 ADD s
-673 SET s
+666 I2F_M main_x
+667 F_MLT 4194304.0
+668 F2I
+669 SET main_t
+670 ADD s
+671 SET s
 // 186: fw = (fy + 1.0) - x;  t = fw * 4194304.0;  s = s + t;  // P_I2F_M
-674 LOD main_fy
-675 F_ADD 1.0
-676 P_I2F_M main_x
-677 SF_SU2
-678 F_MLT 4194304.0
-679 F2I
-680 SET main_t
-681 ADD s
-682 SET s
+672 LOD main_fy
+673 F_ADD 1.0
+674 P_I2F_M main_x
+675 SF_SU2
+676 F_MLT 4194304.0
+677 F2I
+678 SET main_t
+679 ADD s
+680 SET s
 // 187: fw = x - (fy + 1.0);  t = fw * 4194304.0;  s = s + t;  // SF_SU1
-683 LOD main_fy
-684 F_ADD 1.0
-685 P_I2F_M main_x
-686 SF_SU1
-687 F_MLT 4194304.0
-688 F2I
-689 SET main_t
-690 ADD s
-691 SET s
+681 LOD main_fy
+682 F_ADD 1.0
+683 P_I2F_M main_x
+684 SF_SU1
+685 F_MLT 4194304.0
+686 F2I
+687 SET main_t
+688 ADD s
+689 SET s
 // 188: t = fx + fy;       s = s + t;                       // F2I (acc)
-692 LOD main_fx
-693 F_ADD main_fy
-694 F2I
-695 SET main_t
-696 ADD s
-697 SET s
+690 LOD main_fx
+691 F_ADD main_fy
+692 F2I
+693 SET main_t
+694 ADD s
+695 SET s
 // 189: t = fy;            s = s + t;                       // F2I_M
-698 F2I_M main_fy
-699 SET main_t
-700 ADD s
-701 SET s
+696 F2I_M main_fy
+697 SET main_t
+698 ADD s
+699 SET s
 // 190: t = (y + 1) - fy;  s = s + t;                       // int - float
-702 LOD main_y
-703 ADD 1
-704 I2F
-705 F_SU1 main_fy
-706 F2I
-707 SET main_t
-708 ADD s
-709 SET s
+700 LOD main_y
+701 ADD 1
+702 I2F
+703 F_SU1 main_fy
+704 F2I
+705 SET main_t
+706 ADD s
+707 SET s
 // 191: t = (y + 1) - !fy; s = s + t;                       // ! of a float (its mantissa: P_LOD, AND, LIN)
-710 LOD main_fy
-711 AND 8388607
-712 LIN
-713 NEG
-714 ADD main_y
-715 ADD 1
-716 SET main_t
-717 ADD s
-718 SET s
+708 LOD main_fy
+709 AND 8388607
+710 LIN
+711 NEG
+712 ADD main_y
+713 ADD 1
+714 SET main_t
+715 ADD s
+716 SET s
 // 192: t = ia[fy] - ia[fy];  s = s + t;                    // P_F2I_M (a float index, live accumulator; adds 0)
-719 F2I_M main_fy
+717 F2I_M main_fy
+718 LDI ia
+719 P_F2I_M main_fy
 720 LDI ia
-721 P_F2I_M main_fy
-722 LDI ia
-723 NEG
-724 S_ADD
-725 SET main_t
-726 ADD s
-727 SET s
+721 NEG
+722 S_ADD
+723 SET main_t
+724 ADD s
+725 SET s
 // 195: t = (y + 1) - in(0);        s = s + t;              // P_INN
-728 LOD main_y
-729 ADD 1
-730 P_INN 0
-731 NEG
-732 S_ADD
-733 SET main_t
-734 ADD s
-735 SET s
+726 LOD main_y
+727 ADD 1
+728 P_INN 0
+729 NEG
+730 S_ADD
+731 SET main_t
+732 ADD s
+733 SET s
 // 196: fw = (fy + 1.0) - fin(0);  t = fw * 4194304.0;  s = s + t;   // PF_INN
-736 LOD main_fy
-737 F_ADD 1.0
-738 PF_INN 0
-739 SF_SU2
-740 F_MLT 4194304.0
-741 F2I
-742 SET main_t
-743 ADD s
-744 SET s
+734 LOD main_fy
+735 F_ADD 1.0
+736 PF_INN 0
+737 SF_SU2
+738 F_MLT 4194304.0
+739 F2I
+740 SET main_t
+741 ADD s
+742 SET s
 // 201: ia[y & 7] = x;     t = ia[y & 7];   s = s + t;          // STI / LDI
-745 LOD 7
-746 AND main_y
-747 P_LOD main_x
-748 STI ia
-749 SET main_t
-750 ADD s
-751 SET s
+743 LOD 7
+744 AND main_y
+745 P_LOD main_x
+746 STI ia
+747 SET main_t
+748 ADD s
+749 SET s
 // 202: ia[y & 7) = z;     t = ia[y & 7);   s = s + t;          // ISI / ILI
-752 LOD 7
-753 AND main_y
-754 P_LOD main_z
-755 ISI ia
-756 LOD 7
-757 AND main_y
-758 ILI ia
-759 SET main_t
-760 ADD s
-761 SET s
+750 LOD 7
+751 AND main_y
+752 P_LOD main_z
+753 ISI ia
+754 LOD 7
+755 AND main_y
+756 ILI ia
+757 SET main_t
+758 ADD s
+759 SET s
 // 203: fa[y & 7] = fx;    fw = fa[y & 7];  t = fw * 4194304.0;  s = s + t;
-762 LOD 7
-763 AND main_y
-764 P_LOD main_fx
-765 STI fa
-766 F_MLT 4194304.0
-767 F2I
-768 SET main_t
-769 ADD s
-770 SET s
+760 LOD 7
+761 AND main_y
+762 P_LOD main_fx
+763 STI fa
+764 F_MLT 4194304.0
+765 F2I
+766 SET main_t
+767 ADD s
+768 SET s
 // 206: t = twice(x);      s = s + t;                       // CAL / RET
-771 LOD main_x
-772 CAL twice
-773 SET main_t
-774 ADD s
-775 SET s
+769 LOD main_x
+770 CAL twice
+771 SET main_t
+772 ADD s
+773 SET s
 // 207: t = diff(x, y);    s = s + t;                       // SET_P
-776 LOD main_x
-777 P_LOD main_y
-778 CAL diff
-779 SET main_t
-780 ADD s
-781 SET s
+774 LOD main_x
+775 P_LOD main_y
+776 CAL diff
+777 SET main_t
+778 ADD s
+779 SET s
 // 208: t = ia[complex(2.0, 1.0) + complex(1.0, 0.0)];   s = s + t;   // POP (comp index)
-782 LOD 2.0
-783 P_LOD 1.0
-784 P_LOD 1.0
-785 P_LOD 0.0
-786 SET_P __aux_var
-787 SET_P __aux_var1
-788 SET_P __aux_var2
-789 F_ADD __aux_var1
-790 P_LOD __aux_var2
-791 F_ADD __aux_var
-792 POP
-793 F2I
-794 LDI ia
-795 SET main_t
-796 ADD s
-797 SET s
+780 LOD 2.0
+781 P_LOD 1.0
+782 P_LOD 1.0
+783 P_LOD 0.0
+784 SET_P __aux_var
+785 SET_P __aux_var1
+786 SET_P __aux_var2
+787 F_ADD __aux_var1
+788 P_LOD __aux_var2
+789 F_ADD __aux_var
+790 POP
+791 F2I
+792 LDI ia
+793 SET main_t
+794 ADD s
+795 SET s
 // 209: fw = sqrt(4.0);    t = fw * 4194304.0;  s = s + t;     // F_ROT
-798 LOD 4.0
-799 CAL __float_sqrt
-800 F_MLT 4194304.0
-801 F2I
-802 SET main_t
-803 ADD s
-804 SET s
+796 LOD 4.0
+797 CAL __float_sqrt
+798 F_MLT 4194304.0
+799 F2I
+800 SET main_t
+801 ADD s
+802 SET s
 // 210: fw = exp(0.0);     t = fw * 4194304.0;  s = s + t;     // F_SCL
-805 LOD 0.0
-806 CAL __float_exp
-807 F_MLT 4194304.0
-808 F2I
-809 SET main_t
-810 ADD s
-811 SET s
+803 LOD 0.0
+804 CAL __float_exp
+805 F_MLT 4194304.0
+806 F2I
+807 SET main_t
+808 ADD s
+809 SET s
 // 211: fw = log(1.0);     t = fw * 4194304.0;  s = s + t;     // XPO
-812 LOD 1.0
-813 CAL __float_log
-814 F_MLT 4194304.0
-815 F2I
-816 SET main_t
-817 ADD s
-818 SET s
+810 LOD 1.0
+811 CAL __float_log
+812 F_MLT 4194304.0
+813 F2I
+814 SET main_t
+815 ADD s
+816 SET s
 // 218: t = n1(x);
-819 LOD main_x
-820 CAL n1
-821 SET main_t
+817 LOD main_x
+818 CAL n1
+819 SET main_t
 // 219: if (t != x + 7) s = s + 1024;
-822 LOD main_x
-823 ADD 7
-824 XOR main_t
-825 JIZ __Lif20else
-826 LOD s
-827 ADD 1024
-828 SET s
+820 LOD main_x
+821 ADD 7
+822 XOR main_t
+823 JIZ __Lif20else
+824 LOD s
+825 ADD 1024
+826 SET s
 // 220: t = (x * 2) - ((y * 2) - ((x * 3) - ((y * 3) - ((x * 4) - ((y * 4) - ((x * 5) - (y * 5)))))));
-829 LOD main_x
+827 LOD main_x
+828 MLT 2
+829 P_LOD main_y
 830 MLT 2
-831 P_LOD main_y
-832 MLT 2
-833 P_LOD main_x
+831 P_LOD main_x
+832 MLT 3
+833 P_LOD main_y
 834 MLT 3
-835 P_LOD main_y
-836 MLT 3
-837 P_LOD main_x
+835 P_LOD main_x
+836 MLT 4
+837 P_LOD main_y
 838 MLT 4
-839 P_LOD main_y
-840 MLT 4
-841 P_LOD main_x
+839 P_LOD main_x
+840 MLT 5
+841 P_LOD main_y
 842 MLT 5
-843 P_LOD main_y
-844 MLT 5
+843 NEG
+844 S_ADD
 845 NEG
 846 S_ADD
 847 NEG
@@ -1107,192 +1108,188 @@ lang C+-
 854 S_ADD
 855 NEG
 856 S_ADD
-857 NEG
-858 S_ADD
-859 SET main_t
+857 SET main_t
 // 221: if (t != 14 * (x - y)) s = s + 2048;
-860 NEG_M main_y
-861 ADD main_x
-862 MLT 14
-863 XOR main_t
-864 JIZ __Lif21else
-865 LOD s
-866 ADD 2048
-867 SET s
+858 NEG_M main_y
+859 ADD main_x
+860 MLT 14
+861 XOR main_t
+862 JIZ __Lif21else
+863 LOD s
+864 ADD 2048
+865 SET s
 // 227: t = 0;
-868 LOD 0
-869 SET main_t
+866 LOD 0
+867 SET main_t
 // 228: do { t = t + 1; } while (t < 3);  if (t != 3) s = s + 8192;
-870 LOD main_t
-871 ADD 1
-872 SET main_t
-873 GRE 3
-874 JNZ __Lwh2
-875 LOD 3
-876 XOR main_t
-877 JIZ __Lif22else
-878 LOD s
-879 ADD 8192
-880 SET s
+868 INC main_t
+869 GRE 3
+870 JNZ __Lwh2
+871 LOD 3
+872 XOR main_t
+873 JIZ __Lif22else
+874 LOD s
+875 ADD 8192
+876 SET s
 // 232: t = s ^ (s >> 16);
-881 LOD 16
-882 SHR s
-883 XOR s
-884 SET main_t
+877 LOD 16
+878 SHR s
+879 XOR s
+880 SET main_t
 // 233: t = t ^ (t >> 8);
-885 LOD 8
+881 LOD 8
+882 SHR main_t
+883 XOR main_t
+884 SET main_t
+// 234: t = t ^ (t >> 4);
+885 LOD 4
 886 SHR main_t
 887 XOR main_t
 888 SET main_t
-// 234: t = t ^ (t >> 4);
-889 LOD 4
-890 SHR main_t
-891 XOR main_t
-892 SET main_t
 // 235: out(0, t & 15);
-893 LOD 15
-894 AND main_t
-895 OUT 0
+889 LOD 15
+890 AND main_t
+891 OUT 0
 // 69: while (1)
-896 JMP __Lwh1
+892 JMP __Lwh1
 // -3: END
-897 JMP fim
+893 JMP fim
 // 42: int twice(int v)
-898 SET twice_v
+894 SET twice_v
 // 44: return v + v;
-899 ADD twice_v
-900 RET
+895 ADD twice_v
+896 RET
 // 47: int diff(int a, int b)              // a second parameter: SET_P
-901 SET_P diff_b
-902 SET diff_a
+897 SET_P diff_b
+898 SET diff_a
 // 49: return a - b;
-903 NEG_M diff_b
-904 ADD diff_a
-905 RET
+899 NEG_M diff_b
+900 ADD diff_a
+901 RET
 // 54: int n7(int v) { return v + 1; }
-906 ADD 1
-907 RET
+902 ADD 1
+903 RET
 // 55: int n6(int v) { return n7(v) + 1; }
-908 CAL n7
-909 ADD 1
-910 RET
+904 CAL n7
+905 ADD 1
+906 RET
 // 56: int n5(int v) { return n6(v) + 1; }
-911 CAL n6
-912 ADD 1
-913 RET
+907 CAL n6
+908 ADD 1
+909 RET
 // 57: int n4(int v) { return n5(v) + 1; }
-914 CAL n5
-915 ADD 1
-916 RET
+910 CAL n5
+911 ADD 1
+912 RET
 // 58: int n3(int v) { return n4(v) + 1; }
-917 CAL n4
-918 ADD 1
-919 RET
+913 CAL n4
+914 ADD 1
+915 RET
 // 59: int n2(int v) { return n3(v) + 1; }
-920 CAL n3
-921 ADD 1
-922 RET
+916 CAL n3
+917 ADD 1
+918 RET
 // 60: int n1(int v) { return n2(v) + 1; }
-923 CAL n2
-924 ADD 1
-925 RET
+919 CAL n2
+920 ADD 1
+921 RET
 // library macros, no source line
-926 SET __sqrt_num
-927 F_ROT
-928 PSH
-929 F_DIV __sqrt_num
-930 NOP
-931 NOP
-932 NOP
-933 F_QUO
-934 SF_ADD
-935 F_MLT 0.5
-936 PSH
-937 F_DIV __sqrt_num
-938 NOP
-939 NOP
-940 NOP
-941 F_QUO
-942 SF_ADD
-943 F_MLT 0.5
-944 PSH
-945 F_DIV __sqrt_num
-946 NOP
-947 NOP
-948 NOP
-949 F_QUO
-950 SF_ADD
-951 F_MLT 0.5
-952 PSH
-953 F_DIV __sqrt_num
-954 NOP
-955 NOP
-956 NOP
-957 F_QUO
-958 SF_ADD
-959 F_MLT 0.5
-960 RET
-961 SET __exp_x
-962 F_MLT 1.4426950409
-963 SET __exp_q
-964 LOD 0.5
-965 F_SGN __exp_q
-966 F_ADD __exp_q
-967 F2I
-968 SET __exp_n
-969 I2F
-970 F_MLT 0.6931471806
-971 F_SU2 __exp_x
-972 SET __exp_r
-973 F_MLT 0.0013888889
-974 F_ADD 0.0083333333
+922 SET __sqrt_num
+923 F_ROT
+924 PSH
+925 F_DIV __sqrt_num
+926 NOP
+927 NOP
+928 NOP
+929 F_QUO
+930 SF_ADD
+931 F_MLT 0.5
+932 PSH
+933 F_DIV __sqrt_num
+934 NOP
+935 NOP
+936 NOP
+937 F_QUO
+938 SF_ADD
+939 F_MLT 0.5
+940 PSH
+941 F_DIV __sqrt_num
+942 NOP
+943 NOP
+944 NOP
+945 F_QUO
+946 SF_ADD
+947 F_MLT 0.5
+948 PSH
+949 F_DIV __sqrt_num
+950 NOP
+951 NOP
+952 NOP
+953 F_QUO
+954 SF_ADD
+955 F_MLT 0.5
+956 RET
+957 SET __exp_x
+958 F_MLT 1.4426950409
+959 SET __exp_q
+960 LOD 0.5
+961 F_SGN __exp_q
+962 F_ADD __exp_q
+963 F2I
+964 SET __exp_n
+965 I2F
+966 F_MLT 0.6931471806
+967 F_SU2 __exp_x
+968 SET __exp_r
+969 F_MLT 0.0013888889
+970 F_ADD 0.0083333333
+971 F_MLT __exp_r
+972 F_ADD 0.0416666667
+973 F_MLT __exp_r
+974 F_ADD 0.1666666667
 975 F_MLT __exp_r
-976 F_ADD 0.0416666667
+976 F_ADD 0.5
 977 F_MLT __exp_r
-978 F_ADD 0.1666666667
+978 F_ADD 1.0
 979 F_MLT __exp_r
-980 F_ADD 0.5
-981 F_MLT __exp_r
-982 F_ADD 1.0
-983 F_MLT __exp_r
-984 F_ADD 1.0
-985 F_SCL __exp_n
-986 RET
-987 SET __log_x
-988 F_LES 0.0
-989 JIZ __L_log_zero
-990 XPO_M __log_x
-991 SET __log_e
-992 NEG
-993 SET __log_ne
-994 LOD __log_x
-995 F_SCL __log_ne
-996 SET __log_m
-997 F_SU1 1.0
-998 SET __log_t1
-999 LOD __log_m
-1000 F_ADD 1.0
-1001 F_DIV __log_t1
-1002 NOP
-1003 NOP
-1004 NOP
-1005 F_QUO
-1006 SET __log_u
-1007 F_MLT __log_u
-1008 SET __log_w
-1009 F_MLT 0.2222222222
-1010 F_ADD 0.2857142858
+980 F_ADD 1.0
+981 F_SCL __exp_n
+982 RET
+983 SET __log_x
+984 F_LES 0.0
+985 JIZ __L_log_zero
+986 XPO_M __log_x
+987 SET __log_e
+988 NEG
+989 SET __log_ne
+990 LOD __log_x
+991 F_SCL __log_ne
+992 SET __log_m
+993 F_SU1 1.0
+994 SET __log_t1
+995 LOD __log_m
+996 F_ADD 1.0
+997 F_DIV __log_t1
+998 NOP
+999 NOP
+1000 NOP
+1001 F_QUO
+1002 SET __log_u
+1003 F_MLT __log_u
+1004 SET __log_w
+1005 F_MLT 0.2222222222
+1006 F_ADD 0.2857142858
+1007 F_MLT __log_w
+1008 F_ADD 0.4
+1009 F_MLT __log_w
+1010 F_ADD 0.6666666666
 1011 F_MLT __log_w
-1012 F_ADD 0.4
-1013 F_MLT __log_w
-1014 F_ADD 0.6666666666
-1015 F_MLT __log_w
-1016 F_ADD 2.0
-1017 F_MLT __log_u
-1018 SET __log_lm
-1019 I2F_M __log_e
-1020 F_MLT 0.6931471806
-1021 F_ADD __log_lm
-1022 RET
-1023 LOD 0.0
-1024 RET
+1012 F_ADD 2.0
+1013 F_MLT __log_u
+1014 SET __log_lm
+1015 I2F_M __log_e
+1016 F_MLT 0.6931471806
+1017 F_ADD __log_lm
+1018 RET
+1019 LOD 0.0
+1020 RET

@@ -393,8 +393,9 @@ void hdl_vv_file(int n_ins, int n_dat, int nbopr, int itr_addr, int toaqui_addr)
     fprintf(f_veri, "\nalways @ (posedge clk) begin\n");
     // register each variable based on its address. A variable in a #SHARE
     // group shares its word with others, so the address would also catch
-    // their writes: it follows the SETs that write IT instead. While the
-    // write is registered pc_sim_val is already one past the SET (measured).
+    // their writes: it follows the SETs that write IT instead, and the INCs,
+    // whose write lands a cycle later (#203). While the write is registered
+    // pc_sim_val is already one past the SET (measured).
     for (int i = 0; i < sim_cont(); i++)
     {
         fprintf(f_veri, "   if (");

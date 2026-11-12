@@ -28,6 +28,7 @@
 # opnd:    what it does to the data word the operand NAMES --
 #          r       reads its value
 #          w       writes its value
+#          rw      reads its value and writes it back (INC)
 #          base_r  reads an unknown word of the array it names (indirect)
 #          base_w  writes an unknown word of the array it names (indirect)
 #          addr    takes its address only; the value is not touched
@@ -160,6 +161,8 @@ SHR	105	data	rw	-	r	-	-	shift right with memory
 S_SHR	106	none	rw	pop	-	-	-	shift right with stack
 SRS	107	data	rw	-	r	-	-	arithmetic shift right with memory
 S_SRS	108	none	rw	pop	-	-	-	arithmetic shift right with stack
+INC	109	data	w	-	rw	-	-	increments a data word in place; the acc gets the new value (#203)
+P_INC	110	data	rw	push	rw	-	-	PUSH + INC
 LEA	1	lea	w	-	addr	-	-	load-effective-address: acc = &var (pseudo, expands to LOD <const>)
 LOD_V	1	offset	w	-	r	-	-	LOD with constant offset
 P_LOD_V	2	offset	rw	push	r	-	-	P_LOD with constant offset

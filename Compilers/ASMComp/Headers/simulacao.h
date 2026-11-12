@@ -23,10 +23,10 @@ int   sim_type   (int    i);                        // gets the variable type
 int   sim_cont   (        );                        // gets the number of registered variables
 int   sim_regi_at(char *va, int addr);              // registers a variable whose word is at addr (#SHARE)
 int   sim_has    (char *va);                        // whether a variable is already registered
-void  sim_store  (char *va);                        // the next instruction writes va (#SHARE groups)
+void  sim_store  (char *va, int late);              // the next instruction writes va (#SHARE groups), late cycles after its own
 int   sim_shared (int    i);                        // whether the variable is in a #SHARE group
 int   sim_nstore (int    i);                        // how many SETs write it
-int   sim_store_at(int i, int k);                   // instruction index of the k-th SET
+int   sim_store_at(int i, int k);                   // instruction index of the k-th write (an INC's: its own + 1)
 char *sim_mem    (int addr);                       // the data word at addr (the caller frees it)
 
 // user array operations ------------------------------------------------------

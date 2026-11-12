@@ -3,9 +3,10 @@ Info: 133 assembly instructions generated
 Info: 1 unreachable instructions removed
 Info: 1 jumps to the next instruction removed
 Info: 2 JIZ + JMP pairs made one JNZ each
+Info: 3 increments made one INC each
 Info: 9 variables share 2 data words (7 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 129 instructions and 19 variables were found
+Info: 123 instructions and 19 variables were found
 Info: ULA resource -> integer adder
 Info: ULA resource -> ^ operator
 Info: adding data output handling
@@ -14,7 +15,7 @@ Info: ULA resource -> < operator for int
 Info: adding stack memory for function calls
 Info: ULA resource -> integer negative operation
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 10% of the Assembly Instruction Set
+Info: using 11% of the Assembly Instruction Set
 Info: using 13% of the ULA operations
 Processor cmm_ctlforms
   word          32 bits
@@ -22,7 +23,7 @@ Processor cmm_ctlforms
   multiplier    no; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      129 instructions, 19 data words
+  memories      123 instructions, 19 data words
 Sweet: the processor is good to go.
 ## variables
 sw v 1
@@ -42,164 +43,158 @@ lang C+-
 1 LOD 0
 2 SET main_k
 // 60: while (1) { k = k + 1; if (k == 5) break; }
-3 LOD main_k
-4 ADD 1
-5 SET main_k
-6 LOD 5
-7 XOR main_k
-8 JNZ __Lwh1
+3 INC main_k
+4 LOD 5
+5 XOR main_k
+6 JNZ __Lwh1
 // 61: out(0, k);                                  // 5
-9 LOD main_k
-10 OUT 0
+7 LOD main_k
+8 OUT 0
 // 63: do { k = k + 1; if (k != 7) continue; break; } while (1);
-11 LOD main_k
-12 ADD 1
-13 SET main_k
-14 EQU 7
-15 JIZ __Lwh2
+9 INC main_k
+10 EQU 7
+11 JIZ __Lwh2
 // 64: out(0, k);                                  // 7
-16 LOD main_k
-17 OUT 0
+12 LOD main_k
+13 OUT 0
 // 66: s = 0;
-18 LOD 0
-19 SET main_s
+14 LOD 0
+15 SET main_s
 // 67: for (n = 0; n < 6; n = n + 1) { if (n == 2) continue; s = s + n; }
-20 SET main_n
-21 LOD 2
-22 XOR main_n
-23 JIZ __Lwh3cont
-24 LOD main_s
-25 ADD main_n
-26 SET main_s
-27 LOD main_n
-28 ADD 1
-29 SET main_n
-30 LES 5
-31 JIZ __Lwh3
+16 SET main_n
+17 LOD 2
+18 XOR main_n
+19 JIZ __Lwh3cont
+20 LOD main_s
+21 ADD main_n
+22 SET main_s
+23 INC main_n
+24 LES 5
+25 JIZ __Lwh3
 // 68: out(0, s);                                  // 0+1+3+4+5 = 13
-32 LOD main_s
-33 OUT 0
+26 LOD main_s
+27 OUT 0
 // 70: out(0, sw(0));    out(0, sw(2));   out(0, sw(7));
-34 LOD 0
+28 LOD 0
+29 CAL sw
+30 OUT 0
+31 LOD 2
+32 CAL sw
+33 OUT 0
+34 LOD 7
 35 CAL sw
 36 OUT 0
-37 LOD 2
+// 71: out(0, sw(1000)); out(0, sw(3));            // 1 20 70 1000 -1
+37 LOD 1000
 38 CAL sw
 39 OUT 0
-40 LOD 7
+40 LOD 3
 41 CAL sw
 42 OUT 0
-// 71: out(0, sw(1000)); out(0, sw(3));            // 1 20 70 1000 -1
-43 LOD 1000
-44 CAL sw
-45 OUT 0
-46 LOD 3
-47 CAL sw
-48 OUT 0
 // 72: out(0, sw2(5));   out(0, sw2(6));           // 0 9
-49 LOD 5
-50 CAL sw2
-51 OUT 0
-52 LOD 6
-53 CAL sw2
-54 OUT 0
+43 LOD 5
+44 CAL sw2
+45 OUT 0
+46 LOD 6
+47 CAL sw2
+48 OUT 0
 // 73: out(0, sw3(2147483647)); out(0, sw3(0)); out(0, sw3(0 - 5));   // 1 2 3
-55 LOD 2147483647
+49 LOD 2147483647
+50 CAL sw3
+51 OUT 0
+52 LOD 0
+53 CAL sw3
+54 OUT 0
+55 NEG_M 5
 56 CAL sw3
 57 OUT 0
-58 LOD 0
-59 CAL sw3
-60 OUT 0
-61 NEG_M 5
-62 CAL sw3
-63 OUT 0
 // -3: END
-64 JMP fim
+58 JMP fim
 // 18: int sw(int v)
-65 SET sw_v
+59 SET sw_v
 // 20: int r; r = 0;
-66 LOD 0
-67 SET sw_r
+60 LOD 0
+61 SET sw_r
 // 21: switch (v) {
-68 LOD sw_v
-69 ADD -7
-70 JIZ __sw_body_1_1
-71 ADD 5
-72 JIZ __sw_body_1_2
-73 ADD 2
-74 JIZ __sw_body_1_3
-75 ADD -1000
-76 JIZ __sw_body_1_4
-77 JMP __sw_body_1_5
+62 LOD sw_v
+63 ADD -7
+64 JIZ __sw_body_1_1
+65 ADD 5
+66 JIZ __sw_body_1_2
+67 ADD 2
+68 JIZ __sw_body_1_3
+69 ADD -1000
+70 JIZ __sw_body_1_4
+71 JMP __sw_body_1_5
 // 22: case 7:    r = 70;   break;
-78 LOD 70
+72 LOD 70
+73 SET sw_r
+74 JMP __switch_end_1
+// 23: case 2:    r = 20;   break;
+75 LOD 20
+76 SET sw_r
+77 JMP __switch_end_1
+// 24: case 0:    r = 1;    break;
+78 LOD 1
 79 SET sw_r
 80 JMP __switch_end_1
-// 23: case 2:    r = 20;   break;
-81 LOD 20
+// 25: case 1000: r = 1000; break;
+81 LOD 1000
 82 SET sw_r
 83 JMP __switch_end_1
-// 24: case 0:    r = 1;    break;
-84 LOD 1
-85 SET sw_r
-86 JMP __switch_end_1
-// 25: case 1000: r = 1000; break;
-87 LOD 1000
-88 SET sw_r
-89 JMP __switch_end_1
 // 26: default:   r = -1;
-90 NEG_M 1
-91 SET sw_r
+84 NEG_M 1
+85 SET sw_r
 // 28: return r;
-92 LOD sw_r
-93 RET
+86 LOD sw_r
+87 RET
 // 31: int sw2(int v)
-94 SET sw2_v
+88 SET sw2_v
 // 33: int r; r = 0;
-95 LOD 0
-96 SET sw2_r
+89 LOD 0
+90 SET sw2_r
 // 34: switch (v) {
-97 LOD sw2_v
-98 ADD -5
-99 JNZ __sw_body_2_2
+91 LOD sw2_v
+92 ADD -5
+93 JNZ __sw_body_2_2
 // 36: if (v == 5) break;      // leaves r at 0
-100 LOD 5
-101 XOR sw2_v
-102 JIZ __switch_end_2
+94 LOD 5
+95 XOR sw2_v
+96 JIZ __switch_end_2
 // 37: r = 55;
-103 LOD 55
-104 SET sw2_r
+97 LOD 55
+98 SET sw2_r
 // 38: break;
-105 JMP __switch_end_2
+99 JMP __switch_end_2
 // 39: default: r = 9;
-106 LOD 9
-107 SET sw2_r
+100 LOD 9
+101 SET sw2_r
 // 41: return r;
-108 LOD sw2_r
-109 RET
+102 LOD sw2_r
+103 RET
 // 44: int sw3(int v)
-110 SET sw3_v
+104 SET sw3_v
 // 46: int r; r = 0;
-111 LOD 0
-112 SET sw3_r
+105 LOD 0
+106 SET sw3_r
 // 47: switch (v) {
-113 LOD sw3_v
-114 ADD -2147483647
-115 JIZ __sw_body_3_1
-116 ADD 2147483647
-117 JIZ __sw_body_3_2
-118 JMP __sw_body_3_3
+107 LOD sw3_v
+108 ADD -2147483647
+109 JIZ __sw_body_3_1
+110 ADD 2147483647
+111 JIZ __sw_body_3_2
+112 JMP __sw_body_3_3
 // 48: case 2147483647: r = 1; break;
-119 LOD 1
-120 SET sw3_r
-121 JMP __switch_end_3
+113 LOD 1
+114 SET sw3_r
+115 JMP __switch_end_3
 // 49: case 0:          r = 2; break;
-122 LOD 2
-123 SET sw3_r
-124 JMP __switch_end_3
+116 LOD 2
+117 SET sw3_r
+118 JMP __switch_end_3
 // 50: default:         r = 3;
-125 LOD 3
-126 SET sw3_r
+119 LOD 3
+120 SET sw3_r
 // 52: return r;
-127 LOD sw3_r
-128 RET
+121 LOD sw3_r
+122 RET

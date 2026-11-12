@@ -53,8 +53,8 @@ Columns: **operand**, what the operand field holds (`data` a data address,
 `offset` an address plus a constant, `lea` an address taken as a constant);
 **a**, what the instruction does to the accumulator (`r` reads, `w` writes);
 **stack**, `push` or `pop` of one data-stack word; **x**, what it does to the
-data word named (`r`, `w`, `base_r`/`base_w` an unknown word of the array
-named, `addr` its address only).
+data word named (`r`, `w`, `rw` reads it and writes it back, `base_r`/`base_w`
+an unknown word of the array named, `addr` its address only).
 
 ## Memory and stack
 
@@ -232,3 +232,10 @@ named, `addr` its address only).
 | `S_SHR` | 106 | none | rw | pop | - | a = x >> a (logical: zeros enter) |
 | `SRS` | 107 | data | rw | - | r | a = x >> a (arithmetic: the sign enters) |
 | `S_SRS` | 108 | none | rw | pop | - | a = x >> a (arithmetic: the sign enters) |
+
+## In place
+
+| mnemonic | opcode | operand | a | stack | x | computes |
+|---|---|---|---|---|---|---|
+| `INC` | 109 | data | w | - | rw | x = x + 1; a = x (x is written the cycle after: the next instruction must not write the data memory nor read x) |
+| `P_INC` | 110 | data | rw | push | rw | push a; x = x + 1; a = x (as INC) |

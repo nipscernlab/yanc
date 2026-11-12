@@ -174,6 +174,8 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
  "S_SHR"   eval_opcode(106, 0, yytext,  "S_SHR"  ); // shift right with stack
    "SRS"   eval_opcode(107,18, yytext,    "SRS"  ); // arithmetic shift right with memory
  "S_SRS"   eval_opcode(108, 0, yytext,  "S_SRS"  ); // arithmetic shift right with stack
+   "INC"   eval_opcode(109,18, yytext,    "INC"  ); // increments a data word in place, the acc gets it (#203)
+ "P_INC"   eval_opcode(110,18, yytext,  "P_INC"  ); // PUSH + INC
 
    /* special instructions */
 

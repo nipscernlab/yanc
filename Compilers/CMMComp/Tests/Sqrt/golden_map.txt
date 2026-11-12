@@ -7,10 +7,11 @@ Info: 74 assembly instructions generated
 Info: adding assembly macro for root square computation
 Info: 8 divisions, 5 words each for DIV/MOD and 4 for F_DIV (24 added)
 Info: 1 variables written and never read removed (2 instructions)
+Info: 2 increments made one INC each
 Info: 7 variables share 3 data words (4 saved)
 Heads up: variable 'v' in function 'my_sqrt' is never read, so it's out of the program and the waveform (#WAVE v, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 115 instructions and 2013 variables were found
+Info: 111 instructions and 2013 variables were found
 Info: filling array with 1000 values read from file "sqrt_x.txt"
 Info: largest approximation error in file 'sqrt_x.txt' is -0.00780467968434 on line 797
 Info: filling array with 1000 values read from file "sqrt_y.txt"
@@ -28,7 +29,7 @@ Info: ULA resource -> float-point divider (not recomended for high frequency opp
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> root-square approximation for float
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 18% of the Assembly Instruction Set
+Info: using 19% of the Assembly Instruction Set
 Info: using 27% of the ULA operations
 Processor Sqrt
   word          32 bits
@@ -36,7 +37,7 @@ Processor Sqrt
   multiplier    float; divider float
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      115 instructions, 2013 data words
+  memories      111 instructions, 2013 data words
 Sweet: the processor is good to go.
 ## variables
 my_sqrt num 2
@@ -66,125 +67,121 @@ lang C+-
 10 F_SU1 main_y
 11 SET main_e
 // 38: j++;
-12 LOD main_j
-13 ADD 1
-14 SET main_j
+12 INC main_j
 // 33: while (j < 1000)
-15 LES 999
-16 JIZ __Lwh1top
+13 LES 999
+14 JIZ __Lwh1top
 // 41: j=0;
-17 LOD 0
-18 SET main_j
+15 LOD 0
+16 SET main_j
 // 44: y = my_sqrt(x[j]);
-19 LOD main_j
-20 LDI main_x
-21 CAL my_sqrt
-22 SET main_y
+17 LOD main_j
+18 LDI main_x
+19 CAL my_sqrt
+20 SET main_y
 // 45: t = a[j];
-23 LOD main_j
-24 LDI main_a
-25 SET main_t
+21 LOD main_j
+22 LDI main_a
+23 SET main_t
 // 46: e = t - y;
-26 F_SU1 main_y
-27 SET main_e
+24 F_SU1 main_y
+25 SET main_e
 // 47: j++;
-28 LOD main_j
-29 ADD 1
-30 SET main_j
+26 INC main_j
 // 42: while (j < 1000)
-31 LES 999
-32 JIZ __Lwh2top
+27 LES 999
+28 JIZ __Lwh2top
 // -3: END
-33 JMP fim
+29 JMP fim
 // 8: float my_sqrt(float num)
-34 SET my_sqrt_num
+30 SET my_sqrt_num
 // 10: if (num == 0.0) return 0.0;
-35 EQU 0.0
-36 JIZ __Lif1else
-37 LOD 0.0
-38 RET
+31 EQU 0.0
+32 JIZ __Lif1else
+33 LOD 0.0
+34 RET
 // 12: int v = (((num << 1) >>> 24) + 22) >>> 1;         // get the exponent
-39 LOD 1
-40 SHL my_sqrt_num
-41 P_LOD 24
-42 S_SRS
-43 ADD 22
-44 P_LOD 1
-45 S_SRS
+35 LOD 1
+36 SHL my_sqrt_num
+37 P_LOD 24
+38 S_SRS
+39 ADD 22
+40 P_LOD 1
+41 S_SRS
 // 13: v = ((((v-22) << 23) + (1 << 22)) << 1) >> 1; // build the float
-46 ADD -22
-47 P_LOD 23
-48 S_SHL
-49 ADD 4194304
-50 P_LOD 1
-51 S_SHL
-52 P_LOD 1
-53 S_SHR
+42 ADD -22
+43 P_LOD 23
+44 S_SHL
+45 ADD 4194304
+46 P_LOD 1
+47 S_SHL
+48 P_LOD 1
+49 S_SHR
 // 15: float x; copy(v,x);
-54 SET my_sqrt_x
+50 SET my_sqrt_x
 // 17: x = 0.5 * (x+num/x);
-55 F_DIV my_sqrt_num
-56 NOP
-57 NOP
-58 F_QUO
-59 F_ADD my_sqrt_x
-60 F_MLT 0.5
-61 SET my_sqrt_x
+51 F_DIV my_sqrt_num
+52 NOP
+53 NOP
+54 F_QUO
+55 F_ADD my_sqrt_x
+56 F_MLT 0.5
+57 SET my_sqrt_x
 // 18: x = 0.5 * (x+num/x);
-62 F_DIV my_sqrt_num
-63 NOP
-64 NOP
-65 F_QUO
-66 F_ADD my_sqrt_x
-67 F_MLT 0.5
-68 SET my_sqrt_x
+58 F_DIV my_sqrt_num
+59 NOP
+60 NOP
+61 F_QUO
+62 F_ADD my_sqrt_x
+63 F_MLT 0.5
+64 SET my_sqrt_x
 // 19: x = 0.5 * (x+num/x);
-69 F_DIV my_sqrt_num
-70 NOP
-71 NOP
-72 F_QUO
-73 F_ADD my_sqrt_x
-74 F_MLT 0.5
-75 SET my_sqrt_x
+65 F_DIV my_sqrt_num
+66 NOP
+67 NOP
+68 F_QUO
+69 F_ADD my_sqrt_x
+70 F_MLT 0.5
+71 SET my_sqrt_x
 // 20: x = 0.5 * (x+num/x);
-76 F_DIV my_sqrt_num
-77 NOP
-78 NOP
-79 F_QUO
-80 F_ADD my_sqrt_x
-81 F_MLT 0.5
-82 SET my_sqrt_x
+72 F_DIV my_sqrt_num
+73 NOP
+74 NOP
+75 F_QUO
+76 F_ADD my_sqrt_x
+77 F_MLT 0.5
+78 SET my_sqrt_x
 // 22: return x;
-83 RET
+79 RET
 // library macros, no source line
-84 SET __sqrt_num
-85 F_ROT
-86 PSH
-87 F_DIV __sqrt_num
-88 NOP
-89 NOP
-90 F_QUO
-91 SF_ADD
-92 F_MLT 0.5
-93 PSH
-94 F_DIV __sqrt_num
-95 NOP
-96 NOP
-97 F_QUO
-98 SF_ADD
-99 F_MLT 0.5
-100 PSH
-101 F_DIV __sqrt_num
-102 NOP
-103 NOP
-104 F_QUO
-105 SF_ADD
-106 F_MLT 0.5
-107 PSH
-108 F_DIV __sqrt_num
-109 NOP
-110 NOP
-111 F_QUO
-112 SF_ADD
-113 F_MLT 0.5
-114 RET
+80 SET __sqrt_num
+81 F_ROT
+82 PSH
+83 F_DIV __sqrt_num
+84 NOP
+85 NOP
+86 F_QUO
+87 SF_ADD
+88 F_MLT 0.5
+89 PSH
+90 F_DIV __sqrt_num
+91 NOP
+92 NOP
+93 F_QUO
+94 SF_ADD
+95 F_MLT 0.5
+96 PSH
+97 F_DIV __sqrt_num
+98 NOP
+99 NOP
+100 F_QUO
+101 SF_ADD
+102 F_MLT 0.5
+103 PSH
+104 F_DIV __sqrt_num
+105 NOP
+106 NOP
+107 F_QUO
+108 SF_ADD
+109 F_MLT 0.5
+110 RET

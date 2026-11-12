@@ -6,9 +6,10 @@ Info: constant 0.7071067811 on line 47 approximated to 0.7071075439453125 (error
 Info: constant -0.7071067811 on line 49 approximated to -0.7071075439453125 (error = -7.63e-07)
 Info: constant 0.7071067811 on line 49 approximated to 0.7071075439453125 (error = 7.63e-07)
 Info: 203 assembly instructions generated
+Info: 2 increments made one INC each
 Info: 14 variables share 12 data words (2 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 203 instructions and 52 variables were found
+Info: 199 instructions and 52 variables were found
 Info: adding stack memory for function calls
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float to int converter
@@ -20,7 +21,7 @@ Info: adding array handling
 Info: adding bit-reverse array index (FFT)
 Info: ULA resource -> float-point adder
 Info: stack depths from the program: SDEPTH 1, NDSTAC 3
-Info: using 17% of the Assembly Instruction Set
+Info: using 18% of the Assembly Instruction Set
 Info: using 16% of the ULA operations
 Processor proc_fft
   word          23 bits
@@ -28,7 +29,7 @@ Processor proc_fft
   multiplier    int and float; divider no
   data stack    3 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      203 instructions, 52 data words
+  memories      199 instructions, 52 data words
 Sweet: the processor is good to go.
 ## variables
 fft N 1
@@ -279,24 +280,20 @@ lang C+-
 187 ADD fft_istep
 188 SET fft_k
 // 34: ind++;
-189 LOD fft_ind
-190 ADD 1
-191 SET fft_ind
+189 INC fft_ind
 // 27: while (k < N)
-192 JMP __Lwh3
+190 JMP __Lwh3
 // 36: sind = ind;
-193 LOD fft_ind
-194 SET fft_sind
+191 LOD fft_ind
+192 SET fft_sind
 // 37: m++;
-195 LOD fft_m
-196 ADD 1
-197 SET fft_m
+193 INC fft_m
 // 24: while (m < mmax)
-198 JMP __Lwh2
+194 JMP __Lwh2
 // 39: mmax = istep;
-199 LOD fft_istep
-200 SET fft_mmax
+195 LOD fft_istep
+196 SET fft_mmax
 // 18: while (mmax < N)
-201 JMP __Lwh1
+197 JMP __Lwh1
 // 41: }
-202 RET
+198 RET

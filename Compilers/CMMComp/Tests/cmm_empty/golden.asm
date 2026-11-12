@@ -19,9 +19,7 @@ GRE 0
 JNZ __Lwh2
 @__Lwh2end LOD 0
 SET main_a
-@__Lwh3 LOD main_a
-ADD 1
-SET main_a
+@__Lwh3 INC main_a
 LES 1
 JIZ __Lwh3
 @__Lwh3end LOD main_a

@@ -17,7 +17,7 @@ Info: ULA resource -> float-point adder
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> float-point negative operation
 Info: stack depths from the program: SDEPTH 1, NDSTAC 3
-Info: using 16% of the Assembly Instruction Set
+Info: using 15% of the Assembly Instruction Set
 Info: using 16% of the ULA operations
 Processor cmm_comp_part
   word          32 bits

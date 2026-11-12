@@ -59,9 +59,7 @@ NOP
 NOP
 F_QUO
 STI y
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 LES 39
 JIZ __Lwh32top
 @__Lwh32end CAL fit
@@ -73,9 +71,7 @@ F_MLT 1000000.0
 F_ADD 0.5
 F2I
 OUT 0
-LOD main_j
-ADD 1
-SET main_j
+INC main_j
 LES 6
 JIZ __Lwh33top
 @__Lwh33end #TOAQUI
@@ -96,9 +92,7 @@ JIZ __Lif2else
 LOD project_h_hat_k
 P_LOD 1.0
 STI h_hat
-@__Lif2else LOD project_h_hat_k
-ADD 1
-SET project_h_hat_k
+@__Lif2else INC project_h_hat_k
 LES 6
 JIZ __Lwh1top
 @__Lwh1end LOD 1.0
@@ -120,9 +114,7 @@ JIZ __Lif4else
 LOD project_h_cand_k
 P_LOD 1.0
 STI s_h_cand
-@__Lif4else LOD project_h_cand_k
-ADD 1
-SET project_h_cand_k
+@__Lif4else INC project_h_cand_k
 LES 6
 JIZ __Lwh2top
 @__Lwh2end LOD 1.0
@@ -136,9 +128,7 @@ SET lipschitz_x_k
 LDI h_hat
 F_ADD lipschitz_x_s
 SET lipschitz_x_s
-LOD lipschitz_x_k
-ADD 1
-SET lipschitz_x_k
+INC lipschitz_x_k
 LES 6
 JIZ __Lwh3top
 @__Lwh3end LOD lipschitz_x_s
@@ -155,9 +145,7 @@ SET conv_zh_n
 @__Lwh4top LOD conv_zh_n
 P_LOD 0.0
 STI s_conv
-LOD conv_zh_n
-ADD 1
-SET conv_zh_n
+INC conv_zh_n
 LES 39
 JIZ __Lwh4top
 @__Lwh4end LOD 0
@@ -176,14 +164,10 @@ LDI h_hat
 F_MLT conv_zh_zi
 SF_ADD
 STI s_conv
-LOD conv_zh_j
-ADD 1
-SET conv_zh_j
+INC conv_zh_j
 LES 6
 JIZ __Lwh6top
-@__Lwh6end LOD conv_zh_ii
-ADD 1
-SET conv_zh_ii
+@__Lwh6end INC conv_zh_ii
 LES 33
 JIZ __Lwh5top
 @__Lwh5end RET
@@ -192,9 +176,7 @@ SET conv_xh_n
 @__Lwh7top LOD conv_xh_n
 P_LOD 0.0
 STI s_conv
-LOD conv_xh_n
-ADD 1
-SET conv_xh_n
+INC conv_xh_n
 LES 39
 JIZ __Lwh7top
 @__Lwh7end LOD 0
@@ -213,14 +195,10 @@ LDI h_hat
 F_MLT conv_xh_xi
 SF_ADD
 STI s_conv
-LOD conv_xh_j
-ADD 1
-SET conv_xh_j
+INC conv_xh_j
 LES 6
 JIZ __Lwh9top
-@__Lwh9end LOD conv_xh_ii
-ADD 1
-SET conv_xh_ii
+@__Lwh9end INC conv_xh_ii
 LES 33
 JIZ __Lwh8top
 @__Lwh8end RET
@@ -229,9 +207,7 @@ SET conv_x_hcand_n
 @__Lwh10top LOD conv_x_hcand_n
 P_LOD 0.0
 STI s_conv
-LOD conv_x_hcand_n
-ADD 1
-SET conv_x_hcand_n
+INC conv_x_hcand_n
 LES 39
 JIZ __Lwh10top
 @__Lwh10end LOD 0
@@ -250,14 +226,10 @@ LDI s_h_cand
 F_MLT conv_x_hcand_xi
 SF_ADD
 STI s_conv
-LOD conv_x_hcand_j
-ADD 1
-SET conv_x_hcand_j
+INC conv_x_hcand_j
 LES 6
 JIZ __Lwh12top
-@__Lwh12end LOD conv_x_hcand_ii
-ADD 1
-SET conv_x_hcand_ii
+@__Lwh12end INC conv_x_hcand_ii
 LES 33
 JIZ __Lwh11top
 @__Lwh11end RET
@@ -270,9 +242,7 @@ P_LOD residual_sub_y_n
 LDI y
 SF_SU2
 STI s_conv
-LOD residual_sub_y_n
-ADD 1
-SET residual_sub_y_n
+INC residual_sub_y_n
 LES 39
 JIZ __Lwh13top
 @__Lwh13end RET
@@ -286,9 +256,7 @@ PSH
 SF_MLT
 F_ADD sum_residual_sq_s
 SET sum_residual_sq_s
-LOD sum_residual_sq_n
-ADD 1
-SET sum_residual_sq_n
+INC sum_residual_sq_n
 LES 39
 JIZ __Lwh14top
 @__Lwh14end LOD sum_residual_sq_s
@@ -307,17 +275,13 @@ LDI h_hat
 SF_MLT
 F_ADD correlate_residual_h_s
 SET correlate_residual_h_s
-LOD correlate_residual_h_k
-ADD 1
-SET correlate_residual_h_k
+INC correlate_residual_h_k
 LES 6
 JIZ __Lwh16top
 @__Lwh16end LOD correlate_residual_h_n
 P_LOD correlate_residual_h_s
 STI s_grad_x
-LOD correlate_residual_h_n
-ADD 1
-SET correlate_residual_h_n
+INC correlate_residual_h_n
 LES 33
 JIZ __Lwh15top
 @__Lwh15end RET
@@ -335,17 +299,13 @@ LDI x_hat
 SF_MLT
 F_ADD correlate_residual_x_s
 SET correlate_residual_x_s
-LOD correlate_residual_x_k
-ADD 1
-SET correlate_residual_x_k
+INC correlate_residual_x_k
 LES 33
 JIZ __Lwh18top
 @__Lwh18end LOD correlate_residual_x_n
 P_LOD correlate_residual_x_s
 STI s_grad_h
-LOD correlate_residual_x_n
-ADD 1
-SET correlate_residual_x_n
+INC correlate_residual_x_n
 LES 6
 JIZ __Lwh17top
 @__Lwh17end RET
@@ -359,9 +319,7 @@ LOD fista_x_ii
 P_LOD fista_x_ii
 LDI x_hat
 STI s_x_prev
-LOD fista_x_ii
-ADD 1
-SET fista_x_ii
+INC fista_x_ii
 LES 33
 JIZ __Lwh19top
 @__Lwh19end LOD 1.0
@@ -395,9 +353,7 @@ SET fista_x_v
 @__Lif6else LOD fista_x_ii
 P_LOD fista_x_v
 STI x_hat
-LOD fista_x_ii
-ADD 1
-SET fista_x_ii
+INC fista_x_ii
 LES 33
 JIZ __Lwh21top
 @__Lwh21end LOD 4.0
@@ -431,16 +387,12 @@ STI s_z
 LOD fista_x_ii
 P_LOD fista_x_xi
 STI s_x_prev
-LOD fista_x_ii
-ADD 1
-SET fista_x_ii
+INC fista_x_ii
 LES 33
 JIZ __Lwh22top
 @__Lwh22end LOD fista_x_tn
 SET fista_x_t
-LOD fista_x_it
-ADD 1
-SET fista_x_it
+INC fista_x_it
 LES 19
 JIZ __Lwh20top
 @__Lwh20end RET
@@ -463,9 +415,7 @@ SET update_h_ii
 P_LOD update_h_ii
 LDI h_hat
 STI s_h_best
-LOD update_h_ii
-ADD 1
-SET update_h_ii
+INC update_h_ii
 LES 6
 JIZ __Lwh24top
 @__Lwh24end LOD 0.00001
@@ -482,9 +432,7 @@ LDI s_grad_h
 F_MLT update_h_trial
 SF_SU2
 STI s_h_cand
-LOD update_h_ii
-ADD 1
-SET update_h_ii
+INC update_h_ii
 LES 6
 JIZ __Lwh26top
 @__Lwh26end CAL project_h_cand
@@ -503,17 +451,13 @@ SET update_h_ii
 P_LOD update_h_ii
 LDI s_h_cand
 STI s_h_best
-LOD update_h_ii
-ADD 1
-SET update_h_ii
+INC update_h_ii
 LES 6
 JIZ __Lwh27top
 @__Lwh27end @__Lif7else LOD update_h_trial
 F_MLT 0.5
 SET update_h_trial
-LOD update_h_bt
-ADD 1
-SET update_h_bt
+INC update_h_bt
 LES 14
 JIZ __Lwh25top
 @__Lwh25end LOD 0
@@ -522,14 +466,10 @@ SET update_h_ii
 P_LOD update_h_ii
 LDI s_h_best
 STI h_hat
-LOD update_h_ii
-ADD 1
-SET update_h_ii
+INC update_h_ii
 LES 6
 JIZ __Lwh28top
-@__Lwh28end LOD update_h_it
-ADD 1
-SET update_h_it
+@__Lwh28end INC update_h_it
 LES 4
 JIZ __Lwh23top
 @__Lwh23end JMP project_h_hat
@@ -538,9 +478,7 @@ SET fit_ii
 @__Lwh29top LOD fit_ii
 P_LOD 0.0
 STI x_hat
-LOD fit_ii
-ADD 1
-SET fit_ii
+INC fit_ii
 LES 33
 JIZ __Lwh29top
 @__Lwh29end LOD 0
@@ -548,9 +486,7 @@ SET fit_ii
 @__Lwh30top LOD fit_ii
 P_LOD 0.0
 STI h_hat
-LOD fit_ii
-ADD 1
-SET fit_ii
+INC fit_ii
 LES 6
 JIZ __Lwh30top
 @__Lwh30end LOD 0.5
@@ -563,9 +499,7 @@ LOD 0
 SET fit_it
 @__Lwh31top CAL fista_x
 CAL update_h
-LOD fit_it
-ADD 1
-SET fit_it
+INC fit_it
 LES 39
 JIZ __Lwh31top
 @__Lwh31end RET

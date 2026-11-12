@@ -37,9 +37,7 @@ SET main_k
 @__Lwh1 NEG_M 56
 LES main_k
 JIZ __Lwh1end
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 LOD main_k
 ADD 1
 SET main_k
@@ -53,9 +51,7 @@ SET main_k
 ADD main_a
 LES main_k
 JIZ __Lwh2end
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 LOD main_k
 ADD 1
 SET main_k
@@ -68,9 +64,7 @@ SET main_k
 @__Lwh3 NEG_M 56
 LES main_k
 JIZ __Lwh3end
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 LOD main_k
 ADD 1
 SET main_k

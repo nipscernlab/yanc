@@ -9,9 +9,7 @@ SET main_k
 OUT 31
 INN 0
 OUT 9
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 2
 JIZ __Lwh1
 @__Lwh1end @fim JMP fim

@@ -296,6 +296,10 @@ module processor
 	parameter    SRS   = 0,
 	parameter  S_SRS   = 0,
 
+	// in place
+	parameter    INC   = 0,
+	parameter  P_INC   = 0,
+
 	// special operations
 	parameter  F_ROT   = 0,    // nearest power-of-two square-root approximation (with ACC)
 	parameter  F_SU1   = 0,    // floating-point subtraction at input 1
@@ -464,6 +468,8 @@ core #(.NBOPCO ( NBOPCO ),
 	   .S_SHR  ( S_SHR  ),
          .SRS  (   SRS  ),
 	   .S_SRS  ( S_SRS  ),
+	     .INC  (   INC  ),
+	   .P_INC  ( P_INC  ),
 	   .F_ROT  ( F_ROT  ),
 	   .F_SU1  ( F_SU1  ),
 	   .F_SU2  ( F_SU2  ),

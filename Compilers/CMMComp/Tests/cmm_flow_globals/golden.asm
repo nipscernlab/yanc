@@ -48,9 +48,7 @@ LES 3
 JIZ __Lif2else
 LOD h_x
 RET
-@__Lif2else LOD h_x
-ADD 1
-SET h_x
+@__Lif2else INC h_x
 JMP __Lwh1
 @__Lwh1end @s ADD -1
 JNZ __sw_body_1_2

@@ -1,7 +1,8 @@
 ## messages
 Info: 13 assembly instructions generated
+Info: 1 increments made one INC each
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 13 instructions and 4 variables were found
+Info: 11 instructions and 3 variables were found
 Info: adding data input handling
 Info: adding data output handling
 Info: ULA resource -> integer adder
@@ -45,7 +46,7 @@ Processor cmm_ioports
   multiplier    no; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      13 instructions, 4 data words
+  memories      11 instructions, 3 data words
 Sweet: the processor is good to go.
 ## variables
 main k 1
@@ -63,10 +64,8 @@ lang C+-
 5 INN 0
 6 OUT 9
 // 14: for (k = 0; k < 3; k = k + 1)
-7 LOD main_k
-8 ADD 1
-9 SET main_k
-10 LES 2
-11 JIZ __Lwh1
+7 INC main_k
+8 LES 2
+9 JIZ __Lwh1
 // -3: END
-12 JMP fim
+10 JMP fim

@@ -175,6 +175,14 @@ void fatal(const char *fmt, ...);
     M("Erro: #LKSYNC %d, mas o programa não tem TOM nem CAD no link %d.\n", \
       "Error: #LKSYNC %d, but the program has no TOM or CAD on link %d.\n")
 
+#define MSG_ERR_INC_WRITE \
+    M("Erro: %s %s escreve a palavra no ciclo seguinte, e a instrução logo depois dela (%s) também escreve na memória de dados, que tem uma porta de escrita só. Ponha outra instrução entre as duas.\n", \
+      "Error: %s %s writes its word the cycle after, and the instruction right after it (%s) also writes the data memory, which has one write port. Put another instruction between them.\n")
+
+#define MSG_ERR_INC_READ \
+    M("Erro: %s %s escreve a palavra no ciclo seguinte, e a instrução logo depois dela (%s %s) lê essa palavra antes da escrita. Ponha outra instrução entre as duas.\n", \
+      "Error: %s %s writes its word the cycle after, and the instruction right after it (%s %s) reads that word before the write. Put another instruction between them.\n")
+
 #define MSG_ERR_DIV_SEQ_END \
     M("Erro: o programa termina no meio da sequência de %s (faltaram NOP e %s).\n", \
       "Error: the program ends inside the sequence of %s (NOPs and %s are missing).\n")

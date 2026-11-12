@@ -20,7 +20,7 @@ Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point negative operation
 Info: ULA resource -> float scale by a power of two (2^k)
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 16% of the Assembly Instruction Set
+Info: using 15% of the Assembly Instruction Set
 Info: using 22% of the ULA operations
 Processor cmm_cexp
   word          32 bits

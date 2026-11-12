@@ -9,6 +9,27 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **`INC k`, k = k + 1 in one word (#203).** A loop counter's `LOD k;
+  ADD 1; SET k` is now `INC k` (opcode 109; `P_INC` 110 pushes first), in
+  both compilers (`asm_inc`, after `asm_jnz`): two words and two cycles less
+  each, 5.3 % of the cycles of the five programs of #91 and 18 % of
+  proc_rls's. It runs on the ADD's adder, the accumulator loaded with 1 the
+  cycle before, and writes k a cycle late at an address it keeps: MDATAW + 1
+  flip-flops and an address mux, only in a program that uses it. Fitted on
+  proc_rls, the same Fmax within one fit's spread (47.66 to 47.53 MHz on
+  Cyclone V, 32.86 to 32.79 on Cyclone IV) for 4 ALMs and 10 LEs more. The
+  instruction right after an INC must not write a data word nor read k:
+  asmcomp refuses it (two new errors, NegTests `inc_write` and `inc_read`),
+  and a `#PRACA` pulse during an INC drops its write. 54 C± goldens change,
+  three lines to one per INC; the golden maps also carry the new share of
+  the instruction set; `size_baseline.txt` follows; twelve endless loops
+  (dirac_assign, for_loop, sapho_all and nine `cmm_*`) write more lines in
+  the simulated time, and their sim references gained those lines at the
+  end, none changed. `Scripts/wave_map.py` takes a variable's change
+  at the word after an INC of it; the waveform of a variable that shares its
+  word follows its INCs too, a cycle late, as it follows its SETs; and `P_INC`, reached only in a Dirac loop,
+  is an exception of sapho_all's block check. The table gained the operand
+  effect `rw`. docs/design/inc-in-place.md has the record.
 - **Values kept in step by hand are now checked (#185).**
   `Scripts/check_isa.py` (step 3 of the regression) fails when the cycles of
   a divider disagree: `IDIV_STG`/`FDIV_STG` in `ula.v`, the `STG` defaults of

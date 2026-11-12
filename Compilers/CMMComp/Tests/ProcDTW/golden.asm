@@ -16,9 +16,7 @@ SET cont
 @__Lwh1top LOD cont
 P_LOD 0
 STI data_ref
-LOD cont
-ADD 1
-SET cont
+INC cont
 LES 74
 JIZ __Lwh1top
 @__Lwh1end LOD 10
@@ -45,9 +43,7 @@ JMP __Lif1end
 @__Lif1else LOD cont
 P_LOD 0
 STI data
-@__Lif1end LOD cont
-ADD 1
-SET cont
+@__Lif1end INC cont
 LES 74
 JIZ __Lwh2top
 @__Lwh2end NEG_M 124
@@ -191,13 +187,9 @@ ABS
 ADD menor
 STI dtw
 OUT 2
-@__Lif5else @__Lif4end LOD j
-ADD 1
-SET j
+@__Lif5else @__Lif4end INC j
 JMP __Lwh4
-@__Lwh4end LOD k
-ADD 1
-SET k
+@__Lwh4end INC k
 JMP __Lwh3
 @__Lwh3end LOD k
 ADD -1
@@ -225,9 +217,7 @@ LOD cont
 P_LOD cont
 LDI data
 STI data_ref
-LOD cont
-ADD 1
-SET cont
+INC cont
 JMP __Lwh5
 @__Lwh5end @__Lif8else LOD val_final
 OUT 1

@@ -1975,12 +1975,13 @@ fi
 # 3), checked only because they use float (Tests/cmm_nofloat is the other side:
 # no float, a format that does not add up, accepted). The two itrad_ fixtures:
 # a stack not empty right before the #ITRAD point (#188). one_instruction: a
-# program of a single instruction (#190).
+# program of a single instruction (#190). inc_write / inc_read: the
+# instruction right after an INC writes a data word, or reads its word (#203).
 if [ "$CPP_ONLY" -eq 0 ]; then
     echo ""
     echo "==> float format (asmcomp)"
     neg_work="$SCRATCH/work_neg"
-    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short" "fpfmt_wide|is past 32" "fftsiz_wide|#FFTSIZ 40 is out of range" "itrad_data|holds 1 word(s) right before the #ITRAD point" "itrad_call|is in a routine a CAL enters" "one_instruction|has a single instruction"; do
+    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short" "fpfmt_wide|is past 32" "fftsiz_wide|#FFTSIZ 40 is out of range" "itrad_data|holds 1 word(s) right before the #ITRAD point" "itrad_call|is in a routine a CAL enters" "one_instruction|has a single instruction" "inc_write|also writes the data memory" "inc_read|reads that word before the write"; do
         fixture="${fe%%|*}"; expect="${fe#*|}"; name="asm:$fixture"
         neg_listed+=("$fixture.cmm" "$fixture.asm")
         rm -rf "$neg_work"; mkdir -p "$neg_work/p"

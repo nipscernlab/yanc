@@ -12,9 +12,7 @@ SET main_n
 MLT 3
 ADD 1
 TOM 0
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 LES 15
 JIZ __Lwh1top
 @__Lwh1end @fim JMP fim

@@ -788,6 +788,10 @@ module core
 	parameter    SRS   = 0,
 	parameter  S_SRS   = 0,
 
+	// in place: k = k + 1 in memory, the acc gets it (#203)
+	parameter    INC   = 0,
+	parameter  P_INC   = 0,
+
 	// special operations
 	parameter  F_ROT   = 0,   // nearest power-of-two square-root approximation (with ACC)
 	parameter  F_SU1   = 0,   // floating-point subtraction at input 1
@@ -1011,7 +1015,7 @@ wire [NBOPCO-1:0] id_opcode  = if_opcode;
 
 wire [       5:0] id_ula_op;
 wire              id_dsp_push, id_dsp_pop;
-wire              id_sti, id_ldi, id_fft, id_wr;
+wire              id_sti, id_ldi, id_fft, id_wr, id_inc;
 wire              id_req_in, id_out_en;
 
 instr_dec #(.NBOPCO  ( NBOPCO ),
@@ -1107,6 +1111,8 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
 			 .S_SHR  ( S_SHR  ),
 			   .SRS  (   SRS  ),
 			 .S_SRS  ( S_SRS  ),
+			   .INC  (   INC  ),
+			 .P_INC  ( P_INC  ),
 			 .F_ROT  ( F_ROT  ),
 			 .F_SU1  ( F_SU1  ),
 			 .F_SU2  ( F_SU2  ),
@@ -1121,7 +1127,8 @@ instr_dec #(.NBOPCO  ( NBOPCO ),
                                     id_ula_op,
                                     id_wr,
                                     id_req_in, id_out_en,
-                                    id_ldi, id_sti, id_fft);
+                                    id_ldi, id_sti, id_fft,
+                                    id_inc);
 
 // Data stack -----------------------------------------------------------------
 
@@ -1183,7 +1190,7 @@ ula #(.NUBITS (NUBITS ),
       .NBEXPO (NBEXPO ),
       .NUGAIN (NUGAIN ),
       .FROUND (FROUND ),
-        .ADD  (  ADD   |  S_ADD  ),
+        .ADD  (  ADD   |  S_ADD  |  INC  |  P_INC),
 	  .F_ADD  (F_ADD   | SF_ADD  ),
         .MLT  (  MLT   |  S_MLT  ),
       .F_MLT  (F_MLT   | SF_MLT  ),
@@ -1239,7 +1246,17 @@ assign sp_in = ula_out;
 // Accumulator ----------------------------------------------------------------
 // (the racc reg itself is declared earlier, above the uic_in2 generate)
 
-always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out; // synchronous reset (FPGA-friendly)
+// INC k (#203): the ADD it runs adds the data word and the accumulator, and
+// the accumulator is 1 the cycle INC executes: racc takes 1 instead of the
+// result of the instruction before, which INC overwrites anyway (P_INC pushed
+// that result in decode, from ula_out). A constant on the register, its
+// synchronous clear and set, not a mux in front of the ALU. Only with INC:
+// the load, even on an id_inc held at 0, cost Yosys a LUT in sapho_min.
+generate if ((INC | P_INC) != 0) begin : acc_inc
+	always @ (posedge clk) if (rst) racc <= 0; else if (id_inc) racc <= 1; else racc <= ula_out; // synchronous reset (FPGA-friendly)
+end else begin : acc_inc
+	always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out;
+end endgenerate
 
 // toma_dado: the value the partners' CAD reads, one for every link (a writer
 // is inside one TOM at a time and leaves it only once the value was taken).
@@ -1273,6 +1290,8 @@ assign  if_acc = |ula_fast;
 
 // Indirect Addressing --------------------------------------------------------
 
+wire              dec_wr;                  // the write of the instruction in decode
+wire [MDATAW-1:0] dec_addr_wr;
 generate
 	if (STI | LDI | ILI | ISI) begin : mem_access
 		mem_ctrl #(.NUBITS(NUBITS),
@@ -1281,14 +1300,34 @@ generate
 		           .ILI(ILI),.ISI(ISI)) ac(id_sti, id_ldi, id_fft, id_wr,
 		                                   ula_out, ula_fast,
 		                                   if_operand[MDATAW-1:0], sp_data[MDATAW-1:0],
-		                                   mem_wr, mem_addr_rd, mem_addr_wr, mem_data_wr);
+		                                   dec_wr, mem_addr_rd, dec_addr_wr, mem_data_wr);
 	end else begin : mem_access
-		assign mem_wr      = id_wr;
+		assign dec_wr      = id_wr;
 		assign mem_addr_rd = if_operand[MDATAW-1:0];
-		assign mem_addr_wr = if_operand[MDATAW-1:0];
+		assign dec_addr_wr = if_operand[MDATAW-1:0];
 		assign mem_data_wr = ula_out;
 	end
 endgenerate
+
+// INC k writes k + 1 the cycle after its decode, when the ALU has it on
+// ula_out, the data every write takes. By then the operand in decode is the
+// next instruction's, so k is kept a cycle (inc_a) and takes the write
+// address. The next instruction must not write the data memory, nor read k
+// (its read leaves on the edge that writes k): asmcomp holds a program to
+// that, so the port needs no arbiter and the read no bypass (#203). A #PRACA
+// pulse while INC is in decode sends the fetch to the restart point, whose
+// instruction asmcomp cannot hold to that rule: the pulse drops the INC's
+// write, as it drops the push and pop of the instruction in decode (#188).
+localparam INC_ITR = (ITRADD > 0);
+generate if ((INC | P_INC) != 0) begin : inc_wr
+	reg              inc_w;  always @ (posedge clk) if (rst) inc_w <= 1'b0; else inc_w <= id_inc & ~(INC_ITR & itr);
+	reg [MDATAW-1:0] inc_a;  always @ (posedge clk) inc_a <= if_operand[MDATAW-1:0];
+	assign mem_wr      = dec_wr | inc_w;
+	assign mem_addr_wr = (inc_w) ? inc_a : dec_addr_wr;
+end else begin : inc_wr
+	assign mem_wr      = dec_wr;
+	assign mem_addr_wr = dec_addr_wr;
+end endgenerate
 
 // I/O Control ----------------------------------------------------------------
 

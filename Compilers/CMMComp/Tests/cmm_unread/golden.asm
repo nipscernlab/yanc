@@ -44,9 +44,7 @@ SET main_k
 @__Lwh1top LOD main_n
 ADD main_k
 SET main_n
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 2
 JIZ __Lwh1top
 @__Lwh1end LOD main_n

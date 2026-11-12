@@ -172,13 +172,14 @@ int sim_has(char *va)
     return 0;
 }
 
-// the instruction about to be added (sim_n_opc) writes va
-void sim_store(char *va)
+// the instruction about to be added (sim_n_opc) writes va, late cycles after
+// its own (1 for INC, whose write lands while the next instruction runs)
+void sim_store(char *va, int late)
 {
     for (int i = 0; i < s_count; i++) if (strcmp(sv[i].raw, va) == 0)
     {
         sv[i].st = xrealloc(sv[i].st, (size_t)(sv[i].nst + 1) * sizeof(int));
-        sv[i].st[sv[i].nst++] = sim_n_opc;
+        sv[i].st[sv[i].nst++] = sim_n_opc + late;
         return;
     }
 }
@@ -226,8 +227,8 @@ int   sim_addr    (int i){return sv[i].addr   ;} // returns the variable address
 int   sim_type    (int i){return sv[i].type   ;} // returns the variable type
 int   sim_cont    (     ){return s_count      ;} // returns the number of registered variables
 int   sim_shared  (int i){return sv[i].shar   ;} // returns whether the variable is in a #SHARE group
-int   sim_nstore  (int i){return sv[i].nst    ;} // returns how many SETs write it
-int   sim_store_at(int i, int k){return sv[i].st[k];} // returns the instruction index of the k-th
+int   sim_nstore  (int i){return sv[i].nst    ;} // returns how many SETs and INCs write it
+int   sim_store_at(int i, int k){return sv[i].st[k];} // returns the instruction index of the k-th write (an INC's: its own + 1)
 
 char* sim_name_arr(int i){return sa[i].name   ;} // returns the array name
 int   sim_addr_arr(int i){return sa[i].addr   ;} // returns the array address

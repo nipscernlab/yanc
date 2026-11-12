@@ -44,9 +44,7 @@ SET main_acc
 LOD main_sum
 ADD main_r
 SET main_sum
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 LES 31
 JIZ __Lwh3
 @__Lwh3end LOD main_acc
@@ -66,9 +64,7 @@ F_MLT 256.0
 SET main_e
 F2I_M main_e
 OUT 0
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 31
 JIZ __Lwh2
 @__Lwh2end JMP __Lwh1

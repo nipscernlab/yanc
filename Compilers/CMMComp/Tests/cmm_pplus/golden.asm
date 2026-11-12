@@ -213,9 +213,7 @@ ADD 1
 SET_P main_k
 GRE 3
 JIZ __Lwh2end
-LOD main_r
-ADD 1
-SET main_r
+INC main_r
 JMP __Lwh2
 @__Lwh2end LOD main_r
 OUT 0
@@ -246,9 +244,7 @@ PSH
 LDI hist
 ADD 1
 STI hist
-LOD main_j
-ADD 1
-SET main_j
+INC main_j
 LES 5
 JIZ __Lwh3top
 @__Lwh3end LOD_V hist 0

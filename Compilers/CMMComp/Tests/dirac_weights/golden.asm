@@ -36,9 +36,7 @@ MLT 3
 ADD 1
 P_LOD 1.0
 STI R
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 2
 JIZ __Lwh1
 @__Lwh1end #array main_C 2 9
@@ -77,9 +75,7 @@ SF_ADD
 P_LOD __dd11_main
 ADD 3
 SET __dd11_main
-LOD __dk2_main
-ADD 1
-SET __dk2_main
+INC __dk2_main
 JNZ __Ld2
 @__Ld2e POP
 P_LOD __dk1_main
@@ -99,9 +95,7 @@ SF_ADD
 P_LOD __dd12_main
 ADD 3
 SET __dd12_main
-LOD __dk3_main
-ADD 1
-SET __dk3_main
+INC __dk3_main
 JNZ __Ld3
 @__Ld3e POP
 SF_ADD
@@ -122,9 +116,7 @@ SF_ADD
 P_LOD __dd13_main
 ADD 3
 SET __dd13_main
-LOD __dk4_main
-ADD 1
-SET __dk4_main
+INC __dk4_main
 JNZ __Ld4
 @__Ld4e POP
 SF_ADD
@@ -145,16 +137,12 @@ SF_ADD
 P_LOD __dd14_main
 ADD 3
 SET __dd14_main
-LOD __dk5_main
-ADD 1
-SET __dk5_main
+INC __dk5_main
 JNZ __Ld5
 @__Ld5e POP
 SF_ADD
 STI_V main_C 12
-LOD __dk1_main
-ADD 1
-SET __dk1_main
+INC __dk1_main
 JNZ __Ld1
 @__Ld1e LOD __dd10_main
 ADD 3
@@ -173,14 +161,10 @@ ADD main_c
 LDI main_C
 F2I
 OUT 0
-LOD main_c
-ADD 1
-SET main_c
+INC main_c
 LES 2
 JIZ __Lwh3
-@__Lwh3end LOD main_r
-ADD 1
-SET main_r
+@__Lwh3end INC main_r
 LES 2
 JIZ __Lwh2
 @__Lwh2end @fim JMP fim

@@ -201,15 +201,11 @@ ISI data_i
 LOD fft_k
 ADD fft_istep
 SET fft_k
-LOD fft_ind
-ADD 1
-SET fft_ind
+INC fft_ind
 JMP __Lwh3
 @__Lwh3end LOD fft_ind
 SET fft_sind
-LOD fft_m
-ADD 1
-SET fft_m
+INC fft_m
 JMP __Lwh2
 @__Lwh2end LOD fft_istep
 SET fft_mmax

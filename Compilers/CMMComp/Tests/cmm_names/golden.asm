@@ -26,9 +26,7 @@ SET fim
 #array g 2 2
 @main LOD 0
 SET main_k
-@__Lwh1top LOD main_k
-ADD 1
-SET main_k
+@__Lwh1top INC main_k
 LES 2
 JIZ __Lwh1top
 @__Lwh1end LOD Lwh1

@@ -186,7 +186,9 @@ void instr_ula(char *va, int is_const)
     // a shared name is still shown on its own in the waveform, at its home's
     // address, and follows only the instructions that write it (hdl.c)
     if (home != va && !sim_has(va)) sim_regi_at(va, var_find(home));
-    if (var_shared(va) && (strcmp(opc_name, "SET") == 0 || strcmp(opc_name, "SET_P") == 0)) sim_store(va);
+    // INC and P_INC write their word a cycle later, while the next instruction runs (#203)
+    if (var_shared(va) && (strcmp(opc_name, "SET") == 0 || strcmp(opc_name, "SET_P") == 0)) sim_store(va, 0);
+    if (var_shared(va) && (strcmp(opc_name, "INC") == 0 || strcmp(opc_name, "P_INC") == 0)) sim_store(va, 1);
 
     // write the new instruction
     fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(var_find(home),nbopr));
@@ -442,6 +444,30 @@ static int  div_left = 0;          // words of the sequence still expected
 static int  div_len  = 0;          // words of the whole sequence
 static char div_op[16], div_rd[8]; // the division, and the read it ends with
 
+// INC k writes k + 1 the cycle after its decode, on the data memory's one
+// write port, at the address it kept (core.v, inc_wr): the instruction right
+// after it must not write a data word, and must not name k, whose read would
+// leave on the edge that writes it (#203)
+static int  inc_left = 0;          // 2: the INC's operand comes next; 1: the next instruction
+static int  inc_chk  = 0;          // 1: the next instruction's operand must not be k
+static char inc_mn[8], inc_var[64], inc_next[16];
+
+static void inc_seq(const char *mn)
+{
+    inc_chk = 0;
+    if (inc_left == 1)
+    {
+        if (asm_writes_data(mn)) fatal(MSG_ERR_INC_WRITE, inc_mn, inc_var, mn);
+        snprintf(inc_next, sizeof(inc_next), "%s", mn);
+        inc_left = 0; inc_chk = 1;
+    }
+    if (strcmp(mn, "INC") == 0 || strcmp(mn, "P_INC") == 0)
+    {
+        snprintf(inc_mn, sizeof(inc_mn), "%s", mn);
+        inc_left = 2;
+    }
+}
+
 static void div_seq(const char *mn)
 {
     if (div_left > 0)
@@ -465,6 +491,7 @@ static void div_seq(const char *mn)
 void eval_opcode(int op, int next_state, char *text, char *nome)
 {
     div_seq(text);         // a division must be followed by NOP and its read
+    inc_seq(text);         // nor may the word after an INC write or read its word
 
     opc_idx = op;          // record the current opcode
     snprintf(opc_name, sizeof(opc_name), "%s", text); // the current opcode name, for the translation file (a mnemonic: it fits)
@@ -491,6 +518,12 @@ void eval_opcode(int op, int next_state, char *text, char *nome)
 // runs when an operand is found
 void eval_opernd(char *va, int is_const)
 {
+    if (inc_left == 2) { snprintf(inc_var, sizeof(inc_var), "%s", va); inc_left = 1; }
+    else if (inc_chk)
+    {
+        if (strcmp(va, inc_var) == 0) fatal(MSG_ERR_INC_READ, inc_mn, inc_var, inc_next, va);
+        inc_chk = 0;
+    }
     switch (state)
     {
         case  5: ddepth =  atoi(va); ddepth_set = 1;    state =  0; break; // data stack depth

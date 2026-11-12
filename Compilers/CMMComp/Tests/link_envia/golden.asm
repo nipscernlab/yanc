@@ -13,17 +13,13 @@ SET main_k
 @__Lwh2 LOD main_n
 LES main_k
 JIZ __Lwh2end
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 JMP __Lwh2
 @__Lwh2end LOD main_n
 MLT 7
 ADD 3
 TOM 0
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 LES 15
 JIZ __Lwh1top
 @__Lwh1end @fim JMP fim
