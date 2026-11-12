@@ -11,9 +11,7 @@ SET main_k
 ADD 5000
 SET main_x
 OUT 0
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 3
 JIZ __Lwh1
 @__Lwh1end LOD 3

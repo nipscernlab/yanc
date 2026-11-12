@@ -460,9 +460,7 @@ LOD -3
 SET __dk0_main
 @__Ld0 P_F2I_M __dhf1_main
 STI_V iv 3
-LOD __dk0_main
-ADD 1
-SET __dk0_main
+INC __dk0_main
 JNZ __Ld0
 @__Ld0e LOD_V iv 1
 OUT 0
@@ -473,9 +471,7 @@ LOD -3
 SET __dk0_main
 @__Ld1 P_I2F_M __dhi1_main
 STI_V fv 3
-LOD __dk0_main
-ADD 1
-SET __dk0_main
+INC __dk0_main
 JNZ __Ld1
 @__Ld1e LOD_V fv 1
 F2I

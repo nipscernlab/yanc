@@ -5,10 +5,11 @@ Info: 149 assembly instructions generated
 Info: the Dirac temporary area (__dirac_tmp) takes 4 words of data memory. To save them: write the result to an array that isn't on the right-hand side, or compute the middle product into an array of your own, on a line before. Who used it:
       line 31: 4 words
 Info: 13 JIZ + JMP pairs made one JNZ each
+Info: 11 increments made one INC each
 Info: 5 variables share 4 data words (1 saved)
 Heads up: global variable 'A' is never read, so it's out of the program and the waveform (#WAVE A keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 136 instructions and 59 variables were found
+Info: 114 instructions and 59 variables were found
 Info: adding array handling
 Info: ULA resource -> integer adder
 Info: ULA resource -> float-point multiplier
@@ -17,7 +18,7 @@ Info: adding data input handling
 Info: ULA resource -> int to float converter
 Info: adding data output handling
 Info: stack depths from the program: SDEPTH 1, NDSTAC 3
-Info: using 13% of the Assembly Instruction Set
+Info: using 14% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
 Processor dirac_assign
   word          23 bits
@@ -25,7 +26,7 @@ Processor dirac_assign
   multiplier    float; divider no
   data stack    3 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      136 instructions, 59 data words
+  memories      114 instructions, 59 data words
 Sweet: the processor is good to go.
 ## variables
 lang C+-
@@ -37,144 +38,122 @@ lang C+-
 2 SET __dk0_main
 3 P_LOD 0.0
 4 STI_V A 16
-5 LOD __dk0_main
-6 ADD 1
-7 SET __dk0_main
-8 JNZ __Ld0
-9 LOD -20
-10 SET __dk1_main
-11 P_LOD 1.0
-12 STI_V A 20
-13 LOD __dk1_main
-14 ADD 5
-15 SET __dk1_main
-16 JNZ __Ld1
+5 INC __dk0_main
+6 JNZ __Ld0
+7 LOD -20
+8 SET __dk1_main
+9 P_LOD 1.0
+10 STI_V A 20
+11 LOD __dk1_main
+12 ADD 5
+13 SET __dk1_main
+14 JNZ __Ld1
 // 25: B # 1.0|I|;
-17 LOD -16
-18 SET __dk0_main
-19 P_LOD 0.0
-20 STI_V B 16
-21 LOD __dk0_main
-22 ADD 1
-23 SET __dk0_main
-24 JNZ __Ld2
-25 LOD -20
-26 SET __dk1_main
-27 P_LOD 1.0
-28 STI_V B 20
-29 LOD __dk1_main
-30 ADD 5
-31 SET __dk1_main
-32 JNZ __Ld3
+15 LOD -16
+16 SET __dk0_main
+17 P_LOD 0.0
+18 STI_V B 16
+19 INC __dk0_main
+20 JNZ __Ld2
+21 LOD -20
+22 SET __dk1_main
+23 P_LOD 1.0
+24 STI_V B 20
+25 LOD __dk1_main
+26 ADD 5
+27 SET __dk1_main
+28 JNZ __Ld3
 // 26: a # |0>;
-33 LOD -4
-34 SET __dk0_main
-35 P_LOD 0.0
-36 STI_V a 4
-37 LOD __dk0_main
-38 ADD 1
-39 SET __dk0_main
-40 JNZ __Ld4
+29 LOD -4
+30 SET __dk0_main
+31 P_LOD 0.0
+32 STI_V a 4
+33 INC __dk0_main
+34 JNZ __Ld4
 // 27: b # |0>;
-41 LOD -4
-42 SET __dk0_main
-43 P_LOD 0.0
-44 STI_V b 4
-45 LOD __dk0_main
-46 ADD 1
-47 SET __dk0_main
-48 JNZ __Ld5
+35 LOD -4
+36 SET __dk0_main
+37 P_LOD 0.0
+38 STI_V b 4
+39 INC __dk0_main
+40 JNZ __Ld5
 // 31: a # |B|a>;           // a = B * a
-49 LOD_V a 0
-50 SET __dhf2_main
-51 LOD -4
-52 SET __dd3_main
-53 LOD -16
-54 SET __dk0_main
-55 LOD __dd3_main
-56 P_LOD __dk0_main
-57 LDI_V B 16
-58 F_MLT __dhf2_main
-59 P_LOD -3
-60 SET __dk1_main
-61 ADD __dk0_main
-62 LDI_V B 20
-63 P_LOD __dk1_main
-64 LDI_V a 4
-65 SF_MLT
-66 SF_ADD
-67 P_LOD __dk1_main
-68 ADD 1
-69 SET __dk1_main
-70 JNZ __Ld7
-71 POP
-72 STI_V __dirac_tmp 4
-73 LOD __dd3_main
-74 ADD 1
-75 SET __dd3_main
-76 LOD __dk0_main
-77 ADD 4
-78 SET __dk0_main
-79 JNZ __Ld6
-80 LOD -4
-81 SET __dk4_main
-82 PSH
-83 LDI_V __dirac_tmp 4
-84 STI_V a 4
-85 LOD __dk4_main
-86 ADD 1
-87 SET __dk4_main
-88 JNZ __Ld8
+41 LOD_V a 0
+42 SET __dhf2_main
+43 LOD -4
+44 SET __dd3_main
+45 LOD -16
+46 SET __dk0_main
+47 LOD __dd3_main
+48 P_LOD __dk0_main
+49 LDI_V B 16
+50 F_MLT __dhf2_main
+51 P_LOD -3
+52 SET __dk1_main
+53 ADD __dk0_main
+54 LDI_V B 20
+55 P_LOD __dk1_main
+56 LDI_V a 4
+57 SF_MLT
+58 SF_ADD
+59 P_INC __dk1_main
+60 JNZ __Ld7
+61 POP
+62 STI_V __dirac_tmp 4
+63 INC __dd3_main
+64 LOD __dk0_main
+65 ADD 4
+66 SET __dk0_main
+67 JNZ __Ld6
+68 LOD -4
+69 SET __dk4_main
+70 PSH
+71 LDI_V __dirac_tmp 4
+72 STI_V a 4
+73 INC __dk4_main
+74 JNZ __Ld8
 // 32: a # 2.0|b>;          // a = 2.0 * b
-89 LOD -4
-90 SET __dk0_main
-91 PSH
-92 LDI_V b 4
-93 F_MLT 2.0
-94 STI_V a 4
-95 LOD __dk0_main
-96 ADD 1
-97 SET __dk0_main
-98 JNZ __Ld9
+75 LOD -4
+76 SET __dk0_main
+77 PSH
+78 LDI_V b 4
+79 F_MLT 2.0
+80 STI_V a 4
+81 INC __dk0_main
+82 JNZ __Ld9
 // 33: A # |a><b|;          // A = a * b^T
-99 LOD -16
+83 LOD -16
+84 SET __dd3_main
+85 LOD -4
+86 SET __dk0_main
+87 LDI_V a 4
+88 SET __dhf2_main
+89 LOD -4
+90 SET __dk1_main
+91 ADD __dd3_main
+92 P_LOD __dk1_main
+93 LDI_V b 4
+94 F_MLT __dhf2_main
+95 STI_V A 20
+96 INC __dk1_main
+97 JNZ __Ld11
+98 LOD __dd3_main
+99 ADD 4
 100 SET __dd3_main
-101 LOD -4
-102 SET __dk0_main
-103 LDI_V a 4
-104 SET __dhf2_main
-105 LOD -4
-106 SET __dk1_main
-107 ADD __dd3_main
-108 P_LOD __dk1_main
-109 LDI_V b 4
-110 F_MLT __dhf2_main
-111 STI_V A 20
-112 LOD __dk1_main
-113 ADD 1
-114 SET __dk1_main
-115 JNZ __Ld11
-116 LOD __dd3_main
-117 ADD 4
-118 SET __dd3_main
-119 LOD __dk0_main
-120 ADD 1
-121 SET __dk0_main
-122 JNZ __Ld10
+101 INC __dk0_main
+102 JNZ __Ld10
 // 34: a # 0.001|in(0)>;    // a = 0.001 * input(0)
-123 LOD -4
-124 SET __dk0_main
-125 PF_INN 0
-126 F_MLT 0.001
-127 STI_V a 4
-128 LOD __dk0_main
-129 ADD 1
-130 SET __dk0_main
-131 JNZ __Ld12
+103 LOD -4
+104 SET __dk0_main
+105 PF_INN 0
+106 F_MLT 0.001
+107 STI_V a 4
+108 INC __dk0_main
+109 JNZ __Ld12
 // 35: out(0, 1);
-132 LOD 1
-133 OUT 0
+110 LOD 1
+111 OUT 0
 // 29: while (1)
-134 JMP __Lwh1
+112 JMP __Lwh1
 // -3: END
-135 JMP fim
+113 JMP fim

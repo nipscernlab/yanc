@@ -112,6 +112,7 @@ IRREGULAR = {
     'STI':   ('r', 'pop', 'base_w', '-', '-'),
     'ISI':   ('r', 'pop', 'base_w', '-', '-'),
     'LEA':   ('w', '-', 'addr', '-', '-'),
+    'INC':   ('w', '-', 'rw', '-', '-'),     # k = k + 1 in memory, the acc gets it (#203)
     'INN':   ('w', '-', '-', '-', 'in'),
     'F_INN': ('w', '-', '-', '-', 'in'),
     'P_INN': ('rw', 'push', '-', '-', 'in'),
@@ -215,9 +216,9 @@ def read_core_flow(path):
 ULA_LINE = re.compile(r"^\s*wire\s*\[[^\]]*\]\s*([tld])(\d+)\s*[;=](.*?)//\s*(\w+)")
 # the mnemonics whose ALU operation is not the one their name gives: the
 # indirect loads and POP load (LOD), F_INN and PF_INN convert the port's word
-# (I2F)
+# (I2F), INC adds 1 on the integer adder (ADD, #203)
 ULA_IRREGULAR = {'LDI': 'LOD', 'ILI': 'LOD', 'SET_P': 'LOD', 'POP': 'LOD',
-                 'F_INN': 'I2F', 'PF_INN': 'I2F'}
+                 'F_INN': 'I2F', 'PF_INN': 'I2F', 'INC': 'ADD', 'P_INC': 'ADD'}
 
 
 def read_ula_ops(text, bad):

@@ -139,9 +139,7 @@ SET s
 LOD main_y
 LES main_x
 JIZ __Lif3else
-LOD s
-ADD 1
-SET s
+INC s
 @__Lif3else LOD main_y
 GRE main_x
 JIZ __Lif4else
@@ -894,9 +892,7 @@ ADD 2048
 SET s
 @__Lif20else LOD 0
 SET main_t
-@__Lwh2 LOD main_t
-ADD 1
-SET main_t
+@__Lwh2 INC main_t
 GRE 3
 JNZ __Lwh2
 @__Lwh2end LOD 3

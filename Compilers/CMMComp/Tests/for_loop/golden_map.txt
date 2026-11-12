@@ -1,15 +1,16 @@
 ## messages
 Info: 76 assembly instructions generated
+Info: 7 increments made one INC each
 Info: 5 variables share 2 data words (3 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 76 instructions and 12 variables were found
+Info: 62 instructions and 12 variables were found
 Info: ULA resource -> integer adder
 Info: adding data output handling
 Info: ULA resource -> < operator for int
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> > operator for int
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 7% of the Assembly Instruction Set
+Info: using 8% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
 Processor for_loop
   word          16 bits
@@ -17,7 +18,7 @@ Processor for_loop
   multiplier    int; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      76 instructions, 12 data words
+  memories      62 instructions, 12 data words
 Sweet: the processor is good to go.
 ## variables
 main idx 1
@@ -37,94 +38,80 @@ lang C+-
 4 ADD main_idx
 5 OUT 0
 // 29: for (idx = 0; idx < 3; idx = idx + 1)
-6 LOD main_idx
-7 ADD 1
-8 SET main_idx
-9 LES 2
-10 JIZ __Lwh2
+6 INC main_idx
+7 LES 2
+8 JIZ __Lwh2
 // 35: for (cnt = 0; cnt < 3; cnt++)
-11 LOD 0
-12 SET main_cnt
+9 LOD 0
+10 SET main_cnt
 // 37: out(0, 20 + cnt);
-13 LOD 20
-14 ADD main_cnt
-15 OUT 0
+11 LOD 20
+12 ADD main_cnt
+13 OUT 0
 // 35: for (cnt = 0; cnt < 3; cnt++)
-16 LOD main_cnt
-17 ADD 1
-18 SET main_cnt
-19 LES 2
-20 JIZ __Lwh3
+14 INC main_cnt
+15 LES 2
+16 JIZ __Lwh3
 // 41: for (int kk = 0; kk < 3; kk++)
-21 LOD 0
-22 SET main_kk
+17 LOD 0
+18 SET main_kk
 // 43: out(0, 30 + kk);
-23 LOD 30
-24 ADD main_kk
-25 OUT 0
+19 LOD 30
+20 ADD main_kk
+21 OUT 0
 // 41: for (int kk = 0; kk < 3; kk++)
-26 LOD main_kk
-27 ADD 1
-28 SET main_kk
-29 LES 2
-30 JIZ __Lwh4
+22 INC main_kk
+23 LES 2
+24 JIZ __Lwh4
 // 47: for (outer = 0; outer < 2; outer++)
-31 LOD 0
-32 SET main_outer
+25 LOD 0
+26 SET main_outer
 // 49: for (inner = 0; inner < 2; inner++)
-33 LOD 0
-34 SET main_inner
+27 LOD 0
+28 SET main_inner
 // 51: out(0, 40 + outer * 10 + inner);
-35 LOD main_outer
-36 MLT 10
-37 ADD 40
-38 ADD main_inner
-39 OUT 0
+29 LOD main_outer
+30 MLT 10
+31 ADD 40
+32 ADD main_inner
+33 OUT 0
 // 49: for (inner = 0; inner < 2; inner++)
-40 LOD main_inner
-41 ADD 1
-42 SET main_inner
-43 LES 1
-44 JIZ __Lwh6
+34 INC main_inner
+35 LES 1
+36 JIZ __Lwh6
 // 47: for (outer = 0; outer < 2; outer++)
-45 LOD main_outer
-46 ADD 1
-47 SET main_outer
-48 LES 1
-49 JIZ __Lwh5
+37 INC main_outer
+38 LES 1
+39 JIZ __Lwh5
 // 56: idx = 0;
-50 LOD 0
-51 SET main_idx
+40 LOD 0
+41 SET main_idx
 // 59: out(0, 60 + idx);
-52 LOD 60
-53 ADD main_idx
-54 OUT 0
+42 LOD 60
+43 ADD main_idx
+44 OUT 0
 // 57: for ( ; idx < 2; idx++)
-55 LOD main_idx
-56 ADD 1
-57 SET main_idx
-58 LES 1
-59 JIZ __Lwh7
+45 INC main_idx
+46 LES 1
+47 JIZ __Lwh7
 // 63: for (idx = 0; idx < 2; )
-60 LOD 0
-61 SET main_idx
-62 LOD main_idx
-63 GRE 2
-64 JIZ __Lwh8end
+48 LOD 0
+49 SET main_idx
+50 LOD main_idx
+51 GRE 2
+52 JIZ __Lwh8end
 // 65: out(0, 70 + idx);
-65 LOD 70
-66 ADD main_idx
-67 OUT 0
+53 LOD 70
+54 ADD main_idx
+55 OUT 0
 // 66: idx = idx + 1;
-68 LOD main_idx
-69 ADD 1
-70 SET main_idx
+56 INC main_idx
 // 63: for (idx = 0; idx < 2; )
-71 JMP __Lwh8
+57 JMP __Lwh8
 // 69: out(0, 99);
-72 LOD 99
-73 OUT 0
+58 LOD 99
+59 OUT 0
 // 26: while (1)
-74 JMP __Lwh1
+60 JMP __Lwh1
 // -3: END
-75 JMP fim
+61 JMP fim

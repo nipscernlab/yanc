@@ -21,7 +21,7 @@ Info: ULA resource -> & operator
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point negative operation
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 16% of the Assembly Instruction Set
+Info: using 15% of the Assembly Instruction Set
 Info: using 27% of the ULA operations
 Processor cmm_trig
   word          32 bits

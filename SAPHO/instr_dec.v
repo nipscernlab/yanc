@@ -142,7 +142,9 @@ module instr_dec
     parameter SHR      = 0,
     parameter S_SHR    = 0,
     parameter SRS      = 0,
-    parameter S_SRS    = 0
+    parameter S_SRS    = 0,
+    parameter INC      = 0,
+    parameter P_INC    = 0
 )(
     input                   clk, rst,
     input      [NBOPCO-1:0] opcode,
@@ -153,7 +155,8 @@ module instr_dec
 
     output                  mem_wr,
     output                  req_in, out_en,
-    output                  ldi, sti, fft
+    output                  ldi, sti, fft,
+    output                  inc            // an INC or P_INC in decode (#203)
 );
 
 // {ula_op, push, pop, mem_wr, req_in, out_en, ldi, sti, fft}: one term per
@@ -279,6 +282,10 @@ wire [13:0] d105; generate if ((SHR     ) != 0) begin : g105 assign d105 = (opco
 wire [13:0] d106; generate if ((S_SHR   ) != 0) begin : g106 assign d106 = (opcode == 7'd106) ? {6'd44, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g106 assign d106 = 14'd0; end endgenerate
 wire [13:0] d107; generate if ((SRS     ) != 0) begin : g107 assign d107 = (opcode == 7'd107) ? {6'd45, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g107 assign d107 = 14'd0; end endgenerate
 wire [13:0] d108; generate if ((S_SRS   ) != 0) begin : g108 assign d108 = (opcode == 7'd108) ? {6'd45, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g108 assign d108 = 14'd0; end endgenerate
+// in place: the ADD of the data word and 1, which core.v puts in the
+// accumulator; the write comes a cycle later, from core.v (#203)
+wire [13:0] d109; generate if ((INC     ) != 0) begin : g109 assign d109 = (opcode == 7'd109) ? {6'd2 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g109 assign d109 = 14'd0; end endgenerate
+wire [13:0] d110; generate if ((P_INC   ) != 0) begin : g110 assign d110 = (opcode == 7'd110) ? {6'd2 , 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g110 assign d110 = 14'd0; end endgenerate
 
 wire [13:0] ctl = d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 |
                   d13 | d14 | d15 | d23 | d24 | d25 | d26 | d27 | d28 | d29 | d30 | d31 |
@@ -288,7 +295,7 @@ wire [13:0] ctl = d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 |
                   d68 | d69 | d70 | d71 | d72 | d73 | d74 | d75 | d76 | d77 | d78 | d79 |
                   d80 | d81 | d82 | d83 | d84 | d85 | d86 | d87 | d88 | d89 | d90 | d91 |
                   d92 | d93 | d94 | d95 | d96 | d97 | d98 | d99 | d100 | d101 | d102 | d103 |
-                  d104 | d105 | d106 | d107 | d108;
+                  d104 | d105 | d106 | d107 | d108 | d109 | d110;
 
 
 // mem_wr and req_in leave the processor as they are (the data memory's write
@@ -301,6 +308,13 @@ wire mem_wr_d, req_in_d;
 assign {push, pop, mem_wr_d, req_in_d, out_en, ldi, sti, fft} = ctl[7:0];
 assign mem_wr = mem_wr_d & ~rst;
 assign req_in = req_in_d & ~rst;
+
+// INC and P_INC, held at 0 in reset as mem_wr: the write they lead to
+generate if ((INC | P_INC) != 0) begin : inc_dec
+    assign inc = ((opcode == 7'd109) | (opcode == 7'd110)) & ~rst;
+end else begin : inc_dec
+    assign inc = 1'b0;
+end endgenerate
 
 // the ALU operation is registered; a synchronous reset to 0 = pass-acc is a
 // harmless NOP for the ALU while the rest of the pipeline is being reset

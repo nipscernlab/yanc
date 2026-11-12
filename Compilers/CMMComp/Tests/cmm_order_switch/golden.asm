@@ -59,9 +59,7 @@ OUT 0
 @__switch_end_1 LOD main_f
 F_ADD 1.0
 SET main_f
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 3
 JIZ __Lwh1
 @__Lwh1end LOD 2.25

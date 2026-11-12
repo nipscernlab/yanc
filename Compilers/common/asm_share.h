@@ -35,6 +35,10 @@ int asm_share(const char *asm_path);
 // instruction, so neither compiler lets a user name become one.
 int asm_is_mnemonic(const char *name);
 
+// 1 when the instruction writes a data word (SET, STI, INC, ...): what asmcomp
+// keeps from the word right after an INC, whose write takes the port (#203).
+int asm_writes_data(const char *mn);
+
 // ****************************************************************************
 // asm_fuse -- one word where the code wrote two (#38) ------------------------
 // ****************************************************************************
@@ -83,6 +87,25 @@ int asm_tail(const char *asm_path, const char *pc_path);
 // that the pairs they leave next to each other are caught too. Returns how
 // many instructions the pc map covered that left, -1 on an I/O error.
 int asm_jnz(const char *asm_path, const char *pc_path);
+
+// ****************************************************************************
+// asm_inc -- LOD k; ADD 1; SET k is INC k (#203) ------------------------------
+// ****************************************************************************
+//
+// k = k + 1 comes out of the compilers as LOD k; ADD 1; SET k (P_LOD k when
+// the acc is pushed first). INC k does the same in one word: k + 1 in the
+// acc, and in k the cycle after. Only when the three lines follow one
+// another, no label sits on the ADD or the SET, k is a name, and the
+// instruction right after neither writes a data word nor names k (asmcomp's
+// rule: the one write port, and the read of k on the edge that writes it);
+// that instruction does not become an INC itself. The INC keeps the LOD's
+// source line in the pc map. On anything the pass does not understand it
+// leaves the file untouched.
+//
+// Run it after asm_jnz, so that the instruction after the SET is the one the
+// program will run. Returns how many instructions the pc map covered that
+// left, -1 on an I/O error.
+int asm_inc(const char *asm_path, const char *pc_path);
 
 // ****************************************************************************
 // asm_reach -- code no path gets to is not in the program, nor its hardware --
@@ -277,8 +300,8 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth, int *itr_held, con
 // ****************************************************************************
 //
 // cmmcomp and cppcomp both run, after their code generation: asm_fuse,
-// asm_reach, asm_divk, asm_divseq, asm_unread, asm_callarg, asm_tail, asm_jnz
-// and asm_share, each with the order its own comment above asks for. `which`
+// asm_reach, asm_divk, asm_divseq, asm_unread, asm_callarg, asm_tail, asm_jnz,
+// asm_inc and asm_share, each with the order its own comment above asks for. `which`
 // picks the optional ones, ASM_P_FUSE, ASM_P_DIVK and ASM_P_TAIL (cppcomp
 // does its own fusion in its peephole, and keeps every division as written
 // and every call a call); the others always run. gone and keep go to

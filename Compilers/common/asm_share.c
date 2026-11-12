@@ -147,6 +147,8 @@ static const as_isa isa[] = {
     {"S_SHR", "none", "-", "-", "pop", "rw", "-"},
     {"SRS", "data", "r", "-", "-", "rw", "-"},
     {"S_SRS", "none", "-", "-", "pop", "rw", "-"},
+    {"INC", "data", "rw", "-", "-", "w", "-"},
+    {"P_INC", "data", "rw", "-", "push", "rw", "-"},
     {"NOP", "none", "-", "-", "-", "-", "-"},
     {"F_ROT", "none", "-", "-", "-", "rw", "-"},
     {"F_SU1", "data", "r", "-", "-", "rw", "-"},
@@ -181,6 +183,14 @@ static int isa_find(const char *mn)
 }
 
 int asm_is_mnemonic(const char *name) { return isa_find(name) >= 0; }
+
+int asm_writes_data(const char *mn)
+{
+    int i = isa_find(mn);
+    if (i < 0) return 0;
+    const char *e = isa[i].opnd;
+    return strcmp(e, "w") == 0 || strcmp(e, "rw") == 0 || strcmp(e, "base_w") == 0;
+}
 
 // ---- small growable tables ---------------------------------------------------
 
@@ -364,7 +374,7 @@ int asm_share(const char *asm_path)
                 }
                 x->name = ni;
                 const char *e = isa[op].opnd;
-                if (strcmp(cls, "data") != 0 || (strcmp(e, "r") != 0 && strcmp(e, "w") != 0))
+                if (strcmp(cls, "data") != 0 || (strcmp(e, "r") != 0 && strcmp(e, "w") != 0 && strcmp(e, "rw") != 0))
                     pinned[ni] = 1;                        // touched through an address
             }
         }
@@ -424,7 +434,8 @@ int asm_share(const char *asm_path)
             uint64_t *o = &lout[(size_t)i * W], *li = &lin[(size_t)i * W];
             if (memcmp(o, tmp, W * sizeof(uint64_t))) { memcpy(o, tmp, W * sizeof(uint64_t)); changed = 1; }
 
-            // live in = use | (live out - def)
+            // live in = use | (live out - def); an INC (rw) reads its word first,
+            // so for liveness it is a use
             const char *e = isa[x->op].opnd;
             int def = x->name >= 0 && strcmp(isa[x->op].cls, "data") == 0 && strcmp(e, "w") == 0;
             for (int w = 0; w < W; w++)
@@ -444,7 +455,8 @@ int asm_share(const char *asm_path)
     for (int i = 0; i < n; i++)
     {
         as_ins *x = &ins[i];
-        if (!(x->name >= 0 && strcmp(isa[x->op].cls, "data") == 0 && strcmp(isa[x->op].opnd, "w") == 0)) continue;
+        const char *e = isa[x->op].opnd;     // an INC (rw) writes its word too
+        if (!(x->name >= 0 && strcmp(isa[x->op].cls, "data") == 0 && (strcmp(e, "w") == 0 || strcmp(e, "rw") == 0))) continue;
         int d = x->name;
         for (int v = 0; v < nn; v++)
             if (v != d && BS_TEST(&lout[(size_t)i * W], v)) { BS_SET(&adj[(size_t)d * W], v); BS_SET(&adj[(size_t)v * W], d); }
@@ -1562,7 +1574,7 @@ static int acc_only(int op)
     const as_isa *d = &isa[op];
     return (strcmp(d->acc, "w") == 0 || strcmp(d->acc, "rw") == 0) && strcmp(d->stk, "-") == 0
         && strcmp(d->flow, "-") == 0 && strcmp(d->io, "-") == 0 && strcmp(d->cls, "link") != 0
-        && strcmp(d->opnd, "w") != 0 && strcmp(d->opnd, "base_w") != 0
+        && strcmp(d->opnd, "w") != 0 && strcmp(d->opnd, "rw") != 0 && strcmp(d->opnd, "base_w") != 0
         && !asm_div_words(d->mn) && !div_read(d->mn);
 }
 
@@ -1580,7 +1592,7 @@ static int push_load(int op)
     const as_isa *d = &isa[op];
     return strcmp(d->stk, "push") == 0 && (strcmp(d->acc, "rw") == 0 || strcmp(d->acc, "r") == 0)
         && strcmp(d->flow, "-") == 0 && strcmp(d->io, "-") == 0 && strcmp(d->cls, "link") != 0
-        && strcmp(d->opnd, "w") != 0 && strcmp(d->opnd, "base_w") != 0
+        && strcmp(d->opnd, "w") != 0 && strcmp(d->opnd, "rw") != 0 && strcmp(d->opnd, "base_w") != 0
         && !asm_div_words(d->mn) && !div_read(d->mn);
 }
 
@@ -2109,6 +2121,126 @@ done:
     return removed;
 }
 
+// ---- asm_inc: LOD k; ADD 1; SET k is INC k (#203) ------------------------------
+// See asm_share.h.
+
+int asm_inc(const char *asm_path, const char *pc_path)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, pc = {0};
+    read_lines(f, &lines);
+    fclose(f);
+
+    int  *mn_at  = xmalloc((lines.n + 1) * sizeof(int));   // per line: where its mnemonic starts (-1: no instruction)
+    int  *mn_len = xmalloc((lines.n + 1) * sizeof(int));
+    int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));   // per line: its instruction index (-1: none)
+    int  *op_of  = xmalloc((lines.n + 1) * sizeof(int));   // per line: its isa index
+    char *dead   = xcalloc(lines.n + 1, 1);                 // per line: 1 if it leaves
+    char *inc    = xcalloc(lines.n + 1, 1);                 // per line: 1 its LOD becomes INC, 2 its P_LOD P_INC
+    char *after  = xcalloc(lines.n + 1, 1);                 // per line: 1 if it runs right after an INC, so no INC itself
+    char (*var)[256] = xcalloc(lines.n + 1, sizeof(*var));  // per INC line: k
+    int   n = 0, ok = 1, removed = 0, made = 0;
+
+    for (int ln = 0; ln < lines.n && ok; ln++)
+    {
+        char *text = lines.s[ln];
+        int   end  = (int)strlen(text);
+        char *cm   = strstr(text, "//");
+        if (cm) end = (int)(cm - text);
+        mn_at[ln] = ins_of[ln] = op_of[ln] = -1;
+        int p = 0, t0 = -1, tl = 0;
+        for (;;)                                             // skip the labels: the first other token
+        {
+            while (p < end && isspace((unsigned char)text[p])) p++;
+            if (p >= end) break;
+            int s0 = p;
+            while (p < end && !isspace((unsigned char)text[p])) p++;
+            if (text[s0] != '@') { t0 = s0; tl = p - s0; break; }
+        }
+        if (t0 < 0 || text[t0] == '#') continue;             // blank, a label alone, a directive
+        int op = isa_find(tok_of(text + t0, tl));
+        if (op < 0) { ok = 0; break; }
+        mn_at[ln] = t0; mn_len[ln] = tl; ins_of[ln] = n++; op_of[ln] = op;
+    }
+    if (!ok) goto done;
+
+    #define IS(ln, m)    (op_of[ln] >= 0 && strcmp(isa[op_of[ln]].mn, m) == 0)
+    #define LABELED(ln)  (memchr(lines.s[ln], '@', (size_t)mn_at[ln]) != NULL)
+    #define OPND(ln, o)  line_operand(lines.s[ln], mn_at[ln], mn_len[ln], o, sizeof(o))
+    for (int ln = 0; ln + 2 < lines.n; ln++)
+    {
+        int a = ln + 1, w = ln + 2;
+        char k[256], one[256], k2[256];
+        int pl = IS(ln, "P_LOD");
+        if (!pl && !IS(ln, "LOD")) continue;
+        if (after[ln]) continue;                                            // an INC would write right after one
+        if (!IS(a, "ADD") || !IS(w, "SET")) continue;
+        if (LABELED(a) || LABELED(w)) continue;                             // a jump enters in the middle
+        if (!OPND(ln, k) || !OPND(a, one) || !OPND(w, k2)) continue;
+        if (is_literal(k) || strcmp(one, "1") != 0 || strcmp(k, k2) != 0) continue;
+
+        // the instruction right after the SET is the first to run after the
+        // INC: it must not write a data word nor name k (core.v, inc_wr), and
+        // it does not become an INC itself. Neither compiler reloads k there
+        // (2026-11-12: the only LOD k after an increment in the tests has a
+        // label, so a jump also reaches it), so nothing is done to make room.
+        int nx = w + 1;
+        while (nx < lines.n && mn_at[nx] < 0) nx++;
+        if (nx < lines.n)
+        {
+            char o[256];
+            if ((OPND(nx, o) && strcmp(o, k) == 0) || asm_writes_data(isa[op_of[nx]].mn)) continue;
+            after[nx] = 1;
+        }
+        inc[ln] = pl ? 2 : 1;
+        snprintf(var[ln], sizeof(var[ln]), "%s", k);
+        dead[a] = dead[w] = 1;
+        made++;
+        ln = w;
+    }
+    #undef IS
+    #undef LABELED
+    #undef OPND
+    if (made == 0) goto done;
+
+    if (pc_path)
+    {
+        FILE *fp = fopen(pc_path, "r");
+        if (fp) { read_lines(fp, &pc); fclose(fp); }
+    }
+    f = fopen(asm_path, "w");
+    if (!f) { removed = -1; goto done; }
+    char *gone = xcalloc(n + 1, 1);
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        char *text = lines.s[ln];
+        if (dead[ln]) { gone[ins_of[ln]] = 1; continue; }
+        if (!inc[ln]) { fputs(text, f); continue; }
+        const char *cm = strstr(text, "//");                // the labels and the comment stay
+        fprintf(f, "%.*s%s %s", mn_at[ln], text, inc[ln] == 2 ? "P_INC" : "INC", var[ln]);
+        if (cm) fprintf(f, " %s", cm); else fputc('\n', f);
+    }
+    fclose(f);
+    if (pc.n > 0)                                            // the INC keeps the LOD's source line
+    {
+        f = fopen(pc_path, "w");
+        if (f)
+        {
+            for (int i = 0; i < pc.n; i++) { if (i < n && gone[i]) removed++; else fputs(pc.s[i], f); }
+            fclose(f);
+        }
+    }
+    free(gone);
+    printf(yanc_lang_en ? "Info: %d increments made one INC each\n"
+                        : "Info: %d incrementos viraram um INC cada\n", made);
+
+done:
+    free(mn_at); free(mn_len); free(ins_of); free(op_of); free(dead); free(inc); free(after); free(var);
+    st_free(&lines); st_free(&pc);
+    return removed;
+}
+
 int asm_passes(const char *asm_path, const char *pc_path, int which,
                void (*gone)(const char *name), int (*keep)(const char *name))
 {
@@ -2120,7 +2252,8 @@ int asm_passes(const char *asm_path, const char *pc_path, int which,
     if ((n = asm_unread(asm_path, pc_path, gone, keep)) > 0) less += n;
     if ((n = asm_callarg(asm_path, pc_path)) > 0) less += n;
     if ((which & ASM_P_TAIL) && (n = asm_tail(asm_path, pc_path)) > 0) less += n;
-    if ((n = asm_jnz(asm_path, pc_path)) > 0) less += n;                       // last (#78)
+    if ((n = asm_jnz(asm_path, pc_path)) > 0) less += n;                       // (#78)
+    if ((n = asm_inc(asm_path, pc_path)) > 0) less += n;                       // after the jumps settle (#203)
     asm_share(asm_path);
     return less;
 }

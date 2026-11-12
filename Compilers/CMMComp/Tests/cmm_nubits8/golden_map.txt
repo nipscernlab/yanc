@@ -1,15 +1,16 @@
 ## messages
 Heads up on line 21: the array has 200 positions, but an int index of 8 bits only reaches 127.
 Info: 93 assembly instructions generated
+Info: 3 increments made one INC each
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 93 instructions and 219 variables were found
+Info: 87 instructions and 219 variables were found
 Info: ULA resource -> integer negative operation
 Info: adding data output handling
 Info: ULA resource -> integer adder
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 8% of the Assembly Instruction Set
+Info: using 9% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
 Processor cmm_nubits8
   word          8 bits
@@ -17,7 +18,7 @@ Processor cmm_nubits8
   multiplier    int; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      93 instructions, 219 data words
+  memories      87 instructions, 219 data words
 Sweet: the processor is good to go.
 ## variables
 main a 1
@@ -72,76 +73,70 @@ lang C+-
 31 NEG_M 56
 32 LES main_k
 33 JIZ __Lwh1end
-34 LOD main_n
-35 ADD 1
-36 SET main_n
-37 LOD main_k
-38 ADD 1
-39 SET main_k
-40 JMP __Lwh1
+34 INC main_n
+35 LOD main_k
+36 ADD 1
+37 SET main_k
+38 JMP __Lwh1
 // 32: out(0, n);
-41 LOD main_n
-42 OUT 0
+39 LOD main_n
+40 OUT 0
 // 33: n = 0;
-43 LOD 0
-44 SET main_n
+41 LOD 0
+42 SET main_n
 // 34: for (k = 0; k < a + a; k = k + 1) n = n + 1;  // the same, computed
-45 SET main_k
-46 LOD main_a
-47 ADD main_a
-48 LES main_k
-49 JIZ __Lwh2end
-50 LOD main_n
-51 ADD 1
-52 SET main_n
-53 LOD main_k
-54 ADD 1
-55 SET main_k
-56 JMP __Lwh2
+43 SET main_k
+44 LOD main_a
+45 ADD main_a
+46 LES main_k
+47 JIZ __Lwh2end
+48 INC main_n
+49 LOD main_k
+50 ADD 1
+51 SET main_k
+52 JMP __Lwh2
 // 35: out(0, n);
-57 LOD main_n
-58 OUT 0
+53 LOD main_n
+54 OUT 0
 // 36: n = 0;
-59 LOD 0
-60 SET main_n
+55 LOD 0
+56 SET main_n
 // 37: for (k = 0; k < 100 + 100; k = k + 1) n = n + 1;  // the same, folded
-61 SET main_k
-62 NEG_M 56
-63 LES main_k
-64 JIZ __Lwh3end
-65 LOD main_n
-66 ADD 1
-67 SET main_n
-68 LOD main_k
-69 ADD 1
-70 SET main_k
-71 JMP __Lwh3
+57 SET main_k
+58 NEG_M 56
+59 LES main_k
+60 JIZ __Lwh3end
+61 INC main_n
+62 LOD main_k
+63 ADD 1
+64 SET main_k
+65 JMP __Lwh3
 // 38: out(0, n);
-72 LOD main_n
-73 OUT 0
+66 LOD main_n
+67 OUT 0
 // 40: switch (s)
-74 LOD main_s
-75 ADD -120
-76 JIZ __sw_body_1_1
-77 ADD 117
-78 JIZ __sw_body_1_2
-79 JMP __sw_body_1_3
+68 LOD main_s
+69 ADD -120
+70 JIZ __sw_body_1_1
+71 ADD 117
+72 JIZ __sw_body_1_2
+73 JMP __sw_body_1_3
 // 42: case 120: out(0, 11); break;
-80 LOD 11
-81 OUT 0
-82 JMP __switch_end_1
+74 LOD 11
+75 OUT 0
+76 JMP __switch_end_1
 // 43: case 3:   out(0, 22); break;
-83 LOD 22
-84 OUT 0
-85 JMP __switch_end_1
+77 LOD 22
+78 OUT 0
+79 JMP __switch_end_1
 // 44: default:  out(0, 33);
-86 LOD 33
-87 OUT 0
+80 LOD 33
+81 OUT 0
 // 47: big[100] = 5;
-88 LOD 5
-89 SET_V main_big 100
+82 LOD 5
+83 SET_V main_big 100
 // 48: out(0, big[100]);
-90 LOD_V main_big 100
-91 OUT 0
+84 LOD_V main_big 100
+85 OUT 0
 // -3: END
-92 JMP fim
+86 JMP fim

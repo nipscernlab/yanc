@@ -36,7 +36,7 @@ Info: ULA resource -> float to int converter
 Info: ULA resource -> > operator for float
 Info: ULA resource -> < operator for float
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 15% of the Assembly Instruction Set
+Info: using 14% of the Assembly Instruction Set
 Info: using 22% of the ULA operations
 Heads up: input port 0 isn't being used. Burning hardware for nothing!
 Processor ZeroCross

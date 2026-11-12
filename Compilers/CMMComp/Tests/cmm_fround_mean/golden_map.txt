@@ -1,8 +1,9 @@
 ## messages
 Info: 65 assembly instructions generated
+Info: 2 increments made one INC each
 Info: 9 variables share 7 data words (2 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 65 instructions and 18 variables were found
+Info: 61 instructions and 18 variables were found
 Info: ULA resource -> << operator
 Info: ULA resource -> & operator
 Info: ULA resource -> ^ operator
@@ -15,7 +16,7 @@ Info: ULA resource -> < operator for int
 Info: ULA resource -> float to int converter
 Info: adding data output handling
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 17% of the Assembly Instruction Set
+Info: using 18% of the Assembly Instruction Set
 Info: using 27% of the ULA operations
 Processor cmm_fround_mean
   word          32 bits
@@ -23,7 +24,7 @@ Processor cmm_fround_mean
   multiplier    float; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      65 instructions, 18 data words
+  memories      61 instructions, 18 data words
 Sweet: the processor is good to go.
 ## variables
 main base 2
@@ -85,38 +86,34 @@ lang C+-
 34 ADD main_r
 35 SET main_sum
 // 36: for (n = 0; n < 32; n = n + 1)
-36 LOD main_n
-37 ADD 1
-38 SET main_n
-39 LES 31
-40 JIZ __Lwh3
+36 INC main_n
+37 LES 31
+38 JIZ __Lwh3
 // 44: d = (acc - base) - (sum >> 16) * 256.0;
-41 LOD main_acc
-42 F_SU1 main_base
-43 P_LOD 16
-44 SHR main_sum
-45 I2F
-46 F_MLT 256.0
-47 SF_SU2
-48 SET main_d
+39 LOD main_acc
+40 F_SU1 main_base
+41 P_LOD 16
+42 SHR main_sum
+43 I2F
+44 F_MLT 256.0
+45 SF_SU2
+46 SET main_d
 // 45: e = (d - (sum & 65535) * s8) * 256.0;
-49 LOD 65535
-50 AND main_sum
-51 I2F
-52 F_MLT main_s8
-53 F_SU2 main_d
-54 F_MLT 256.0
-55 SET main_e
+47 LOD 65535
+48 AND main_sum
+49 I2F
+50 F_MLT main_s8
+51 F_SU2 main_d
+52 F_MLT 256.0
+53 SET main_e
 // 46: fout(0, e);
-56 F2I_M main_e
-57 OUT 0
+54 F2I_M main_e
+55 OUT 0
 // 34: for (k = 0; k < 32; k = k + 1)
-58 LOD main_k
-59 ADD 1
-60 SET main_k
-61 LES 31
-62 JIZ __Lwh2
+56 INC main_k
+57 LES 31
+58 JIZ __Lwh2
 // 31: while (1)
-63 JMP __Lwh1
+59 JMP __Lwh1
 // -3: END
-64 JMP fim
+60 JMP fim

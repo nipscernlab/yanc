@@ -37,7 +37,7 @@ Info: ULA resource -> > operator for float
 Info: ULA resource -> < operator for float
 Info: ULA resource -> ~ operator
 Info: stack depths from the program: SDEPTH 1, NDSTAC 6
-Info: using 59% of the Assembly Instruction Set
+Info: using 58% of the Assembly Instruction Set
 Info: using 72% of the ULA operations
 Processor cmm_cov_ops
   word          32 bits

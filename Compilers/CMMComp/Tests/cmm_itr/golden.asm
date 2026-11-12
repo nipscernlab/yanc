@@ -15,9 +15,7 @@ OUT 0
 LOD 0
 SET main_k
 @__Lwh1top #TOAQUI
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 2
 JIZ __Lwh1top
 @fim JMP fim

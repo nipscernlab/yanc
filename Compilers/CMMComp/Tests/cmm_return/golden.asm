@@ -46,9 +46,7 @@ JIZ __Lif1else
 LOD firstHit_k
 ADD firstHit_k
 RET
-@__Lif1else LOD firstHit_k
-ADD 1
-SET firstHit_k
+@__Lif1else INC firstHit_k
 LES 99
 JIZ __Lwh1
 @__Lwh1end LOD 0
@@ -67,14 +65,10 @@ LOD nestedFind_a
 MLT 100
 ADD nestedFind_b
 RET
-@__Lif2else LOD nestedFind_b
-ADD 1
-SET nestedFind_b
+@__Lif2else INC nestedFind_b
 LES 4
 JIZ __Lwh3
-@__Lwh3end LOD nestedFind_a
-ADD 1
-SET nestedFind_a
+@__Lwh3end INC nestedFind_a
 LES 4
 JIZ __Lwh2
 @__Lwh2end LOD 0

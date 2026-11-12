@@ -8,9 +8,7 @@ NOP
 #NUGAIN 128
 @main @__Lwh1 LOD 0
 SET main_k
-@__Lwh2top LOD main_k
-ADD 1
-SET main_k
+@__Lwh2top INC main_k
 LOD 3
 XOR main_k
 JIZ __Lwh2
@@ -27,9 +25,7 @@ JIZ __Lwh3cont
 LOD 10
 ADD main_k
 OUT 0
-@__Lwh3cont LOD main_k
-ADD 1
-SET main_k
+@__Lwh3cont INC main_k
 LES 5
 JIZ __Lwh3
 @__Lwh3end LOD 0
@@ -44,14 +40,10 @@ MLT 10
 ADD 20
 ADD main_n
 OUT 0
-@__Lwh5cont LOD main_n
-ADD 1
-SET main_n
+@__Lwh5cont INC main_n
 LES 2
 JIZ __Lwh5
-@__Lwh5end LOD main_k
-ADD 1
-SET main_k
+@__Lwh5end INC main_k
 LES 2
 JIZ __Lwh4
 @__Lwh4end LOD 0
@@ -65,9 +57,7 @@ OUT 0
 @__switch_end_1 LOD 60
 ADD main_k
 OUT 0
-@__Lwh6cont LOD main_k
-ADD 1
-SET main_k
+@__Lwh6cont INC main_k
 LES 3
 JIZ __Lwh6
 @__Lwh6end JMP __Lwh1

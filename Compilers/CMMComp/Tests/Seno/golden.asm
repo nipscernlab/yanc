@@ -28,9 +28,7 @@ LDI main_a
 SET main_t
 F_SU1 main_y
 SET main_e
-LOD main_j
-ADD 1
-SET main_j
+INC main_j
 LES 999
 JIZ __Lwh2top
 @__Lwh2end LOD 0
@@ -44,9 +42,7 @@ LDI main_a
 SET main_t
 F_SU1 main_y
 SET main_e
-LOD main_j
-ADD 1
-SET main_j
+INC main_j
 LES 999
 JIZ __Lwh3top
 @__Lwh3end @fim JMP fim

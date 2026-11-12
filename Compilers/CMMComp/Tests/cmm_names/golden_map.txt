@@ -7,6 +7,7 @@ Info: 4 divisions, 5 words each for DIV/MOD and 4 for F_DIV (12 added)
 Info: 5 variables written and never read removed (7 instructions)
 Info: 3 instructions computing a value never read removed
 Info: 1 JIZ + JMP pairs made one JNZ each
+Info: 1 increments made one INC each
 Info: 13 variables share 7 data words (6 saved)
 Heads up: global variable 'switch_exp' is never read, so it's out of the program and the waveform (#WAVE switch_exp keeps it).
 Heads up: global variable 'g' is never read, so it's out of the program and the waveform (#WAVE g keeps it).
@@ -15,7 +16,7 @@ Heads up: variable 'y' in function 'main' is never read, so it's out of the prog
 Heads up: variable 's' in function 'main' is never read, so it's out of the program and the waveform (#WAVE s, in the function, keeps it).
 Heads up: variable 'r' in function 'main' is never read, so it's out of the program and the waveform (#WAVE r, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 99 instructions and 22 variables were found
+Info: 97 instructions and 22 variables were found
 Info: ULA resource -> integer adder
 Info: ULA resource -> < operator for int
 Info: adding data output handling
@@ -29,7 +30,7 @@ Info: ULA resource -> < operator for float
 Info: ULA resource -> root-square approximation for float
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 17% of the Assembly Instruction Set
+Info: using 18% of the Assembly Instruction Set
 Info: using 25% of the ULA operations
 Processor cmm_names
   word          32 bits
@@ -37,7 +38,7 @@ Processor cmm_names
   multiplier    float; divider float
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      99 instructions, 22 data words
+  memories      97 instructions, 22 data words
 Sweet: the processor is good to go.
 ## variables
 global Lwh1 1
@@ -77,103 +78,101 @@ lang C+-
 12 LOD 0
 13 SET main_k
 // 33: while (k < 3) k = k + 1;
-14 LOD main_k
-15 ADD 1
-16 SET main_k
-17 LES 2
-18 JIZ __Lwh1top
+14 INC main_k
+15 LES 2
+16 JIZ __Lwh1top
 // 34: out(0, Lwh1 + k);
-19 LOD Lwh1
-20 ADD main_k
-21 OUT 0
+17 LOD Lwh1
+18 ADD main_k
+19 OUT 0
 // 36: g[0] = 1.5;
-22 LOD 1.5
-23 SET_V g 0
+20 LOD 1.5
+21 SET_V g 0
 // 37: float yy = g[0]++;               // keeps the old g[0] in aux_var
-24 LOD 0
-25 PSH
-26 LDI g
-27 SET __aux_var
-28 F_ADD 1.0
-29 STI g
+22 LOD 0
+23 PSH
+24 LDI g
+25 SET __aux_var
+26 F_ADD 1.0
+27 STI g
 // 38: out(0, aux_var);
-30 LOD aux_var
-31 OUT 0
+28 LOD aux_var
+29 OUT 0
 // 40: int y = pow(2, 3);
-32 LOD 2.0
-33 SET __pow_b
-34 SET __pow_r
-35 F_MLT __pow_b
-36 SET __pow_b
-37 LOD __pow_r
-38 F_MLT __pow_b
-39 SET __pow_r
-40 F2I
+30 LOD 2.0
+31 SET __pow_b
+32 SET __pow_r
+33 F_MLT __pow_b
+34 SET __pow_b
+35 LOD __pow_r
+36 F_MLT __pow_b
+37 SET __pow_r
+38 F2I
 // 41: out(0, y + pow_b);
-41 ADD pow_b
-42 OUT 0
+39 ADD pow_b
+40 OUT 0
 // 43: float s = sqrt(16.0);
-43 LOD 16.0
-44 CAL __float_sqrt
+41 LOD 16.0
+42 CAL __float_sqrt
 // 44: int r = floor(s + floor_x);
-45 F_ADD floor_x
-46 SET __floor_x
-47 F2I
-48 I2F
-49 SET __floor_t
-50 F_LES __floor_x
-51 JIZ __Lflr1end
-52 LOD __floor_t
-53 F_ADD -1.0
-54 SET __floor_t
-55 LOD __floor_t
-56 F2I
+43 F_ADD floor_x
+44 SET __floor_x
+45 F2I
+46 I2F
+47 SET __floor_t
+48 F_LES __floor_x
+49 JIZ __Lflr1end
+50 LOD __floor_t
+51 F_ADD -1.0
+52 SET __floor_t
+53 LOD __floor_t
+54 F2I
 // 45: out(0, r);
-57 OUT 0
+55 OUT 0
 // 47: switch (k)
-58 LOD main_k
-59 ADD -3
-60 JNZ __sw_body_1_2
+56 LOD main_k
+57 ADD -3
+58 JNZ __sw_body_1_2
 // 49: case 3: switch_exp = 1; break;
-61 LOD 1
-62 JMP __switch_end_1
+59 LOD 1
+60 JMP __switch_end_1
 // 52: out(0, sw_body_1_1);
-63 LOD sw_body_1_1
-64 OUT 0
+61 LOD sw_body_1_1
+62 OUT 0
 // 53: out(0, fim);
-65 LOD fim
-66 OUT 0
+63 LOD fim
+64 OUT 0
 // -3: END
-67 JMP fim
+65 JMP fim
 // library macros, no source line
-68 SET __sqrt_num
-69 F_ROT
-70 PSH
-71 F_DIV __sqrt_num
-72 NOP
-73 NOP
-74 F_QUO
-75 SF_ADD
-76 F_MLT 0.5
-77 PSH
-78 F_DIV __sqrt_num
-79 NOP
-80 NOP
-81 F_QUO
-82 SF_ADD
-83 F_MLT 0.5
-84 PSH
-85 F_DIV __sqrt_num
-86 NOP
-87 NOP
-88 F_QUO
-89 SF_ADD
-90 F_MLT 0.5
-91 PSH
-92 F_DIV __sqrt_num
-93 NOP
-94 NOP
-95 F_QUO
-96 SF_ADD
-97 F_MLT 0.5
-98 RET
+66 SET __sqrt_num
+67 F_ROT
+68 PSH
+69 F_DIV __sqrt_num
+70 NOP
+71 NOP
+72 F_QUO
+73 SF_ADD
+74 F_MLT 0.5
+75 PSH
+76 F_DIV __sqrt_num
+77 NOP
+78 NOP
+79 F_QUO
+80 SF_ADD
+81 F_MLT 0.5
+82 PSH
+83 F_DIV __sqrt_num
+84 NOP
+85 NOP
+86 F_QUO
+87 SF_ADD
+88 F_MLT 0.5
+89 PSH
+90 F_DIV __sqrt_num
+91 NOP
+92 NOP
+93 F_QUO
+94 SF_ADD
+95 F_MLT 0.5
+96 RET

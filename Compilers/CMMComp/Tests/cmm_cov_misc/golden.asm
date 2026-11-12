@@ -54,9 +54,7 @@ OUT 0
 LOD 0
 SET main_k
 SET main_s
-@__Lwh1 LOD main_k
-ADD 1
-SET main_k
+@__Lwh1 INC main_k
 LOD 4
 XOR main_k
 JIZ __Lwh1end
@@ -72,9 +70,7 @@ SET main_s
 @__Lwh2 LOD 5
 XOR main_k
 JIZ __Lwh2end
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 EQU 3
 JIZ __Lwh2
 LOD main_s
@@ -86,9 +82,7 @@ OUT 0
 LOD 0
 SET main_s
 SET main_k
-@__Lwh3top LOD main_k
-ADD 1
-SET main_k
+@__Lwh3top INC main_k
 LOD 3
 XOR main_k
 JIZ __Lwh3
@@ -109,9 +103,7 @@ JIZ __Lwh4cont
 LOD main_s
 ADD main_k
 SET main_s
-@__Lwh4cont LOD main_k
-ADD 1
-SET main_k
+@__Lwh4cont INC main_k
 LES 4
 JIZ __Lwh4
 @__Lwh4end LOD main_s
@@ -119,9 +111,7 @@ OUT 0
 LOD 0
 SET main_k
 SET main_s
-@__Lwh5 LOD main_k
-ADD 1
-SET main_k
+@__Lwh5 INC main_k
 LOD 2
 XOR main_k
 JIZ __Lwh5cont
@@ -153,9 +143,7 @@ SET main_s
 @__Lwh7 LOD 5
 XOR main_k
 JIZ __Lwh7end
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 EQU 3
 JIZ __Lif6else
 LOD main_s
@@ -181,9 +169,7 @@ JMP __Lwh8cont
 @__Lif7else LOD main_s
 ADD main_k
 SET main_s
-@__Lwh8cont LOD main_k
-ADD 1
-SET main_k
+@__Lwh8cont INC main_k
 LES 4
 JIZ __Lwh8
 @__Lwh8end LOD main_s
@@ -204,18 +190,14 @@ JMP __Lwh9cont
 @__Lif8else LOD main_s
 ADD main_k
 SET main_s
-@__Lwh9cont LOD main_k
-ADD 1
-SET main_k
+@__Lwh9cont INC main_k
 JMP __Lwh9
 @__Lwh9end LOD main_s
 OUT 0
 LOD 0
 SET main_k
 SET main_s
-@__Lwh10 LOD main_k
-ADD 1
-SET main_k
+@__Lwh10 INC main_k
 EQU 2
 JIZ __Lif9else
 LOD main_s
@@ -316,9 +298,7 @@ SET __dk0_main
 LDI_V fa3 3
 F_MLT __dhf1_main
 STI_V fv3 3
-LOD __dk0_main
-ADD 1
-SET __dk0_main
+INC __dk0_main
 JNZ __Ld0
 @__Ld0e LOD_V fv3 0
 F_MLT 4.0
@@ -334,9 +314,7 @@ SET __dk0_main
 LDI_V ia3 3
 I2F
 STI_V fv3 3
-LOD __dk0_main
-ADD 1
-SET __dk0_main
+INC __dk0_main
 JNZ __Ld1
 @__Ld1e LOD_V fv3 1
 F_MLT 4.0
@@ -348,9 +326,7 @@ SET __dk0_main
 LDI_V fa3 3
 F2I
 STI_V iv3 3
-LOD __dk0_main
-ADD 1
-SET __dk0_main
+INC __dk0_main
 JNZ __Ld2
 @__Ld2e LOD_V iv3 2
 OUT 0
@@ -392,9 +368,7 @@ SET __dk0_main
 LDI_V fa3 3
 F_MLT main_fs
 STI_V fv3 3
-LOD __dk0_main
-ADD 1
-SET __dk0_main
+INC __dk0_main
 JNZ __Ld3
 @__Ld3e LOD_V fv3 2
 F_MLT 4.0
@@ -412,9 +386,7 @@ LDI_V ia3 3
 I2F
 SF_MLT
 SF_ADD
-P_LOD __dk0_main
-ADD 1
-SET __dk0_main
+P_INC __dk0_main
 JNZ __Ld4
 @__Ld4e POP
 SF_ADD

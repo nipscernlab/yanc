@@ -2,9 +2,10 @@
 Heads up on line 16: variable 'f' is float, but getting an int.
 Info: 13 assembly instructions generated
 Info: 1 variables written and never read removed (1 instructions)
+Info: 1 increments made one INC each
 Heads up: variable 'f' in function 'main' is never read, so it's out of the program and the waveform (#WAVE f, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 12 instructions and 5 variables were found
+Info: 10 instructions and 4 variables were found
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point multiplier
 Info: adding toma (TOM), which hands a value to the partner processor
@@ -19,7 +20,7 @@ Processor lk_flt_w
   multiplier    float; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      12 instructions, 5 data words
+  memories      10 instructions, 4 data words
 Sweet: the processor is good to go.
 ## variables
 main n 1
@@ -37,11 +38,9 @@ lang C+-
 4 F_MLT 1.5
 5 TOM 0
 // 18: n++;
-6 LOD main_n
-7 ADD 1
-8 SET main_n
+6 INC main_n
 // 14: while (n < 16)
-9 LES 15
-10 JIZ __Lwh1top
+7 LES 15
+8 JIZ __Lwh1top
 // -3: END
-11 JMP fim
+9 JMP fim

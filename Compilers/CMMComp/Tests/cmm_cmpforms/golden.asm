@@ -131,9 +131,7 @@ SET b1_s
 I2F_M b1_k
 F_GRE b1_f
 JIZ __Lif1else
-LOD b1_s
-ADD 1
-SET b1_s
+INC b1_s
 @__Lif1else I2F_M b1_k
 F_LES b1_f
 JIZ __Lif2else
@@ -156,9 +154,7 @@ LOD b2_k
 ADD 1
 GRE b2_m
 JIZ __Lif4else
-LOD b2_s
-ADD 1
-SET b2_s
+INC b2_s
 @__Lif4else LOD b2_k
 ADD 1
 LES b2_m
@@ -184,9 +180,7 @@ ADD 1
 I2F
 F_GRE b3_f
 JIZ __Lif7else
-LOD b3_s
-ADD 1
-SET b3_s
+INC b3_s
 @__Lif7else LOD b3_k
 ADD 1
 I2F
@@ -212,9 +206,7 @@ SET b4_s
 I2F_M b4_k
 F_LES b4_f
 JIZ __Lif10else
-LOD b4_s
-ADD 1
-SET b4_s
+INC b4_s
 @__Lif10else I2F_M b4_k
 F_GRE b4_f
 JIZ __Lif11else
@@ -238,9 +230,7 @@ ADD 1
 I2F
 F_LES b5_f
 JIZ __Lif13else
-LOD b5_s
-ADD 1
-SET b5_s
+INC b5_s
 @__Lif13else LOD b5_k
 ADD 1
 I2F
@@ -266,9 +256,7 @@ SET b6_s
 LOD b6_f
 F_GRE b6_g
 JIZ __Lif16else
-LOD b6_s
-ADD 1
-SET b6_s
+INC b6_s
 @__Lif16else LOD b6_f
 F_LES b6_g
 JIZ __Lif17else
@@ -291,9 +279,7 @@ LOD b7_g
 F_ADD 0.5
 F_LES b7_f
 JIZ __Lif19else
-LOD b7_s
-ADD 1
-SET b7_s
+INC b7_s
 @__Lif19else LOD b7_g
 F_ADD 0.5
 F_GRE b7_f
@@ -318,9 +304,7 @@ LOD b8_f
 F_ADD 0.5
 F_GRE b8_g
 JIZ __Lif22else
-LOD b8_s
-ADD 1
-SET b8_s
+INC b8_s
 @__Lif22else LOD b8_f
 F_ADD 0.5
 F_LES b8_g

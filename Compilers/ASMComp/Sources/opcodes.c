@@ -17,7 +17,7 @@
 // the totals the usage report divides by; Scripts/check_isa.py holds them to
 // the code (rule 9), so adding an opcode or an ALU block without updating them
 // fails the regress instead of printing a wrong percentage
-#define ISA_PARAMS 106  // distinct opcode parameters in ASMComp.l (eval_opcode's last argument)
+#define ISA_PARAMS 108  // distinct opcode parameters in ASMComp.l (eval_opcode's last argument)
 #define ULA_BLOCKS  36   // distinct ALU blocks opc_add can instantiate (its MSG_INFO_*; u_count++ lines)
 
 int  u_count = 0;	      // ALU operations counter
@@ -211,7 +211,7 @@ void opc_add(char *mne)
 		if (strcmp(mne, "ADD") == 0)
 		{
 			// if the integer adder circuit isn't there yet, write the info
-			if ((find_opc("ADD") == -1) && (find_opc("S_ADD") == -1) && (find_opc("ADD_V") == -1))
+			if ((find_opc("ADD") == -1) && (find_opc("S_ADD") == -1) && (find_opc("ADD_V") == -1) && (find_opc("INC") == -1) && (find_opc("P_INC") == -1))
 			{
 				printf(MSG_INFO_INT_ADDER); u_count++;
 			}
@@ -220,7 +220,17 @@ void opc_add(char *mne)
 		if (strcmp(mne, "S_ADD") == 0)
 		{
 			// if the integer adder circuit isn't there yet, write the info
-			if ((find_opc("ADD") == -1) && (find_opc("S_ADD") == -1) && (find_opc("ADD_V") == -1))
+			if ((find_opc("ADD") == -1) && (find_opc("S_ADD") == -1) && (find_opc("ADD_V") == -1) && (find_opc("INC") == -1) && (find_opc("P_INC") == -1))
+			{
+				printf(MSG_INFO_INT_ADDER); u_count++;
+			}
+		}
+
+		// INC and P_INC add 1 on the integer adder (#203)
+		if ((strcmp(mne, "INC") == 0) || (strcmp(mne, "P_INC") == 0))
+		{
+			// if the integer adder circuit isn't there yet, write the info
+			if ((find_opc("ADD") == -1) && (find_opc("S_ADD") == -1) && (find_opc("ADD_V") == -1) && (find_opc("INC") == -1) && (find_opc("P_INC") == -1))
 			{
 				printf(MSG_INFO_INT_ADDER); u_count++;
 			}
@@ -1006,7 +1016,7 @@ void opc_add(char *mne)
 		if (strcmp(mne, "ADD_V") == 0)
 		{
 			// if the integer adder circuit isn't there yet, write the info
-			if ((find_opc("ADD") == -1) && (find_opc("S_ADD") == -1) && (find_opc("ADD_V") == -1))
+			if ((find_opc("ADD") == -1) && (find_opc("S_ADD") == -1) && (find_opc("ADD_V") == -1) && (find_opc("INC") == -1) && (find_opc("P_INC") == -1))
 			{
 				printf(MSG_INFO_INT_ADDER); u_count++;
 			}

@@ -76,6 +76,8 @@ OTHER = {
     'REM': 'a = the remainder of the MOD four words before',
     'F_QUO': 'a = the quotient of the F_DIV three words before (four in a program with DIV or MOD)',
     'LEA': 'a = the address of x (a constant)',
+    'INC': 'x = x + 1; a = x (x is written the cycle after: the next instruction must not write the data memory nor read x)',
+    'P_INC': 'push a; x = x + 1; a = x (as INC)',
 }
 
 FAMILIES = [
@@ -90,6 +92,7 @@ FAMILIES = [
     ('Logic',                 lambda op: 83 <= op <= 92),
     ('Comparisons',           lambda op: 93 <= op <= 102),
     ('Shifts',                lambda op: 103 <= op <= 108),
+    ('In place',              lambda op: 109 <= op <= 110),
 ]
 
 def read_rows(path):
@@ -184,8 +187,8 @@ def render(rows):
     w('`offset` an address plus a constant, `lea` an address taken as a constant);')
     w('**a**, what the instruction does to the accumulator (`r` reads, `w` writes);')
     w('**stack**, `push` or `pop` of one data-stack word; **x**, what it does to the')
-    w('data word named (`r`, `w`, `base_r`/`base_w` an unknown word of the array')
-    w('named, `addr` its address only).')
+    w('data word named (`r`, `w`, `rw` reads it and writes it back, `base_r`/`base_w`')
+    w('an unknown word of the array named, `addr` its address only).')
     w('')
     lost = [r['mn'] for r in rows if not any(test(r['op']) for _, test in FAMILIES)]
     if lost:                       # a row in no family would leave the page silently

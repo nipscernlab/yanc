@@ -10,9 +10,7 @@ NOP
 SET main_n
 @__Lwh1top CAD 0
 OUT 0
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 LES 15
 JIZ __Lwh1top
 @__Lwh1end @fim JMP fim

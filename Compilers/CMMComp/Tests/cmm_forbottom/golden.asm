@@ -12,9 +12,7 @@ SET main_k
 @__Lwh1 LOD main_s
 ADD main_k
 SET main_s
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 9
 JIZ __Lwh1
 @__Lwh1end LOD main_s
@@ -26,9 +24,7 @@ SET main_k
 @__Lwh2 LOD main_s
 ADD main_k
 SET main_s
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 7
 JIZ __Lwh2
 @__Lwh2end LOD main_s
@@ -67,9 +63,7 @@ SET main_k
 @__Lwh5 LOD main_s
 ADD main_k
 SET main_s
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 EQU 6
 JIZ __Lwh5
 @__Lwh5end LOD main_s
@@ -80,9 +74,7 @@ SET main_k
 @__Lwh6 LOD main_s
 ADD 7
 SET main_s
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 XOR 0
 JIZ __Lwh6
 @__Lwh6end LOD main_s
@@ -97,9 +89,7 @@ JIZ __Lwh7end
 LOD main_s
 ADD 100
 SET main_s
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 JMP __Lwh7
 @__Lwh7end LOD main_s
 OUT 0
@@ -110,9 +100,7 @@ SET main_k
 @__Lwh8 LOD main_s
 ADD main_k
 SET main_s
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 10
 JIZ __Lwh8
 @__Lwh8end LOD main_s
@@ -131,9 +119,7 @@ JIZ __Lwh9cont
 LOD main_s
 ADD main_k
 SET main_s
-@__Lwh9cont LOD main_k
-ADD 1
-SET main_k
+@__Lwh9cont INC main_k
 LES 9
 JIZ __Lwh9
 @__Lwh9end LOD main_s
@@ -147,9 +133,7 @@ JIZ __Lwh10end
 LOD main_s
 ADD main_k
 SET main_s
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 9
 JIZ __Lwh10
 @__Lwh10end LOD main_s

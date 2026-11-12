@@ -97,9 +97,7 @@ SET soma_s
 @__Lwh1 LOD soma_n
 GRE 3
 JIZ __Lwh1end
-LOD soma_n
-ADD 1
-SET soma_n
+INC soma_n
 ADD soma_s
 SET soma_s
 JMP __Lwh1

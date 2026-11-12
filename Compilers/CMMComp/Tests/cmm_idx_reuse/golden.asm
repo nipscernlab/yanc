@@ -23,9 +23,7 @@ LOD main_k
 P_I2F_M main_k
 F_MLT 0.5
 STI vf
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 5
 JIZ __Lwh1top
 @__Lwh1end LOD main_a
@@ -113,9 +111,7 @@ PSH
 LDI vi
 ADD 100
 STI vi
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 2
 JIZ __Lwh2top
 @__Lwh2end LOD_V vi 1

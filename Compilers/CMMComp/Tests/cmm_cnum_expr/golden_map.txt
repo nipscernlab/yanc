@@ -1,8 +1,9 @@
 ## messages
 Info: 109 assembly instructions generated
+Info: 1 increments made one INC each
 Info: 11 variables share 7 data words (4 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 109 instructions and 29 variables were found
+Info: 107 instructions and 28 variables were found
 Info: ULA resource -> float-point multiplier
 Info: adding stack memory for function calls
 Info: ULA resource -> integer adder
@@ -14,7 +15,7 @@ Info: ULA resource -> < operator for int
 Info: ULA resource -> float to int converter
 Info: adding data output handling
 Info: stack depths from the program: SDEPTH 1, NDSTAC 2
-Info: using 16% of the Assembly Instruction Set
+Info: using 17% of the Assembly Instruction Set
 Info: using 19% of the ULA operations
 Processor cmm_cnum_expr
   word          32 bits
@@ -22,7 +23,7 @@ Processor cmm_cnum_expr
   multiplier    float; divider no
   data stack    2 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      109 instructions, 29 data words
+  memories      107 instructions, 28 data words
 Sweet: the processor is good to go.
 ## variables
 put z 3
@@ -146,21 +147,19 @@ lang C+-
 93 P_LOD main_k
 94 LDI v_i
 95 CAL put
-96 LOD main_k
-97 ADD 1
-98 SET main_k
-99 LES 3
-100 JIZ __Lwh1
+96 INC main_k
+97 LES 3
+98 JIZ __Lwh1
 // -3: END
-101 JMP fim
+99 JMP fim
 // 22: void put(comp z)
-102 SET_P put_z_i
-103 SET put_z
+100 SET_P put_z_i
+101 SET put_z
 // 24: fout(0, real(z));
-104 F2I_M put_z
-105 OUT 0
+102 F2I_M put_z
+103 OUT 0
 // 25: fout(0, imag(z));
-106 F2I_M put_z_i
-107 OUT 0
+104 F2I_M put_z_i
+105 OUT 0
 // 26: }
-108 RET
+106 RET

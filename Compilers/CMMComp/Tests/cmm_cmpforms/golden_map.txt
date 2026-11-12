@@ -1,8 +1,9 @@
 ## messages
 Info: 311 assembly instructions generated
+Info: 8 increments made one INC each
 Info: 24 variables share 3 data words (21 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 311 instructions and 14 variables were found
+Info: 295 instructions and 14 variables were found
 Info: adding stack memory for function calls
 Info: adding data output handling
 Info: ULA resource -> int to float converter
@@ -22,7 +23,7 @@ Processor cmm_cmpforms
   multiplier    no; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      311 instructions, 14 data words
+  memories      295 instructions, 14 data words
 Sweet: the processor is good to go.
 ## variables
 b1 k 1
@@ -169,254 +170,238 @@ lang C+-
 102 I2F_M b1_k
 103 F_GRE b1_f
 104 JIZ __Lif1else
-105 LOD b1_s
-106 ADD 1
-107 SET b1_s
+105 INC b1_s
 // 20: if (k > f) s = s + 2;
-108 I2F_M b1_k
-109 F_LES b1_f
-110 JIZ __Lif2else
-111 LOD b1_s
-112 ADD 2
-113 SET b1_s
+106 I2F_M b1_k
+107 F_LES b1_f
+108 JIZ __Lif2else
+109 LOD b1_s
+110 ADD 2
+111 SET b1_s
 // 21: if (k == f) s = s + 4;
-114 I2F_M b1_k
-115 EQU b1_f
-116 JIZ __Lif3else
-117 LOD b1_s
-118 ADD 4
-119 SET b1_s
+112 I2F_M b1_k
+113 EQU b1_f
+114 JIZ __Lif3else
+115 LOD b1_s
+116 ADD 4
+117 SET b1_s
 // 22: return s;
-120 LOD b1_s
-121 RET
+118 LOD b1_s
+119 RET
 // 25: int b2(int k, int m)                // int acc   with int var
-122 SET_P b2_m
-123 SET b2_k
+120 SET_P b2_m
+121 SET b2_k
 // 27: int s; s = 0;
-124 LOD 0
-125 SET b2_s
+122 LOD 0
+123 SET b2_s
 // 28: if ((k + 1) < m) s = s + 1;
-126 LOD b2_k
-127 ADD 1
-128 GRE b2_m
-129 JIZ __Lif4else
-130 LOD b2_s
-131 ADD 1
-132 SET b2_s
+124 LOD b2_k
+125 ADD 1
+126 GRE b2_m
+127 JIZ __Lif4else
+128 INC b2_s
 // 29: if ((k + 1) > m) s = s + 2;
-133 LOD b2_k
-134 ADD 1
-135 LES b2_m
-136 JIZ __Lif5else
-137 LOD b2_s
-138 ADD 2
-139 SET b2_s
+129 LOD b2_k
+130 ADD 1
+131 LES b2_m
+132 JIZ __Lif5else
+133 LOD b2_s
+134 ADD 2
+135 SET b2_s
 // 30: if ((k + 1) == m) s = s + 4;
-140 LOD b2_k
-141 ADD 1
-142 EQU b2_m
-143 JIZ __Lif6else
-144 LOD b2_s
-145 ADD 4
-146 SET b2_s
+136 LOD b2_k
+137 ADD 1
+138 EQU b2_m
+139 JIZ __Lif6else
+140 LOD b2_s
+141 ADD 4
+142 SET b2_s
 // 31: return s;
-147 LOD b2_s
-148 RET
+143 LOD b2_s
+144 RET
 // 34: int b3(int k, float f)              // int acc   with float var
-149 SET_P b3_f
-150 SET b3_k
+145 SET_P b3_f
+146 SET b3_k
 // 36: int s; s = 0;
-151 LOD 0
-152 SET b3_s
+147 LOD 0
+148 SET b3_s
 // 37: if ((k + 1) < f) s = s + 1;
-153 LOD b3_k
-154 ADD 1
-155 I2F
-156 F_GRE b3_f
-157 JIZ __Lif7else
-158 LOD b3_s
-159 ADD 1
-160 SET b3_s
+149 LOD b3_k
+150 ADD 1
+151 I2F
+152 F_GRE b3_f
+153 JIZ __Lif7else
+154 INC b3_s
 // 38: if ((k + 1) > f) s = s + 2;
-161 LOD b3_k
-162 ADD 1
-163 I2F
-164 F_LES b3_f
-165 JIZ __Lif8else
-166 LOD b3_s
-167 ADD 2
-168 SET b3_s
+155 LOD b3_k
+156 ADD 1
+157 I2F
+158 F_LES b3_f
+159 JIZ __Lif8else
+160 LOD b3_s
+161 ADD 2
+162 SET b3_s
 // 39: if ((k + 1) == f) s = s + 4;
-169 LOD b3_k
-170 ADD 1
-171 I2F
-172 EQU b3_f
-173 JIZ __Lif9else
-174 LOD b3_s
-175 ADD 4
-176 SET b3_s
+163 LOD b3_k
+164 ADD 1
+165 I2F
+166 EQU b3_f
+167 JIZ __Lif9else
+168 LOD b3_s
+169 ADD 4
+170 SET b3_s
 // 40: return s;
-177 LOD b3_s
-178 RET
+171 LOD b3_s
+172 RET
 // 43: int b4(float f, int k)              // float var with int var
-179 SET_P b4_k
-180 SET b4_f
+173 SET_P b4_k
+174 SET b4_f
 // 45: int s; s = 0;
-181 LOD 0
-182 SET b4_s
+175 LOD 0
+176 SET b4_s
 // 46: if (f < k) s = s + 1;
-183 I2F_M b4_k
-184 F_LES b4_f
-185 JIZ __Lif10else
-186 LOD b4_s
-187 ADD 1
-188 SET b4_s
+177 I2F_M b4_k
+178 F_LES b4_f
+179 JIZ __Lif10else
+180 INC b4_s
 // 47: if (f > k) s = s + 2;
-189 I2F_M b4_k
-190 F_GRE b4_f
-191 JIZ __Lif11else
-192 LOD b4_s
-193 ADD 2
-194 SET b4_s
+181 I2F_M b4_k
+182 F_GRE b4_f
+183 JIZ __Lif11else
+184 LOD b4_s
+185 ADD 2
+186 SET b4_s
 // 48: if (f == k) s = s + 4;
-195 I2F_M b4_k
-196 EQU b4_f
-197 JIZ __Lif12else
-198 LOD b4_s
-199 ADD 4
-200 SET b4_s
+187 I2F_M b4_k
+188 EQU b4_f
+189 JIZ __Lif12else
+190 LOD b4_s
+191 ADD 4
+192 SET b4_s
 // 49: return s;
-201 LOD b4_s
-202 RET
+193 LOD b4_s
+194 RET
 // 52: int b5(float f, int k)              // float var with int acc
-203 SET_P b5_k
-204 SET b5_f
+195 SET_P b5_k
+196 SET b5_f
 // 54: int s; s = 0;
-205 LOD 0
-206 SET b5_s
+197 LOD 0
+198 SET b5_s
 // 55: if (f < (k + 1)) s = s + 1;
-207 LOD b5_k
-208 ADD 1
-209 I2F
-210 F_LES b5_f
-211 JIZ __Lif13else
-212 LOD b5_s
-213 ADD 1
-214 SET b5_s
+199 LOD b5_k
+200 ADD 1
+201 I2F
+202 F_LES b5_f
+203 JIZ __Lif13else
+204 INC b5_s
 // 56: if (f > (k + 1)) s = s + 2;
-215 LOD b5_k
-216 ADD 1
-217 I2F
-218 F_GRE b5_f
-219 JIZ __Lif14else
-220 LOD b5_s
-221 ADD 2
-222 SET b5_s
+205 LOD b5_k
+206 ADD 1
+207 I2F
+208 F_GRE b5_f
+209 JIZ __Lif14else
+210 LOD b5_s
+211 ADD 2
+212 SET b5_s
 // 57: if (f == (k + 1)) s = s + 4;
-223 LOD b5_k
-224 ADD 1
-225 I2F
-226 EQU b5_f
-227 JIZ __Lif15else
-228 LOD b5_s
-229 ADD 4
-230 SET b5_s
+213 LOD b5_k
+214 ADD 1
+215 I2F
+216 EQU b5_f
+217 JIZ __Lif15else
+218 LOD b5_s
+219 ADD 4
+220 SET b5_s
 // 58: return s;
-231 LOD b5_s
-232 RET
+221 LOD b5_s
+222 RET
 // 61: int b6(float f, float g)            // float var with float var
-233 SET_P b6_g
-234 SET b6_f
+223 SET_P b6_g
+224 SET b6_f
 // 63: int s; s = 0;
-235 LOD 0
-236 SET b6_s
+225 LOD 0
+226 SET b6_s
 // 64: if (f < g) s = s + 1;
-237 LOD b6_f
-238 F_GRE b6_g
-239 JIZ __Lif16else
-240 LOD b6_s
-241 ADD 1
-242 SET b6_s
+227 LOD b6_f
+228 F_GRE b6_g
+229 JIZ __Lif16else
+230 INC b6_s
 // 65: if (f > g) s = s + 2;
-243 LOD b6_f
-244 F_LES b6_g
-245 JIZ __Lif17else
-246 LOD b6_s
-247 ADD 2
-248 SET b6_s
+231 LOD b6_f
+232 F_LES b6_g
+233 JIZ __Lif17else
+234 LOD b6_s
+235 ADD 2
+236 SET b6_s
 // 66: if (f == g) s = s + 4;
-249 LOD b6_f
-250 EQU b6_g
-251 JIZ __Lif18else
-252 LOD b6_s
-253 ADD 4
-254 SET b6_s
+237 LOD b6_f
+238 EQU b6_g
+239 JIZ __Lif18else
+240 LOD b6_s
+241 ADD 4
+242 SET b6_s
 // 67: return s;
-255 LOD b6_s
-256 RET
+243 LOD b6_s
+244 RET
 // 70: int b7(float f, float g)            // float var with float acc
-257 SET_P b7_g
-258 SET b7_f
+245 SET_P b7_g
+246 SET b7_f
 // 72: int s; s = 0;
-259 LOD 0
-260 SET b7_s
+247 LOD 0
+248 SET b7_s
 // 73: if (f < (g + 0.5)) s = s + 1;
+249 LOD b7_g
+250 F_ADD 0.5
+251 F_LES b7_f
+252 JIZ __Lif19else
+253 INC b7_s
+// 74: if (f > (g + 0.5)) s = s + 2;
+254 LOD b7_g
+255 F_ADD 0.5
+256 F_GRE b7_f
+257 JIZ __Lif20else
+258 LOD b7_s
+259 ADD 2
+260 SET b7_s
+// 75: if (f == (g + 0.5)) s = s + 4;
 261 LOD b7_g
 262 F_ADD 0.5
-263 F_LES b7_f
-264 JIZ __Lif19else
+263 EQU b7_f
+264 JIZ __Lif21else
 265 LOD b7_s
-266 ADD 1
+266 ADD 4
 267 SET b7_s
-// 74: if (f > (g + 0.5)) s = s + 2;
-268 LOD b7_g
-269 F_ADD 0.5
-270 F_GRE b7_f
-271 JIZ __Lif20else
-272 LOD b7_s
-273 ADD 2
-274 SET b7_s
-// 75: if (f == (g + 0.5)) s = s + 4;
-275 LOD b7_g
-276 F_ADD 0.5
-277 EQU b7_f
-278 JIZ __Lif21else
-279 LOD b7_s
-280 ADD 4
-281 SET b7_s
 // 76: return s;
-282 LOD b7_s
-283 RET
+268 LOD b7_s
+269 RET
 // 79: int b8(float f, float g)            // float acc with float var
-284 SET_P b8_g
-285 SET b8_f
+270 SET_P b8_g
+271 SET b8_f
 // 81: int s; s = 0;
-286 LOD 0
-287 SET b8_s
+272 LOD 0
+273 SET b8_s
 // 82: if ((f + 0.5) < g) s = s + 1;
-288 LOD b8_f
-289 F_ADD 0.5
-290 F_GRE b8_g
-291 JIZ __Lif22else
-292 LOD b8_s
-293 ADD 1
-294 SET b8_s
+274 LOD b8_f
+275 F_ADD 0.5
+276 F_GRE b8_g
+277 JIZ __Lif22else
+278 INC b8_s
 // 83: if ((f + 0.5) > g) s = s + 2;
-295 LOD b8_f
-296 F_ADD 0.5
-297 F_LES b8_g
-298 JIZ __Lif23else
-299 LOD b8_s
-300 ADD 2
-301 SET b8_s
+279 LOD b8_f
+280 F_ADD 0.5
+281 F_LES b8_g
+282 JIZ __Lif23else
+283 LOD b8_s
+284 ADD 2
+285 SET b8_s
 // 84: if ((f + 0.5) == g) s = s + 4;
-302 LOD b8_f
-303 F_ADD 0.5
-304 EQU b8_g
-305 JIZ __Lif24else
-306 LOD b8_s
-307 ADD 4
-308 SET b8_s
+286 LOD b8_f
+287 F_ADD 0.5
+288 EQU b8_g
+289 JIZ __Lif24else
+290 LOD b8_s
+291 ADD 4
+292 SET b8_s
 // 85: return s;
-309 LOD b8_s
-310 RET
+293 LOD b8_s
+294 RET

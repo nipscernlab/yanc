@@ -10,6 +10,7 @@ Info: 7 divisions, 5 words each for DIV/MOD and 4 for F_DIV (21 added)
 Info: 15 variables written and never read removed (15 instructions)
 Info: 17 instructions computing an argument never read removed
 Info: 1 calls that end a function made jumps
+Info: 33 increments made one INC each
 Info: 47 variables share 13 data words (34 saved)
 Heads up: variable 'dummy' in function 'project_h_hat' is never read, so it's out of the program and the waveform (#WAVE dummy, in the function, keeps it).
 Heads up: variable 'dummy' in function 'project_h_cand' is never read, so it's out of the program and the waveform (#WAVE dummy, in the function, keeps it).
@@ -27,7 +28,7 @@ Heads up: variable 'dummy' in function 'update_h' is never read, so it's out of 
 Heads up: variable 'dummy' in function 'fit' is never read, so it's out of the program and the waveform (#WAVE dummy, in the function, keeps it).
 Heads up: variable 'r' in function 'main' is never read, so it's out of the program and the waveform (#WAVE r, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 551 instructions and 273 variables were found
+Info: 485 instructions and 272 variables were found
 Info: adding data input handling
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
@@ -43,7 +44,7 @@ Info: ULA resource -> > operator for float
 Info: ULA resource -> < operator for float
 Info: ULA resource -> root-square approximation for float
 Info: stack depths from the program: SDEPTH 3, NDSTAC 2
-Info: using 23% of the Assembly Instruction Set
+Info: using 24% of the Assembly Instruction Set
 Info: using 27% of the ULA operations
 Processor procBlind
   word          32 bits
@@ -51,7 +52,7 @@ Processor procBlind
   multiplier    float; divider float
   data stack    2 words (worked out from the program)
   call stack    3 words (worked out from the program)
-  memories      551 instructions, 273 data words
+  memories      485 instructions, 272 data words
 Sweet: the processor is good to go.
 ## variables
 project_h_hat dummy 1
@@ -132,699 +133,633 @@ lang C+-
 9 F_QUO
 10 STI y
 // 349: n++;
-11 LOD main_n
-12 ADD 1
-13 SET main_n
+11 INC main_n
 // 346: while (n < 40)
-14 LES 39
-15 JIZ __Lwh32top
+12 LES 39
+13 JIZ __Lwh32top
 // 352: fit(0);
-16 CAL fit
+14 CAL fit
 // 354: int j = 0;
-17 LOD 0
-18 SET main_j
+15 LOD 0
+16 SET main_j
 // 357: int r = h_hat[j] * 1000000.0 + 0.5;   // F2I truncates -> (int)(h*1e6 + 0.5)
-19 LOD main_j
-20 LDI h_hat
-21 F_MLT 1000000.0
-22 F_ADD 0.5
-23 F2I
+17 LOD main_j
+18 LDI h_hat
+19 F_MLT 1000000.0
+20 F_ADD 0.5
+21 F2I
 // 358: out(0, r);
-24 OUT 0
+22 OUT 0
 // 359: j++;
-25 LOD main_j
-26 ADD 1
-27 SET main_j
+23 INC main_j
 // 355: while (j < 7)
-28 LES 6
-29 JIZ __Lwh33top
+24 LES 6
+25 JIZ __Lwh33top
 // -3: END
-30 JMP fim
+26 JMP fim
 // 64: int k = 0;
-31 LOD 0
-32 SET project_h_hat_k
+27 LOD 0
+28 SET project_h_hat_k
 // 67: if (h_hat[k] < 0.0) h_hat[k] = 0.0;
+29 LOD project_h_hat_k
+30 LDI h_hat
+31 F_GRE 0.0
+32 JIZ __Lif1else
 33 LOD project_h_hat_k
-34 LDI h_hat
-35 F_GRE 0.0
-36 JIZ __Lif1else
-37 LOD project_h_hat_k
-38 P_LOD 0.0
-39 STI h_hat
+34 P_LOD 0.0
+35 STI h_hat
 // 68: if (h_hat[k] > 1.0) h_hat[k] = 1.0;
+36 LOD project_h_hat_k
+37 LDI h_hat
+38 F_LES 1.0
+39 JIZ __Lif2else
 40 LOD project_h_hat_k
-41 LDI h_hat
-42 F_LES 1.0
-43 JIZ __Lif2else
-44 LOD project_h_hat_k
-45 P_LOD 1.0
-46 STI h_hat
+41 P_LOD 1.0
+42 STI h_hat
 // 69: k++;
-47 LOD project_h_hat_k
-48 ADD 1
-49 SET project_h_hat_k
+43 INC project_h_hat_k
 // 65: while (k < 7)
-50 LES 6
-51 JIZ __Lwh1top
+44 LES 6
+45 JIZ __Lwh1top
 // 71: h_hat[3] = 1.0;
-52 LOD 1.0
-53 SET_V h_hat 3
+46 LOD 1.0
+47 SET_V h_hat 3
 // 72: }
-54 RET
+48 RET
 // 76: int k = 0;
-55 LOD 0
-56 SET project_h_cand_k
+49 LOD 0
+50 SET project_h_cand_k
 // 79: if (s_h_cand[k] < 0.0) s_h_cand[k] = 0.0;
-57 LOD project_h_cand_k
-58 LDI s_h_cand
-59 F_GRE 0.0
-60 JIZ __Lif3else
-61 LOD project_h_cand_k
-62 P_LOD 0.0
-63 STI s_h_cand
+51 LOD project_h_cand_k
+52 LDI s_h_cand
+53 F_GRE 0.0
+54 JIZ __Lif3else
+55 LOD project_h_cand_k
+56 P_LOD 0.0
+57 STI s_h_cand
 // 80: if (s_h_cand[k] > 1.0) s_h_cand[k] = 1.0;
-64 LOD project_h_cand_k
-65 LDI s_h_cand
-66 F_LES 1.0
-67 JIZ __Lif4else
-68 LOD project_h_cand_k
-69 P_LOD 1.0
-70 STI s_h_cand
+58 LOD project_h_cand_k
+59 LDI s_h_cand
+60 F_LES 1.0
+61 JIZ __Lif4else
+62 LOD project_h_cand_k
+63 P_LOD 1.0
+64 STI s_h_cand
 // 81: k++;
-71 LOD project_h_cand_k
-72 ADD 1
-73 SET project_h_cand_k
+65 INC project_h_cand_k
 // 77: while (k < 7)
-74 LES 6
-75 JIZ __Lwh2top
+66 LES 6
+67 JIZ __Lwh2top
 // 83: s_h_cand[3] = 1.0;
-76 LOD 1.0
-77 SET_V s_h_cand 3
+68 LOD 1.0
+69 SET_V s_h_cand 3
 // 84: }
-78 RET
+70 RET
 // 93: float s = 0.0;
-79 LOD 0.0
-80 SET lipschitz_x_s
+71 LOD 0.0
+72 SET lipschitz_x_s
 // 94: int   k = 0;
-81 LOD 0
-82 SET lipschitz_x_k
+73 LOD 0
+74 SET lipschitz_x_k
 // 95: while (k < 7) { s = s + h_hat[k]; k++; }
-83 LOD lipschitz_x_k
-84 LDI h_hat
-85 F_ADD lipschitz_x_s
-86 SET lipschitz_x_s
-87 LOD lipschitz_x_k
-88 ADD 1
-89 SET lipschitz_x_k
-90 LES 6
-91 JIZ __Lwh3top
+75 LOD lipschitz_x_k
+76 LDI h_hat
+77 F_ADD lipschitz_x_s
+78 SET lipschitz_x_s
+79 INC lipschitz_x_k
+80 LES 6
+81 JIZ __Lwh3top
 // 96: float L = s * s;
-92 LOD lipschitz_x_s
-93 F_MLT lipschitz_x_s
-94 SET lipschitz_x_L
+82 LOD lipschitz_x_s
+83 F_MLT lipschitz_x_s
+84 SET lipschitz_x_L
 // 97: if (L < 0.000000000001) L = 0.000000000001;
-95 F_GRE 0.000000000001
-96 JIZ __Lif5else
-97 LOD 0.000000000001
-98 SET lipschitz_x_L
+85 F_GRE 0.000000000001
+86 JIZ __Lif5else
+87 LOD 0.000000000001
+88 SET lipschitz_x_L
 // 98: return L;
-99 LOD lipschitz_x_L
-100 RET
+89 LOD lipschitz_x_L
+90 RET
 // 108: int n = 0;
-101 LOD 0
-102 SET conv_zh_n
+91 LOD 0
+92 SET conv_zh_n
 // 109: while (n < 40) { s_conv[n] = 0.0; n++; }
-103 LOD conv_zh_n
-104 P_LOD 0.0
-105 STI s_conv
-106 LOD conv_zh_n
-107 ADD 1
-108 SET conv_zh_n
-109 LES 39
-110 JIZ __Lwh4top
+93 LOD conv_zh_n
+94 P_LOD 0.0
+95 STI s_conv
+96 INC conv_zh_n
+97 LES 39
+98 JIZ __Lwh4top
 // 110: int ii = 0;
-111 LOD 0
-112 SET conv_zh_ii
+99 LOD 0
+100 SET conv_zh_ii
 // 113: float zi = s_z[ii];
-113 LOD conv_zh_ii
-114 LDI s_z
-115 SET conv_zh_zi
+101 LOD conv_zh_ii
+102 LDI s_z
+103 SET conv_zh_zi
 // 114: int   j  = 0;
-116 LOD 0
-117 SET conv_zh_j
+104 LOD 0
+105 SET conv_zh_j
 // 117: s_conv[ii+j] = s_conv[ii+j] + zi * h_hat[j];
-118 LOD conv_zh_ii
-119 ADD conv_zh_j
-120 PSH
-121 LDI s_conv
-122 P_LOD conv_zh_j
-123 LDI h_hat
-124 F_MLT conv_zh_zi
-125 SF_ADD
-126 STI s_conv
+106 LOD conv_zh_ii
+107 ADD conv_zh_j
+108 PSH
+109 LDI s_conv
+110 P_LOD conv_zh_j
+111 LDI h_hat
+112 F_MLT conv_zh_zi
+113 SF_ADD
+114 STI s_conv
 // 118: j++;
-127 LOD conv_zh_j
-128 ADD 1
-129 SET conv_zh_j
+115 INC conv_zh_j
 // 115: while (j < 7)
-130 LES 6
-131 JIZ __Lwh6top
+116 LES 6
+117 JIZ __Lwh6top
 // 120: ii++;
-132 LOD conv_zh_ii
-133 ADD 1
-134 SET conv_zh_ii
+118 INC conv_zh_ii
 // 111: while (ii < 34)
-135 LES 33
-136 JIZ __Lwh5top
+119 LES 33
+120 JIZ __Lwh5top
 // 122: }
-137 RET
+121 RET
 // 126: int n = 0;
-138 LOD 0
-139 SET conv_xh_n
+122 LOD 0
+123 SET conv_xh_n
 // 127: while (n < 40) { s_conv[n] = 0.0; n++; }
-140 LOD conv_xh_n
-141 P_LOD 0.0
-142 STI s_conv
-143 LOD conv_xh_n
-144 ADD 1
-145 SET conv_xh_n
-146 LES 39
-147 JIZ __Lwh7top
+124 LOD conv_xh_n
+125 P_LOD 0.0
+126 STI s_conv
+127 INC conv_xh_n
+128 LES 39
+129 JIZ __Lwh7top
 // 128: int ii = 0;
-148 LOD 0
-149 SET conv_xh_ii
+130 LOD 0
+131 SET conv_xh_ii
 // 131: float xi = x_hat[ii];
-150 LOD conv_xh_ii
-151 LDI x_hat
-152 SET conv_xh_xi
+132 LOD conv_xh_ii
+133 LDI x_hat
+134 SET conv_xh_xi
 // 132: int   j  = 0;
-153 LOD 0
-154 SET conv_xh_j
+135 LOD 0
+136 SET conv_xh_j
 // 135: s_conv[ii+j] = s_conv[ii+j] + xi * h_hat[j];
-155 LOD conv_xh_ii
-156 ADD conv_xh_j
-157 PSH
-158 LDI s_conv
-159 P_LOD conv_xh_j
-160 LDI h_hat
-161 F_MLT conv_xh_xi
-162 SF_ADD
-163 STI s_conv
+137 LOD conv_xh_ii
+138 ADD conv_xh_j
+139 PSH
+140 LDI s_conv
+141 P_LOD conv_xh_j
+142 LDI h_hat
+143 F_MLT conv_xh_xi
+144 SF_ADD
+145 STI s_conv
 // 136: j++;
-164 LOD conv_xh_j
-165 ADD 1
-166 SET conv_xh_j
+146 INC conv_xh_j
 // 133: while (j < 7)
-167 LES 6
-168 JIZ __Lwh9top
+147 LES 6
+148 JIZ __Lwh9top
 // 138: ii++;
-169 LOD conv_xh_ii
-170 ADD 1
-171 SET conv_xh_ii
+149 INC conv_xh_ii
 // 129: while (ii < 34)
-172 LES 33
-173 JIZ __Lwh8top
+150 LES 33
+151 JIZ __Lwh8top
 // 140: }
-174 RET
+152 RET
 // 144: int n = 0;
-175 LOD 0
-176 SET conv_x_hcand_n
+153 LOD 0
+154 SET conv_x_hcand_n
 // 145: while (n < 40) { s_conv[n] = 0.0; n++; }
-177 LOD conv_x_hcand_n
-178 P_LOD 0.0
-179 STI s_conv
-180 LOD conv_x_hcand_n
-181 ADD 1
-182 SET conv_x_hcand_n
-183 LES 39
-184 JIZ __Lwh10top
+155 LOD conv_x_hcand_n
+156 P_LOD 0.0
+157 STI s_conv
+158 INC conv_x_hcand_n
+159 LES 39
+160 JIZ __Lwh10top
 // 146: int ii = 0;
-185 LOD 0
-186 SET conv_x_hcand_ii
+161 LOD 0
+162 SET conv_x_hcand_ii
 // 149: float xi = x_hat[ii];
-187 LOD conv_x_hcand_ii
-188 LDI x_hat
-189 SET conv_x_hcand_xi
+163 LOD conv_x_hcand_ii
+164 LDI x_hat
+165 SET conv_x_hcand_xi
 // 150: int   j  = 0;
-190 LOD 0
-191 SET conv_x_hcand_j
+166 LOD 0
+167 SET conv_x_hcand_j
 // 153: s_conv[ii+j] = s_conv[ii+j] + xi * s_h_cand[j];
-192 LOD conv_x_hcand_ii
-193 ADD conv_x_hcand_j
-194 PSH
-195 LDI s_conv
-196 P_LOD conv_x_hcand_j
-197 LDI s_h_cand
-198 F_MLT conv_x_hcand_xi
-199 SF_ADD
-200 STI s_conv
+168 LOD conv_x_hcand_ii
+169 ADD conv_x_hcand_j
+170 PSH
+171 LDI s_conv
+172 P_LOD conv_x_hcand_j
+173 LDI s_h_cand
+174 F_MLT conv_x_hcand_xi
+175 SF_ADD
+176 STI s_conv
 // 154: j++;
-201 LOD conv_x_hcand_j
-202 ADD 1
-203 SET conv_x_hcand_j
+177 INC conv_x_hcand_j
 // 151: while (j < 7)
-204 LES 6
-205 JIZ __Lwh12top
+178 LES 6
+179 JIZ __Lwh12top
 // 156: ii++;
-206 LOD conv_x_hcand_ii
-207 ADD 1
-208 SET conv_x_hcand_ii
+180 INC conv_x_hcand_ii
 // 147: while (ii < 34)
-209 LES 33
-210 JIZ __Lwh11top
+181 LES 33
+182 JIZ __Lwh11top
 // 158: }
-211 RET
+183 RET
 // 166: int n = 0;
-212 LOD 0
-213 SET residual_sub_y_n
+184 LOD 0
+185 SET residual_sub_y_n
 // 167: while (n < 40) { s_conv[n] = s_conv[n] - y[n]; n++; }
-214 LOD residual_sub_y_n
-215 P_LOD residual_sub_y_n
-216 LDI s_conv
-217 P_LOD residual_sub_y_n
-218 LDI y
-219 SF_SU2
-220 STI s_conv
-221 LOD residual_sub_y_n
-222 ADD 1
-223 SET residual_sub_y_n
-224 LES 39
-225 JIZ __Lwh13top
+186 LOD residual_sub_y_n
+187 P_LOD residual_sub_y_n
+188 LDI s_conv
+189 P_LOD residual_sub_y_n
+190 LDI y
+191 SF_SU2
+192 STI s_conv
+193 INC residual_sub_y_n
+194 LES 39
+195 JIZ __Lwh13top
 // 168: }
-226 RET
+196 RET
 // 173: float s = 0.0;
-227 LOD 0.0
-228 SET sum_residual_sq_s
+197 LOD 0.0
+198 SET sum_residual_sq_s
 // 174: int   n = 0;
-229 LOD 0
-230 SET sum_residual_sq_n
+199 LOD 0
+200 SET sum_residual_sq_n
 // 175: while (n < 40) { s = s + s_conv[n]*s_conv[n]; n++; }
-231 LOD sum_residual_sq_n
-232 LDI s_conv
-233 PSH
-234 SF_MLT
-235 F_ADD sum_residual_sq_s
-236 SET sum_residual_sq_s
-237 LOD sum_residual_sq_n
-238 ADD 1
-239 SET sum_residual_sq_n
-240 LES 39
-241 JIZ __Lwh14top
+201 LOD sum_residual_sq_n
+202 LDI s_conv
+203 PSH
+204 SF_MLT
+205 F_ADD sum_residual_sq_s
+206 SET sum_residual_sq_s
+207 INC sum_residual_sq_n
+208 LES 39
+209 JIZ __Lwh14top
 // 176: return s;
-242 LOD sum_residual_sq_s
-243 RET
+210 LOD sum_residual_sq_s
+211 RET
 // 186: int n = 0;
-244 LOD 0
-245 SET correlate_residual_h_n
+212 LOD 0
+213 SET correlate_residual_h_n
 // 189: float s = 0.0;
-246 LOD 0.0
-247 SET correlate_residual_h_s
+214 LOD 0.0
+215 SET correlate_residual_h_s
 // 190: int   k = 0;
-248 LOD 0
-249 SET correlate_residual_h_k
+216 LOD 0
+217 SET correlate_residual_h_k
 // 191: while (k < 7) { s = s + s_conv[n+k] * h_hat[k]; k++; }
-250 LOD correlate_residual_h_n
-251 ADD correlate_residual_h_k
-252 LDI s_conv
-253 P_LOD correlate_residual_h_k
-254 LDI h_hat
-255 SF_MLT
-256 F_ADD correlate_residual_h_s
-257 SET correlate_residual_h_s
-258 LOD correlate_residual_h_k
-259 ADD 1
-260 SET correlate_residual_h_k
-261 LES 6
-262 JIZ __Lwh16top
+218 LOD correlate_residual_h_n
+219 ADD correlate_residual_h_k
+220 LDI s_conv
+221 P_LOD correlate_residual_h_k
+222 LDI h_hat
+223 SF_MLT
+224 F_ADD correlate_residual_h_s
+225 SET correlate_residual_h_s
+226 INC correlate_residual_h_k
+227 LES 6
+228 JIZ __Lwh16top
 // 192: s_grad_x[n] = s;
-263 LOD correlate_residual_h_n
-264 P_LOD correlate_residual_h_s
-265 STI s_grad_x
+229 LOD correlate_residual_h_n
+230 P_LOD correlate_residual_h_s
+231 STI s_grad_x
 // 193: n++;
-266 LOD correlate_residual_h_n
-267 ADD 1
-268 SET correlate_residual_h_n
+232 INC correlate_residual_h_n
 // 187: while (n < 34)
-269 LES 33
-270 JIZ __Lwh15top
+233 LES 33
+234 JIZ __Lwh15top
 // 195: }
-271 RET
+235 RET
 // 200: int n = 0;
-272 LOD 0
-273 SET correlate_residual_x_n
+236 LOD 0
+237 SET correlate_residual_x_n
 // 203: float s = 0.0;
-274 LOD 0.0
-275 SET correlate_residual_x_s
+238 LOD 0.0
+239 SET correlate_residual_x_s
 // 204: int   k = 0;
-276 LOD 0
-277 SET correlate_residual_x_k
+240 LOD 0
+241 SET correlate_residual_x_k
 // 205: while (k < 34) { s = s + s_conv[n+k] * x_hat[k]; k++; }
-278 LOD correlate_residual_x_n
-279 ADD correlate_residual_x_k
-280 LDI s_conv
-281 P_LOD correlate_residual_x_k
-282 LDI x_hat
-283 SF_MLT
-284 F_ADD correlate_residual_x_s
-285 SET correlate_residual_x_s
-286 LOD correlate_residual_x_k
-287 ADD 1
-288 SET correlate_residual_x_k
-289 LES 33
-290 JIZ __Lwh18top
+242 LOD correlate_residual_x_n
+243 ADD correlate_residual_x_k
+244 LDI s_conv
+245 P_LOD correlate_residual_x_k
+246 LDI x_hat
+247 SF_MLT
+248 F_ADD correlate_residual_x_s
+249 SET correlate_residual_x_s
+250 INC correlate_residual_x_k
+251 LES 33
+252 JIZ __Lwh18top
 // 206: s_grad_h[n] = s;
-291 LOD correlate_residual_x_n
-292 P_LOD correlate_residual_x_s
-293 STI s_grad_h
+253 LOD correlate_residual_x_n
+254 P_LOD correlate_residual_x_s
+255 STI s_grad_h
 // 207: n++;
-294 LOD correlate_residual_x_n
-295 ADD 1
-296 SET correlate_residual_x_n
+256 INC correlate_residual_x_n
 // 201: while (n < 7)
-297 LES 6
-298 JIZ __Lwh17top
+257 LES 6
+258 JIZ __Lwh17top
 // 209: }
-299 RET
+259 RET
 // 217: int ii = 0;
-300 LOD 0
-301 SET fista_x_ii
+260 LOD 0
+261 SET fista_x_ii
 // 218: while (ii < 34) { s_z[ii] = x_hat[ii]; s_x_prev[ii] = x_hat[ii]; ii++; }
-302 LOD fista_x_ii
-303 P_LOD fista_x_ii
-304 LDI x_hat
-305 STI s_z
-306 LOD fista_x_ii
-307 P_LOD fista_x_ii
-308 LDI x_hat
-309 STI s_x_prev
-310 LOD fista_x_ii
-311 ADD 1
-312 SET fista_x_ii
-313 LES 33
-314 JIZ __Lwh19top
+262 LOD fista_x_ii
+263 P_LOD fista_x_ii
+264 LDI x_hat
+265 STI s_z
+266 LOD fista_x_ii
+267 P_LOD fista_x_ii
+268 LDI x_hat
+269 STI s_x_prev
+270 INC fista_x_ii
+271 LES 33
+272 JIZ __Lwh19top
 // 220: float t        = 1.0;
-315 LOD 1.0
-316 SET fista_x_t
+273 LOD 1.0
+274 SET fista_x_t
 // 221: float L        = lipschitz_x(0);
-317 CAL lipschitz_x
+275 CAL lipschitz_x
 // 222: float step     = 1.0 / L;
-318 F_DIV 1.0
+276 F_DIV 1.0
+277 NOP
+278 NOP
+279 F_QUO
+280 SET fista_x_step
+// 223: float step_lam = step * 1.0;       // LAM = 1.0
+281 SET fista_x_step_lam
+// 225: int it = 0;
+282 LOD 0
+283 SET fista_x_it
+// 229: conv_zh(0);
+284 CAL conv_zh
+// 230: residual_sub_y(0);
+285 CAL residual_sub_y
+// 231: correlate_residual_h(0);
+286 CAL correlate_residual_h
+// 234: ii = 0;
+287 LOD 0
+288 SET fista_x_ii
+// 237: float v = s_z[ii] - step * s_grad_x[ii] - step_lam;
+289 LOD fista_x_ii
+290 LDI s_z
+291 P_LOD fista_x_ii
+292 LDI s_grad_x
+293 F_MLT fista_x_step
+294 SF_SU2
+295 F_SU1 fista_x_step_lam
+296 SET fista_x_v
+// 238: if (v < 0.0) v = 0.0;
+297 F_GRE 0.0
+298 JIZ __Lif6else
+299 LOD 0.0
+300 SET fista_x_v
+// 239: x_hat[ii] = v;
+301 LOD fista_x_ii
+302 P_LOD fista_x_v
+303 STI x_hat
+// 240: ii++;
+304 INC fista_x_ii
+// 235: while (ii < 34)
+305 LES 33
+306 JIZ __Lwh21top
+// 244: float tn  = 0.5 * (1.0 + sqrt(1.0 + 4.0 * t * t));
+307 LOD 4.0
+308 F_MLT fista_x_t
+309 F_MLT fista_x_t
+310 F_ADD 1.0
+311 CAL __float_sqrt
+312 F_ADD 1.0
+313 F_MLT 0.5
+314 SET fista_x_tn
+// 245: float mom = (t - 1.0) / tn;
+315 LOD fista_x_t
+316 F_SU1 1.0
+317 P_LOD fista_x_tn
+318 SF_DIV
 319 NOP
 320 NOP
 321 F_QUO
-322 SET fista_x_step
-// 223: float step_lam = step * 1.0;       // LAM = 1.0
-323 SET fista_x_step_lam
-// 225: int it = 0;
-324 LOD 0
-325 SET fista_x_it
-// 229: conv_zh(0);
-326 CAL conv_zh
-// 230: residual_sub_y(0);
-327 CAL residual_sub_y
-// 231: correlate_residual_h(0);
-328 CAL correlate_residual_h
-// 234: ii = 0;
-329 LOD 0
-330 SET fista_x_ii
-// 237: float v = s_z[ii] - step * s_grad_x[ii] - step_lam;
-331 LOD fista_x_ii
-332 LDI s_z
-333 P_LOD fista_x_ii
-334 LDI s_grad_x
-335 F_MLT fista_x_step
-336 SF_SU2
-337 F_SU1 fista_x_step_lam
-338 SET fista_x_v
-// 238: if (v < 0.0) v = 0.0;
-339 F_GRE 0.0
-340 JIZ __Lif6else
-341 LOD 0.0
-342 SET fista_x_v
-// 239: x_hat[ii] = v;
-343 LOD fista_x_ii
-344 P_LOD fista_x_v
-345 STI x_hat
-// 240: ii++;
-346 LOD fista_x_ii
-347 ADD 1
-348 SET fista_x_ii
-// 235: while (ii < 34)
-349 LES 33
-350 JIZ __Lwh21top
-// 244: float tn  = 0.5 * (1.0 + sqrt(1.0 + 4.0 * t * t));
-351 LOD 4.0
-352 F_MLT fista_x_t
-353 F_MLT fista_x_t
-354 F_ADD 1.0
-355 CAL __float_sqrt
-356 F_ADD 1.0
-357 F_MLT 0.5
-358 SET fista_x_tn
-// 245: float mom = (t - 1.0) / tn;
-359 LOD fista_x_t
-360 F_SU1 1.0
-361 P_LOD fista_x_tn
-362 SF_DIV
-363 NOP
-364 NOP
-365 F_QUO
-366 SET fista_x_mom
+322 SET fista_x_mom
 // 246: ii = 0;
-367 LOD 0
-368 SET fista_x_ii
+323 LOD 0
+324 SET fista_x_ii
 // 249: float xi = x_hat[ii];
-369 LOD fista_x_ii
-370 LDI x_hat
-371 SET fista_x_xi
+325 LOD fista_x_ii
+326 LDI x_hat
+327 SET fista_x_xi
 // 250: s_z[ii]      = xi + mom * (xi - s_x_prev[ii]);
-372 LOD fista_x_ii
-373 P_LOD fista_x_ii
-374 LDI s_x_prev
-375 F_SU2 fista_x_xi
-376 F_MLT fista_x_mom
-377 F_ADD fista_x_xi
-378 STI s_z
+328 LOD fista_x_ii
+329 P_LOD fista_x_ii
+330 LDI s_x_prev
+331 F_SU2 fista_x_xi
+332 F_MLT fista_x_mom
+333 F_ADD fista_x_xi
+334 STI s_z
 // 251: s_x_prev[ii] = xi;
-379 LOD fista_x_ii
-380 P_LOD fista_x_xi
-381 STI s_x_prev
+335 LOD fista_x_ii
+336 P_LOD fista_x_xi
+337 STI s_x_prev
 // 252: ii++;
-382 LOD fista_x_ii
-383 ADD 1
-384 SET fista_x_ii
+338 INC fista_x_ii
 // 247: while (ii < 34)
-385 LES 33
-386 JIZ __Lwh22top
+339 LES 33
+340 JIZ __Lwh22top
 // 254: t = tn;
-387 LOD fista_x_tn
-388 SET fista_x_t
+341 LOD fista_x_tn
+342 SET fista_x_t
 // 256: it++;
-389 LOD fista_x_it
-390 ADD 1
-391 SET fista_x_it
+343 INC fista_x_it
 // 226: while (it < 20)
-392 LES 19
-393 JIZ __Lwh20top
+344 LES 19
+345 JIZ __Lwh20top
 // 258: }
-394 RET
+346 RET
 // 266: project_h_hat(0);
-395 CAL project_h_hat
+347 CAL project_h_hat
 // 268: int it = 0;
-396 LOD 0
-397 SET update_h_it
+348 LOD 0
+349 SET update_h_it
 // 272: conv_xh(0);
-398 CAL conv_xh
+350 CAL conv_xh
 // 273: residual_sub_y(0);
-399 CAL residual_sub_y
+351 CAL residual_sub_y
 // 274: float dt = 0.5 * sum_residual_sq(0);
-400 CAL sum_residual_sq
-401 F_MLT 0.5
-402 SET update_h_dt
+352 CAL sum_residual_sq
+353 F_MLT 0.5
+354 SET update_h_dt
 // 276: correlate_residual_x(0);
-403 CAL correlate_residual_x
+355 CAL correlate_residual_x
 // 277: s_grad_h[3] = 0.0;
-404 LOD 0.0
-405 SET_V s_grad_h 3
+356 LOD 0.0
+357 SET_V s_grad_h 3
 // 279: float best_dt = dt;
-406 LOD update_h_dt
-407 SET update_h_best_dt
+358 LOD update_h_dt
+359 SET update_h_best_dt
 // 280: int   ii = 0;
-408 LOD 0
-409 SET update_h_ii
+360 LOD 0
+361 SET update_h_ii
 // 281: while (ii < 7) { s_h_best[ii] = h_hat[ii]; ii++; }
-410 LOD update_h_ii
-411 P_LOD update_h_ii
-412 LDI h_hat
-413 STI s_h_best
-414 LOD update_h_ii
-415 ADD 1
-416 SET update_h_ii
-417 LES 6
-418 JIZ __Lwh24top
+362 LOD update_h_ii
+363 P_LOD update_h_ii
+364 LDI h_hat
+365 STI s_h_best
+366 INC update_h_ii
+367 LES 6
+368 JIZ __Lwh24top
 // 283: float trial = 0.00001;         // HSTEP
-419 LOD 0.00001
-420 SET update_h_trial
+369 LOD 0.00001
+370 SET update_h_trial
 // 284: int   bt    = 0;
-421 LOD 0
-422 SET update_h_bt
+371 LOD 0
+372 SET update_h_bt
 // 287: ii = 0;
-423 LOD 0
-424 SET update_h_ii
+373 LOD 0
+374 SET update_h_ii
 // 288: while (ii < 7) { s_h_cand[ii] = h_hat[ii] - trial * s_grad_h[ii]; ii++; }
-425 LOD update_h_ii
-426 P_LOD update_h_ii
-427 LDI h_hat
-428 P_LOD update_h_ii
-429 LDI s_grad_h
-430 F_MLT update_h_trial
-431 SF_SU2
-432 STI s_h_cand
-433 LOD update_h_ii
-434 ADD 1
-435 SET update_h_ii
-436 LES 6
-437 JIZ __Lwh26top
+375 LOD update_h_ii
+376 P_LOD update_h_ii
+377 LDI h_hat
+378 P_LOD update_h_ii
+379 LDI s_grad_h
+380 F_MLT update_h_trial
+381 SF_SU2
+382 STI s_h_cand
+383 INC update_h_ii
+384 LES 6
+385 JIZ __Lwh26top
 // 289: project_h_cand(0);
-438 CAL project_h_cand
+386 CAL project_h_cand
 // 291: conv_x_hcand(0);
-439 CAL conv_x_hcand
+387 CAL conv_x_hcand
 // 292: residual_sub_y(0);
-440 CAL residual_sub_y
+388 CAL residual_sub_y
 // 293: float cdt = 0.5 * sum_residual_sq(0);
-441 CAL sum_residual_sq
-442 F_MLT 0.5
-443 SET update_h_cdt
+389 CAL sum_residual_sq
+390 F_MLT 0.5
+391 SET update_h_cdt
 // 295: if (cdt < best_dt)
-444 F_GRE update_h_best_dt
-445 JIZ __Lif7else
+392 F_GRE update_h_best_dt
+393 JIZ __Lif7else
 // 297: best_dt = cdt;
-446 LOD update_h_cdt
-447 SET update_h_best_dt
+394 LOD update_h_cdt
+395 SET update_h_best_dt
 // 298: ii = 0;
-448 LOD 0
-449 SET update_h_ii
+396 LOD 0
+397 SET update_h_ii
 // 299: while (ii < 7) { s_h_best[ii] = s_h_cand[ii]; ii++; }
-450 LOD update_h_ii
-451 P_LOD update_h_ii
-452 LDI s_h_cand
-453 STI s_h_best
-454 LOD update_h_ii
-455 ADD 1
-456 SET update_h_ii
-457 LES 6
-458 JIZ __Lwh27top
+398 LOD update_h_ii
+399 P_LOD update_h_ii
+400 LDI s_h_cand
+401 STI s_h_best
+402 INC update_h_ii
+403 LES 6
+404 JIZ __Lwh27top
 // 301: trial = trial * 0.5;
-459 LOD update_h_trial
-460 F_MLT 0.5
-461 SET update_h_trial
+405 LOD update_h_trial
+406 F_MLT 0.5
+407 SET update_h_trial
 // 302: bt++;
-462 LOD update_h_bt
-463 ADD 1
-464 SET update_h_bt
+408 INC update_h_bt
 // 285: while (bt < 15)
-465 LES 14
-466 JIZ __Lwh25top
+409 LES 14
+410 JIZ __Lwh25top
 // 305: ii = 0;
-467 LOD 0
-468 SET update_h_ii
+411 LOD 0
+412 SET update_h_ii
 // 306: while (ii < 7) { h_hat[ii] = s_h_best[ii]; ii++; }
-469 LOD update_h_ii
-470 P_LOD update_h_ii
-471 LDI s_h_best
-472 STI h_hat
-473 LOD update_h_ii
-474 ADD 1
-475 SET update_h_ii
-476 LES 6
-477 JIZ __Lwh28top
+413 LOD update_h_ii
+414 P_LOD update_h_ii
+415 LDI s_h_best
+416 STI h_hat
+417 INC update_h_ii
+418 LES 6
+419 JIZ __Lwh28top
 // 308: it++;
-478 LOD update_h_it
-479 ADD 1
-480 SET update_h_it
+420 INC update_h_it
 // 269: while (it < 5)
-481 LES 4
-482 JIZ __Lwh23top
+421 LES 4
+422 JIZ __Lwh23top
 // 311: project_h_hat(0);
-483 JMP project_h_hat
+423 JMP project_h_hat
 // 320: int ii = 0;
-484 LOD 0
-485 SET fit_ii
+424 LOD 0
+425 SET fit_ii
 // 321: while (ii < 34) { x_hat[ii] = 0.0; ii++; }
-486 LOD fit_ii
-487 P_LOD 0.0
-488 STI x_hat
-489 LOD fit_ii
-490 ADD 1
-491 SET fit_ii
-492 LES 33
-493 JIZ __Lwh29top
+426 LOD fit_ii
+427 P_LOD 0.0
+428 STI x_hat
+429 INC fit_ii
+430 LES 33
+431 JIZ __Lwh29top
 // 322: ii = 0;
-494 LOD 0
-495 SET fit_ii
+432 LOD 0
+433 SET fit_ii
 // 323: while (ii < 7) { h_hat[ii] = 0.0; ii++; }
-496 LOD fit_ii
-497 P_LOD 0.0
-498 STI h_hat
-499 LOD fit_ii
-500 ADD 1
-501 SET fit_ii
-502 LES 6
-503 JIZ __Lwh30top
+434 LOD fit_ii
+435 P_LOD 0.0
+436 STI h_hat
+437 INC fit_ii
+438 LES 6
+439 JIZ __Lwh30top
 // 326: h_hat[2] = 0.5;
-504 LOD 0.5
-505 SET_V h_hat 2
+440 LOD 0.5
+441 SET_V h_hat 2
 // 327: h_hat[3] = 1.0;
-506 LOD 1.0
-507 SET_V h_hat 3
+442 LOD 1.0
+443 SET_V h_hat 3
 // 328: h_hat[4] = 0.5;
-508 LOD 0.5
-509 SET_V h_hat 4
+444 LOD 0.5
+445 SET_V h_hat 4
 // 330: int it = 0;
-510 LOD 0
-511 SET fit_it
+446 LOD 0
+447 SET fit_it
 // 333: fista_x(0);
-512 CAL fista_x
+448 CAL fista_x
 // 334: update_h(0);
-513 CAL update_h
+449 CAL update_h
 // 335: it++;
-514 LOD fit_it
-515 ADD 1
-516 SET fit_it
+450 INC fit_it
 // 331: while (it < 40)
-517 LES 39
-518 JIZ __Lwh31top
+451 LES 39
+452 JIZ __Lwh31top
 // 337: }
-519 RET
+453 RET
 // library macros, no source line
-520 SET __sqrt_num
-521 F_ROT
-522 PSH
-523 F_DIV __sqrt_num
-524 NOP
-525 NOP
-526 F_QUO
-527 SF_ADD
-528 F_MLT 0.5
-529 PSH
-530 F_DIV __sqrt_num
-531 NOP
-532 NOP
-533 F_QUO
-534 SF_ADD
-535 F_MLT 0.5
-536 PSH
-537 F_DIV __sqrt_num
-538 NOP
-539 NOP
-540 F_QUO
-541 SF_ADD
-542 F_MLT 0.5
-543 PSH
-544 F_DIV __sqrt_num
-545 NOP
-546 NOP
-547 F_QUO
-548 SF_ADD
-549 F_MLT 0.5
-550 RET
+454 SET __sqrt_num
+455 F_ROT
+456 PSH
+457 F_DIV __sqrt_num
+458 NOP
+459 NOP
+460 F_QUO
+461 SF_ADD
+462 F_MLT 0.5
+463 PSH
+464 F_DIV __sqrt_num
+465 NOP
+466 NOP
+467 F_QUO
+468 SF_ADD
+469 F_MLT 0.5
+470 PSH
+471 F_DIV __sqrt_num
+472 NOP
+473 NOP
+474 F_QUO
+475 SF_ADD
+476 F_MLT 0.5
+477 PSH
+478 F_DIV __sqrt_num
+479 NOP
+480 NOP
+481 F_QUO
+482 SF_ADD
+483 F_MLT 0.5
+484 RET

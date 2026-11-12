@@ -10,9 +10,7 @@ NOP
 SET main_k
 @__Lwh1top INN 0
 OUT 0
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 5
 JIZ __Lwh1top
 @__Lwh1end @fim JMP fim

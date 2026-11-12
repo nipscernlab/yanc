@@ -27,9 +27,7 @@ JIZ __Lwh3end
 LOD 10
 ADD main_k
 OUT 0
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 9
 JIZ __Lwh3
 @__Lwh3end LOD 101
@@ -46,14 +44,10 @@ MLT 10
 ADD 20
 ADD main_n
 OUT 0
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 LES 4
 JIZ __Lwh5
-@__Lwh5end LOD main_k
-ADD 1
-SET main_k
+@__Lwh5end INC main_k
 LES 2
 JIZ __Lwh4
 @__Lwh4end LOD 102
@@ -70,9 +64,7 @@ JIZ __Lwh6end
 LOD 50
 ADD main_n
 OUT 0
-LOD main_n
-ADD 1
-SET main_n
+INC main_n
 LES 4
 JIZ __Lwh6
 @__Lwh6end LOD 59
@@ -93,9 +85,7 @@ OUT 0
 @__switch_end_2 LOD 70
 ADD main_k
 OUT 0
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 2
 JIZ __Lwh7
 @__Lwh7end JMP __Lwh1

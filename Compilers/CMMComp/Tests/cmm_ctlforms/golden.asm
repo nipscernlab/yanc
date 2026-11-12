@@ -15,17 +15,13 @@ NOP
 #SHARE sw3_r main_n
 @main LOD 0
 SET main_k
-@__Lwh1 LOD main_k
-ADD 1
-SET main_k
+@__Lwh1 INC main_k
 LOD 5
 XOR main_k
 JNZ __Lwh1
 @__Lwh1end LOD main_k
 OUT 0
-@__Lwh2 LOD main_k
-ADD 1
-SET main_k
+@__Lwh2 INC main_k
 EQU 7
 JIZ __Lwh2
 @__Lwh2end LOD main_k
@@ -39,9 +35,7 @@ JIZ __Lwh3cont
 LOD main_s
 ADD main_n
 SET main_s
-@__Lwh3cont LOD main_n
-ADD 1
-SET main_n
+@__Lwh3cont INC main_n
 LES 5
 JIZ __Lwh3
 @__Lwh3end LOD main_s

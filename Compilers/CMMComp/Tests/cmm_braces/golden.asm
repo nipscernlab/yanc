@@ -17,9 +17,7 @@ SET main_k
 @__Lwh1 LOD main_k
 LDI a
 OUT 0
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 4
 JIZ __Lwh1
 @__Lwh1end LOD 0
@@ -29,9 +27,7 @@ LDI f
 F_MLT 8.0
 F2I
 OUT 0
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 2
 JIZ __Lwh2
 @__Lwh2end LOD_V m 1
@@ -58,9 +54,7 @@ LDI c_i
 F_MLT 2.0
 F2I
 OUT 0
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 1
 JIZ __Lwh3
 @__Lwh3end CAL loc

@@ -127,6 +127,7 @@ design/dirac-expressions
 design/ip-protection
 design/asm-names
 design/unread-variables
+design/inc-in-place
 design/pipeln-and-division
 design/normalisation-survey
 design/fadd-survey

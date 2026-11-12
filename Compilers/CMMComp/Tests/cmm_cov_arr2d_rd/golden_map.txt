@@ -351,7 +351,7 @@ Info: ULA resource -> float to int converter
 Info: ULA resource -> float-point adder
 Info: ULA resource -> float-point multiplier
 Info: stack depths from the program: SDEPTH 1, NDSTAC 4
-Info: using 16% of the Assembly Instruction Set
+Info: using 15% of the Assembly Instruction Set
 Info: using 13% of the ULA operations
 Processor cmm_cov_arr2d_rd
   word          32 bits

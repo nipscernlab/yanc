@@ -1,11 +1,12 @@
 ## messages
 Info: 96 assembly instructions generated
 Info: 2 variables written and never read removed (2 instructions)
+Info: 1 increments made one INC each
 Info: 18 variables share 11 data words (7 saved)
 Heads up: global variable 'gf' is never read, so it's out of the program and the waveform (#WAVE gf keeps it).
 Heads up: variable 'a' in function 'main' is never read, so it's out of the program and the waveform (#WAVE a, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 94 instructions and 24 variables were found
+Info: 92 instructions and 24 variables were found
 Info: ULA resource -> integer adder
 Info: ULA resource -> integer multiplier
 Info: adding data output handling
@@ -24,7 +25,7 @@ Processor cmm_decl_list
   multiplier    int and float; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      94 instructions, 24 data words
+  memories      92 instructions, 24 data words
 Sweet: the processor is good to go.
 ## variables
 global ga 1
@@ -160,14 +161,12 @@ lang C+-
 84 GRE 3
 85 JIZ __Lwh1end
 // 27: n = n + 1;
-86 LOD soma_n
-87 ADD 1
-88 SET soma_n
+86 INC soma_n
 // 28: s = s + n;
-89 ADD soma_s
-90 SET soma_s
+87 ADD soma_s
+88 SET soma_s
 // 25: while (n < 3)
-91 JMP __Lwh1
+89 JMP __Lwh1
 // 30: return s;
-92 LOD soma_s
-93 RET
+90 LOD soma_s
+91 RET

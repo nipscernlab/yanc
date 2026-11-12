@@ -24,9 +24,7 @@ OUT 0
 LOD main_y
 CAL g
 POP
-LOD main_k
-ADD 1
-SET main_k
+INC main_k
 LES 39
 JIZ __Lwh1top
 @__Lwh1end LOD main_k

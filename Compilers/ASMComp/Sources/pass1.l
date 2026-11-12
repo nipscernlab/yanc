@@ -168,6 +168,8 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
  "S_SHR"   p1_opcode( 0); // shift right with stack
    "SRS"   p1_opcode(18); // arithmetic shift right with memory
  "S_SRS"   p1_opcode( 0); // arithmetic shift right with stack
+   "INC"   p1_opcode(18); // increments a data word in place (#203)
+ "P_INC"   p1_opcode(18); // PUSH + INC
 
    /* special instructions */
 

@@ -14,9 +14,10 @@ Heads up on line 72: if you don't want this warning, use 'fout'.
 Heads up on line 73: if you don't want this warning, use 'fout'.
 Info: 199 assembly instructions generated
 Info: 1 divisions, 5 words each for DIV/MOD and 4 for F_DIV (3 added)
+Info: 1 increments made one INC each
 Info: 16 variables share 13 data words (3 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 202 instructions and 40 variables were found
+Info: 200 instructions and 40 variables were found
 Info: ULA resource -> float-point adder
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float to int converter
@@ -38,7 +39,7 @@ Processor cmm_fround0
   multiplier    float; divider float
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      202 instructions, 40 data words
+  memories      200 instructions, 40 data words
 Sweet: the processor is good to go.
 ## variables
 main one 2
@@ -181,120 +182,118 @@ lang C+-
 98 LOD main_acc
 99 F_ADD 0.001
 100 SET main_acc
-101 LOD main_k
-102 ADD 1
-103 SET main_k
-104 LES 999
-105 JIZ __Lwh2
+101 INC main_k
+102 LES 999
+103 JIZ __Lwh2
 // 57: y = (acc - one) * ulp;                      fout(0, y);   // -240 / -177 / 78  (exact 0)
-106 LOD main_acc
-107 F_SU1 main_one
-108 F_MLT main_ulp
-109 SET main_y
-110 F2I_M main_y
-111 OUT 0
+104 LOD main_acc
+105 F_SU1 main_one
+106 F_MLT main_ulp
+107 SET main_y
+108 F2I_M main_y
+109 OUT 0
 // 60: y = big * big;   if (y > big)   flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = saturated)
-112 LOD main_big
-113 F_MLT main_big
-114 SET main_y
-115 F_LES main_big
-116 JIZ __Lif1else
-117 LOD 1
-118 SET main_flag
-119 JMP __Lif1end
-120 LOD 0
-121 SET main_flag
-122 LOD main_flag
-123 OUT 0
+110 LOD main_big
+111 F_MLT main_big
+112 SET main_y
+113 F_LES main_big
+114 JIZ __Lif1else
+115 LOD 1
+116 SET main_flag
+117 JMP __Lif1end
+118 LOD 0
+119 SET main_flag
+120 LOD main_flag
+121 OUT 0
 // 61: y = tiny * tiny; if (y == 0.0)  flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = flushed to zero)
-124 LOD main_tiny
-125 F_MLT main_tiny
-126 SET main_y
-127 EQU 0.0
-128 JIZ __Lif2else
-129 LOD 1
-130 SET main_flag
-131 JMP __Lif2end
-132 LOD 0
-133 SET main_flag
-134 LOD main_flag
-135 OUT 0
+122 LOD main_tiny
+123 F_MLT main_tiny
+124 SET main_y
+125 EQU 0.0
+126 JIZ __Lif2else
+127 LOD 1
+128 SET main_flag
+129 JMP __Lif2end
+130 LOD 0
+131 SET main_flag
+132 LOD main_flag
+133 OUT 0
 // 62: z = x - x;       y = -z;
-136 LOD main_x
-137 F_SU1 main_x
-138 SET main_z
-139 F_NEG_M main_z
-140 SET main_y
+134 LOD main_x
+135 F_SU1 main_x
+136 SET main_z
+137 F_NEG_M main_z
+138 SET main_y
 // 63: if (y == 0.0)  flag = 1; else flag = 0; out(0, flag); // 0 / 1 / 1  (1 = -0.0 equals 0.0)
-141 EQU 0.0
-142 JIZ __Lif3else
-143 LOD 1
-144 SET main_flag
-145 JMP __Lif3end
-146 LOD 0
-147 SET main_flag
-148 LOD main_flag
-149 OUT 0
+139 EQU 0.0
+140 JIZ __Lif3else
+141 LOD 1
+142 SET main_flag
+143 JMP __Lif3end
+144 LOD 0
+145 SET main_flag
+146 LOD main_flag
+147 OUT 0
 // 66: k = 4194303;          x = k;  fout(0, x);   // 4194303 / 4194303 / 4194303  (fits the mantissa)
-150 LOD 4194303
-151 SET main_k
-152 I2F_M main_k
-153 SET main_x
-154 F2I_M main_x
-155 OUT 0
+148 LOD 4194303
+149 SET main_k
+150 I2F_M main_k
+151 SET main_x
+152 F2I_M main_x
+153 OUT 0
 // 67: k = 5000000;          x = k;  fout(0, x);   // -3388608 / 5000000 / 5000000  (bit 22 taken as the sign)
-156 LOD 5000000
-157 SET main_k
-158 I2F_M main_k
-159 SET main_x
-160 F2I_M main_x
-161 OUT 0
+154 LOD 5000000
+155 SET main_k
+156 I2F_M main_k
+157 SET main_x
+158 F2I_M main_x
+159 OUT 0
 // 68: k = 16777217;         x = k;  fout(0, x);   // 1 / 16777216 / 16777216  (2^24+1: two bits dropped, 0.25 -> down)
-162 LOD 16777217
-163 SET main_k
-164 I2F_M main_k
-165 SET main_x
-166 F2I_M main_x
-167 OUT 0
+160 LOD 16777217
+161 SET main_k
+162 I2F_M main_k
+163 SET main_x
+164 F2I_M main_x
+165 OUT 0
 // 69: k = 16777219;         x = k;  fout(0, x);   // 3 / 16777216 / 16777220  (2^24+3: two bits dropped, 0.75 -> up at level 2)
-168 LOD 16777219
-169 SET main_k
-170 I2F_M main_k
-171 SET main_x
-172 F2I_M main_x
-173 OUT 0
+166 LOD 16777219
+167 SET main_k
+168 I2F_M main_k
+169 SET main_x
+170 F2I_M main_x
+171 OUT 0
 // 70: k = 2147483647;       x = k;  fout(0, x);   // -1 / 2147483392 / 2147483647  (level 2 rounds to 2^31, F2I saturates)
-174 LOD 2147483647
-175 SET main_k
-176 I2F_M main_k
-177 SET main_x
-178 F2I_M main_x
-179 OUT 0
+172 LOD 2147483647
+173 SET main_k
+174 I2F_M main_k
+175 SET main_x
+176 F2I_M main_x
+177 OUT 0
 // 71: k = -2147483647 - 1;  x = k;  fout(0, x);   // 0 / -2147483648 / -2147483648  (low 23 bits are zero)
-180 NEG_M 2147483647
-181 ADD -1
-182 SET main_k
-183 I2F_M main_k
-184 SET main_x
-185 F2I_M main_x
-186 OUT 0
+178 NEG_M 2147483647
+179 ADD -1
+180 SET main_k
+181 I2F_M main_k
+182 SET main_x
+183 F2I_M main_x
+184 OUT 0
 // 72: x = 3000000000.0;             out(0, x);    // -1294967296 / 2147483647 / 2147483647  (F2I saturates)
-187 LOD 3000000000.0
-188 SET main_x
-189 F2I_M main_x
-190 OUT 0
+185 LOD 3000000000.0
+186 SET main_x
+187 F2I_M main_x
+188 OUT 0
 // 73: x = -3000000000.0;            out(0, x);    // 1294967296 / -2147483648 / -2147483648
-191 LOD -3000000000.0
-192 SET main_x
-193 F2I_M main_x
-194 OUT 0
+189 LOD -3000000000.0
+190 SET main_x
+191 F2I_M main_x
+192 OUT 0
 // 76: x = d33 * b36;                fout(0, x);   // 999 / 0 / 0  (exact 1000, fout truncates 999.99; before the encoder fix
-195 LOD main_d33
-196 F_MLT main_b36
-197 SET main_x
-198 F2I_M main_x
-199 OUT 0
+193 LOD main_d33
+194 F_MLT main_b36
+195 SET main_x
+196 F2I_M main_x
+197 OUT 0
 // 39: while (1)
-200 JMP __Lwh1
+198 JMP __Lwh1
 // -3: END
-201 JMP fim
+199 JMP fim

@@ -1,9 +1,10 @@
 ## messages
 Heads up on line 26: local array 'l' gets the values between braces only once, when the memory is loaded; from one call to the next it keeps what the function wrote into it (like a C static).
 Info: 65 assembly instructions generated
+Info: 3 increments made one INC each
 Info: 2 variables share 1 data words (1 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 65 instructions and 33 variables were found
+Info: 59 instructions and 33 variables were found
 Info: adding array handling
 Info: adding data output handling
 Info: ULA resource -> integer adder
@@ -20,7 +21,7 @@ Processor cmm_braces
   multiplier    float; divider no
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      65 instructions, 33 data words
+  memories      59 instructions, 33 data words
 Sweet: the processor is good to go.
 ## variables
 loc s 1
@@ -35,75 +36,69 @@ lang C+-
 3 LOD main_k
 4 LDI a
 5 OUT 0
-6 LOD main_k
-7 ADD 1
-8 SET main_k
-9 LES 4
-10 JIZ __Lwh1
+6 INC main_k
+7 LES 4
+8 JIZ __Lwh1
 // 36: for (k = 0; k < 3; k = k + 1) fout(0, f[k] * 8.0);
-11 LOD 0
-12 SET main_k
-13 LOD main_k
-14 LDI f
-15 F_MLT 8.0
-16 F2I
-17 OUT 0
-18 LOD main_k
-19 ADD 1
-20 SET main_k
-21 LES 2
-22 JIZ __Lwh2
+9 LOD 0
+10 SET main_k
+11 LOD main_k
+12 LDI f
+13 F_MLT 8.0
+14 F2I
+15 OUT 0
+16 INC main_k
+17 LES 2
+18 JIZ __Lwh2
 // 37: out(0, m[0][1]); out(0, m[0][2]); out(0, m[1][0]); out(0, m[1][2]);
-23 LOD_V m 1
+19 LOD_V m 1
+20 OUT 0
+21 LOD_V m 2
+22 OUT 0
+23 LOD_V m 3
 24 OUT 0
-25 LOD_V m 2
+25 LOD_V m 5
 26 OUT 0
-27 LOD_V m 3
-28 OUT 0
-29 LOD_V m 5
-30 OUT 0
 // 38: out(0, q[1][0]); out(0, q[1][1]);
-31 LOD_V q 2
-32 OUT 0
-33 LOD_V q 3
-34 OUT 0
+27 LOD_V q 2
+28 OUT 0
+29 LOD_V q 3
+30 OUT 0
 // 39: for (k = 0; k < 2; k = k + 1)
-35 LOD 0
-36 SET main_k
+31 LOD 0
+32 SET main_k
 // 41: fout(0, real(c[k]) * 2.0);
-37 LOD main_k
-38 LDI c
-39 F_MLT 2.0
-40 F2I
-41 OUT 0
+33 LOD main_k
+34 LDI c
+35 F_MLT 2.0
+36 F2I
+37 OUT 0
 // 42: fout(0, imag(c[k]) * 2.0);
-42 LOD main_k
-43 LDI c_i
-44 F_MLT 2.0
-45 F2I
-46 OUT 0
+38 LOD main_k
+39 LDI c_i
+40 F_MLT 2.0
+41 F2I
+42 OUT 0
 // 39: for (k = 0; k < 2; k = k + 1)
-47 LOD main_k
-48 ADD 1
-49 SET main_k
-50 LES 1
-51 JIZ __Lwh3
+43 INC main_k
+44 LES 1
+45 JIZ __Lwh3
 // 44: out(0, loc());
-52 CAL loc
-53 OUT 0
+46 CAL loc
+47 OUT 0
 // 45: out(0, loc());
-54 CAL loc
-55 OUT 0
+48 CAL loc
+49 OUT 0
 // -3: END
-56 JMP fim
+50 JMP fim
 // 27: int s = l[1] + l[2];
-57 LOD_V loc_l 1
-58 P_LOD_V loc_l 2
-59 S_ADD
-60 SET loc_s
+51 LOD_V loc_l 1
+52 P_LOD_V loc_l 2
+53 S_ADD
+54 SET loc_s
 // 28: l[2] = 9;
-61 LOD 9
-62 SET_V loc_l 2
+55 LOD 9
+56 SET_V loc_l 2
 // 29: return s;
-63 LOD loc_s
-64 RET
+57 LOD loc_s
+58 RET
