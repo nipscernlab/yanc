@@ -63,6 +63,21 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **A data stack of 32 words or more goes to block RAM (#170).** The stack
+  read its top asynchronously, which no block RAM does, so Quartus built it
+  in flip-flops and a mux, on the Cyclone V too. From 32 words the top is now
+  read at the clock edge before, at the address the pointer is about to take,
+  with a bypass for the word a push writes; it is a register in the cycle it
+  is used, as before, so STI and ISI keep using it as their address. Quartus
+  23.1, a fit of test21 (C++ with recursion, 128 words, seed 1): Cyclone V
+  2942 to 893 ALMs, 5353 to 1291 registers, Fmax 71.99 to 73.01 MHz;
+  Cyclone IV E 6857 to 2019 logic elements, 52.92 to 52.60 MHz (one seed
+  each; the worst path is MLT's). Synthesis of sapho_all with its stack
+  forced to 32, 64 and 128 words: Cyclone IV 7148 to 5508, 8878 to 5509,
+  12377 to 5516 logic elements. Below 32 words the stack is as it was: there
+  its bypass and registers cost more than it saves (sapho_all at 8 words,
+  Cyclone IV, 5822 to 5889; two C++ tests at 16 and 20 words grew by 9 and
+  17 ALMs). The whole regression passed with the new read on every stack.
 - **Each stack exactly as deep as the program goes (#145).** asmcomp gave
   every stack it sized a word more than the program's deepest point: the
   simulation's `fl_full` rose when a stack became full, not when it

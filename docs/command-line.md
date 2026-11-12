@@ -69,9 +69,11 @@ Processor filtro
   memories      152 instructions, 40 data words
 ```
 
-A stack that says "the default: it could not be worked out" keeps 128 words,
-which can be most of a small processor: give its depth with `#NDSTAC` or
-`#SDEPTH` (see [Directives](directives.md)).
+A stack that says "the default: it could not be worked out" keeps 128 words.
+The data stack goes to a block of memory from 32 words, so its cost is
+small; the call stack is built in logic and can be most of a small
+processor: give its depth with `#SDEPTH` (or the data stack's with
+`#NDSTAC`, see [Directives](directives.md)).
 
 ## What lands where
 
