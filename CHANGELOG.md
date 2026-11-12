@@ -22,9 +22,10 @@ tags consumed by Aurora.
   asmcomp refuses it (two new errors, NegTests `inc_write` and `inc_read`),
   and a `#PRACA` pulse during an INC drops its write. 54 C± goldens change,
   three lines to one per INC; the golden maps also carry the new share of
-  the instruction set; `size_baseline.txt` follows; dirac_assign, an
-  endless loop, now writes 263 lines in the simulated time instead of 209
-  (the first 209 the same). `Scripts/wave_map.py` takes a variable's change
+  the instruction set; `size_baseline.txt` follows; twelve endless loops
+  (dirac_assign, for_loop, sapho_all and nine `cmm_*`) write more lines in
+  the simulated time, and their sim references gained those lines at the
+  end, none changed. `Scripts/wave_map.py` takes a variable's change
   at the word after an INC of it; the waveform of a variable that shares its
   word follows its INCs too, a cycle late, as it follows its SETs; and `P_INC`, reached only in a Dirac loop,
   is an exception of sapho_all's block check. The table gained the operand

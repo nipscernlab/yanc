@@ -75,9 +75,16 @@ in 56 programs; asmcomp accepts every one.
   shown by the SETs that write it, not by the address (asmcomp, hdl.c); its
   INCs are in that list too, one cycle late (cmm_ctlforms, test18, test81,
   test108 showed the variable stuck without them).
-- dirac_assign is an endless loop that writes 1 each turn: in the same
-  simulated time it now writes 263 lines instead of 209, the first 209 the
-  same; its `golden_sim/output_0.txt` follows.
+- Twelve tests are endless loops whose `golden_sim/output_0.txt` is what
+  the simulation writes in a fixed time: with INC a turn is shorter, more
+  lines fit, and the references gained lines at their end, none changed
+  (dirac_assign 209 to 263, for_loop 10 000 to 12 676, and cmm_break,
+  cmm_continue, cmm_dowhile, cmm_fround_mean, cmm_fround0, cmm_fround1,
+  cmm_fround2, cmm_pplus, cmm_return, sapho_all). The new lines repeat each
+  program's turn (in cmm_pplus, whose `b[1][1]` is never reset, each turn's
+  values step as in the turns before), and sapho_all's still all equal its
+  model.py. The other eleven were hidden behind the waveform failure in the
+  first full regression, which stops a test at its first failure.
 - `P_INC` is reached only in a Dirac loop (the acc keeps the sum while the
   counter steps), and sapho_all has none: it is in sapho_all's
   `blocks_except.txt`. proc_rls, dirac_assign, dirac_shapes and cmm_cov_misc
