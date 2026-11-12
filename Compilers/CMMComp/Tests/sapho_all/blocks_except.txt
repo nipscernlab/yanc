@@ -5,3 +5,4 @@ SF_SCL   F_SCL is reached only inside the exp/log macros, always with a memory o
 XPO      XPO is reached only inside the log macro, always with a memory operand (XPO_M)
 TOM      toma needs a partner processor: alone it waits forever (docs/design/toma-and-cade.md)
 CAD      cade needs a partner processor: alone it waits forever (docs/design/toma-and-cade.md)
+P_INC    reached only in a Dirac loop (the acc keeps the sum while the counter steps), which sapho_all has none of; proc_rls, dirac_assign, dirac_shapes and cmm_cov_misc run it, on the INC block sapho_all instantiates (#203)

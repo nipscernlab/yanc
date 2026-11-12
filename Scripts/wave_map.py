@@ -468,6 +468,12 @@ def check_vcd(prog, path):
                 ins = prog.trad[a].split() if a is not None and a < len(prog.trad) else ["?"]
                 if ins[0] in indirect:
                     continue
+                # INC x writes x a cycle late, while the word after it runs
+                # (docs/design/inc-in-place.md): INC does not jump, so the
+                # INC of a change seen at address a is at a - 1
+                inc = prog.trad[a - 1].split() if a is not None and 0 < a <= len(prog.trad) else []
+                if inc[:1] in (["INC"], ["P_INC"]) and inc[1:2] == [mirror[i][0]]:
+                    continue
                 if not (ins[0] in ("SET", "SET_P") and len(ins) > 1 and ins[1] == mirror[i][0]):
                     fail(f"at time {t}: the waveform's '{mirror[i][0]}' changes while the "
                          f"instruction is '{' '.join(ins)}' (address {a}), not a SET of it")

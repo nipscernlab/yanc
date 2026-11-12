@@ -22,8 +22,12 @@ tags consumed by Aurora.
   asmcomp refuses it (two new errors, NegTests `inc_write` and `inc_read`),
   and a `#PRACA` pulse during an INC drops its write. 54 C± goldens change,
   three lines to one per INC; the golden maps also carry the new share of
-  the instruction set; `size_baseline.txt` follows. The table gained the
-  operand effect `rw`. docs/design/inc-in-place.md has the record.
+  the instruction set; `size_baseline.txt` follows; dirac_assign, an
+  endless loop, now writes 263 lines in the simulated time instead of 209
+  (the first 209 the same). `Scripts/wave_map.py` takes a variable's change
+  at the word after an INC of it, and `P_INC`, reached only in a Dirac loop,
+  is an exception of sapho_all's block check. The table gained the operand
+  effect `rw`. docs/design/inc-in-place.md has the record.
 - **Values kept in step by hand are now checked (#185).**
   `Scripts/check_isa.py` (step 3 of the regression) fails when the cycles of
   a divider disagree: `IDIV_STG`/`FDIV_STG` in `ula.v`, the `STG` defaults of

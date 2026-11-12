@@ -1250,8 +1250,13 @@ assign sp_in = ula_out;
 // the accumulator is 1 the cycle INC executes: racc takes 1 instead of the
 // result of the instruction before, which INC overwrites anyway (P_INC pushed
 // that result in decode, from ula_out). A constant on the register, its
-// synchronous clear and set, not a mux in front of the ALU.
-always @ (posedge clk) if (rst) racc <= 0; else if (id_inc) racc <= 1; else racc <= ula_out; // synchronous reset (FPGA-friendly)
+// synchronous clear and set, not a mux in front of the ALU. Only with INC:
+// the load, even on an id_inc held at 0, cost Yosys a LUT in sapho_min.
+generate if ((INC | P_INC) != 0) begin : acc_inc
+	always @ (posedge clk) if (rst) racc <= 0; else if (id_inc) racc <= 1; else racc <= ula_out; // synchronous reset (FPGA-friendly)
+end else begin : acc_inc
+	always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out;
+end endgenerate
 
 // toma_dado: the value the partners' CAD reads, one for every link (a writer
 // is inside one TOM at a time and leaves it only once the value was taken).

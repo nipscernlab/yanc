@@ -30,7 +30,9 @@ constant 1 the ADD no longer reads.
   accumulator (`ula_op` 2, `.ADD(... | INC | P_INC)`). The accumulator's old
   value is dead, since INC overwrites it, so the cycle INC is decoded `racc`
   loads 1 instead of the ALU's output: a constant on the register, its
-  synchronous clear and set, not a mux in front of the ALU. `P_INC` pushes
+  synchronous clear and set, not a mux in front of the ALU. That load is
+  generated only with INC: written for every program, on an `id_inc` held at
+  0, it still cost Yosys one LUT in sapho_min (20 against cells.txt's 19). `P_INC` pushes
   the old value in decode, from `ula_out`, as every push does.
 - **The write is a cycle late.** k + 1 is on `ula_out` the cycle after the
   decode, when the operand in decode is already the next instruction's. So
@@ -61,6 +63,22 @@ itself (`a++; b++` gives one INC and
 one sequence of three). On 2026-11-12: 54 of the 125 C± goldens changed, by
 three lines to one per INC and nothing else; the 116 C++ tests have 386 INC
 in 56 programs; asmcomp accepts every one.
+
+## The tests it moved
+
+- 54 `golden.asm` (three lines to one per INC) and 67 `golden_map.txt` (the
+  same, and 13 where only asmcomp's share of the instruction set moves, 106
+  to 108 opcodes); `size_baseline.txt`, 54 smaller.
+- `Scripts/wave_map.py --vcd` held a variable's change to a SET of it; INC's
+  change shows while the word after it runs, at the address after the INC,
+  and is taken there.
+- dirac_assign is an endless loop that writes 1 each turn: in the same
+  simulated time it now writes 263 lines instead of 209, the first 209 the
+  same; its `golden_sim/output_0.txt` follows.
+- `P_INC` is reached only in a Dirac loop (the acc keeps the sum while the
+  counter steps), and sapho_all has none: it is in sapho_all's
+  `blocks_except.txt`. proc_rls, dirac_assign, dirac_shapes and cmm_cov_misc
+  run it.
 
 ## Measured cost
 
