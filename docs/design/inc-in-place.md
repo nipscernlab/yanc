@@ -71,7 +71,10 @@ in 56 programs; asmcomp accepts every one.
   to 108 opcodes); `size_baseline.txt`, 54 smaller.
 - `Scripts/wave_map.py --vcd` held a variable's change to a SET of it; INC's
   change shows while the word after it runs, at the address after the INC,
-  and is taken there.
+  and is taken there. A variable that shares its data word with others is
+  shown by the SETs that write it, not by the address (asmcomp, hdl.c); its
+  INCs are in that list too, one cycle late (cmm_ctlforms, test18, test81,
+  test108 showed the variable stuck without them).
 - dirac_assign is an endless loop that writes 1 each turn: in the same
   simulated time it now writes 263 lines instead of 209, the first 209 the
   same; its `golden_sim/output_0.txt` follows.

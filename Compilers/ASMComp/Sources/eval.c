@@ -186,7 +186,9 @@ void instr_ula(char *va, int is_const)
     // a shared name is still shown on its own in the waveform, at its home's
     // address, and follows only the instructions that write it (hdl.c)
     if (home != va && !sim_has(va)) sim_regi_at(va, var_find(home));
-    if (var_shared(va) && (strcmp(opc_name, "SET") == 0 || strcmp(opc_name, "SET_P") == 0)) sim_store(va);
+    // INC and P_INC write their word a cycle later, while the next instruction runs (#203)
+    if (var_shared(va) && (strcmp(opc_name, "SET") == 0 || strcmp(opc_name, "SET_P") == 0)) sim_store(va, 0);
+    if (var_shared(va) && (strcmp(opc_name, "INC") == 0 || strcmp(opc_name, "P_INC") == 0)) sim_store(va, 1);
 
     // write the new instruction
     fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(var_find(home),nbopr));
