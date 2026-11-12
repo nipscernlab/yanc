@@ -169,7 +169,8 @@ module stack
 #(
 	parameter NADDR = 7,
 	parameter DEPTH = 3,
-	parameter NBITS = 8
+	parameter NBITS = 8,
+	parameter SYNC  = 0                 // 1: the top comes from a register (#170)
 )(
 	 input             clk , rst,
 	 input             push, pop,
@@ -203,7 +204,39 @@ end
 // Stack interface
 
 always @ (posedge clk) if (push) mem[pointer] <= in;
-assign                     out = mem[pmenoum];
+
+// The top, mem[pointer - 1]. Without SYNC it is read as the memory holds it,
+// asynchronously, which no block RAM does: on a family without LUT RAM
+// (Cyclone IV, MAX 10) the stack is then DEPTH x NBITS flip-flops and a mux.
+// With SYNC the top is read at the clock edge before, at the address the
+// pointer is about to take, so it is a register in the cycle it is used, as
+// the asynchronous read was: after a push the top is the word pushed, which
+// takes the bypass (the memory writes it on that same edge); after a pop it is
+// mem[pointer - 2]; otherwise mem[pointer - 1], which that edge does not write.
+// The read and the write of one edge never meet on one address but in a push,
+// whose read the bypass replaces, so the memory needs no read-during-write
+// behaviour (#170).
+// The data stack takes it from 32 words up: below, its bypass and registers
+// cost more than the memory they save. Quartus 23.1 synthesis, sapho_all with
+// the data stack at 8 / 16 / 32 / 64 / 128 words, before -> with SYNC:
+// Cyclone V ALMs 2466 -> 2402, 2585 -> 2408, 2818 -> 2409, 3323 -> 2402,
+// 4569 -> 2411; Cyclone IV logic elements 5822 -> 5889, 6265 -> 5511,
+// 7148 -> 5508, 8878 -> 5509, 12377 -> 5516. Two C++ tests with 16 and 20
+// words grew by 9 and 17 ALMs. A fit of test21 (C++, 128 words, seed 1): Cyclone
+// V 2942 -> 893 ALMs, 71.99 -> 73.01 MHz; Cyclone IV 6857 -> 2019 logic
+// elements, 52.92 -> 52.60 MHz; the worst path, through MLT, is not the
+// stack's. The instruction stack keeps the asynchronous read (its top is a
+// RET's jump address; SYNC was not tried there).
+generate if (SYNC != 0) begin : top_reg
+	wire [NADDR-1:0] pmenodois = pmenoum - um;
+	wire [NADDR-1:0] raddr     = (push) ? pointer : (pop) ? pmenodois : pmenoum;
+	reg  [NBITS-1:0] rtop;  always @ (posedge clk) rtop <= mem[raddr];
+	reg              byp;   always @ (posedge clk) byp  <= push;
+	reg  [NBITS-1:0] bword; always @ (posedge clk) bword <= in;
+	assign out = (byp) ? bword : rtop;
+end else begin : top_async
+	assign out = mem[pmenoum];
+end endgenerate
 
 // Flags
 `ifdef YANC_SIM_VIS // --------------------------------------------------------
@@ -1106,7 +1139,8 @@ endgenerate
 
 stack #(.NADDR((DDEPTH > 1) ? $clog2(DDEPTH) : 1),   // a 1-word stack still has a 1-bit pointer
         .DEPTH(DDEPTH),
-        .NBITS(NUBITS)) sp(clk, sp_clr, sp_push, sp_pop, sp_in, sp_data);
+        .NBITS(NUBITS),
+        .SYNC (DDEPTH >= 32)) sp(clk, sp_clr, sp_push, sp_pop, sp_in, sp_data);
 
 // ALU input controls ---------------------------------------------------------
 
