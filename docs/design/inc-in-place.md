@@ -27,13 +27,22 @@ constant 1 the ADD no longer reads.
 ## The hardware (core.v, instr_dec.v)
 
 - **The adder is the ADD's.** INC decodes as an ADD of its data word and the
-  accumulator (`ula_op` 2, `.ADD(... | INC | P_INC)`). The accumulator's old
-  value is dead, since INC overwrites it, so the cycle INC is decoded `racc`
-  loads 1 instead of the ALU's output: a constant on the register, its
-  synchronous clear and set, not a mux in front of the ALU. That load is
-  generated only with INC: written for every program, on an `id_inc` held at
-  0, it still cost Yosys one LUT in sapho_min (20 against cells.txt's 19). `P_INC` pushes
-  the old value in decode, from `ula_out`, as every push does.
+  accumulator (`ula_op` 2, `.ADD(... | INC | P_INC)`), and the accumulator's
+  old value is dead, since INC overwrites it. So the cycle INC executes, the
+  cycle after its decode (`ula_op` is registered in instr_dec), the integer
+  adder takes 1 for its second input instead of the accumulator (`add_in2`
+  in ula.v); the selector is `id_inc` a cycle later (`ex_inc` in core.v,
+  one flip-flop). The mux is on `ula_add` only: the float add, the
+  denormaliser and every other operation read `in2` as before, and the float
+  add is the critical path of sapho_all. Both are generated only with INC
+  (ula's parameter `INC`, `inc_ex` in core.v), and sapho_min still maps to
+  cells.txt's 12 flip-flops and 19 LUT4. `P_INC` pushes the old value in
+  decode, from `ula_out`, as every push does.
+- **The first form loaded 1 into `racc`** the cycle INC was decoded
+  (merged in #209): no flip-flop, but the fit put a LUT in front of every bit
+  of `racc`, where without INC the ALU's output reaches the register's
+  synchronous load directly. The form above replaced it; the measures are
+  below.
 - **The write is a cycle late.** k + 1 is on `ula_out` the cycle after the
   decode, when the operand in decode is already the next instruction's. So
   the operand is kept a cycle (`inc_a`, MDATAW bits, and `inc_w`), and that
@@ -91,6 +100,28 @@ in 56 programs; asmcomp accepts every one.
   run it.
 
 ## Measured cost
+
+sapho_all on Cyclone V (5CSEMA5F31C6), the same program (with INC) and
+three placement seeds for each form of the 1, 2026-11-13:
+
+| seed | 1 loaded into `racc` | 1 at the adder's input |
+|---|---|---|
+| 1 | 40.42 MHz, 2 623 ALMs | 37.99 MHz, 2 602 ALMs |
+| 2 | 37.11 MHz, 2 617 ALMs | 37.32 MHz, 2 613 ALMs |
+| 3 | 38.66 MHz, 2 607 ALMs | 39.57 MHz, 2 612 ALMs |
+| mean | 38.73 MHz, 2 616 ALMs | 38.29 MHz, 2 609 ALMs |
+| synthesis estimate | 2 482 ALMs | 2 472 ALMs |
+
+Without INC, seed 1: 40.23 MHz, 2 613 ALMs, synthesis estimate 2 466. The
+Fmax difference between the means (1 %) is smaller than either form's spread
+across seeds (3.3 and 2.3 MHz), and seed by seed each form wins some; the
+worst path of all seven fits is the float add (the data memory, the
+denormaliser, `op_fadd`), and the integer adder is in none of them nor in
+the worst paths to `racc[0]` and `racc[5]` of the two seed-1 fits. What separates the two is the
+logic: INC costs 6 ALMs in synthesis at the adder's input against 16 on
+`racc`, and the LUT in front of `racc` is gone.
+
+The rows below were measured on the first form (1 loaded into `racc`):
 
 | | without INC | with INC |
 |---|---|---|

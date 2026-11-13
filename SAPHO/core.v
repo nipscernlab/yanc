@@ -1185,6 +1185,17 @@ endgenerate
 wire signed [NUBITS-1:0] ula_out;
 wire        [NUBITS-1:0] ula_fast;   // ula_out without the normalised operations
 
+// INC k (#203) runs as an ADD whose second operand is 1: the ALU's adder takes
+// 1 instead of the accumulator the cycle INC executes, which is the cycle
+// after its decode, as id_ula_op (registered in instr_dec). Only with INC
+wire ex_inc;
+generate if ((INC | P_INC) != 0) begin : inc_ex
+	reg r; always @ (posedge clk) if (rst) r <= 1'b0; else r <= id_inc;
+	assign ex_inc = r;
+end else begin : inc_ex
+	assign ex_inc = 1'b0;
+end endgenerate
+
 ula #(.NUBITS (NUBITS ),
       .NBMANT (NBMANT ),
       .NBEXPO (NBEXPO ),
@@ -1239,24 +1250,15 @@ ula #(.NUBITS (NUBITS ),
 	  .F_SU2  (F_SU2   | SF_SU2  ),
 	  .F_SCL  (F_SCL   | SF_SCL  ),
 	  .XPO    (XPO              ),
-	  .XPO_M  (XPO_M            )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out, ula_fast, clk);
+	  .XPO_M  (XPO_M            ),
+	  .INC    (INC     | P_INC  )) ula (id_ula_op, ula_data_in1, ula_data_in2, ula_out, ula_fast, clk, ex_inc);
 
 assign sp_in = ula_out;
 
 // Accumulator ----------------------------------------------------------------
 // (the racc reg itself is declared earlier, above the uic_in2 generate)
 
-// INC k (#203): the ADD it runs adds the data word and the accumulator, and
-// the accumulator is 1 the cycle INC executes: racc takes 1 instead of the
-// result of the instruction before, which INC overwrites anyway (P_INC pushed
-// that result in decode, from ula_out). A constant on the register, its
-// synchronous clear and set, not a mux in front of the ALU. Only with INC:
-// the load, even on an id_inc held at 0, cost Yosys a LUT in sapho_min.
-generate if ((INC | P_INC) != 0) begin : acc_inc
-	always @ (posedge clk) if (rst) racc <= 0; else if (id_inc) racc <= 1; else racc <= ula_out; // synchronous reset (FPGA-friendly)
-end else begin : acc_inc
-	always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out;
-end endgenerate
+always @ (posedge clk) if (rst) racc <= 0; else racc <= ula_out; // synchronous reset (FPGA-friendly)
 
 // toma_dado: the value the partners' CAD reads, one for every link (a writer
 // is inside one TOM at a time and leaves it only once the value was taken).
