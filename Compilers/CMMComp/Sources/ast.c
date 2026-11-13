@@ -167,11 +167,12 @@ expr_node *expr_array_index(int type, int id, int reversed,
     return n;
 }
 
-expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2)
+expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2, int step)
 {
     expr_node *n = enode_new(EXPR_PPLUS);
     n->type  = type;
-    n->id    = id;        // variable being post-incremented
+    n->op    = step;      // STEP_DEC for --, STEP_PRE for the prefix form
+    n->id    = id;        // variable being incremented or decremented
     n->left  = idx;       // NULL for scalar id++
     n->right = idx2;      // NULL unless 2D
     return n;
@@ -1240,14 +1241,16 @@ static expr ast_emit_expr_impl(expr_node *n)
         }
 
         case EXPR_PPLUS: {
-            if (!n->left)  return pplus2exp(n->id, 1);
+            // the postfix form's value is the old one, the prefix form's the new
+            int old = !(n->op & STEP_PRE), dec = n->op & STEP_DEC;
+            if (!n->left)  return pplus2exp(n->id, old, dec);
             if (!n->right) {
                 expr idx = ast_emit_expr(n->left);
-                return pplus1d2exp(n->id, idx, 1);
+                return pplus1d2exp(n->id, idx, old, dec);
             }
             expr i1 = ast_emit_expr(n->left );
             expr i2 = ast_emit_expr(n->right);
-            return pplus2d2exp(n->id, i1, i2, 1);
+            return pplus2d2exp(n->id, i1, i2, old, dec);
         }
 
         case EXPR_STDLIB_CALL: {
@@ -1375,12 +1378,13 @@ stmt_node *stmt_assign(int id, expr_node *rhs)
     return n;
 }
 
-stmt_node *stmt_pplus(int id, expr_node *idx, expr_node *idx2)
+stmt_node *stmt_pplus(int id, expr_node *idx, expr_node *idx2, int step)
 {
     stmt_node *n = snode_new(STMT_PPLUS);
     n->id   = id;
     n->idx  = idx;
     n->idx2 = idx2;
+    n->op   = step;   // STEP_DEC for --
     return n;
 }
 
@@ -1394,6 +1398,48 @@ stmt_node *stmt_array_assign(int id, expr_node *idx, expr_node *idx2,
     n->rhs  = rhs;
     n->op   = fft;
     return n;
+}
+
+// a fresh copy of a subtree, not yet emitted (the walker caches a node's
+// result, and stmt_free frees each tree a statement holds)
+static expr_node *expr_clone(const expr_node *n)
+{
+    if (!n) return NULL;
+    expr_node *c = xcalloc(1, sizeof(*c));
+    *c = *n;
+    c->left  = expr_clone(n->left);
+    c->right = expr_clone(n->right);
+    c->args  = NULL;
+    if (n->n_args) {
+        c->args = xcalloc(n->n_args, sizeof(*c->args));
+        for (int k = 0; k < n->n_args; k++) c->args[k] = expr_clone(n->args[k]);
+    }
+    c->emitted = 0;
+    return c;
+}
+
+// x op= e (#208): the right-hand side x op (e), x given as a tree
+static expr_node *opassign_rhs(int op, expr_node *x, expr_node *e)
+{
+    return (op == OP_ADD || op == OP_SUB) ? expr_addsub(op, x, e) : expr_binop(op, x, e);
+}
+
+// x op= e is the assignment x = x op (e): its words, and every check and
+// conversion of an assignment
+stmt_node *stmt_opassign(int id, int op, expr_node *rhs)
+{
+    return stmt_assign(id, opassign_rhs(op, expr_var(v_table[id].type, id), rhs));
+}
+
+// v[k] op= e is v[k] = v[k] op (e), the element read at a copy of k. k is
+// then computed twice, so it must do nothing but give a value: a call, a ++
+// or an input read in it would happen twice
+stmt_node *stmt_opassign_array(int id, expr_node *idx, expr_node *idx2, int op, expr_node *rhs)
+{
+    if (has_side_effect(idx) || has_side_effect(idx2))
+        fatal(MSG_ERR_OPASSIGN_INDEX, pctx.line_num+1, strip_fn_prefix(v_table[id].name));
+    expr_node *el = expr_array_index(v_table[id].type, id, 0, expr_clone(idx), expr_clone(idx2));
+    return stmt_array_assign(id, idx, idx2, opassign_rhs(op, el, rhs), 0);
 }
 
 stmt_node *stmt_return(expr_node *rhs)
@@ -1888,15 +1934,15 @@ void stmt_emit(stmt_node *n)
             break;
 
         case STMT_PPLUS:
-            if      (!n->idx ) assign_pplus(n->id);
-            else if (!n->idx2) assign_aplus(n->id, ast_emit_expr(n->idx));
+            if      (!n->idx ) assign_pplus(n->id, n->op & STEP_DEC);
+            else if (!n->idx2) assign_aplus(n->id, ast_emit_expr(n->idx), n->op & STEP_DEC);
             else {
                 // one statement each: C leaves the order of a call's
                 // arguments to the host compiler, and the first index must
                 // be emitted first (it goes to the stack, the second to the acc)
                 expr i1 = ast_emit_expr(n->idx);
                 expr i2 = ast_emit_expr(n->idx2);
-                assign_apl2d(n->id, i1, i2);
+                assign_apl2d(n->id, i1, i2, n->op & STEP_DEC);
             }
             break;
 

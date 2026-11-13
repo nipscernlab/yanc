@@ -70,6 +70,7 @@ cmm_names  66
 cmm_names_1000 75
 cmm_nofloat 19
 cmm_nubits8 87
+cmm_opassign 596
 cmm_order_switch 83
 cmm_params 327
 cmm_pow    116

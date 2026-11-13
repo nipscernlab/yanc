@@ -155,10 +155,18 @@ float table[64] "table.txt";      // initialised from a file
 | logical | `&&` `\|\|` `!` | 1 or 0; on ints and floats (not `comp`) |
 | bitwise | `&` `\|` `^` `~` | ints |
 | shifts | `<<` `>>` `>>>` | `>>` fills with zeros, `>>>` with the sign |
-| increment | `x++`, `v[k]++` | also inside an expression |
+| increment, decrement | `x++` `++x` `x--` `--x`, on `v[k]` and `m[r][c]` too | ints and floats; also inside an expression, where `x++` gives the old value and `++x` the new, as in C |
+| compound assignment | `+=` `-=` `*=` `/=` `%=` `&=` `\|=` `^=` `<<=` `>>=` `>>>=` | a statement or the step of a `for`, not an expression; on a variable or an element |
 
-The precedence is C's. There is no `--`, no compound assignment (`+=`,
-`-=`, ...), no `?:`, no `sizeof`. A shift costs almost nothing in hardware,
+The precedence is C's. There is no `?:` and no `sizeof`.
+
+`x op= e` is `x = x op (e)`: the same instructions, and the same
+conversions and warnings; `k += 1` gives the instructions of `k++`. On an
+element, `v[k] op= e` is `v[k] = v[k] op (e)`, so its index is
+computed for the read and for the write; an index with a call, a `++` or
+an input read in it would do that twice, and the compiler refuses it (keep
+the index in a variable first). A `comp` takes `+=`, `-=`, `*=` and `/=`,
+the operations it has. A shift costs almost nothing in hardware,
 a division a divider and five clock cycles (four for a float division):
 `x >> 2` instead of `x / 4` when `x` is not negative.
 
@@ -178,8 +186,8 @@ division by a literal stays a division.
 `default`, `break`, `continue`, `return`, as in C. There is no `goto`.
 
 - `for (init; condition; step)`: `init` is an assignment or a declaration
-  with a value (`int k = 0`), `step` an assignment or `k++`; either can be
-  empty. One clause each, no commas.
+  with a value (`int k = 0`), `step` an assignment, a compound assignment
+  (`k += 2`) or `k++`, `++k`, `k--`, `--k`; either can be empty. One clause each, no commas.
 - `case` takes a constant number. A `case` without `break` falls through to
   the next, as in C. As in C, a value appears in one `case` of a `switch`
   only, and a `switch` has one `default` at most.
@@ -291,5 +299,5 @@ no arguments, and a program may have any number of them. There is no
 Pointers, `struct`, strings and characters (`'a'` is an error),
 recursion, dynamic memory, `#include`, several
 source files, arrays of more than two dimensions, arrays as parameters,
-`goto`, `--`, compound assignment, `?:`, casts. Most of them are in the C++
+`goto`, `?:`, casts. Most of them are in the C++
 YANC accepts, at a cost in instructions; C± keeps the processor small.

@@ -113,7 +113,8 @@ void  yyerror(char const *s);
 %token WHILE DO FOR IF THEN ELSE SWITCH CASE DEFAULT RET BREAK CONTINUE   // jumps
 %token SHIFTL SHIFTR SSHIFTR                                           // bit shift
 %token GREQU LESEQ EQU DIF LAN LOR                                     // two-symbol logical operators
-%token PPLUS                                                           // ++ operator. can be used both to reduce exp and for assignments
+%token PPLUS MMINUS                                                    // ++ and --, postfix or prefix: in an expression and as a statement
+%token <ival> OPASSIGN                                                 // +=, -=, ... (#208): the operation, an OP_ code
 %token BRA KET EYE VZERO DBAR                                          // Dirac notation (BRA is the closing angle, KET the opening one; DBAR a bar before an array name)
 %token <ival> KETIN                                                    // Dirac |in(p)>, the port as an INUM id
 
@@ -144,7 +145,7 @@ void  yyerror(char const *s);
 %left '+' '-'
 %left JUXT DBAR KET EYE VZERO KETIN                                    // Dirac juxtaposition: (2*c)|a> and |b> + (c|a>)
 %left '*' '/' '%'
-%left '!' '~' PPLUS
+%left '!' '~' PPLUS MMINUS
 
 // par_list / par_items have no semantic value (declare_par appends ids to the
 // deferred func_params[] array; func_body_begin consumes them).
@@ -429,16 +430,33 @@ for_init_clause : /* empty */                          {for_init_set(NULL);}
 
 for_step_clause : /* empty */                          {for_step_set(NULL);}
                 | ID  '=' exp                          {for_step_set(stmt_assign($1, $3));}
-                | ID PPLUS                             {for_step_set(stmt_pplus($1, NULL, NULL));}
+                | ID PPLUS                             {for_step_set(stmt_pplus($1, NULL, NULL, 0       ));}
+                | ID MMINUS                            {for_step_set(stmt_pplus($1, NULL, NULL, STEP_DEC));}
+                | PPLUS  ID                            {for_step_set(stmt_pplus($2, NULL, NULL, 0       ));}
+                | MMINUS ID                            {for_step_set(stmt_pplus($2, NULL, NULL, STEP_DEC));}
+                | ID OPASSIGN exp                      {for_step_set(stmt_opassign($1, $2, $3));}
 
 // assignments ----------------------------------------------------------------
 
            // standard assignment
 assignment : ID  '=' exp ';'                          {stmt_append(stmt_assign($1, $3));}
-           // increment
-           | ID                          PPLUS ';'    {stmt_append(stmt_pplus($1, NULL, NULL));}
-           | ID  '[' exp ']'             PPLUS ';'    {stmt_append(stmt_pplus($1, $3,   NULL));}
-           | ID  '[' exp ']' '[' exp ']' PPLUS ';'    {stmt_append(stmt_pplus($1, $3,   $6  ));}
+           // increment and decrement, postfix or prefix (one statement: the same)
+           | ID                          PPLUS  ';'   {stmt_append(stmt_pplus($1, NULL, NULL, 0       ));}
+           | ID  '[' exp ']'             PPLUS  ';'   {stmt_append(stmt_pplus($1, $3,   NULL, 0       ));}
+           | ID  '[' exp ']' '[' exp ']' PPLUS  ';'   {stmt_append(stmt_pplus($1, $3,   $6  , 0       ));}
+           | ID                          MMINUS ';'   {stmt_append(stmt_pplus($1, NULL, NULL, STEP_DEC));}
+           | ID  '[' exp ']'             MMINUS ';'   {stmt_append(stmt_pplus($1, $3,   NULL, STEP_DEC));}
+           | ID  '[' exp ']' '[' exp ']' MMINUS ';'   {stmt_append(stmt_pplus($1, $3,   $6  , STEP_DEC));}
+           | PPLUS  ID                          ';'   {stmt_append(stmt_pplus($2, NULL, NULL, 0       ));}
+           | PPLUS  ID '[' exp ']'              ';'   {stmt_append(stmt_pplus($2, $4,   NULL, 0       ));}
+           | PPLUS  ID '[' exp ']' '[' exp ']'  ';'   {stmt_append(stmt_pplus($2, $4,   $7  , 0       ));}
+           | MMINUS ID                          ';'   {stmt_append(stmt_pplus($2, NULL, NULL, STEP_DEC));}
+           | MMINUS ID '[' exp ']'              ';'   {stmt_append(stmt_pplus($2, $4,   NULL, STEP_DEC));}
+           | MMINUS ID '[' exp ']' '[' exp ']'  ';'   {stmt_append(stmt_pplus($2, $4,   $7  , STEP_DEC));}
+           // compound assignment (#208): x op= e is x = x op (e)
+           | ID                          OPASSIGN exp ';' {stmt_append(stmt_opassign      ($1, $2, $3));}
+           | ID  '[' exp ']'             OPASSIGN exp ';' {stmt_append(stmt_opassign_array($1, $3, NULL, $5, $6));}
+           | ID  '[' exp ']' '[' exp ']' OPASSIGN exp ';' {stmt_append(stmt_opassign_array($1, $3, $6  , $8, $9));}
            // regular array
            | ID  '[' exp ']'  '='     exp ';'         {stmt_append(stmt_array_assign($1, $3, NULL, $6, 0));}
            // reversed array
@@ -497,9 +515,19 @@ exp:       terminal                           {$$ = $1;}
          |    '-' DIMIN                       {$$ = expr_unop(OP_NEG, expr_lit(TY_INT, $2));}
          |    '!' exp                         {$$ = expr_unop(OP_LIN, $2);}
          |    '~' exp                         {$$ = expr_unop(OP_INV, $2);}
-         | ID                         PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, NULL, NULL);}
-         | ID '[' exp ']'             PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, $3,   NULL);}
-         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, $3,   $6  );}
+         // ++ and --: postfix gives the old value, prefix (STEP_PRE) the new
+         | ID                         PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, NULL, NULL, 0       );}
+         | ID '[' exp ']'             PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, $3,   NULL, 0       );}
+         | ID '[' exp ']' '[' exp ']' PPLUS   {$$ = expr_pplus(v_table[$1].type, $1, $3,   $6  , 0       );}
+         | ID                         MMINUS  {$$ = expr_pplus(v_table[$1].type, $1, NULL, NULL, STEP_DEC);}
+         | ID '[' exp ']'             MMINUS  {$$ = expr_pplus(v_table[$1].type, $1, $3,   NULL, STEP_DEC);}
+         | ID '[' exp ']' '[' exp ']' MMINUS  {$$ = expr_pplus(v_table[$1].type, $1, $3,   $6  , STEP_DEC);}
+         | PPLUS  ID                          {$$ = expr_pplus(v_table[$2].type, $2, NULL, NULL, STEP_PRE           );}
+         | PPLUS  ID '[' exp ']'              {$$ = expr_pplus(v_table[$2].type, $2, $4,   NULL, STEP_PRE           );}
+         | PPLUS  ID '[' exp ']' '[' exp ']'  {$$ = expr_pplus(v_table[$2].type, $2, $4,   $7  , STEP_PRE           );}
+         | MMINUS ID                          {$$ = expr_pplus(v_table[$2].type, $2, NULL, NULL, STEP_PRE | STEP_DEC);}
+         | MMINUS ID '[' exp ']'              {$$ = expr_pplus(v_table[$2].type, $2, $4,   NULL, STEP_PRE | STEP_DEC);}
+         | MMINUS ID '[' exp ']' '[' exp ']'  {$$ = expr_pplus(v_table[$2].type, $2, $4,   $7  , STEP_PRE | STEP_DEC);}
          // shift operators
          | exp  SHIFTL exp                    {$$ = expr_binop(OP_SHL, $1, $3);}
          | exp  SHIFTR exp                    {$$ = expr_binop(OP_SHR, $1, $3);}

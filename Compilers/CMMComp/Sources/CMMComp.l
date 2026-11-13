@@ -170,6 +170,21 @@ COMEN  "//"[^\n]*
 "||"          return LOR;
 
 "++"          return PPLUS;
+"--"          return MMINUS;
+
+ /* compound assignment (#208): the token carries the operation, x op= e is
+  * x = x op (e) */
+"+="          {yylval.ival = OP_ADD ; return OPASSIGN;}
+"-="          {yylval.ival = OP_SUB ; return OPASSIGN;}
+"*="          {yylval.ival = OP_MUL ; return OPASSIGN;}
+"/="          {yylval.ival = OP_DIV ; return OPASSIGN;}
+"%="          {yylval.ival = OP_MOD ; return OPASSIGN;}
+"&="          {yylval.ival = OP_AND ; return OPASSIGN;}
+"|="          {yylval.ival = OP_OR  ; return OPASSIGN;}
+"^="          {yylval.ival = OP_XOR ; return OPASSIGN;}
+"<<="         {yylval.ival = OP_SHL ; return OPASSIGN;}
+">>="         {yylval.ival = OP_SHR ; return OPASSIGN;}
+">>>="        {yylval.ival = OP_SSHR; return OPASSIGN;}
 
 "⟩"           return BRA;
 "⟨"           return KET;

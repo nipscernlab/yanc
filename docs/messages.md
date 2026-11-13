@@ -25,7 +25,8 @@ uses something the language does not have. The usual causes in C±:
 
 | written | why | instead |
 |---|---|---|
-| `a += 2;`, `a--;`, `x ? a : b` | no compound assignment, no `--`, no `?:` | `a = a + 2;`, `a = a - 1;`, an `if` |
+| `x ? a : b` | no `?:` | an `if` |
+| `y = (a += 2);`, `f(a -= 1)` | a compound assignment is a statement (or the step of a `for`), not an expression | `a += 2; y = a;` |
 | `(int) x` | no casts: conversions are automatic | `int a = x;` |
 | `#include`, `#if`, `#define F(x) ...` | the C± preprocessor has only `#define NAME text` | write it out, or use C++ |
 

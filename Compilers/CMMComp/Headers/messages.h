@@ -190,8 +190,12 @@ void parse_lang_flag(int *argc, char **argv);
       "Error on line %d: array '%s' has just one dimension!\n")
 
 #define MSG_ERR_INCR_COMPLEX \
-    M("Erro na linha %d: o que você bebeu pra querer incrementar um número complexo?\n", \
-      "Error on line %d: what were you smoking when you tried to increment a complex number?\n")
+    M("Erro na linha %d: o que você bebeu pra querer incrementar ou decrementar um número complexo?\n", \
+      "Error on line %d: what were you smoking when you tried to increment or decrement a complex number?\n")
+
+#define MSG_ERR_OPASSIGN_INDEX \
+    M("Erro na linha %d: o índice de '%s' num +=, -=, ... é calculado duas vezes, na leitura e na escrita, e a chamada, o ++ ou a entrada que ele tem aconteceria duas vezes: guarde o índice numa variável antes.\n", \
+      "Error on line %d: the index of '%s' in a +=, -=, ... is computed twice, for the read and for the write, and the call, the ++ or the input in it would happen twice: keep the index in a variable first.\n")
 
 #define MSG_ERR_WRONG_USE \
     M("Erro na linha %d: não é assim que se usa '%s'!\n", \

@@ -1,0 +1,18 @@
+#NUBITS 16
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+
+// Negative fixture (#208): v[k] op= e reads and writes the element at two
+// computations of its index, so an index with a ++ (a call, an input read)
+// would change k twice; cmmcomp refuses it instead of doing that silently.
+int a[4];
+
+void main()
+{
+    int k;
+    k = 0;
+    a[k++] += 1;
+    out(0, a[0]);
+}

@@ -1,0 +1,714 @@
+## messages
+Info: 595 assembly instructions generated
+Info: 2 divisions, 5 words each for DIV/MOD and 4 for F_DIV (8 added)
+Info: 1 variables written and never read removed (5 instructions)
+Info: 1 increments made one INC each
+Info: 12 variables share 4 data words (8 saved)
+Heads up: variable 'y' in function 'main' is never read, so it's out of the program and the waveform (#WAVE y, in the function, keeps it).
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 596 instructions and 55 variables were found
+Info: ULA resource -> integer adder
+Info: adding data output handling
+Info: ULA resource -> integer negative operation
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> integer divider (not recomended for high frequency opperation)
+Info: ULA resource -> modulo computation (not recomended for high frequency opperation)
+Info: ULA resource -> & operator
+Info: ULA resource -> | operator
+Info: ULA resource -> ^ operator
+Info: ULA resource -> << operator
+Info: ULA resource -> >> operator
+Info: ULA resource -> >>> operator
+Info: adding array handling
+Info: ULA resource -> > operator for int
+Info: ULA resource -> < operator for int
+Info: stack depths from the program: SDEPTH 1, NDSTAC 3
+Info: using 31% of the Assembly Instruction Set
+Info: using 44% of the ULA operations
+Processor cmm_opassign
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    int and float; divider int
+  data stack    3 words (worked out from the program)
+  call stack    1 words (worked out from the program)
+  memories      596 instructions, 55 data words
+Sweet: the processor is good to go.
+## variables
+main k 1
+main j 1
+main r 1
+main n 1
+main x 2
+main y 2
+main c 3
+main c_i 3
+main d 3
+main d_i 3
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 31: k = 5; k--;                       out(0, k);
+1 LOD 5
+2 SET main_k
+3 ADD -1
+4 SET main_k
+5 OUT 0
+// 32: k = 5; --k;                       out(0, k);
+6 LOD 5
+7 SET main_k
+8 ADD -1
+9 SET main_k
+10 OUT 0
+// 33: k = 5; ++k;                       out(0, k);
+11 LOD 5
+12 SET main_k
+13 ADD 1
+14 SET main_k
+15 OUT 0
+// 35: k = 5; r = ++k;                   out(0, r); out(0, k);
+16 LOD 5
+17 SET main_k
+18 ADD 1
+19 SET main_k
+20 SET main_r
+21 OUT 0
+22 OUT 0
+// 36: k = 5; r = k--;                   out(0, r); out(0, k);
+23 LOD 5
+24 SET main_k
+25 PSH
+26 ADD -1
+27 SET_P main_k
+28 SET main_r
+29 OUT 0
+30 LOD main_k
+31 OUT 0
+// 37: k = 6; r = --k;                   out(0, r); out(0, k);
+32 LOD 6
+33 SET main_k
+34 ADD -1
+35 SET main_k
+36 SET main_r
+37 OUT 0
+38 OUT 0
+// 38: n = 10; k = 3; r = n + --k;       out(0, r); out(0, k);             // a live operand
+39 LOD 10
+40 SET main_n
+41 LOD 3
+42 SET main_k
+43 ADD -1
+44 SET main_k
+45 ADD main_n
+46 SET main_r
+47 OUT 0
+48 LOD main_k
+49 OUT 0
+// 39: n = 10; k = 3; r = n - k--;       out(0, r); out(0, k);
+50 LOD 10
+51 SET main_n
+52 LOD 3
+53 SET main_k
+54 PSH
+55 ADD -1
+56 SET_P main_k
+57 NEG
+58 ADD main_n
+59 SET main_r
+60 OUT 0
+61 LOD main_k
+62 OUT 0
+// 40: x = 2.5; x--;                     fout(0, x * 10.0);
+63 LOD 2.5
+64 SET main_x
+65 F_ADD -1.0
+66 SET main_x
+67 F_MLT 10.0
+68 F2I
+69 OUT 0
+// 41: x = 2.5; y = --x;                 fout(0, y * 10.0); fout(0, x * 10.0);
+70 LOD 2.5
+71 SET main_x
+72 F_ADD -1.0
+73 SET main_x
+74 F_MLT 10.0
+75 F2I
+76 OUT 0
+77 LOD main_x
+78 F_MLT 10.0
+79 F2I
+80 OUT 0
+// 42: x = 2.5; y = x--;                 fout(0, y * 10.0); fout(0, x * 10.0);
+81 LOD 2.5
+82 SET main_x
+83 PSH
+84 F_ADD -1.0
+85 SET_P main_x
+86 F_MLT 10.0
+87 F2I
+88 OUT 0
+89 LOD main_x
+90 F_MLT 10.0
+91 F2I
+92 OUT 0
+// 43: x = 2.5; y = ++x;                 fout(0, y * 10.0);
+93 LOD 2.5
+94 SET main_x
+95 F_ADD 1.0
+96 SET main_x
+97 F_MLT 10.0
+98 F2I
+99 OUT 0
+// 46: k = 7;  k += 8;                   out(0, k);
+100 LOD 7
+101 SET main_k
+102 ADD 8
+103 SET main_k
+104 OUT 0
+// 47: k = 7;  k -= 10;                  out(0, k);
+105 LOD 7
+106 SET main_k
+107 ADD -10
+108 SET main_k
+109 OUT 0
+// 48: k = 7;  k *= 3;                   out(0, k);
+110 LOD 7
+111 SET main_k
+112 MLT 3
+113 SET main_k
+114 OUT 0
+// 49: k = 23; k /= 4;                   out(0, k);
+115 LOD 23
+116 SET main_k
+117 LOD 4
+118 DIV main_k
+119 NOP
+120 NOP
+121 NOP
+122 QUO
+123 SET main_k
+124 OUT 0
+// 50: k = 23; k %= 4;                   out(0, k);
+125 LOD 23
+126 SET main_k
+127 LOD 4
+128 MOD main_k
+129 NOP
+130 NOP
+131 NOP
+132 REM
+133 SET main_k
+134 OUT 0
+// 51: k = 13; k &= 6;                   out(0, k);
+135 LOD 13
+136 SET main_k
+137 LOD 6
+138 AND main_k
+139 SET main_k
+140 OUT 0
+// 52: k = 9;  k |= 6;                   out(0, k);
+141 LOD 9
+142 SET main_k
+143 LOD 6
+144 ORR main_k
+145 SET main_k
+146 OUT 0
+// 53: k = 9;  k ^= 12;                  out(0, k);
+147 LOD 9
+148 SET main_k
+149 LOD 12
+150 XOR main_k
+151 SET main_k
+152 OUT 0
+// 54: k = 3;  k <<= 2;                  out(0, k);
+153 LOD 3
+154 SET main_k
+155 LOD 2
+156 SHL main_k
+157 SET main_k
+158 OUT 0
+// 55: k = 13; k >>= 2;                  out(0, k);
+159 LOD 13
+160 SET main_k
+161 LOD 2
+162 SHR main_k
+163 SET main_k
+164 OUT 0
+// 56: k = -8; k >>= 2;                  out(0, k);                        // zero fill
+165 NEG_M 8
+166 SET main_k
+167 LOD 2
+168 SHR main_k
+169 SET main_k
+170 OUT 0
+// 57: k = -8; k >>>= 2;                 out(0, k);                        // sign fill
+171 NEG_M 8
+172 SET main_k
+173 LOD 2
+174 SRS main_k
+175 SET main_k
+176 OUT 0
+// 59: k = 4; j = 2; k *= j + 3;         out(0, k);
+177 LOD 4
+178 SET main_k
+179 LOD 2
+180 SET main_j
+181 ADD 3
+182 MLT main_k
+183 SET main_k
+184 OUT 0
+// 60: k = 4; j = 2; k -= j - 3;         out(0, k);
+185 LOD 4
+186 SET main_k
+187 LOD 2
+188 SET main_j
+189 NEG_M main_j
+190 ADD main_k
+191 ADD 3
+192 SET main_k
+193 OUT 0
+// 62: x = 1.5; x += 2.25;               fout(0, x * 4.0);
+194 LOD 1.5
+195 SET main_x
+196 F_ADD 2.25
+197 SET main_x
+198 F_MLT 4.0
+199 F2I
+200 OUT 0
+// 63: x = 1.5; x -= 2.25;               fout(0, x * 4.0);
+201 LOD 1.5
+202 SET main_x
+203 F_SU1 2.25
+204 SET main_x
+205 F_MLT 4.0
+206 F2I
+207 OUT 0
+// 64: x = 1.5; x *= 2.5;                fout(0, x * 4.0);
+208 LOD 1.5
+209 SET main_x
+210 F_MLT 2.5
+211 SET main_x
+212 F_MLT 4.0
+213 F2I
+214 OUT 0
+// 65: x = 7.5; x /= 2.0;                fout(0, x * 4.0);                 // a power of two: exact
+215 LOD 7.5
+216 SET main_x
+217 F_MLT 0.5
+218 SET main_x
+219 F_MLT 4.0
+220 F2I
+221 OUT 0
+// 68: a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 4; a[4] = 5;
+222 LOD 1
+223 SET_V a 0
+224 LOD 2
+225 SET_V a 1
+226 LOD 3
+227 SET_V a 2
+228 LOD 4
+229 SET_V a 3
+230 LOD 5
+231 SET_V a 4
+// 69: a[1] += 10;                       out(0, a[1]);
+232 LOD_V a 1
+233 ADD 10
+234 SET_V a 1
+235 LOD_V a 1
+236 OUT 0
+// 70: j = 2; a[j] -= 7;                 out(0, a[2]);
+237 LOD 2
+238 SET main_j
+239 P_LOD main_j
+240 LDI a
+241 ADD -7
+242 STI a
+243 LOD_V a 2
+244 OUT 0
+// 71: j = 1; a[j + 2] *= 3;             out(0, a[3]);
+245 LOD 1
+246 SET main_j
+247 ADD 2
+248 PSH
+249 LDI a
+250 MLT 3
+251 STI a
+252 LOD_V a 3
+253 OUT 0
+// 72: a[j]--;                           out(0, a[1]);
+254 LOD main_j
+255 PSH
+256 LDI a
+257 ADD -1
+258 STI a
+259 LOD_V a 1
+260 OUT 0
+// 73: --a[4];                           out(0, a[4]);
+261 LOD 4
+262 PSH
+263 LDI a
+264 ADD -1
+265 STI a
+266 LOD_V a 4
+267 OUT 0
+// 74: ++a[0];                           out(0, a[0]);
+268 LOD 0
+269 PSH
+270 LDI a
+271 ADD 1
+272 STI a
+273 LOD_V a 0
+274 OUT 0
+// 75: j = 4; r = --a[j];                out(0, r); out(0, a[4]);
+275 LOD 4
+276 SET main_j
+277 PSH
+278 LDI a
+279 ADD -1
+280 STI a
+281 SET main_r
+282 OUT 0
+283 LOD_V a 4
+284 OUT 0
+// 76: j = 4; r = a[j]--;                out(0, r); out(0, a[4]);
+285 LOD 4
+286 SET main_j
+287 PSH
+288 LDI a
+289 ADD -1
+290 STI a
+291 ADD 1
+292 SET main_r
+293 OUT 0
+294 LOD_V a 4
+295 OUT 0
+// 77: j = 0; r = ++a[j];                out(0, r); out(0, a[0]);
+296 LOD 0
+297 SET main_j
+298 PSH
+299 LDI a
+300 ADD 1
+301 STI a
+302 SET main_r
+303 OUT 0
+304 LOD_V a 0
+305 OUT 0
+// 78: m[1][2] = 5; m[1][2] += 4;        out(0, m[1][2]);
+306 LOD 5
+307 SET_V m 5
+308 LOD_V m 5
+309 ADD 4
+310 SET_V m 5
+311 LOD_V m 5
+312 OUT 0
+// 79: j = 1; k = 2; m[j][k] <<= 1;      out(0, m[1][2]);
+313 LOD 1
+314 SET main_j
+315 LOD 2
+316 SET main_k
+317 LOD main_j
+318 MLT 3
+319 ADD main_k
+320 P_LOD main_j
+321 MLT 3
+322 ADD main_k
+323 LDI m
+324 P_LOD 1
+325 S_SHL
+326 STI m
+327 LOD_V m 5
+328 OUT 0
+// 80: m[j][k]--;                        out(0, m[1][2]);
+329 LOD main_j
+330 MLT 3
+331 ADD main_k
+332 PSH
+333 LDI m
+334 ADD -1
+335 STI m
+336 LOD_V m 5
+337 OUT 0
+// 81: r = m[j][k]--;                    out(0, r); out(0, m[1][2]);
+338 LOD main_j
+339 MLT 3
+340 ADD main_k
+341 PSH
+342 LDI m
+343 ADD -1
+344 STI m
+345 ADD 1
+346 SET main_r
+347 OUT 0
+348 LOD_V m 5
+349 OUT 0
+// 82: r = --m[j][k];                    out(0, r); out(0, m[1][2]);
+350 LOD main_j
+351 MLT 3
+352 ADD main_k
+353 PSH
+354 LDI m
+355 ADD -1
+356 STI m
+357 SET main_r
+358 OUT 0
+359 LOD_V m 5
+360 OUT 0
+// 83: g[0] = 1.5; g[1] = 0.5;
+361 LOD 1.5
+362 SET_V g 0
+363 LOD 0.5
+364 SET_V g 1
+// 84: g[1] += 2.0;                      fout(0, g[1] * 4.0);
+365 LOD_V g 1
+366 F_ADD 2.0
+367 SET_V g 1
+368 LOD_V g 1
+369 F_MLT 4.0
+370 F2I
+371 OUT 0
+// 85: j = 0; g[j] *= 3.0;               fout(0, g[0] * 4.0);
+372 LOD 0
+373 SET main_j
+374 P_LOD main_j
+375 LDI g
+376 F_MLT 3.0
+377 STI g
+378 LOD_V g 0
+379 F_MLT 4.0
+380 F2I
+381 OUT 0
+// 86: g[j]--;                           fout(0, g[0] * 4.0);
+382 LOD main_j
+383 PSH
+384 LDI g
+385 F_ADD -1.0
+386 STI g
+387 LOD_V g 0
+388 F_MLT 4.0
+389 F2I
+390 OUT 0
+// 87: y = g[j]--;                       fout(0, y * 4.0); fout(0, g[0] * 4.0);
+391 LOD main_j
+392 PSH
+393 LDI g
+394 SET __aux_var
+395 F_ADD -1.0
+396 STI g
+397 LOD __aux_var
+398 F_MLT 4.0
+399 F2I
+400 OUT 0
+401 LOD_V g 0
+402 F_MLT 4.0
+403 F2I
+404 OUT 0
+// 88: y = --g[j];                       fout(0, y * 4.0); fout(0, g[0] * 4.0);
+405 LOD main_j
+406 PSH
+407 LDI g
+408 F_ADD -1.0
+409 STI g
+410 F_MLT 4.0
+411 F2I
+412 OUT 0
+413 LOD_V g 0
+414 F_MLT 4.0
+415 F2I
+416 OUT 0
+// 91: c = complex(1.5, 2.0); d = complex(0.5, -1.0);
+417 LOD 1.5
+418 P_LOD 2.0
+419 SET_P main_c_i
+420 SET main_c
+421 LOD 0.5
+422 P_LOD -1.0
+423 SET_P main_d_i
+424 SET main_d
+// 92: c += d;                           fout(0, real(c) * 4.0); fout(0, imag(c) * 4.0);
+425 F_ADD main_c
+426 P_LOD main_c_i
+427 F_ADD main_d_i
+428 SET_P main_c_i
+429 SET main_c
+430 F_MLT 4.0
+431 F2I
+432 OUT 0
+433 LOD main_c_i
+434 F_MLT 4.0
+435 F2I
+436 OUT 0
+// 93: c -= complex(3.0, 0.5);           fout(0, real(c) * 4.0); fout(0, imag(c) * 4.0);
+437 LOD 3.0
+438 P_LOD 0.5
+439 SET_P __aux_var
+440 F_SU2 main_c
+441 P_LOD main_c_i
+442 F_SU1 __aux_var
+443 SET_P main_c_i
+444 SET main_c
+445 F_MLT 4.0
+446 F2I
+447 OUT 0
+448 LOD main_c_i
+449 F_MLT 4.0
+450 F2I
+451 OUT 0
+// 94: c = complex(1.0, 2.0); c *= complex(3.0, -1.0);
+452 LOD 1.0
+453 P_LOD 2.0
+454 SET_P main_c_i
+455 SET main_c
+456 LOD 3.0
+457 P_LOD -1.0
+458 SET_P __aux_var
+459 SET __aux_var1
+460 F_MLT main_c
+461 P_LOD main_c_i
+462 F_MLT __aux_var
+463 SF_SU2
+464 P_LOD main_c
+465 F_MLT __aux_var
+466 P_LOD main_c_i
+467 F_MLT __aux_var1
+468 SF_ADD
+469 SET_P main_c_i
+470 SET main_c
+// 95: fout(0, real(c)); fout(0, imag(c));
+471 F2I_M main_c
+472 OUT 0
+473 F2I_M main_c_i
+474 OUT 0
+// 96: z[1] = complex(2.0, 1.0); z[1] += complex(0.5, 0.5);
+475 LOD 2.0
+476 P_LOD 1.0
+477 SET_V z_i 1
+478 POP
+479 SET_V z 1
+480 LOD_V z 1
+481 P_LOD_V z_i 1
+482 P_LOD 0.5
+483 P_LOD 0.5
+484 SET_P __aux_var
+485 SET_P __aux_var1
+486 SET_P __aux_var2
+487 F_ADD __aux_var1
+488 P_LOD __aux_var2
+489 F_ADD __aux_var
+490 SET_V z_i 1
+491 POP
+492 SET_V z 1
+// 97: fout(0, real(z[1]) * 4.0); fout(0, imag(z[1]) * 4.0);
+493 LOD_V z 1
+494 F_MLT 4.0
+495 F2I
+496 OUT 0
+497 LOD_V z_i 1
+498 F_MLT 4.0
+499 F2I
+500 OUT 0
+// 100: r = 0; for (k = 10; k > 0; k -= 3) r = r + k;     out(0, r); out(0, k);
+501 LOD 0
+502 SET main_r
+503 LOD 10
+504 SET main_k
+505 LOD main_r
+506 ADD main_k
+507 SET main_r
+508 LOD main_k
+509 ADD -3
+510 SET main_k
+511 GRE 1
+512 JIZ __Lwh1
+513 LOD main_r
+514 OUT 0
+515 LOD main_k
+516 OUT 0
+// 101: r = 0; for (k = 5; k > 0; k--)     r = r + k;     out(0, r); out(0, k);
+517 LOD 0
+518 SET main_r
+519 LOD 5
+520 SET main_k
+521 LOD main_r
+522 ADD main_k
+523 SET main_r
+524 LOD main_k
+525 ADD -1
+526 SET main_k
+527 GRE 1
+528 JIZ __Lwh2
+529 LOD main_r
+530 OUT 0
+531 LOD main_k
+532 OUT 0
+// 102: r = 0; for (k = 5; k > 0; --k)     r = r + k;     out(0, r); out(0, k);
+533 LOD 0
+534 SET main_r
+535 LOD 5
+536 SET main_k
+537 LOD main_r
+538 ADD main_k
+539 SET main_r
+540 LOD main_k
+541 ADD -1
+542 SET main_k
+543 GRE 1
+544 JIZ __Lwh3
+545 LOD main_r
+546 OUT 0
+547 LOD main_k
+548 OUT 0
+// 103: r = 0; for (k = 0; k < 5; ++k)     r = r + k;     out(0, r); out(0, k);
+549 LOD 0
+550 SET main_r
+551 SET main_k
+552 LOD main_r
+553 ADD main_k
+554 SET main_r
+555 INC main_k
+556 LES 4
+557 JIZ __Lwh4
+558 LOD main_r
+559 OUT 0
+560 LOD main_k
+561 OUT 0
+// 104: r = 1; for (k = 1; k < 100; k *= 3) r = r + k;    out(0, r); out(0, k);
+562 LOD 1
+563 SET main_r
+564 SET main_k
+565 LOD main_r
+566 ADD main_k
+567 SET main_r
+568 LOD main_k
+569 MLT 3
+570 SET main_k
+571 LES 99
+572 JIZ __Lwh5
+573 LOD main_r
+574 OUT 0
+575 LOD main_k
+576 OUT 0
+// 106: k = 4; r = 0;
+577 LOD 4
+578 SET main_k
+579 LOD 0
+580 SET main_r
+// 107: while (k-- > 0) r = r + 2;        out(0, r); out(0, k);
+581 LOD main_k
+582 PSH
+583 ADD -1
+584 SET_P main_k
+585 LES 0
+586 JIZ __Lwh6end
+587 LOD main_r
+588 ADD 2
+589 SET main_r
+590 JMP __Lwh6
+591 LOD main_r
+592 OUT 0
+593 LOD main_k
+594 OUT 0
+// -3: END
+595 JMP fim

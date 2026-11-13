@@ -396,23 +396,23 @@ void assign_array(int id, expr e, int fft)
     acc_live     = 0;  // acc released
 }
 
-// ++ operator assignment
-void assign_pplus(int id)
+// ++ and -- operator assignment (dec for --)
+void assign_pplus(int id, int dec)
 {
-    pplus2exp(id, 0);
+    pplus2exp(id, 0, dec);
     acc_live = 0; // acc released
 }
 
-// ++ operator assignment on a 1D array
-void assign_aplus(int id, expr e)
+// ++ and -- operator assignment on a 1D array
+void assign_aplus(int id, expr e, int dec)
 {
-    pplus1d2exp(id, e, 0);
+    pplus1d2exp(id, e, 0, dec);
     acc_live = 0; // acc released
 }
 
-// ++ operator assignment on a 2D array
-void assign_apl2d(int id, expr e1, expr e2)
+// ++ and -- operator assignment on a 2D array
+void assign_apl2d(int id, expr e1, expr e2, int dec)
 {
-    pplus2d2exp(id, e1, e2, 0);
+    pplus2d2exp(id, e1, e2, 0, dec);
     acc_live = 0; // acc released
 }
