@@ -86,3 +86,5 @@ func_empty_int.cmm|Error in function g: some path gets to the end without a retu
 deep_parens.cmm|Error on line 8: an expression nested too deep for the compiler.
 char_nul.cmm|Error on line 5: the character '\0' is not part of C±.
 praca_not_main.cmm|Error on line 10: #PRACA inside f.
+opassign_index.cmm|is computed twice, for the read and for the write
+decr_complex.cmm|increment or decrement a complex number

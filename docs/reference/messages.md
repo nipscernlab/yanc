@@ -46,7 +46,8 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: the array '<name>' has <n> elements; it can have 1 to <n>.
 - Error on line <n>: array '<name>' has two dimensions!
 - Error on line <n>: array '<name>' has just one dimension!
-- Error on line <n>: what were you smoking when you tried to increment a complex number?
+- Error on line <n>: what were you smoking when you tried to increment or decrement a complex number?
+- Error on line <n>: the index of '<name>' in a +=, -=, ... is computed twice, for the read and for the write, and the call, the ++ or the input in it would happen twice: keep the index in a variable first.
 - Error on line <n>: that's not how you use '<name>'!
 - Error on line <n>: there's no input port <name>, dude!
 - Error on line <n>: there's no output port <name>, dude!

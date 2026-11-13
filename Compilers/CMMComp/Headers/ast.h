@@ -59,7 +59,7 @@ typedef enum {
     EXPR_BINOP,        // a <op> b   (op in +, -, *, /, %, &, |, ^, <<, >>, comparisons, &&, ||, ...)
     EXPR_UNOP,         // <op> a     (op in -, !, ~)
     EXPR_ARRAY_INDEX,  // array[idx]  (1D auto / reversed; 2D adds right)
-    EXPR_PPLUS,        // postfix ++ (scalar id, or array[idx] / [idx][idx2])
+    EXPR_PPLUS,        // ++ or --, postfix or prefix (op: STEP_*; scalar id, or array[idx] / [idx][idx2])
     EXPR_STDLIB_CALL,  // in() / fin() / pst() / abs() / sign() / sqrt() / ... (op picks which)
     EXPR_FUNC_CALL,    // user-defined function call f(a, b, ...) - args[] is n-ary
     // Dirac notation: a chain of names between bars and the products of
@@ -190,9 +190,16 @@ expr_node *expr_minus (expr_node *e);                                 // unary -
 expr_node *expr_array_index(int type, int id, int reversed,
                             expr_node *idx, expr_node *idx2);
 
-// id is the variable being post-incremented. idx / idx2 are NULL for a
-// scalar id++; 1D id[i]++ has idx and NULL; 2D id[i][j]++ has both.
-expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2);
+// ++ and -- (EXPR_PPLUS and STMT_PPLUS, in op): STEP_DEC for --, STEP_PRE
+// for the prefix form, whose value in an expression is the new one (the
+// postfix form's is the old one; a statement has no value, so it takes no
+// STEP_PRE)
+#define STEP_DEC 1
+#define STEP_PRE 2
+
+// id is the variable being incremented or decremented. idx / idx2 are NULL
+// for a scalar id++; 1D id[i]++ has idx and NULL; 2D id[i][j]++ has both.
+expr_node *expr_pplus(int type, int id, expr_node *idx, expr_node *idx2, int step);
 
 // generic stdlib call. `port` is the INUM port number for IN/FIN/OUT and
 // 0 for everything else. a/b are operand expressions (NULL if unused).
@@ -326,7 +333,15 @@ stmt_node *stmt_assign(int id, struct expr_node *rhs);
 // scalar id++:      idx=NULL,    idx2=NULL
 // 1D    id[i]++:    idx=<index>, idx2=NULL
 // 2D    id[i][j]++: idx=<i>,     idx2=<j>
-stmt_node *stmt_pplus (int id, struct expr_node *idx, struct expr_node *idx2);
+// step: 0 for ++, STEP_DEC for --
+stmt_node *stmt_pplus (int id, struct expr_node *idx, struct expr_node *idx2, int step);
+
+// compound assignment (#208), op an OP_ code: id op= rhs is id = id op (rhs),
+// an assignment node; on an element, the element is read at a copy of its
+// indexes, which must then do nothing but give a value (no call, ++ or input)
+stmt_node *stmt_opassign      (int id, int op, struct expr_node *rhs);
+stmt_node *stmt_opassign_array(int id, struct expr_node *idx, struct expr_node *idx2,
+                               int op, struct expr_node *rhs);
 
 // 1D     id[i]  = rhs:  idx=<i>, idx2=NULL, fft=0
 // 1D rev id[i)  = rhs:  idx=<i>, idx2=NULL, fft=1

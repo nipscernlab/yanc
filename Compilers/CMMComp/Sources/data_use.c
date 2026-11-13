@@ -48,20 +48,22 @@ expr id2exp(int id)
     return expr_make(v_table[id].type, id);
 }
 
-// ++ reduction into expr
-// the constant 1 of type t (int, or float as "1.0": "1" would be assembled
-// as the int 1, whose bits the float adder reads as an unnormalised
-// number), marked a constant as the lexer marks a literal (#108 A20)
-static expr one_of(int t)
+// ++ and -- reduction into expr: old asks for the old value (a postfix form
+// inside an expression), dec for -- (#208)
+// the constant 1, or -1 for --, of type t (int, or float as "1.0": "1" would
+// be assembled as the int 1, whose bits the float adder reads as an
+// unnormalised number), marked a constant as the lexer marks a literal
+// (#108 A20)
+static expr one_of(int t, int dec)
 {
-    const char *one = (t == TY_FLOAT) ? "1.0" : "1";
+    const char *one = (t == TY_FLOAT) ? (dec ? "-1.0" : "1.0") : (dec ? "-1" : "1");
     if (find_var(one) == -1) add_var(one);
     int id = find_var(one);
     v_table[id].is_const = 1;
     return num2exp(id, t);
 }
 
-expr pplus2exp(int id, int old)
+expr pplus2exp(int id, int old, int dec)
 {
     if (v_table[id].type > TY_FLOAT)
         fatal(MSG_ERR_INCR_COMPLEX, pctx.line_num+1);
@@ -80,8 +82,8 @@ expr pplus2exp(int id, int old)
         acc_live = 1;
     }
 
-    // the 1, of x's type
-    expr e1   = one_of(e.type);
+    // the 1 (or -1), of x's type
+    expr e1   = one_of(e.type, dec);
 
     // then perform the addition
     expr ret = oper_add(e, e1);
@@ -97,8 +99,8 @@ expr pplus2exp(int id, int old)
     return ret;
 }
 
-// ++ reduction into expr on a 1D array
-expr pplus1d2exp(int id, expr ete, int old)
+// ++ and -- reduction into expr on a 1D array
+expr pplus1d2exp(int id, expr ete, int old, int dec)
 {
     if (v_table[id].type > TY_FLOAT)
         fatal(MSG_ERR_INCR_COMPLEX, pctx.line_num+1);
@@ -118,8 +120,8 @@ expr pplus1d2exp(int id, expr ete, int old)
     // on the stack top for STI, so the stack cannot hold it)
     if (old && e.type == TY_FLOAT) add_instr("SET __aux_var\n");
 
-    // the 1, of x's type
-    expr e1   = one_of(e.type);
+    // the 1 (or -1), of x's type
+    expr e1   = one_of(e.type, dec);
 
     // then perform the addition
     expr ret = oper_add(e, e1);
@@ -128,15 +130,15 @@ expr pplus1d2exp(int id, expr ete, int old)
     assign_array(id, ret, 0);
 
     // the value of `x[i]++` in an expression is the old element
-    if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : "ADD -1\n");
+    if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : (dec ? "ADD 1\n" : "ADD -1\n"));
 
     acc_live = 1; // cannot free acc, since it is an exp
 
     return ret;
 }
 
-// ++ reduction into expr on a 2D array
-expr pplus2d2exp(int id, expr e1, expr e2, int old)
+// ++ and -- reduction into expr on a 2D array
+expr pplus2d2exp(int id, expr e1, expr e2, int old, int dec)
 {
     if (v_table[id].type > TY_FLOAT)
         fatal(MSG_ERR_INCR_COMPLEX, pctx.line_num+1);
@@ -151,8 +153,8 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
     expr e = expr_make(v_table[id].type, 0);
     if (old && e.type == TY_FLOAT) add_instr("SET __aux_var\n");   // see 1-D
 
-    // the 1, of x's type
-    expr eone = one_of(e.type);
+    // the 1 (or -1), of x's type
+    expr eone = one_of(e.type, dec);
 
     // then perform the addition
     expr ret = oper_add(e, eone);
@@ -161,7 +163,7 @@ expr pplus2d2exp(int id, expr e1, expr e2, int old)
     assign_array(id, ret, 0);
 
     // the value of `x[i][j]++` in an expression is the old element
-    if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : "ADD -1\n");
+    if (old) add_instr(e.type == TY_FLOAT ? "LOD __aux_var\n" : (dec ? "ADD 1\n" : "ADD -1\n"));
 
     acc_live = 1; // cannot free acc, since it is an exp
 

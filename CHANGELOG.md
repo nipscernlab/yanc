@@ -9,6 +9,18 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **C± has `--`, `++x`, `--x` and the compound assignments (#208).** `x--`
+  and the prefix forms on int and float scalars and elements, as a
+  statement, inside an expression (the postfix form gives the old value,
+  the prefix the new) and as the step of a `for`; `+=` `-=` `*=` `/=` `%=`
+  `&=` `|=` `^=` `<<=` `>>=` `>>>=` as a statement or a `for` step, on a
+  variable or an element. The compiler only: `x op= e` is written as
+  `x = x op (e)`, `x--` as `x++` with -1, so no instruction is new. An
+  element's index is computed for the read and for the write, and one
+  with a call, a `++` or an input read is refused (new error,
+  NegTests `opassign_index`); `--` on a `comp` is refused as `++` is
+  (`decr_complex`). New test `cmm_opassign`, every form against the same
+  program compiled by gcc. docs/language-cmm.md lists them.
 - **`INC k`, k = k + 1 in one word (#203).** A loop counter's `LOD k;
   ADD 1; SET k` is now `INC k` (opcode 109; `P_INC` 110 pushes first), in
   both compilers (`asm_inc`, after `asm_jnz`): two words and two cycles less

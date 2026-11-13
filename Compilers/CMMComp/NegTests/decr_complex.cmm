@@ -1,0 +1,14 @@
+#NUBITS 16
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 10
+#NBEXPO 5
+
+// Negative fixture (#208): -- on a comp is refused, as ++ is.
+void main()
+{
+    comp c;
+    c = complex(1.0, 2.0);
+    c--;
+    fout(0, real(c));
+}

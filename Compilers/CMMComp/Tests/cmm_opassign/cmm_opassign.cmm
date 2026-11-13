@@ -1,0 +1,108 @@
+#NUBITS 32
+#NUIOIN 1
+#NUIOOU 1
+#NBMANT 23
+#NBEXPO 8
+#NUGAIN 128
+
+// --, ++x, --x and the compound assignments (#208), in every place C± takes
+// them: a statement, an expression (++ and -- only) and the step of a for,
+// on int and float scalars, array elements of one and two dimensions, and
+// comp (+=, -=, *=). golden_sim/output_0.txt is the output of the same
+// program compiled by gcc, out and fout a printf of the int (C±'s >> fills
+// with zeros, >>> with the sign: an unsigned and an int shift in C). The
+// program ends, so its output does not depend on how long the simulation
+// runs.
+// Expected: 4 4 6 6 6 5 4 5 5 12 2 7 2 15 15 15 25 15 35 15 -3 21 5 3 4
+//           15 5 12 3 1073741822 -2 20 5 15 -3 15 15 12 -4 12 11 4 2 3 3
+//           3 2 3 3 9 18 17 17 16 15 15 10 18 14 14 10 6 6 8 4 -4 2 5 5
+//           10 6 22 -2 15 0 15 0 10 5 122 243 8 -1
+
+int   a[5];
+int   m[3][3];
+float g[3];
+comp  z[2];
+
+void main()
+{
+    int k; int j; int r; int n; float x; float y; comp c; comp d;
+
+    // scalars: -- and the prefix forms, as statements
+    k = 5; k--;                       out(0, k);
+    k = 5; --k;                       out(0, k);
+    k = 5; ++k;                       out(0, k);
+    // in an expression: postfix gives the old value, prefix the new
+    k = 5; r = ++k;                   out(0, r); out(0, k);
+    k = 5; r = k--;                   out(0, r); out(0, k);
+    k = 6; r = --k;                   out(0, r); out(0, k);
+    n = 10; k = 3; r = n + --k;       out(0, r); out(0, k);             // a live operand
+    n = 10; k = 3; r = n - k--;       out(0, r); out(0, k);
+    x = 2.5; x--;                     fout(0, x * 10.0);
+    x = 2.5; y = --x;                 fout(0, y * 10.0); fout(0, x * 10.0);
+    x = 2.5; y = x--;                 fout(0, y * 10.0); fout(0, x * 10.0);
+    x = 2.5; y = ++x;                 fout(0, y * 10.0);
+
+    // every compound assignment on an int
+    k = 7;  k += 8;                   out(0, k);
+    k = 7;  k -= 10;                  out(0, k);
+    k = 7;  k *= 3;                   out(0, k);
+    k = 23; k /= 4;                   out(0, k);
+    k = 23; k %= 4;                   out(0, k);
+    k = 13; k &= 6;                   out(0, k);
+    k = 9;  k |= 6;                   out(0, k);
+    k = 9;  k ^= 12;                  out(0, k);
+    k = 3;  k <<= 2;                  out(0, k);
+    k = 13; k >>= 2;                  out(0, k);
+    k = -8; k >>= 2;                  out(0, k);                        // zero fill
+    k = -8; k >>>= 2;                 out(0, k);                        // sign fill
+    // the right-hand side is one expression: k * (2 + 3), not k * 2 + 3
+    k = 4; j = 2; k *= j + 3;         out(0, k);
+    k = 4; j = 2; k -= j - 3;         out(0, k);
+    // on a float
+    x = 1.5; x += 2.25;               fout(0, x * 4.0);
+    x = 1.5; x -= 2.25;               fout(0, x * 4.0);
+    x = 1.5; x *= 2.5;                fout(0, x * 4.0);
+    x = 7.5; x /= 2.0;                fout(0, x * 4.0);                 // a power of two: exact
+
+    // array elements: a constant index, a computed one, a matrix
+    a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 4; a[4] = 5;
+    a[1] += 10;                       out(0, a[1]);
+    j = 2; a[j] -= 7;                 out(0, a[2]);
+    j = 1; a[j + 2] *= 3;             out(0, a[3]);
+    a[j]--;                           out(0, a[1]);
+    --a[4];                           out(0, a[4]);
+    ++a[0];                           out(0, a[0]);
+    j = 4; r = --a[j];                out(0, r); out(0, a[4]);
+    j = 4; r = a[j]--;                out(0, r); out(0, a[4]);
+    j = 0; r = ++a[j];                out(0, r); out(0, a[0]);
+    m[1][2] = 5; m[1][2] += 4;        out(0, m[1][2]);
+    j = 1; k = 2; m[j][k] <<= 1;      out(0, m[1][2]);
+    m[j][k]--;                        out(0, m[1][2]);
+    r = m[j][k]--;                    out(0, r); out(0, m[1][2]);
+    r = --m[j][k];                    out(0, r); out(0, m[1][2]);
+    g[0] = 1.5; g[1] = 0.5;
+    g[1] += 2.0;                      fout(0, g[1] * 4.0);
+    j = 0; g[j] *= 3.0;               fout(0, g[0] * 4.0);
+    g[j]--;                           fout(0, g[0] * 4.0);
+    y = g[j]--;                       fout(0, y * 4.0); fout(0, g[0] * 4.0);
+    y = --g[j];                       fout(0, y * 4.0); fout(0, g[0] * 4.0);
+
+    // comp
+    c = complex(1.5, 2.0); d = complex(0.5, -1.0);
+    c += d;                           fout(0, real(c) * 4.0); fout(0, imag(c) * 4.0);
+    c -= complex(3.0, 0.5);           fout(0, real(c) * 4.0); fout(0, imag(c) * 4.0);
+    c = complex(1.0, 2.0); c *= complex(3.0, -1.0);
+                                      fout(0, real(c)); fout(0, imag(c));
+    z[1] = complex(2.0, 1.0); z[1] += complex(0.5, 0.5);
+                                      fout(0, real(z[1]) * 4.0); fout(0, imag(z[1]) * 4.0);
+
+    // the step of a for
+    r = 0; for (k = 10; k > 0; k -= 3) r = r + k;     out(0, r); out(0, k);
+    r = 0; for (k = 5; k > 0; k--)     r = r + k;     out(0, r); out(0, k);
+    r = 0; for (k = 5; k > 0; --k)     r = r + k;     out(0, r); out(0, k);
+    r = 0; for (k = 0; k < 5; ++k)     r = r + k;     out(0, r); out(0, k);
+    r = 1; for (k = 1; k < 100; k *= 3) r = r + k;    out(0, r); out(0, k);
+    // a loop that counts down with -- inside its condition
+    k = 4; r = 0;
+    while (k-- > 0) r = r + 2;        out(0, r); out(0, k);
+}
