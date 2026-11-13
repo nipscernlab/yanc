@@ -13,11 +13,14 @@ tags consumed by Aurora.
   ADD 1; SET k` is now `INC k` (opcode 109; `P_INC` 110 pushes first), in
   both compilers (`asm_inc`, after `asm_jnz`): two words and two cycles less
   each, 5.3 % of the cycles of the five programs of #91 and 18 % of
-  proc_rls's. It runs on the ADD's adder, the accumulator loaded with 1 the
-  cycle before, and writes k a cycle late at an address it keeps: MDATAW + 1
-  flip-flops and an address mux, only in a program that uses it. Fitted on
-  proc_rls, the same Fmax within one fit's spread (47.66 to 47.53 MHz on
-  Cyclone V, 32.86 to 32.79 on Cyclone IV) for 4 ALMs and 10 LEs more. The
+  proc_rls's. It runs on the ADD's adder, whose second input takes 1 instead
+  of the accumulator the cycle INC executes (a mux on the integer adder only,
+  off the float add's path, and a flip-flop that selects it), and writes k a
+  cycle late at an address it keeps: MDATAW + 1 flip-flops and an address
+  mux, only in a program that uses it. Fitted on sapho_all (Cyclone V, seeds
+  1 to 3), the same Fmax within the seeds' spread (38.73 MHz mean with the
+  1 loaded into the accumulator instead, 38.29 with this form) and 6 ALMs over
+  no INC in synthesis, against that form's 16. The
   instruction right after an INC must not write a data word nor read k:
   asmcomp refuses it (two new errors, NegTests `inc_write` and `inc_read`),
   and a `#PRACA` pulse during an INC drops its write. 54 C± goldens change,

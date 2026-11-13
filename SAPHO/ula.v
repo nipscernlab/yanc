@@ -1804,13 +1804,16 @@ module ula
 	parameter F_SU2   = 0,
 	parameter F_SCL   = 0,
 	parameter XPO     = 0,
-	parameter XPO_M   = 0)
+	parameter XPO_M   = 0,
+	// INC k (#203): an ADD whose second operand is 1, not the accumulator
+	parameter INC     = 0)
 (
 	input         [       5:0] op,
 	input  signed [NUBITS-1:0] in1, in2,
 	output signed [NUBITS-1:0] out,
 	output        [NUBITS-1:0] out_fast,               // out without the normalised operations (JIZ)
-	input                      clk                     // the dividers' register cuts
+	input                      clk,                    // the dividers' register cuts
+	input                      inc                     // INC in execution: the adder takes 1 for in2 (only with INC)
 );
 
 // floating-point rounding level ----------------------------------------------
@@ -1837,7 +1840,14 @@ generate if ((F_ADD | F_SU1 | F_SU2) != 0) begin : op_denorm ula_denorm #(NBMANT
 
 wire signed [NUBITS-1:0] add;
 
-generate if ((ADD) != 0) begin : op_add ula_add #(NUBITS) my_add(in1, in2, add); end else begin : op_add assign add = {NUBITS{1'b0}}; end endgenerate
+// INC k (#203) runs on this adder: k + 1 is an ADD whose second operand is 1.
+// The 1 is chosen at the adder's input, so only the ADD path sees the mux, and
+// only in a program with INC
+wire signed [NUBITS-1:0] add_in2;
+generate if (INC != 0) begin : add_inc assign add_in2 = (inc) ? {{NUBITS-1{1'b0}}, 1'b1} : in2; end
+         else          begin : add_inc assign add_in2 = in2; end endgenerate
+
+generate if ((ADD) != 0) begin : op_add ula_add #(NUBITS) my_add(in1, add_in2, add); end else begin : op_add assign add = {NUBITS{1'b0}}; end endgenerate
 
 // F_ADD ----------------------------------------------------------------------
 
@@ -2353,7 +2363,7 @@ end
 real in1r; always @ (*) in1r = in1;
 real in2r; always @ (*) in2r = in2;
 
-real val_add; always @ (*) val_add = in1r + in2r;
+real val_add; always @ (*) val_add = in1r + $itor(add_in2); // INC adds 1, not in2
 real val_mlt; always @ (*) val_mlt = in1r * in2r;
 // a division: the inputs of the DIV / MOD that started it (QUO / REM read
 // it IDIV_STG-1 cycles later, and one start serves both)
