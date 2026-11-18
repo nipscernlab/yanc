@@ -25,6 +25,7 @@
 #include "../Headers/cpppp.h"
 #include "../../common/asm_share.h"
 #include "../../common/xstr.h"
+#include "../../common/exe_dir.h"
 
 // ---- output ----------------------------------------------------------------
 
@@ -649,6 +650,9 @@ static char *new_temp(const char *prefix);
 static char *new_temp_as(const char *prefix, type *t, int code, char **plain);
 static void emit_dtors_at(const char *name, const char *dtor, int n, int words);
 static type *array_elems(type *t, int *n);
+static int   is_nn_name(const char *fn);
+static type *nn_type(expr *e);
+static void  nn_gen(expr *e);
 static void gen_store(expr *lv, expr *val);
 static void gen_stmt (stmt *s);
 static void gen_bool (expr *e, const char *jz_target);
@@ -968,6 +972,7 @@ static type *infer_type(expr *e)
                             e->etype = (ms && ms->kind == SK_FUNC) ? ms->stype : t_int(); break; }
                 if (vslot >= 0) { e->etype = t_int(); break; }
             }
+            if (is_nn_name(fn)) { e->etype = nn_type(e); break; }   // built in, docs/design/nn-functions.md
             msg_error(e->line, MSG_ERR_UNDEFINED_FUNC, fn);
         } else {
             // indirect call via (*fp)(...) — the callee holds a function ID, not
@@ -1884,6 +1889,213 @@ static type *array_elems(type *t, int *n)
     *n = 1;
     while (t && t->kind == TY_ARRAY) { *n *= t->arr_size; t = t->base; }
     return t;
+}
+
+// ---- relu, sigmoid, tanh, softmax, argmax and exp, built in -----------------
+// docs/design/nn-functions.md. The calls of C±'s library for a neural
+// network's layers, as built-ins: no #include, and a function of the program
+// with the same name (a declared symbol, an overload, a template, a method)
+// hides them, which is why typing and emission reach them last. exp is C±'s
+// own routine, Macros/float_exp.asm, appended once after @fim (issue #31:
+// one set of routines for the two compilers); tanh and sigmoid are its
+// sequences in cmmcomp's stdlib.c.
+//
+// An array is walked word by word from its address (gen_addr), as
+// __zerofill does: a matrix is its rows one after the other, and the loops
+// do not depend on where the array lives (global, local, member).
+
+static int g_uses_fexp = 0;    // the program calls __float_exp
+
+static int is_nn_name(const char *fn)
+{
+    return !strcmp(fn, "relu") || !strcmp(fn, "sigmoid") || !strcmp(fn, "tanh") ||
+           !strcmp(fn, "softmax") || !strcmp(fn, "argmax") || !strcmp(fn, "exp");
+}
+
+// the argument's type, after checking that there is one
+static type *nn_arg(expr *e, const char *fn)
+{
+    if (e->n_args != 1) msg_error(e->line, MSG_ERR_NN_ARGS, fn);
+    return infer_type(e->args[0]);
+}
+
+static int nn_is_array(type *t) {return t && t->kind == TY_ARRAY && !t->is_ref;}
+
+// an element relu and argmax take: a float, or an int that is signed (an
+// unsigned word has no negative to clear, nor the order of LES)
+static int nn_signed_or_float(type *t)
+{
+    return t && (t->kind == TY_FLOAT || (t->kind == TY_INT && t->is_signed && !t->is_bool));
+}
+
+static type *nn_type(expr *e)
+{
+    const char *fn = e->a->sval;
+    type *t = nn_arg(e, fn);
+    if (!strcmp(fn, "argmax")) return t_int();
+    if (!strcmp(fn, "softmax")) return t_void();
+    if (nn_is_array(t)) {
+        if (!strcmp(fn, "exp")) msg_error(e->line, MSG_ERR_NN_NUMBER, fn);
+        return t_void();
+    }
+    if (!strcmp(fn, "relu")) return (t && t->kind == TY_FLOAT) ? t_float() : t_int();
+    return t_float();
+}
+
+// f(acc) for one element or number: the float in the acc is replaced by
+// sigmoid, tanh or exp of it (two temporaries for tanh)
+static void nn_float_op(const char *fn)
+{
+    g_uses_fexp = 1;
+    if (!strcmp(fn, "exp")) { emit("CAL __float_exp"); return; }
+    if (!strcmp(fn, "sigmoid")) {                 // 1 / (1 + exp(-x)); F_DIV X = X / acc
+        emit("F_NEG"); emit("CAL __float_exp"); emit("F_ADD 1.0"); emit("F_DIV 1.0");
+        return;
+    }
+    char *ex = new_temp("nnte"), *nu = new_temp("nntn");   // tanh = (exp(2x) - 1) / (exp(2x) + 1)
+    emit("F_MLT 2.0"); emit("CAL __float_exp"); emit("SET %s", ex);
+    emit("F_ADD -1.0"); emit("SET %s", nu);
+    emit("LOD %s", ex); emit("F_ADD 1.0"); emit("F_DIV %s", nu);
+    free(ex); free(nu);
+}
+
+// for (p = from; p < end; p++) body: p and end are the names of words; the
+// body starts and ends with any value in the acc
+#define NN_LOOP_TOP(id, p)      do { emit("@__Lnn_t%d NOP", id); } while (0)
+static void nn_loop_bottom(int id, const char *p, const char *end)
+{
+    emit("LOD %s", p); emit("ADD 1"); emit("SET %s", p);
+    emit("GRE %s", end); emit("LIN"); emit("JIZ __Lnn_t%d", id);   // end > p: next turn
+}
+
+static void nn_gen(expr *e)
+{
+    const char *fn = e->a->sval;
+    type *t = nn_arg(e, fn);
+    int n;
+    type *et = nn_is_array(t) ? array_elems(t, &n) : NULL;
+
+    // a number: relu, sigmoid, tanh and exp of it, in the acc
+    if (!et) {
+        // a pointer, a reference or an object (std::vector, std::array): no
+        // size the compiler knows here
+        if (!strcmp(fn, "softmax") || !strcmp(fn, "argmax") || (t && (t->kind == TY_PTR || t->kind == TY_STRUCT)))
+            msg_error(e->line, MSG_ERR_NN_ARRAY, fn);
+        if (!t || (t->kind != TY_INT && t->kind != TY_FLOAT)) msg_error(e->line, MSG_ERR_NN_NUMBER, fn);
+        if (!strcmp(fn, "relu")) {
+            if (t->kind == TY_FLOAT) { gen_expr(e->args[0]); emit("F_PST"); }
+            else                     { gen_expr_to(e->args[0], t_int()); emit("PST"); }
+            return;
+        }
+        gen_expr_to(e->args[0], t_float());
+        nn_float_op(fn);
+        return;
+    }
+
+    int vec = t->base && t->base->kind != TY_ARRAY;
+    int is_f = et->kind == TY_FLOAT;
+    if (!strcmp(fn, "relu")) { if (!nn_signed_or_float(et)) msg_error(e->line, MSG_ERR_NN_ELEM, fn, "int or float"); }
+    else if (!strcmp(fn, "argmax")) {
+        if (!vec) msg_error(e->line, MSG_ERR_NN_VECTOR, fn);
+        if (!nn_signed_or_float(et)) msg_error(e->line, MSG_ERR_NN_ELEM, fn, "int or float");
+    } else {
+        if (!strcmp(fn, "softmax") && !vec) msg_error(e->line, MSG_ERR_NN_VECTOR, fn);
+        if (!is_f) msg_error(e->line, MSG_ERR_NN_ELEM, fn, "float");
+    }
+
+    char *p = new_temp("nnp"), *end = new_temp("nne");
+    gen_addr(e->args[0]);
+
+    if (!strcmp(fn, "relu") || !strcmp(fn, "sigmoid") || !strcmp(fn, "tanh")) {
+        // v[k] = f(v[k]) on every word
+        int id = ++label_n;
+        emit("SET %s", p); emit("ADD %d", n); emit("SET %s", end);
+        NN_LOOP_TOP(id, p);
+        emit("LOD %s", p); emit("PSH"); emit("LDI 0");
+        if (!strcmp(fn, "relu")) emit(is_f ? "F_PST" : "PST");
+        else nn_float_op(fn);
+        emit("STI 0");
+        nn_loop_bottom(id, p, end);
+        free(p); free(end);
+        return;
+    }
+
+    char *base = new_temp("nnb"), *m = new_temp("nnm"), *x = new_temp("nnx");
+    const char *les = is_f ? "F_LES" : "LES";
+    emit("SET %s", base); emit("ADD %d", n); emit("SET %s", end);
+    emit("LOD %s", base); emit("LDI 0"); emit("SET %s", m);         // m = v[0]
+
+    if (!strcmp(fn, "argmax")) {
+        // b = 0; for k: if (v[k] > m) {m = v[k]; b = k}: the first of equal ones stays
+        char *b = new_temp("nnk"), *k = new_temp("nnc");
+        emit("LOD 0"); emit("SET %s", b);
+        if (n > 1) {
+            int id = ++label_n;
+            emit("LOD %s", base); emit("ADD 1"); emit("SET %s", p);
+            emit("LOD 1"); emit("SET %s", k);
+            NN_LOOP_TOP(id, p);
+            emit("LOD %s", p); emit("LDI 0"); emit("SET %s", x);
+            emit("%s %s", les, m); emit("JIZ __Lnn_s%d", id);            // m < v[k]
+            emit("LOD %s", x); emit("SET %s", m); emit("LOD %s", k); emit("SET %s", b);
+            emit("@__Lnn_s%d NOP", id);
+            emit("LOD %s", k); emit("ADD 1"); emit("SET %s", k);
+            nn_loop_bottom(id, p, end);
+        }
+        emit("LOD %s", b);
+        free(b); free(k);
+    } else {
+        // softmax: the maximum first (the SAPHO float has no infinity, and exp
+        // passes the largest float above about 103), then exp(v[k] - m) and
+        // their sum, then one division and a product per element
+        char *sum = new_temp("nns");
+        if (n > 1) {
+            int id = ++label_n;
+            emit("LOD %s", base); emit("ADD 1"); emit("SET %s", p);
+            NN_LOOP_TOP(id, p);
+            emit("LOD %s", p); emit("LDI 0"); emit("SET %s", x);
+            emit("F_LES %s", m); emit("JIZ __Lnn_s%d", id);
+            emit("LOD %s", x); emit("SET %s", m);
+            emit("@__Lnn_s%d NOP", id);
+            nn_loop_bottom(id, p, end);
+        }
+        int id2 = ++label_n, id3 = ++label_n;
+        g_uses_fexp = 1;
+        emit("LOD 0.0"); emit("SET %s", sum);
+        emit("LOD %s", base); emit("SET %s", p);
+        NN_LOOP_TOP(id2, p);
+        emit("LOD %s", p); emit("PSH"); emit("LDI 0");
+        emit("F_SU1 %s", m); emit("CAL __float_exp"); emit("STI 0");    // v[k] = exp(v[k] - m)
+        emit("F_ADD %s", sum); emit("SET %s", sum);                     // STI keeps the acc
+        nn_loop_bottom(id2, p, end);
+        emit("LOD %s", sum); emit("F_DIV 1.0"); emit("SET %s", sum);    // 1 / sum
+        emit("LOD %s", base); emit("SET %s", p);
+        NN_LOOP_TOP(id3, p);
+        emit("LOD %s", p); emit("PSH"); emit("LDI 0");
+        emit("F_MLT %s", sum); emit("STI 0");
+        nn_loop_bottom(id3, p, end);
+        free(sum);
+    }
+    free(base); free(m); free(x); free(p); free(end);
+}
+
+// Macros/float_exp.asm, C±'s routine, after @fim: its lines as they are,
+// without the comments, and never fused (as inline asm)
+static void emit_float_exp(void)
+{
+    static const char *const dirs[] = EXE_MACROS_DIRS;
+    char *dir = exe_find_dir(dirs);
+    char *path = dir ? xasprintf("%s/float_exp.asm", dir) : NULL;
+    FILE *f = path ? fopen(path, "r") : NULL;
+    if (!f) msg_fatal(1, MSG_ERR_NO_MACRO, "float_exp.asm");
+    char ln[512];
+    while (fgets(ln, sizeof ln, f)) {
+        char *c = strstr(ln, "//"); if (c) *c = 0;
+        size_t k = strlen(ln);
+        while (k && (ln[k - 1] == '\n' || ln[k - 1] == '\r' || ln[k - 1] == ' ' || ln[k - 1] == '\t')) ln[--k] = 0;
+        char *b = ln; while (*b == ' ' || *b == '\t') b++;
+        if (*b) emit_verbatim(b);
+    }
+    fclose(f); free(path); free(dir);
 }
 
 // __construct_members' arguments after (this, base_named) name the member
@@ -3155,6 +3367,7 @@ static void gen_expr(expr *e)
                     return;
                 }
             }
+            if (is_nn_name(fn) && !st_find(fn)) { nn_gen(e); return; }   // built in
             // fall through: callee is a variable holding a function ID -> indirect
         }
         // indirect call: callee is a function-pointer value (a variable, or *fp).
@@ -4765,7 +4978,8 @@ static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect, const
             if (in && in->method_of)                               // a sibling method, unqualified
                 hit |= calls_named(u, row, e->a->sval, 1);
             if (!hit && e->a->sval && strcmp(e->a->sval, "in") && strcmp(e->a->sval, "out")
-                     && strcmp(e->a->sval, "toma") && strcmp(e->a->sval, "toma_sync") && !is_cade_name(e->a->sval))
+                     && strcmp(e->a->sval, "toma") && strcmp(e->a->sval, "toma_sync") && !is_cade_name(e->a->sval)
+                     && !is_nn_name(e->a->sval))
                 *indirect = 1;                 // a variable holding a function id
         } else if (e->a && (e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER)) {
             calls_named(u, row, e->a->member, 1);                  // obj.m(), p->m()
@@ -5337,7 +5551,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
 {
     out_f = out_file;
     ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
-    g_uses_udiv = 0; g_uses_u2f = 0; g_uses_f2u = 0; n_stinit = 0; g_n_inst = 0;
+    g_uses_udiv = 0; g_uses_u2f = 0; g_uses_f2u = 0; n_stinit = 0; g_n_inst = 0; g_uses_fexp = 0;
     g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
     cg_unit = u;
     claims_reset();
@@ -5445,6 +5659,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     if (g_uses_heap) emit_heap();
     if (g_uses_u2f)  emit_u2f();
     if (g_uses_f2u)  emit_f2u();
+    if (g_uses_fexp) emit_float_exp();     // exp, from C±'s Macros/ (issue #31)
 
     // all instructions buffered: fuse, then write the .asm + pc_mem (ins_count
     // is finalised here, after fusion, so num_ins matches the emitted program).

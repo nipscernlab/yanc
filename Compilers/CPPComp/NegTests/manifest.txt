@@ -58,3 +58,10 @@ virtual_overload.cpp|two virtual methods 'f' in one class
 fptr_overload.cpp|fptr_overload.cpp:4: error: 'g' is overloaded: a function pointer cannot tell which one
 overload_tie.cpp|overload_tie.cpp:4: error: ambiguous call of 'f'
 template_and_func.cpp|template_and_func.cpp:3: error: 'h' is a function template already
+nn_pointer.cpp|relu() takes an array whose size the compiler knows
+nn_vector.cpp|relu() takes an array whose size the compiler knows
+nn_softmax_int.cpp|softmax(): the array's elements must be float
+nn_argmax_2d.cpp|argmax() takes an array of one dimension
+nn_exp_array.cpp|exp() takes a number, an int or a float
+nn_args.cpp|relu() takes one argument
+nn_args_pt.cpp|relu() recebe um argumento|pt

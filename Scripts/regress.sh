@@ -1638,8 +1638,8 @@ if command -v python3 >/dev/null 2>&1; then
     else
         fail=$((fail + 1)); failed_names+=("rls-ref")
     fi
-    # cmm_nn against relu, sigmoid, tanh, softmax and argmax in double
-    # precision (Scripts/nn_ref.py)
+    # cmm_nn (C±) and test117 (C++) against relu, sigmoid, tanh, softmax and
+    # argmax in double precision (Scripts/nn_ref.py)
     if python3 "$ROOT/Scripts/nn_ref.py" "$ROOT"; then
         pass=$((pass + 1))
     else

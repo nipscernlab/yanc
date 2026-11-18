@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""cmm_nn against relu, sigmoid, tanh, softmax and argmax computed apart from YANC.
+"""cmm_nn and test117 against relu, sigmoid, tanh, softmax and argmax computed apart from YANC.
 
 Compilers/CMMComp/Tests/cmm_nn applies the functions of a neural network's
 layers (docs/design/nn-functions.md) to arrays it declares and writes each
-result to port 0: an int as it is, a float as trunc(scale * x). This computes
-the same program in Python, in double precision, and compares it with the
-fixture's recorded output. An int must be equal. A float may differ in its
-last digits, because the SAPHO float has a 23-bit mantissa and exp is a
-polynomial evaluated in that format (docs/library.md): a value scaled by
+result to port 0: an int as it is, a float as trunc(scale * x).
+Compilers/CPPComp/Tests/test117 is the same program in C++, with cppcomp's
+built-ins, and five values more (exp, std::exp, tanh, std::tanh and sigmoid
+of a number). This computes them in Python, in double precision, and
+compares them with the fixtures' recorded outputs. An int must be equal.
+A float may differ in its last digits, because the SAPHO float has a 23-bit
+mantissa and exp is a polynomial evaluated in that format
+(docs/library.md): a value scaled by
 10^6 may differ by TOL_E6, one scaled by 10^3 by TOL_E3 (measured on
 2026-11-18: the largest difference is 0; the tolerances leave room for a
 change of the exp routine within its documented accuracy).
@@ -20,9 +23,9 @@ the last of two equal elements as argmax, an argmax computed once before the
 while, sigmoid of -x, tanh of 2x and a relu that clears nothing each make
 the check fail.
 
-The recorded output is the regression's sim golden, so this checks that the
-golden is these functions', and the regression checks that the simulation
-still gives the golden.
+The recorded outputs are the regression's sim goldens (cmm_nn's golden_sim,
+test117's golden.txt), so this checks that each golden is these functions',
+and the regression checks that the simulation still gives the golden.
 
 usage: python3 Scripts/nn_ref.py [repo-root]    (exit 1 on a difference)
 """
@@ -93,21 +96,32 @@ def program():
     return out
 
 
-def main():
-    root = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-    path = os.path.join(root, 'Compilers', 'CMMComp', 'Tests', 'cmm_nn', 'golden_sim', 'output_0.txt')
+def cpp_more():
+    """test117's last values: exp, std::exp, tanh, std::tanh and sigmoid of a number"""
+    return [(math.exp(1.0), 1e6), (math.exp(-1.0), 1e6), (math.tanh(0.5), 1e6),
+            (math.tanh(0.5), 1e6), (sigmoid(2), 1e6)]
+
+
+def check(name, path, ref):
     got = [int(v) for v in open(path).read().split()]
-    ref = program()
     if len(got) != len(ref):
-        sys.exit('nn_ref: cmm_nn wrote %d values, the reference %d' % (len(got), len(ref)))
+        sys.exit('nn_ref: %s wrote %d values, the reference %d' % (name, len(got), len(ref)))
     worst = 0
     for k, (g, (x, sc)) in enumerate(zip(got, ref)):
         want = int(x) if sc == 0 else f2i(sc * x)
         tol = 0 if sc == 0 else (TOL_E6 if sc == 1e6 else TOL_E3)
         if abs(g - want) > tol:
-            sys.exit('nn_ref: cmm_nn value %d is %d, the reference gives %d' % (k, g, want))
+            sys.exit('nn_ref: %s value %d is %d, the reference gives %d' % (name, k, g, want))
         worst = max(worst, abs(g - want))
-    print('nn_ref: cmm_nn computes the functions (%d values, largest difference %d)' % (len(ref), worst))
+    print('nn_ref: %s computes the functions (%d values, largest difference %d)' % (name, len(ref), worst))
+
+
+def main():
+    root = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+    check('cmm_nn', os.path.join(root, 'Compilers', 'CMMComp', 'Tests', 'cmm_nn', 'golden_sim', 'output_0.txt'),
+          program())
+    check('test117', os.path.join(root, 'Compilers', 'CPPComp', 'Tests', 'test117', 'golden.txt'),
+          program() + cpp_more())
 
 
 if __name__ == '__main__':

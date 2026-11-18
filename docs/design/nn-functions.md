@@ -3,9 +3,8 @@
 `relu`, `sigmoid`, `tanh`, `softmax` and `argmax` on an array, in C± and in
 C++, for the forward pass of a dense network on a SAPHO. A student of the
 laboratory has that task, and Luciano agreed to add the functions to YANC
-(2026-11-18). This note covers C±; the C++ part (the same calls as cppcomp
-built-ins, with `exp`, `tanh` and `sigmoid` of a number) is still to be
-written.
+(2026-11-18), in C± and, as cppcomp built-ins, in C++ with `exp`, `tanh`
+and `sigmoid` of a number.
 
 ## The problem
 
@@ -69,6 +68,35 @@ Fact, read in the code (`Compilers/CMMComp/Sources/nn.c`).
   `__Lif` for `softmax` and `argmax`) on the line that calls them; its
   `--selftest` on `sapho_all` still catches broken maps (2026-11-18).
 
+## C++
+
+Fact, read in the code (`Compilers/CPPComp/Sources/codegen.c`, the section
+"relu, sigmoid, tanh, softmax, argmax and exp, built in").
+
+- Built-ins, as `in` and `out`, not a header of templates (decided
+  2026-11-18): C± and C++ take the same calls, and `exp` has to be one
+  anyway. Typing and emission reach them after every function, overload,
+  template and method of the program, so a program's own `argmax` is the
+  one called: tests 39, 44, 46, 48, 49 and 50 define
+  `int argmax(const float *a, int n)`, and the 117 C++ tests give the same
+  `.asm` before and after the change (2026-11-18). The recursion analysis
+  does not take a call of a built-in for a call through a pointer.
+- `exp` is C±'s routine: `Macros/float_exp.asm` (`EXE_MACROS_DIRS`, the
+  folder cmmcomp reads) is appended after `@fim` once, as the other
+  helpers, without its comments and never fused. Issue #31 agreed on
+  2026-10-27 that the two compilers share the routines. `tanh` and
+  `sigmoid` of a number are the sequences of cmmcomp's `stdlib.c`.
+- An array is walked word by word from its address (`gen_addr`), as
+  `__zerofill` does, with `LDI 0` and `STI 0`: a matrix is its rows one
+  after the other, and the loops do not depend on where the array lives
+  (global, local, member). The loops are written in assembly with labels
+  `__Lnn_t<n>` and `__Lnn_s<n>` and temporaries from `new_temp`; they call
+  nothing of the program.
+- A pointer, a reference, a `std::vector` and a `std::array` are refused
+  (no size the compiler knows there); `relu` and `argmax` take signed ints
+  and floats (an unsigned word has no negative, nor the order of `LES`),
+  `sigmoid`, `tanh` and `softmax` floats.
+
 ## What was measured
 
 On 2026-11-18, 32-bit processor, `#FROUND 0`.
@@ -101,6 +129,12 @@ On 2026-11-18, 32-bit processor, `#FROUND 0`.
 
 ## The tests
 
+- `Compilers/CPPComp/Tests/test117`: the program of `cmm_nn` in C++, the
+  same 42 values, and `exp`, `std::exp`, `tanh`, `std::tanh` and `sigmoid`
+  of a number. `Scripts/nn_ref.py` holds its `golden.txt` to Python too.
+  `NegTests`: a pointer, a `std::vector`, `softmax` of an `int` array,
+  `argmax` of a matrix, `exp` of an array, two arguments (in English and in
+  Portuguese).
 - `Compilers/CMMComp/Tests/cmm_nn`: every form, a tie, one element,
   negatives, `softmax` of `{200, 199, 0}`, `argmax` in a `while` condition,
   on a local array and twice in one expression (the second finds the acc
@@ -116,7 +150,6 @@ On 2026-11-18, 32-bit processor, `#FROUND 0`.
 
 ## Open
 
-- The C++ part.
 - The fused form `h # relu(|W|x⟩ + |b⟩);`.
 - `std::vector` and `std::array` in C++.
 
@@ -125,3 +158,5 @@ On 2026-11-18, 32-bit processor, `#FROUND 0`.
 `docs/library.md`, "Neural networks": the calls, a two-layer network, why
 `softmax` subtracts the maximum and when to leave it out, the costs.
 `docs/language-cmm.md`, "Library": the calls and the reserved names.
+`docs/language-cpp.md`, "Neural networks": the built-ins, what arrays they
+take, and that a function of the program hides them.

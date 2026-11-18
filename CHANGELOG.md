@@ -27,6 +27,17 @@ tags consumed by Aurora.
   `Scripts/nn_ref.py`. `Scripts/wave_map.py` accepts the loops' jumps on
   the line of the call. docs/library.md, "Neural networks";
   docs/design/nn-functions.md.
+- **C++ has `relu`, `sigmoid`, `tanh`, `softmax`, `argmax` and `exp` built
+  in.** The same calls as C±, on an array whose size the compiler knows
+  (global, local or member, of any dimensions for the elementwise ones),
+  and `exp`, `tanh`, `sigmoid` and `relu` of a number; `std::exp` and
+  `std::tanh` work with or without `<cmath>`. `exp` is C±'s routine,
+  `Macros/float_exp.asm`, appended once after `@fim` (issue #31: one set of
+  routines for both compilers). A function of the program with one of
+  these names is the one called: the 117 C++ tests, six of which define
+  their own `argmax`, give the same `.asm` as before. New errors (NegTests
+  `nn_*`); new test `test117`, checked against Python by `Scripts/nn_ref.py`.
+  docs/language-cpp.md, "Neural networks".
 - **C± has `--`, `++x`, `--x` and the compound assignments (#208).** `x--`
   and the prefix forms on int and float scalars and elements, as a
   statement, inside an expression (the postfix form gives the old value,

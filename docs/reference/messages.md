@@ -187,6 +187,12 @@ value. What the common ones mean and how to get past them is in
 - error: undefined '<name>'
 - error: subscript on non-array/non-pointer
 - error: undefined function '<name>'
+- error: <name>() takes one argument
+- error: <name>() takes an array whose size the compiler knows; a pointer, a std::vector or a std::array does not work yet
+- error: <name>() takes an array of one dimension
+- error: <name>(): the array's elements must be <name>
+- error: <name>() takes a number, an int or a float
+- error: the library routine '<name>' was not found, in the Macros/ folder beside bin/
 - error: deref on non-pointer
 - error: '.' on non-struct
 - error: no such field '<name>'

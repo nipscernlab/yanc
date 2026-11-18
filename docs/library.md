@@ -169,6 +169,7 @@ Dirac statement, `h # |W|x⟩ + |b⟩;`, and the weights come from files
 (`float W[8][4] "w.txt";`, see [The C± language](language-cmm.md)). C± has
 no arrays as parameters, so a program cannot write these as functions of its
 own: they take the name of an array, and the compiler writes the loops.
+C++ has the same calls, built in ([The C++ YANC accepts](language-cpp.md#neural-networks)).
 
 | call | takes | does |
 |---|---|---|
