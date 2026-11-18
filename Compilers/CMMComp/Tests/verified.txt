@@ -8,6 +8,7 @@
 # outputs regress.sh checks against a sequence it computes itself.
 dirac_shapes      | Scripts/dirac_ref.py: the same statements in Python, checked by the regression
 proc_rls          | Scripts/rls_ref.py: an RLS filter in double precision, checked by the regression
+cmm_nn            | Scripts/nn_ref.py: relu, sigmoid, tanh, softmax and argmax in double precision, checked by the regression
 cmm_stack_balance | the values worked out in its header (k + 2, 13, then 40)
 cmm_order_switch  | the values worked out in its header
 cmm_cnum_expr     | the values worked out in its header

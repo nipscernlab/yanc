@@ -45,8 +45,9 @@
 #      holds CHANGELOG.md's link lines to its version headings, and
 #      Scripts/dirac_cases.py runs every combination of the Dirac notation
 #      in Compilers/CMMComp/DiracCases/cases.tsv through cmmcomp, and
-#      Scripts/dirac_ref.py and Scripts/rls_ref.py hold the sim goldens of
-#      dirac_shapes and proc_rls to values computed apart from YANC.
+#      Scripts/dirac_ref.py, Scripts/rls_ref.py and Scripts/nn_ref.py hold
+#      the sim goldens of dirac_shapes, proc_rls and cmm_nn to values
+#      computed apart from YANC.
 #      Scripts/cmm_cov.sh: no more of cmmcomp's sites that emit assembly
 #      (its calls that write it, and the cells of its operator tables) may
 #      go unreached by the tests, or unchecked against an independent
@@ -1636,6 +1637,13 @@ if command -v python3 >/dev/null 2>&1; then
         pass=$((pass + 1))
     else
         fail=$((fail + 1)); failed_names+=("rls-ref")
+    fi
+    # cmm_nn against relu, sigmoid, tanh, softmax and argmax in double
+    # precision (Scripts/nn_ref.py)
+    if python3 "$ROOT/Scripts/nn_ref.py" "$ROOT"; then
+        pass=$((pass + 1))
+    else
+        fail=$((fail + 1)); failed_names+=("nn-ref")
     fi
     # no statement of a C± test leaves a word on the data stack: the depth
     # worked out from isa.tsv is 0 at every output and at @fim (Scripts/stack_balance.py)

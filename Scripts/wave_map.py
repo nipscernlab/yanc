@@ -43,7 +43,9 @@ from tables the compilers write beside it, and asmcomp completes them.
                 split by another statement's, with the same exceptions;
      jump       a jump to a loop's, if's, switch's, pow's, floor's or ceil's
                 label is on that construct's line, or on a break, continue,
-                if or switch (a case whose body is only a jump).
+                if or switch (a case whose body is only a jump); the loops
+                and ifs of relu, sigmoid, tanh, softmax and argmax on an
+                array are on the line that calls them.
    These rules are written for C±, and do not run on a C++ program (its
    prog_log.txt says lang C++) until it has rules of its own (#87).
    --selftest breaks the map of a test the way a compiler bug would (one
@@ -85,7 +87,10 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONT = tuple(",(+-*/&|=<>")                      # a line ending so continues
 HEAD = re.compile(r"\b(while|for|do|if|else|switch)\b")
-JUMP_FAMILY = [("__Lwh", "while|for|do"), ("__Lif", "if|else"), ("__Lpow", "pow"),
+# relu, sigmoid, tanh, softmax and argmax on an array are loops (an if inside
+# for softmax and argmax) that cmmcomp writes on the line of the call (nn.c)
+NN_LOOPS = "relu|sigmoid|tanh|softmax|argmax"
+JUMP_FAMILY = [("__Lwh", "while|for|do|" + NN_LOOPS), ("__Lif", "if|else|softmax|argmax"), ("__Lpow", "pow"),
                ("__Lflr", "floor"), ("__Lcel", "ceil"),
                ("__switch", "switch|case|default"), ("__sw", "switch|case|default")]
 

@@ -27,6 +27,7 @@
 #include "../Headers/diag.h"
 #include "../Headers/convert.h"      // get_cmp_cst for complex cond loads
 #include "../Headers/dirac.h"    // the Dirac notation in loops
+#include "../Headers/nn.h"       // relu, sigmoid, tanh, softmax and argmax on an array
 #include "../../common/xstr.h"
 
 static void expr_free(expr_node *n);   // frees the node and every descendant recursively
@@ -549,6 +550,9 @@ void typecheck_expr(expr_node *n)
                 case OP_STD_REAL: case OP_STD_IMAG:
                 case OP_STD_FASE: case OP_STD_MOD2:              n->type = TY_FLOAT;  break;
                 case OP_STD_COMP: case OP_STD_CONJ:              n->type = TY_COMP;  break;
+                case OP_STD_RELU:                                n->type = lt; break;
+                case OP_STD_SIGM:                                n->type = TY_FLOAT;  break;
+                case OP_STD_ARGMAX:                              n->type = TY_INT;  break;
                 default: break;
             }
             break;
@@ -1308,6 +1312,13 @@ static expr ast_emit_expr_impl(expr_node *n)
                 case OP_STD_FASE: { expr a = ast_emit_expr(n->left); return builtin_fase(a); }
                 case OP_STD_MOD2: { expr a = ast_emit_expr(n->left); return builtin_mod2(a); }
                 case OP_STD_CONJ: { expr a = ast_emit_expr(n->left); return builtin_conj(a); }
+                case OP_STD_RELU: {
+                    expr a = ast_emit_expr(n->left);
+                    if (a.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, n->line, "relu");
+                    return builtin_pst(a);
+                }
+                case OP_STD_SIGM: { expr a = ast_emit_expr(n->left); return builtin_sigmoid(a); }
+                case OP_STD_ARGMAX: return nn_argmax_emit(n->id);
                 default: break;
             }
             break;
@@ -1510,6 +1521,15 @@ stmt_node *stmt_dirac_shift(int dst, expr_node *c, int a)
     n->id  = dst;
     n->id2 = a;
     n->rhs = c;
+    return n;
+}
+
+stmt_node *stmt_nn(int fn, int v)
+{
+    stmt_node *n = snode_new(STMT_NN);
+    nn_check(fn, v, n->line);
+    n->id = v;
+    n->op = fn;
     return n;
 }
 
@@ -2056,6 +2076,10 @@ void stmt_emit(stmt_node *n)
 
         case STMT_DIRAC:
             dirac_emit(n->id, n->rhs, n->line);
+            break;
+
+        case STMT_NN:
+            nn_emit(n->op, n->id);
             break;
 
         case STMT_DIRAC_SHIFT:

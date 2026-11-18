@@ -1,0 +1,6 @@
+// argmax gives one index: a matrix has two
+float m[2][2] = {{1.0, 2.0}, {3.0, 4.0}};
+void main()
+{
+    out(0, argmax(m));
+}

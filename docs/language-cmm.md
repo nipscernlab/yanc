@@ -278,8 +278,12 @@ The functions that cost little map almost one to one onto instructions:
 divider) and `copy(x, y)` (copies the bits of `x` into the variable `y`
 with no conversion). The mathematical ones become routines of many
 instructions: `sqrt`, `exp`, `log`, `pow`, `sin`, `cos`, `tan`, `atan`,
-`sinh`, `cosh`, `tanh`, `floor`, `ceil`, `round`. See
-[The library](library.md).
+`sinh`, `cosh`, `tanh`, `floor`, `ceil`, `round`. For the layers of a
+neural network, `relu(v);`, `sigmoid(v);`, `tanh(v);` and `softmax(v);`
+change every element of the array `v` in place, and `argmax(v)` gives the
+index of its largest element; `relu(x)` and `sigmoid(x)` also take a number.
+`relu`, `sigmoid`, `softmax` and `argmax` are names of the library, so a
+program cannot give them to a variable. See [The library](library.md).
 
 ## Several processors
 

@@ -1,0 +1,7 @@
+// relu(v); takes the name of an array: on a number it would do nothing
+void main()
+{
+    float x = 1.0;
+    relu(x);
+    fout(0, x);
+}

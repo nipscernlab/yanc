@@ -138,6 +138,11 @@ COMEN  "//"[^\n]*
 "ceil"        return CEIL;
 "round"       return ROUND;
 
+"relu"        return RELU;
+"sigmoid"     return SIGM;
+"softmax"     return SOFTMAX;
+"argmax"      return ARGMAX;
+
 "real"        return REAL;
 "imag"        return IMAG;
 "conj"        return CONJ;

@@ -69,6 +69,9 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: haven't coded this up for complex numbers yet. You're on your own!
 - Error on line <n>: '<name>' ain't even a vector, mate!
 - Error on line <n>: '<name>' ain't even a matrix, mate!
+- Error on line <n>: <name>(<name>); takes the name of an array, and '<name>' ain't one. On a number, write x = <name>(x);
+- Error on line <n>: <name>(.) takes the name of a vector, and '<name>' ain't one.
+- Error on line <n>: <name>(.) writes floats into the array, and '<name>' is an int one.
 - Error on line <n>: you can only shift a vector into itself, mate!
 - Error on line <n>: adding <name> and <name>? Those shapes don't fit, mate!
 - Error on line <n>: <name> times <name>? No way: the columns of the first must match the rows of the second!

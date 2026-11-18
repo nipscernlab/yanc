@@ -1308,6 +1308,35 @@ expr builtin_tanh(expr e)
     return expr_make(TY_FLOAT, 0);
 }
 
+// sigmoid(x) = 1 / (1 + exp(-x)), the logistic function of a neural network's
+// activation: one exponential and one division (F_DIV X = X / acc), as tanh
+expr builtin_sigmoid(expr e)
+{
+    // ------------------------------------------------------------------------
+    // consistency check ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    if (e.type > TY_FLOAT) fatal(MSG_ERR_FUNC_COMPLEX, pctx.line_num+1, "sigmoid");
+
+    if (e.id != 0) v_table[e.id].used = 1;
+
+    // ------------------------------------------------------------------------
+    // execute -- bring x into the acc as a float (the four operand shapes) ----
+    // ------------------------------------------------------------------------
+
+    load_float(e);
+
+    acc_live = 1;
+
+    add_instr("F_NEG\n");                  // -x
+    add_instr("CAL __float_exp\n");        // exp(-x)
+    add_instr("F_ADD 1.0\n");              // 1 + exp(-x)
+    add_instr("F_DIV 1.0\n");              // 1 / (1 + exp(-x))
+
+    acc_live = 1;
+    return expr_make(TY_FLOAT, 0);
+}
+
 // ----------------------------------------------------------------------------
 // rounding functions ---------------------------------------------------------
 // F2I truncates toward zero, so I2F(F2I(x)) = trunc(x). floor/ceil nudge that

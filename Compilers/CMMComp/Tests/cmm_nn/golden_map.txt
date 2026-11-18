@@ -1,0 +1,636 @@
+## messages
+Info: 575 assembly instructions generated
+Info: adding assembly macro for exponential computation
+Info: 1 pairs of instructions fused into one
+Info: 6 divisions, 5 words each for DIV/MOD and 4 for F_DIV (18 added)
+Info: 33 increments made one INC each
+Info: 57 variables share 16 data words (41 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 552 instructions and 82 variables were found
+Info: adding array handling
+Info: ULA resource -> float-point pset computation (standard library)
+Info: ULA resource -> integer adder
+Info: ULA resource -> < operator for int
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> integer pset computation (standard library)
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> float-point negative operation
+Info: adding stack memory for function calls
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: ULA resource -> < operator for float
+Info: ULA resource -> > operator for int
+Info: ULA resource -> ^ operator
+Info: ULA resource -> integer negative operation
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float scale by a power of two (2^k)
+Info: stack depths from the program: SDEPTH 1, NDSTAC 1
+Info: using 28% of the Assembly Instruction Set
+Info: using 47% of the ULA operations
+Processor cmm_nn
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    int and float; divider float
+  data stack    1 words (worked out from the program)
+  call stack    1 words (worked out from the program)
+  memories      552 instructions, 82 data words
+Sweet: the processor is good to go.
+## variables
+best n 1
+main k 1
+main x 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 39: relu(v);
+1 LOD 0
+2 SET __nnk0_main
+3 LOD __nnk0_main
+4 P_LOD __nnk0_main
+5 LDI v
+6 F_PST
+7 STI v
+8 INC __nnk0_main
+9 LES 4
+10 JIZ __Lwh10
+// 40: for (k = 0; k < 5; k++) fout(0, v[k] * 1000.0);
+11 LOD 0
+12 SET main_k
+13 LOD main_k
+14 LDI v
+15 F_MLT 1000.0
+16 F2I
+17 OUT 0
+18 INC main_k
+19 LES 4
+20 JIZ __Lwh1
+// 41: relu(iv);
+21 LOD 0
+22 SET __nnk1_main
+23 LOD __nnk1_main
+24 P_LOD __nnk1_main
+25 LDI iv
+26 PST
+27 STI iv
+28 INC __nnk1_main
+29 LES 3
+30 JIZ __Lwh11
+// 42: for (k = 0; k < 4; k++) out(0, iv[k]);
+31 LOD 0
+32 SET main_k
+33 LOD main_k
+34 LDI iv
+35 OUT 0
+36 INC main_k
+37 LES 3
+38 JIZ __Lwh2
+// 43: relu(m);
+39 LOD 0
+40 SET __nnk2_main
+41 LOD 0
+42 SET __nnk3_main
+43 LOD __nnk2_main
+44 MLT 3
+45 ADD __nnk3_main
+46 P_LOD __nnk2_main
+47 MLT 3
+48 ADD __nnk3_main
+49 LDI m
+50 F_PST
+51 STI m
+52 INC __nnk3_main
+53 LES 2
+54 JIZ __Lwh12
+55 INC __nnk2_main
+56 LES 1
+57 JIZ __Lwh13
+// 44: for (k = 0; k < 3; k++) fout(0, m[0][k] * 1000.0);
+58 LOD 0
+59 SET main_k
+60 LOD 0
+61 MLT 3
+62 ADD main_k
+63 LDI m
+64 F_MLT 1000.0
+65 F2I
+66 OUT 0
+67 INC main_k
+68 LES 2
+69 JIZ __Lwh3
+// 45: for (k = 0; k < 3; k++) fout(0, m[1][k] * 1000.0);
+70 LOD 0
+71 SET main_k
+72 LOD 1
+73 MLT 3
+74 ADD main_k
+75 LDI m
+76 F_MLT 1000.0
+77 F2I
+78 OUT 0
+79 INC main_k
+80 LES 2
+81 JIZ __Lwh4
+// 47: sigmoid(g);
+82 LOD 0
+83 SET __nnk4_main
+84 LOD __nnk4_main
+85 P_LOD __nnk4_main
+86 LDI g
+87 F_NEG
+88 CAL __float_exp
+89 F_ADD 1.0
+90 F_DIV 1.0
+91 NOP
+92 NOP
+93 F_QUO
+94 STI g
+95 INC __nnk4_main
+96 LES 2
+97 JIZ __Lwh14
+// 48: for (k = 0; k < 3; k++) fout(0, g[k] * 1000000.0);
+98 LOD 0
+99 SET main_k
+100 LOD main_k
+101 LDI g
+102 F_MLT 1000000.0
+103 F2I
+104 OUT 0
+105 INC main_k
+106 LES 2
+107 JIZ __Lwh5
+// 49: tanh(t);
+108 LOD 0
+109 SET __nnk5_main
+110 LOD __nnk5_main
+111 P_LOD __nnk5_main
+112 LDI t
+113 F_MLT 2.0
+114 CAL __float_exp
+115 SET __tanh_e
+116 F_ADD -1.0
+117 SET __tanh_n
+118 LOD __tanh_e
+119 F_ADD 1.0
+120 F_DIV __tanh_n
+121 NOP
+122 NOP
+123 F_QUO
+124 STI t
+125 INC __nnk5_main
+126 LES 2
+127 JIZ __Lwh15
+// 50: for (k = 0; k < 3; k++) fout(0, t[k] * 1000000.0);
+128 LOD 0
+129 SET main_k
+130 LOD main_k
+131 LDI t
+132 F_MLT 1000000.0
+133 F2I
+134 OUT 0
+135 INC main_k
+136 LES 2
+137 JIZ __Lwh6
+// 52: softmax(s);
+138 LOD_V s 0
+139 SET __nnm6_main
+140 LOD 1
+141 SET __nnk10_main
+142 LOD __nnk10_main
+143 LDI s
+144 F_LES __nnm6_main
+145 JIZ __Lif1else
+146 LOD __nnk10_main
+147 LDI s
+148 SET __nnm6_main
+149 INC __nnk10_main
+150 LES 4
+151 JIZ __Lwh18
+152 LOD 0.0
+153 SET __nns7_main
+154 LOD 0
+155 SET __nnk8_main
+156 LOD __nnk8_main
+157 P_LOD __nnk8_main
+158 LDI s
+159 F_SU1 __nnm6_main
+160 CAL __float_exp
+161 STI s
+162 F_ADD __nns7_main
+163 SET __nns7_main
+164 INC __nnk8_main
+165 LES 4
+166 JIZ __Lwh16
+167 LOD __nns7_main
+168 F_DIV 1.0
+169 NOP
+170 NOP
+171 F_QUO
+172 SET __nns7_main
+173 LOD 0
+174 SET __nnk9_main
+175 LOD __nnk9_main
+176 P_LOD __nnk9_main
+177 LDI s
+178 F_MLT __nns7_main
+179 STI s
+180 INC __nnk9_main
+181 LES 4
+182 JIZ __Lwh17
+// 53: for (k = 0; k < 5; k++) fout(0, s[k] * 1000000.0);
+183 LOD 0
+184 SET main_k
+185 LOD main_k
+186 LDI s
+187 F_MLT 1000000.0
+188 F2I
+189 OUT 0
+190 INC main_k
+191 LES 4
+192 JIZ __Lwh7
+// 54: softmax(big);
+193 LOD_V big 0
+194 SET __nnm11_main
+195 LOD 1
+196 SET __nnk15_main
+197 LOD __nnk15_main
+198 LDI big
+199 F_LES __nnm11_main
+200 JIZ __Lif2else
+201 LOD __nnk15_main
+202 LDI big
+203 SET __nnm11_main
+204 INC __nnk15_main
+205 LES 2
+206 JIZ __Lwh21
+207 LOD 0.0
+208 SET __nns12_main
+209 LOD 0
+210 SET __nnk13_main
+211 LOD __nnk13_main
+212 P_LOD __nnk13_main
+213 LDI big
+214 F_SU1 __nnm11_main
+215 CAL __float_exp
+216 STI big
+217 F_ADD __nns12_main
+218 SET __nns12_main
+219 INC __nnk13_main
+220 LES 2
+221 JIZ __Lwh19
+222 LOD __nns12_main
+223 F_DIV 1.0
+224 NOP
+225 NOP
+226 F_QUO
+227 SET __nns12_main
+228 LOD 0
+229 SET __nnk14_main
+230 LOD __nnk14_main
+231 P_LOD __nnk14_main
+232 LDI big
+233 F_MLT __nns12_main
+234 STI big
+235 INC __nnk14_main
+236 LES 2
+237 JIZ __Lwh20
+// 55: for (k = 0; k < 3; k++) fout(0, big[k] * 1000000.0);
+238 LOD 0
+239 SET main_k
+240 LOD main_k
+241 LDI big
+242 F_MLT 1000000.0
+243 F2I
+244 OUT 0
+245 INC main_k
+246 LES 2
+247 JIZ __Lwh8
+// 56: softmax(one);
+248 LOD_V one 0
+249 SET __nnm16_main
+250 LOD 1
+251 SET __nnk20_main
+252 LOD __nnk20_main
+253 GRE 1
+254 JIZ __Lwh24end
+255 LOD __nnk20_main
+256 LDI one
+257 F_LES __nnm16_main
+258 JIZ __Lif3else
+259 LOD __nnk20_main
+260 LDI one
+261 SET __nnm16_main
+262 INC __nnk20_main
+263 JMP __Lwh24
+264 LOD 0.0
+265 SET __nns17_main
+266 LOD 0
+267 SET __nnk18_main
+268 LOD __nnk18_main
+269 P_LOD __nnk18_main
+270 LDI one
+271 F_SU1 __nnm16_main
+272 CAL __float_exp
+273 STI one
+274 F_ADD __nns17_main
+275 SET __nns17_main
+276 INC __nnk18_main
+277 LES 0
+278 JIZ __Lwh22
+279 LOD __nns17_main
+280 F_DIV 1.0
+281 NOP
+282 NOP
+283 F_QUO
+284 SET __nns17_main
+285 LOD 0
+286 SET __nnk19_main
+287 LOD __nnk19_main
+288 P_LOD __nnk19_main
+289 LDI one
+290 F_MLT __nns17_main
+291 STI one
+292 INC __nnk19_main
+293 LES 0
+294 JIZ __Lwh23
+// 57: fout(0, one[0] * 1000.0);
+295 LOD_V one 0
+296 F_MLT 1000.0
+297 F2I
+298 OUT 0
+// 59: out(0, argmax(s));
+299 LOD 0
+300 SET __nnb21_main
+301 LOD_V s 0
+302 SET __nnm22_main
+303 LOD 1
+304 SET __nnk23_main
+305 LOD __nnk23_main
+306 LDI s
+307 F_LES __nnm22_main
+308 JIZ __Lif4else
+309 LOD __nnk23_main
+310 LDI s
+311 SET __nnm22_main
+312 LOD __nnk23_main
+313 SET __nnb21_main
+314 INC __nnk23_main
+315 LES 4
+316 JIZ __Lwh25
+317 LOD __nnb21_main
+318 OUT 0
+// 60: out(0, argmax(iv));
+319 LOD 0
+320 SET __nnb24_main
+321 LOD_V iv 0
+322 SET __nnm25_main
+323 LOD 1
+324 SET __nnk26_main
+325 LOD __nnk26_main
+326 LDI iv
+327 LES __nnm25_main
+328 JIZ __Lif5else
+329 LOD __nnk26_main
+330 LDI iv
+331 SET __nnm25_main
+332 LOD __nnk26_main
+333 SET __nnb24_main
+334 INC __nnk26_main
+335 LES 3
+336 JIZ __Lwh26
+337 LOD __nnb24_main
+338 OUT 0
+// 61: out(0, argmax(tie));
+339 LOD 0
+340 SET __nnb27_main
+341 LOD_V tie 0
+342 SET __nnm28_main
+343 LOD 1
+344 SET __nnk29_main
+345 LOD __nnk29_main
+346 LDI tie
+347 F_LES __nnm28_main
+348 JIZ __Lif6else
+349 LOD __nnk29_main
+350 LDI tie
+351 SET __nnm28_main
+352 LOD __nnk29_main
+353 SET __nnb27_main
+354 INC __nnk29_main
+355 LES 3
+356 JIZ __Lwh27
+357 LOD __nnb27_main
+358 OUT 0
+// 62: out(0, argmax(one));
+359 LOD 0
+360 SET __nnb30_main
+361 LOD_V one 0
+362 SET __nnm31_main
+363 LOD 1
+364 SET __nnk32_main
+365 LOD __nnk32_main
+366 GRE 1
+367 JIZ __Lwh28end
+368 LOD __nnk32_main
+369 LDI one
+370 F_LES __nnm31_main
+371 JIZ __Lif7else
+372 LOD __nnk32_main
+373 LDI one
+374 SET __nnm31_main
+375 LOD __nnk32_main
+376 SET __nnb30_main
+377 INC __nnk32_main
+378 JMP __Lwh28
+379 LOD __nnb30_main
+380 OUT 0
+// 63: out(0, argmax(neg));
+381 LOD 0
+382 SET __nnb33_main
+383 LOD_V neg 0
+384 SET __nnm34_main
+385 LOD 1
+386 SET __nnk35_main
+387 LOD __nnk35_main
+388 LDI neg
+389 F_LES __nnm34_main
+390 JIZ __Lif8else
+391 LOD __nnk35_main
+392 LDI neg
+393 SET __nnm34_main
+394 LOD __nnk35_main
+395 SET __nnb33_main
+396 INC __nnk35_main
+397 LES 2
+398 JIZ __Lwh29
+399 LOD __nnb33_main
+400 OUT 0
+// 64: k = 0;
+401 LOD 0
+402 SET main_k
+// 65: while (argmax(cnt) != 0) { cnt[0] = cnt[0] + 5; k++; }
+403 LOD 0
+404 SET __nnb36_main
+405 LOD_V cnt 0
+406 SET __nnm37_main
+407 LOD 1
+408 SET __nnk38_main
+409 LOD __nnk38_main
+410 LDI cnt
+411 LES __nnm37_main
+412 JIZ __Lif9else
+413 LOD __nnk38_main
+414 LDI cnt
+415 SET __nnm37_main
+416 LOD __nnk38_main
+417 SET __nnb36_main
+418 INC __nnk38_main
+419 LES 2
+420 JIZ __Lwh30
+421 LOD __nnb36_main
+422 XOR 0
+423 JIZ __Lwh9end
+424 LOD_V cnt 0
+425 ADD 5
+426 SET_V cnt 0
+427 INC main_k
+428 JMP __Lwh9
+// 66: out(0, k);
+429 LOD main_k
+430 OUT 0
+// 67: out(0, best(10));
+431 LOD 10
+432 CAL best
+433 OUT 0
+// 68: out(0, argmax(tie) * 10 + argmax(neg));
+434 LOD 0
+435 SET __nnb39_main
+436 LOD_V tie 0
+437 SET __nnm40_main
+438 LOD 1
+439 SET __nnk41_main
+440 LOD __nnk41_main
+441 LDI tie
+442 F_LES __nnm40_main
+443 JIZ __Lif10else
+444 LOD __nnk41_main
+445 LDI tie
+446 SET __nnm40_main
+447 LOD __nnk41_main
+448 SET __nnb39_main
+449 INC __nnk41_main
+450 LES 3
+451 JIZ __Lwh31
+452 LOD __nnb39_main
+453 MLT 10
+454 P_LOD 0
+455 SET __nnb42_main
+456 LOD_V neg 0
+457 SET __nnm43_main
+458 LOD 1
+459 SET __nnk44_main
+460 LOD __nnk44_main
+461 LDI neg
+462 F_LES __nnm43_main
+463 JIZ __Lif11else
+464 LOD __nnk44_main
+465 LDI neg
+466 SET __nnm43_main
+467 LOD __nnk44_main
+468 SET __nnb42_main
+469 INC __nnk44_main
+470 LES 2
+471 JIZ __Lwh32
+472 LOD __nnb42_main
+473 S_ADD
+474 OUT 0
+// 70: float x = 0.5;
+475 LOD 0.5
+476 SET main_x
+// 71: fout(0, sigmoid(x) * 1000000.0);
+477 F_NEG
+478 CAL __float_exp
+479 F_ADD 1.0
+480 F_DIV 1.0
+481 NOP
+482 NOP
+483 F_QUO
+484 F_MLT 1000000.0
+485 F2I
+486 OUT 0
+// 72: fout(0, relu(-x) * 1000.0);
+487 F_NEG_M main_x
+488 F_PST
+489 F_MLT 1000.0
+490 F2I
+491 OUT 0
+// 73: out(0, relu(-7));
+492 NEG_M 7
+493 PST
+494 OUT 0
+// 74: out(0, relu(7));
+495 PST_M 7
+496 OUT 0
+// -3: END
+497 JMP fim
+// 28: int best(int n)
+498 SET best_n
+// 31: loc[0] = 0.5; loc[1] = -0.5; loc[2] = 2.5;
+499 LOD 0.5
+500 SET_V best_loc 0
+501 LOD -0.5
+502 SET_V best_loc 1
+503 LOD 2.5
+504 SET_V best_loc 2
+// 32: return argmax(loc) * n;
+505 LOD 0
+506 SET __nnb45_best
+507 LOD_V best_loc 0
+508 SET __nnm46_best
+509 LOD 1
+510 SET __nnk47_best
+511 LOD __nnk47_best
+512 LDI best_loc
+513 F_LES __nnm46_best
+514 JIZ __Lif12else
+515 LOD __nnk47_best
+516 LDI best_loc
+517 SET __nnm46_best
+518 LOD __nnk47_best
+519 SET __nnb45_best
+520 INC __nnk47_best
+521 LES 2
+522 JIZ __Lwh33
+523 LOD __nnb45_best
+524 MLT best_n
+525 RET
+// library macros, no source line
+526 SET __exp_x
+527 F_MLT 1.4426950409
+528 SET __exp_q
+529 LOD 0.5
+530 F_SGN __exp_q
+531 F_ADD __exp_q
+532 F2I
+533 SET __exp_n
+534 I2F
+535 F_MLT 0.6931471806
+536 F_SU2 __exp_x
+537 SET __exp_r
+538 F_MLT 0.0013888889
+539 F_ADD 0.0083333333
+540 F_MLT __exp_r
+541 F_ADD 0.0416666667
+542 F_MLT __exp_r
+543 F_ADD 0.1666666667
+544 F_MLT __exp_r
+545 F_ADD 0.5
+546 F_MLT __exp_r
+547 F_ADD 1.0
+548 F_MLT __exp_r
+549 F_ADD 1.0
+550 F_SCL __exp_n
+551 RET

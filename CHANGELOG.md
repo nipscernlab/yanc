@@ -9,6 +9,24 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **C± has `relu`, `sigmoid`, `softmax` and `argmax`, and `tanh` of an
+  array, for a neural network's layers.** `relu(v);`, `sigmoid(v);`,
+  `tanh(v);` and `softmax(v);` change the array `v` in place, and
+  `argmax(v)` gives the index of its largest element (the first of equal
+  ones) anywhere a number goes; `relu(x)` (`pset(x)`) and `sigmoid(x)` also
+  take a number. C± has no arrays as parameters, so the compiler takes the
+  name of the array and writes the loops a program would write by hand
+  (`nn.c`), from the code paths of `pset`, `tanh`, `exp`, the comparisons
+  and the array accesses. `softmax` subtracts the largest element before
+  `exp`: without it, `{200, 199, 0}` gives 0, 0 and 1 (the SAPHO float has
+  no infinity). Each call is a loop of fixed size: `relu(v);` 10
+  instructions and 8 cycles an element, `softmax(v);` 71 and 55, measured
+  on a vector of 16. `relu`, `sigmoid`, `softmax` and `argmax` are now
+  names of the library, so a program cannot give them to a variable. Three
+  new errors (NegTests `nn_*`); new test `cmm_nn`, checked against Python by
+  `Scripts/nn_ref.py`. `Scripts/wave_map.py` accepts the loops' jumps on
+  the line of the call. docs/library.md, "Neural networks";
+  docs/design/nn-functions.md.
 - **C± has `--`, `++x`, `--x` and the compound assignments (#208).** `x--`
   and the prefix forms on int and float scalars and elements, as a
   statement, inside an expression (the postfix form gives the old value,

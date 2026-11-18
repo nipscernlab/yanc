@@ -145,6 +145,9 @@ typedef enum {
     OP_STD_FASE,  // fase(x)         -> phase of a comp (radians)
     OP_STD_MOD2,  // mod2(x)         -> squared magnitude of a comp
     OP_STD_CONJ,  // conj(x)         -> complex conjugate (real -> x+0i); always comp
+    OP_STD_RELU,  // relu(x)         -> pset(x), for a number (the array form is STMT_NN)
+    OP_STD_SIGM,  // sigmoid(x)      -> 1 / (1 + exp(-x)), a float
+    OP_STD_ARGMAX,// argmax(v)       -> the index of v's largest element, an int (id = v)
 } expr_op;
 
 typedef struct expr_node {
@@ -257,6 +260,7 @@ typedef enum {
     STMT_COPY,          // copy(exp, dst_id);
     STMT_DIRAC,         // dst # exp;  a Dirac expression into an array (id = dst, rhs)
     STMT_DIRAC_SHIFT,   // dst # c -> |dst⟩;  shift register (id = dst, id2 = the ket, rhs = c)
+    STMT_NN,            // relu(v); sigmoid(v); tanh(v); softmax(v);  in place (id = v, op = an NN_ code of nn.h)
     STMT_VOID_CALL,     // f(args);  user-defined void function call statement
     STMT_DIRE_INTER,    // #PRACA directive (interrupt return target)
     STMT_DIRE_TOAQUI,   // #TOAQUI directive (cheguei pin trigger address)
@@ -439,6 +443,10 @@ stmt_node *stmt_list_top        (void);
 // shift register dst # c -> |a⟩; (a must be dst).
 stmt_node *stmt_dirac      (int dst, struct expr_node *rhs);
 stmt_node *stmt_dirac_shift(int dst, struct expr_node *c, int a);
+
+// relu(v); sigmoid(v); tanh(v); softmax(v);: fn is an NN_ code (nn.h), v the
+// array, checked here, at parse time
+stmt_node *stmt_nn(int fn, int v);
 
 // walks a stmt_node and emits via the same helpers the inline grammar
 // actions used to call (assign_set, etc.).

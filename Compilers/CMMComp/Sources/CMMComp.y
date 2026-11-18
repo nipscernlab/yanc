@@ -79,6 +79,7 @@
 #include "../Headers/messages.h"    // PT/EN bilingual support
 #include "../Headers/args.h"        // command-line argument parsing
 #include "../Headers/diag.h"        // fatal(): stop on an error
+#include "../Headers/nn.h"          // relu, sigmoid, tanh, softmax and argmax on an array
 #include "../../common/console_utf8.h" // UTF-8 messages on a Windows console
 
 // required flex/bison variables ----------------------------------------------
@@ -109,6 +110,7 @@ void  yyerror(char const *s);
 %token SQRT ATAN SIN COS TAN EXP LOG POW                               // stdlib (non-linear functions)
 %token COSH SINH TANH                                                  // stdlib (hyperbolic)
 %token FLOOR CEIL ROUND                                                // stdlib (rounding)
+%token RELU SIGM SOFTMAX ARGMAX                                        // stdlib (neural networks: nn.c)
 %token REAL IMAG COMP FASE MOD2 CONJ                                   // stdlib (complex numbers)
 %token WHILE DO FOR IF THEN ELSE SWITCH CASE DEFAULT RET BREAK CONTINUE   // jumps
 %token SHIFTL SHIFTR SSHIFTR                                           // bit shift
@@ -163,6 +165,7 @@ void  yyerror(char const *s);
 %type <eval> std_sqrt std_atan std_sin std_cos std_tan std_exp std_log std_pow
 %type <eval> std_cosh std_sinh std_tanh
 %type <eval> std_floor std_ceil std_round
+%type <eval> std_relu std_sigm std_argmax
 %type <eval> std_real std_imag std_comp std_fase std_mod2 std_conj
 %type <eval> exp terminal
 %type <eval> dirac dchain
@@ -303,6 +306,7 @@ stmt_full: '{' stmt_list '}' // statement block
          |      std_toma     // hands a value to the partner processor
          |      std_fout     // stdlib data output (converting to float)
          |      std_copy     // copies the value of the first argument into the second (no type checking)
+         |        std_nn     // relu(v); sigmoid(v); tanh(v); softmax(v); on an array, in place
          |     void_call     // subroutine call
          |   return_call     // function return
          |   switch_case     // switch/case
@@ -362,6 +366,16 @@ std_comp : COMP '(' exp  ',' exp ')'           {$$ = expr_stdlib(OP_STD_COMP, 0,
 std_fase : FASE '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_FASE, 0,  $3,   NULL);}  // phase(comp)
 std_mod2 : MOD2 '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_MOD2, 0,  $3,   NULL);}  // |comp|^2
 std_conj : CONJ '(' exp  ')'                   {$$ = expr_stdlib(OP_STD_CONJ, 0,  $3,   NULL);}  // conjugate
+
+// neural networks (nn.c): the array forms take the name of an array, which C±
+// cannot pass to a function of its own; relu and sigmoid also take a number
+std_nn    : RELU    '(' ID ')' ';'              {stmt_append(stmt_nn(NN_RELU,    $3));}  // v[k] = pset(v[k])
+          | SIGM    '(' ID ')' ';'              {stmt_append(stmt_nn(NN_SIGM,    $3));}  // v[k] = sigmoid(v[k])
+          | TANH    '(' ID ')' ';'              {stmt_append(stmt_nn(NN_TANH,    $3));}  // v[k] = tanh(v[k])
+          | SOFTMAX '(' ID ')' ';'              {stmt_append(stmt_nn(NN_SOFTMAX, $3));}  // exp(v[k] - max) / sum
+std_relu  : RELU '(' exp ')'                    {$$ = expr_stdlib(OP_STD_RELU, 0,  $3,   NULL);}  // pset(x)
+std_sigm  : SIGM '(' exp ')'                    {$$ = expr_stdlib(OP_STD_SIGM, 0,  $3,   NULL);}  // 1 / (1 + exp(-x))
+std_argmax: ARGMAX '(' ID ')'                   {nn_check_argmax($3, pctx.line_num+1); $$ = expr_stdlib(OP_STD_ARGMAX, $3, NULL, NULL);}  // index of the largest
 
 // if/else --------------------------------------------------------------------
 
@@ -503,6 +517,9 @@ exp:       terminal                           {$$ = $1;}
          | std_fase                           {$$ = $1;}
          | std_mod2                           {$$ = $1;}
          | std_conj                           {$$ = $1;}
+         | std_relu                           {$$ = $1;}
+         | std_sigm                           {$$ = $1;}
+         | std_argmax                         {$$ = $1;}
          // function call
          | func_call                          {$$ = $1;}
          // null operators
