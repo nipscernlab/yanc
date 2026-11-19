@@ -655,6 +655,10 @@ void parse_lang_flag(int *argc, char **argv);
     M("Info: adicionando macro assembly para cálculo de exponencial\n", \
       "Info: adding assembly macro for exponential computation\n")
 
+#define MSG_INFO_NN_MACRO \
+    M("Info: adicionando a rotina %s, uma cópia para todas as chamadas\n", \
+      "Info: adding the routine %s, one copy for every call\n")
+
 #define MSG_INFO_LOG_MACRO \
     M("Info: adicionando macro assembly para cálculo de logaritmo natural\n", \
       "Info: adding assembly macro for natural-logarithm computation\n")

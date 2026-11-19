@@ -25,7 +25,7 @@ void nn_check(int fn, int v, int line);
 // the same for argmax(v): a 1D int or float array
 void nn_check_argmax(int v, int line);
 
-// the loops of a STMT_NN, emitted at walker time
+// a STMT_NN: the call of its routine (nn_*.asm), emitted at walker time
 void nn_emit(int fn, int v);
 
 // argmax(v) inside an expression: the result in the acc, a live partial

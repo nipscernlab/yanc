@@ -168,7 +168,7 @@ The functions that follow a layer of a dense neural network. A layer is a
 Dirac statement, `h # |W|x⟩ + |b⟩;`, and the weights come from files
 (`float W[8][4] "w.txt";`, see [The C± language](language-cmm.md)). C± has
 no arrays as parameters, so a program cannot write these as functions of its
-own: they take the name of an array, and the compiler writes the loops.
+own: they take the name of an array, and the compiler calls a routine.
 C++ has the same calls, built in ([The C++ YANC accepts](language-cpp.md#neural-networks)).
 
 | call | takes | does |
@@ -215,21 +215,25 @@ that only needs the class leaves `softmax` out: the largest element of the
 layer's output is also the most probable, and `argmax` needs neither `exp`
 nor a divider.
 
-What they cost, measured on 2026-11-18 (32-bit processor, `#FROUND 0`): the
-instructions and data words a program has beyond the same program without
-the call, as `yanc` prints them, and the cycles a call takes on a vector of
-16 floats from -2 to 2. The code is a loop, so its size does not grow with
-the array (the same at 4 and at 64 elements); the cycles grow with it.
+Each array form calls a routine (`nn_relu_f`, `nn_softmax`, ... in
+`Macros/`) that is added to the program once, whatever the number of calls,
+as the routine of `exp` is; a call is four instructions. What they cost,
+measured on 2026-11-19 (32-bit processor, `#FROUND 0`): the instructions and
+data words a program has beyond the same program without the call, as `yanc`
+prints them, for the first call and for each one after it, and the cycles a
+call takes on a vector of 16 floats from -2 to 2. The size does not depend
+on the number of elements; the cycles grow with it.
 
-| call | instructions | data words | cycles per element |
+| call | first call: instructions, data words | each further call | cycles per element |
 |---|---|---|---|
-| `relu(v);` | 10 (19 for a matrix) | 0 | 8 |
-| `sigmoid(v);` | 42 | 10 | 40 |
-| `tanh(v);` | 46 | 12 | 44 |
-| `softmax(v);` | 71 | 14 | 55 |
-| `argmax(v)` | 18 | 3 | 12 |
-| `sigmoid(x)` | 33 | 10 | |
-| `relu(x)` | 1 | 0 | |
+| `relu(v);` | 14, 4 | 4 | 8 |
+| `sigmoid(v);` | 46, 14 | 4 | 40 |
+| `tanh(v);` | 50, 16 | 4 | 44 |
+| `softmax(v);` | 78, 18 | 4 | 57 |
+| `argmax(v)` | 26, 7 | 4 | 13 |
+| `sigmoid(x)` | 33, 10 | 7 | |
+| `relu(x)` | 1, 0 | 1 | |
 
 `sigmoid`, `tanh` and `softmax` share the routine of `exp` and the
-divider: a program that calls two of them pays for each once. `softmax` divides once and multiplies every element by the result.
+divider: a program that calls two of them pays for each once. `softmax`
+divides once and multiplies every element by the result.

@@ -47,26 +47,48 @@ Fact, read in the code (`Compilers/CMMComp/Sources/nn.c`).
   (`OP_STD_SIGM`, `builtin_sigmoid` in `stdlib.c`: `F_NEG`, `CAL
   __float_exp`, `F_ADD 1.0`, `F_DIV 1.0`) and `argmax(v)`
   (`OP_STD_ARGMAX`, the array in the node's `id`).
-- At walker time `nn.c` builds the statements a program would write by
-  hand, `for (k = 0; k < N; k++) v[k] = pset(v[k]);`, as the parser builds a
-  `for`: an assignment, then a `STMT_WHILE` with the init on `then_body`
-  and the step on `else_body`, so that the loop gets the bottom test of
-  `for_bottom_test`. `stmt_emit` emits them. No instruction is written by
-  hand except `argmax`'s two below; every other one comes from the code
-  paths of `pset`, `tanh`, `exp`, the comparisons and the array accesses.
-- A matrix gets two loops. `softmax` is a running maximum, a loop of
-  `v[k] = exp(v[k] - m); s = s + v[k];`, one division `s = 1.0 / s` and a
-  loop of products. `argmax` is `b = 0; m = v[0];` and a loop of
-  `if (v[k] > m) {m = v[k]; b = k;}`.
-- The counters, the maximum and the sum are variables of the compiler,
-  `__nn<stem><n>_<function>`, one set per use, as `dirac.c` names its own.
+- Each array form is a call of a routine of `Compilers/CMMComp/Includes/`
+  (`Macros/` in a release): `nn_relu_f.asm`, `nn_relu_i.asm`,
+  `nn_sigmoid.asm`, `nn_tanh.asm`, `nn_softmax.asm`, `nn_argmax_f.asm`,
+  `nn_argmax_i.asm`. A call is four words, `LEA v; SET __nn_p; ADD N; CAL
+  __nn_<f>`: the address of the first element in `__nn_p`, the address after
+  the last in the acc. `macros.c` appends each routine the program calls
+  once, after the program, as `float_exp.asm` (which `sigmoid`, `tanh` and
+  `softmax` bring); cppcomp appends the same files. A matrix is its rows one
+  after the other, so `relu`, `sigmoid` and `tanh` walk it as one vector of
+  rows times cols elements.
+- The routines walk the array with an address, `LDI 0` and `STI 0`, and
+  their own variables, `__nn_p`, `__nn_e`, `__nn_a`, `__nn_b`, `__nn_m`,
+  `__nn_x`, `__nn_s`, `__nn_te` and `__nn_tn`. They call `__float_exp` and
+  nothing of the program, so they need no stack frame; the call stack is
+  2 deep where one of them calls `exp` (worked out by the tools, and no
+  `fl_overflow` in the simulations of the tests).
+- `softmax` is a running maximum, a loop of `v[k] = exp(v[k] - m)` and their
+  sum, one division `s = 1.0 / s` and a loop of products. `argmax` keeps the
+  address of the largest element and returns it minus the first's.
 - `argmax` inside an expression: a live partial result (`x + argmax(v)`)
-  is pushed first (`PSH`), as for a call of a function, and the result is
-  loaded into the acc (`LOD b`). Its loops then run where the expression
-  is, so in a `while` condition they run every turn.
-- `Scripts/wave_map.py` accepts the jumps of these loops (`__Lwh`, and
-  `__Lif` for `softmax` and `argmax`) on the line that calls them; its
-  `--selftest` on `sapho_all` still catches broken maps (2026-11-18).
+  is pushed first (`PSH`), as for a call of a function, and the routine
+  leaves the index in the acc. In a `while` condition it runs every turn.
+- The waveform shows the four words of the call on the line of the call;
+  the routines, after the program, have no source line, as the library's
+  float routines.
+
+## Loops in place, then routines
+
+The first form of this change (2026-11-18) wrote the loops in place for each
+call: in C±, the statements a program would write by hand, built at walker
+time and emitted by `stmt_emit`; in C++, loops in assembly. Each call then
+cost the whole loop again: `cmm_nn` was 552 instructions and `test117` 885,
+against 495 and 793 for the same programs written by hand without the new
+functions (whose C++ version writes `softmax` and `argmax` once, as
+functions, and calls them). A network calls `relu` once per layer and
+`argmax` at least once per output, so the routines (2026-11-19)
+replace the loops: `cmm_nn` is now 386 instructions and `test117` 623, with
+the same outputs.
+
+A routine costs more than a loop in place for one call (4 to 8 words, see
+below) and less from the second call on. Choosing per program (in place when
+called once) was left out: one code path, as for `exp`.
 
 ## C++
 
@@ -86,12 +108,10 @@ Fact, read in the code (`Compilers/CPPComp/Sources/codegen.c`, the section
   helpers, without its comments and never fused. Issue #31 agreed on
   2026-10-27 that the two compilers share the routines. `tanh` and
   `sigmoid` of a number are the sequences of cmmcomp's `stdlib.c`.
-- An array is walked word by word from its address (`gen_addr`), as
-  `__zerofill` does, with `LDI 0` and `STI 0`: a matrix is its rows one
-  after the other, and the loops do not depend on where the array lives
-  (global, local, member). The loops are written in assembly with labels
-  `__Lnn_t<n>` and `__Lnn_s<n>` and temporaries from `new_temp`; they call
-  nothing of the program.
+- An array goes to the same routines as in C±, `nn_*.asm`, appended after
+  `@fim` once: its address from `gen_addr` (so it does not matter where the
+  array lives: global, local, member) in `__nn_p`, the address after its
+  last element in the acc, and a `CAL`.
 - A pointer, a reference, a `std::vector` and a `std::array` are refused
   (no size the compiler knows there); `relu` and `argmax` take signed ints
   and floats (an unsigned word has no negative, nor the order of `LES`),
@@ -99,23 +119,28 @@ Fact, read in the code (`Compilers/CPPComp/Sources/codegen.c`, the section
 
 ## What was measured
 
-On 2026-11-18, 32-bit processor, `#FROUND 0`.
+32-bit processor, `#FROUND 0`.
 
-- The 126 C± tests give the same `.asm` as their goldens.
-- What each call costs, beyond the same program without it, and its cycles
-  on a vector of 16 floats from -2 to 2:
+- The 126 C± tests give the same `.asm` as their goldens, and the 117 C++
+  tests the same `.asm` as `main` (2026-11-19).
+- What a call costs, beyond the same program without it, on a vector of 16
+  floats from -2 to 2 (2026-11-19, the routines): the first call, which
+  brings the routine; each call after it; the cycles a call takes per
+  element. The loops in place of the first form (2026-11-18) cost the
+  number in the last column at every call.
 
-  | call | instructions | data words | cycles per element |
-  |---|---|---|---|
-  | `relu(v);` | 10 (19 for a matrix) | 0 | 8.1 |
-  | `sigmoid(v);` | 42 | 10 | 40.1 |
-  | `tanh(v);` | 46 | 12 | 44.1 |
-  | `softmax(v);` | 71 | 14 | 55.4 |
-  | `argmax(v)` | 18 | 3 | 11.6 |
-  | `sigmoid(x)` | 33 | 10 | |
-  | `relu(x)` | 1 | 0 | |
+  | call | first call: instructions, data words | each further call | cycles per element | in place, every call |
+  |---|---|---|---|---|
+  | `relu(v);` | 14, 4 | 4 | 8.4 | 10 |
+  | `sigmoid(v);` | 46, 14 | 4 | 40.4 | 42 |
+  | `tanh(v);` | 50, 16 | 4 | 44.4 | 46 |
+  | `softmax(v);` | 78, 18 | 4 | 56.9 | 71 |
+  | `argmax(v)` | 26, 7 | 4 | 13.2 | 18 |
+  | `sigmoid(x)` | 33, 10 | 7 | | |
+  | `relu(x)` | 1, 0 | 1 | | |
 
-  The sizes are the same at 4 and at 64 elements.
+  The sizes do not depend on the number of elements. Data words of
+  routines are shared: `sigmoid` and `tanh` together bring `exp` once.
 - `log(exp(x))` gives `x` back up to 103 and less from 104: `exp` passes
   the largest float there. A `softmax` that did not subtract the maximum
   (the compiler changed for the test, then restored) gives the same values
@@ -138,7 +163,8 @@ On 2026-11-18, 32-bit processor, `#FROUND 0`.
 - `Compilers/CMMComp/Tests/cmm_nn`: every form, a tie, one element,
   negatives, `softmax` of `{200, 199, 0}`, `argmax` in a `while` condition,
   on a local array and twice in one expression (the second finds the acc
-  live). `Scripts/nn_ref.py` computes the same program in Python and holds
+  live). 386 instructions, 210 of them in the program and the rest the
+  routines. `Scripts/nn_ref.py` computes the same program in Python and holds
   the sim golden to it; the regression runs it, and the test is in
   `verified.txt`. Changing the reference (a sum without the last element,
   the last of equal elements, an `argmax` computed once before the

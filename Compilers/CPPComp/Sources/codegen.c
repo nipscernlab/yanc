@@ -1900,9 +1900,10 @@ static type *array_elems(type *t, int *n)
 // one set of routines for the two compilers); tanh and sigmoid are its
 // sequences in cmmcomp's stdlib.c.
 //
-// An array is walked word by word from its address (gen_addr), as
-// __zerofill does: a matrix is its rows one after the other, and the loops
-// do not depend on where the array lives (global, local, member).
+// An array goes to a routine of Macros/, nn_*.asm, shared with cmmcomp and
+// appended once whatever the number of calls: its address (gen_addr, so it
+// does not matter where the array lives) in __nn_p, the address after its
+// last element in the acc, and a CAL.
 
 static int g_uses_fexp = 0;    // the program calls __float_exp
 
@@ -1959,13 +1960,25 @@ static void nn_float_op(const char *fn)
     free(ex); free(nu);
 }
 
-// for (p = from; p < end; p++) body: p and end are the names of words; the
-// body starts and ends with any value in the acc
-#define NN_LOOP_TOP(id, p)      do { emit("@__Lnn_t%d NOP", id); } while (0)
-static void nn_loop_bottom(int id, const char *p, const char *end)
+// the routines of Macros/ the program calls, appended once after @fim
+// (cmmcomp's macros.c keeps the same list): float_exp.asm first, then
+// nn_*.asm, the routines of relu, sigmoid, tanh, softmax and argmax on an
+// array, one copy whatever the number of calls
+static const char *const nn_files[] = {"nn_relu_f", "nn_relu_i", "nn_sigmoid", "nn_tanh",
+                                       "nn_softmax", "nn_argmax_f", "nn_argmax_i"};
+#define N_NN_FILES ((int)(sizeof nn_files / sizeof nn_files[0]))
+static int g_uses_nn[N_NN_FILES];
+
+// __nn_p = the array's address, acc = the address after its last element,
+// CAL __<routine>; the routine marked for after @fim
+static void nn_call(expr *arr, int n, const char *routine)
 {
-    emit("LOD %s", p); emit("ADD 1"); emit("SET %s", p);
-    emit("GRE %s", end); emit("LIN"); emit("JIZ __Lnn_t%d", id);   // end > p: next turn
+    gen_addr(arr);
+    emit("SET __nn_p"); emit("ADD %d", n); emit("CAL __%s", routine);
+    for (int k = 0; k < N_NN_FILES; k++)
+        if (!strcmp(nn_files[k], routine)) g_uses_nn[k] = 1;
+    if (!strcmp(routine, "nn_sigmoid") || !strcmp(routine, "nn_tanh") || !strcmp(routine, "nn_softmax"))
+        g_uses_fexp = 1;
 }
 
 static void nn_gen(expr *e)
@@ -1992,101 +2005,34 @@ static void nn_gen(expr *e)
         return;
     }
 
+    // an array: walked as one vector of every element (a matrix is its rows
+    // one after the other)
     int vec = t->base && t->base->kind != TY_ARRAY;
     int is_f = et->kind == TY_FLOAT;
-    if (!strcmp(fn, "relu")) { if (!nn_signed_or_float(et)) msg_error(e->line, MSG_ERR_NN_ELEM, fn, "int or float"); }
-    else if (!strcmp(fn, "argmax")) {
+    if (!strcmp(fn, "relu")) {
+        if (!nn_signed_or_float(et)) msg_error(e->line, MSG_ERR_NN_ELEM, fn, "int or float");
+        nn_call(e->args[0], n, is_f ? "nn_relu_f" : "nn_relu_i");
+    } else if (!strcmp(fn, "argmax")) {
         if (!vec) msg_error(e->line, MSG_ERR_NN_VECTOR, fn);
         if (!nn_signed_or_float(et)) msg_error(e->line, MSG_ERR_NN_ELEM, fn, "int or float");
+        nn_call(e->args[0], n, is_f ? "nn_argmax_f" : "nn_argmax_i");
     } else {
         if (!strcmp(fn, "softmax") && !vec) msg_error(e->line, MSG_ERR_NN_VECTOR, fn);
         if (!is_f) msg_error(e->line, MSG_ERR_NN_ELEM, fn, "float");
+        nn_call(e->args[0], n, !strcmp(fn, "softmax") ? "nn_softmax" :
+                               !strcmp(fn, "sigmoid") ? "nn_sigmoid" : "nn_tanh");
     }
-
-    char *p = new_temp("nnp"), *end = new_temp("nne");
-    gen_addr(e->args[0]);
-
-    if (!strcmp(fn, "relu") || !strcmp(fn, "sigmoid") || !strcmp(fn, "tanh")) {
-        // v[k] = f(v[k]) on every word
-        int id = ++label_n;
-        emit("SET %s", p); emit("ADD %d", n); emit("SET %s", end);
-        NN_LOOP_TOP(id, p);
-        emit("LOD %s", p); emit("PSH"); emit("LDI 0");
-        if (!strcmp(fn, "relu")) emit(is_f ? "F_PST" : "PST");
-        else nn_float_op(fn);
-        emit("STI 0");
-        nn_loop_bottom(id, p, end);
-        free(p); free(end);
-        return;
-    }
-
-    char *base = new_temp("nnb"), *m = new_temp("nnm"), *x = new_temp("nnx");
-    const char *les = is_f ? "F_LES" : "LES";
-    emit("SET %s", base); emit("ADD %d", n); emit("SET %s", end);
-    emit("LOD %s", base); emit("LDI 0"); emit("SET %s", m);         // m = v[0]
-
-    if (!strcmp(fn, "argmax")) {
-        // b = 0; for k: if (v[k] > m) {m = v[k]; b = k}: the first of equal ones stays
-        char *b = new_temp("nnk"), *k = new_temp("nnc");
-        emit("LOD 0"); emit("SET %s", b);
-        if (n > 1) {
-            int id = ++label_n;
-            emit("LOD %s", base); emit("ADD 1"); emit("SET %s", p);
-            emit("LOD 1"); emit("SET %s", k);
-            NN_LOOP_TOP(id, p);
-            emit("LOD %s", p); emit("LDI 0"); emit("SET %s", x);
-            emit("%s %s", les, m); emit("JIZ __Lnn_s%d", id);            // m < v[k]
-            emit("LOD %s", x); emit("SET %s", m); emit("LOD %s", k); emit("SET %s", b);
-            emit("@__Lnn_s%d NOP", id);
-            emit("LOD %s", k); emit("ADD 1"); emit("SET %s", k);
-            nn_loop_bottom(id, p, end);
-        }
-        emit("LOD %s", b);
-        free(b); free(k);
-    } else {
-        // softmax: the maximum first (the SAPHO float has no infinity, and exp
-        // passes the largest float above about 103), then exp(v[k] - m) and
-        // their sum, then one division and a product per element
-        char *sum = new_temp("nns");
-        if (n > 1) {
-            int id = ++label_n;
-            emit("LOD %s", base); emit("ADD 1"); emit("SET %s", p);
-            NN_LOOP_TOP(id, p);
-            emit("LOD %s", p); emit("LDI 0"); emit("SET %s", x);
-            emit("F_LES %s", m); emit("JIZ __Lnn_s%d", id);
-            emit("LOD %s", x); emit("SET %s", m);
-            emit("@__Lnn_s%d NOP", id);
-            nn_loop_bottom(id, p, end);
-        }
-        int id2 = ++label_n, id3 = ++label_n;
-        g_uses_fexp = 1;
-        emit("LOD 0.0"); emit("SET %s", sum);
-        emit("LOD %s", base); emit("SET %s", p);
-        NN_LOOP_TOP(id2, p);
-        emit("LOD %s", p); emit("PSH"); emit("LDI 0");
-        emit("F_SU1 %s", m); emit("CAL __float_exp"); emit("STI 0");    // v[k] = exp(v[k] - m)
-        emit("F_ADD %s", sum); emit("SET %s", sum);                     // STI keeps the acc
-        nn_loop_bottom(id2, p, end);
-        emit("LOD %s", sum); emit("F_DIV 1.0"); emit("SET %s", sum);    // 1 / sum
-        emit("LOD %s", base); emit("SET %s", p);
-        NN_LOOP_TOP(id3, p);
-        emit("LOD %s", p); emit("PSH"); emit("LDI 0");
-        emit("F_MLT %s", sum); emit("STI 0");
-        nn_loop_bottom(id3, p, end);
-        free(sum);
-    }
-    free(base); free(m); free(x); free(p); free(end);
 }
 
-// Macros/float_exp.asm, C±'s routine, after @fim: its lines as they are,
-// without the comments, and never fused (as inline asm)
-static void emit_float_exp(void)
+// a routine of Macros/ (the folder cmmcomp reads its own from), after @fim:
+// its lines as they are, without the comments, and never fused (as inline asm)
+static void emit_macro(const char *file)
 {
     static const char *const dirs[] = EXE_MACROS_DIRS;
     char *dir = exe_find_dir(dirs);
-    char *path = dir ? xasprintf("%s/float_exp.asm", dir) : NULL;
+    char *path = dir ? xasprintf("%s/%s", dir, file) : NULL;
     FILE *f = path ? fopen(path, "r") : NULL;
-    if (!f) msg_fatal(1, MSG_ERR_NO_MACRO, "float_exp.asm");
+    if (!f) msg_fatal(1, MSG_ERR_NO_MACRO, file);
     char ln[512];
     while (fgets(ln, sizeof ln, f)) {
         char *c = strstr(ln, "//"); if (c) *c = 0;
@@ -2096,6 +2042,14 @@ static void emit_float_exp(void)
         if (*b) emit_verbatim(b);
     }
     fclose(f); free(path); free(dir);
+}
+
+// every routine the program calls, after @fim
+static void emit_macros(void)
+{
+    if (g_uses_fexp) emit_macro("float_exp.asm");
+    for (int k = 0; k < N_NN_FILES; k++)
+        if (g_uses_nn[k]) { char *f = xasprintf("%s.asm", nn_files[k]); emit_macro(f); free(f); }
 }
 
 // __construct_members' arguments after (this, base_named) name the member
@@ -5552,6 +5506,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     out_f = out_file;
     ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
     g_uses_udiv = 0; g_uses_u2f = 0; g_uses_f2u = 0; n_stinit = 0; g_n_inst = 0; g_uses_fexp = 0;
+    memset(g_uses_nn, 0, sizeof g_uses_nn);
     g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
     cg_unit = u;
     claims_reset();
@@ -5659,7 +5614,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     if (g_uses_heap) emit_heap();
     if (g_uses_u2f)  emit_u2f();
     if (g_uses_f2u)  emit_f2u();
-    if (g_uses_fexp) emit_float_exp();     // exp, from C±'s Macros/ (issue #31)
+    emit_macros();                         // exp and the nn_ routines, from C±'s Macros/ (issue #31)
 
     // all instructions buffered: fuse, then write the .asm + pc_mem (ins_count
     // is finalised here, after fusion, so num_ins matches the emitted program).

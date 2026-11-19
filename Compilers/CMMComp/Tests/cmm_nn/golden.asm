@@ -12,58 +12,17 @@ NOP
 #arrayd tie 2 4 4 1.0 5.0 5.0 -2.0
 #arrayd neg 2 3 3 -4.0 -1.0 -2.0
 #arrayd cnt 1 3 3 0 0 9
-#SHARE __nnk1_main __nnk0_main
-#SHARE __nnk2_main __nnk0_main
-#SHARE __nnk3_main main_k
-#SHARE __nnk4_main __nnk0_main
-#SHARE __tanh_e main_k
-#SHARE __nnk10_main __nns7_main
-#SHARE __nnk9_main __nnm11_main
-#SHARE __nnk15_main __nns12_main
-#SHARE __nnk14_main __nnm16_main
-#SHARE __nnk20_main __nns17_main
-#SHARE __nnk19_main main_k
-#SHARE __nnb21_main main_k
-#SHARE __nnm22_main __tanh_n
-#SHARE __nnb24_main main_k
-#SHARE __nnm25_main __tanh_n
-#SHARE __nnk26_main __nnk23_main
-#SHARE __nnb27_main main_k
-#SHARE __nnm28_main __tanh_n
-#SHARE __nnk29_main __nnk23_main
-#SHARE __nnb30_main main_k
-#SHARE __nnm31_main __tanh_n
-#SHARE __nnk32_main __nnk23_main
-#SHARE __nnb33_main main_k
-#SHARE __nnm34_main __tanh_n
-#SHARE __nnk35_main __nnk23_main
-#SHARE __nnb36_main __tanh_n
-#SHARE __nnm37_main __nnk23_main
-#SHARE __nnb39_main main_x
-#SHARE __nnm40_main main_k
-#SHARE __nnk41_main __tanh_n
-#SHARE __nnb42_main main_x
-#SHARE __nnm43_main main_k
-#SHARE __nnk44_main __tanh_n
-#SHARE best_n main_k
-#SHARE __nnb45_best __tanh_n
-#SHARE __nnm46_best __nnk23_main
-#SHARE __nnk47_best __nnk38_main
-#SHARE __exp_x main_k
-#SHARE __exp_q __tanh_n
-#SHARE __exp_n __tanh_n
-#SHARE __exp_r main_k
-@main LOD 0
-SET __nnk0_main
-@__Lwh10 LOD __nnk0_main
-P_LOD __nnk0_main
-LDI v
-F_PST
-STI v
-INC __nnk0_main
-LES 4
-JIZ __Lwh10
-@__Lwh10end LOD 0
+#SHARE __exp_n __exp_q
+#SHARE __exp_r __exp_x
+#SHARE __nn_te __exp_x
+#SHARE __nn_tn __exp_q
+#SHARE __nn_x __exp_x
+#SHARE __nn_b __exp_q
+@main LEA v
+SET __nn_p
+ADD 5
+CAL __nn_relu_f
+LOD 0
 SET main_k
 @__Lwh1 LOD main_k
 LDI v
@@ -73,17 +32,11 @@ OUT 0
 INC main_k
 LES 4
 JIZ __Lwh1
-@__Lwh1end LOD 0
-SET __nnk1_main
-@__Lwh11 LOD __nnk1_main
-P_LOD __nnk1_main
-LDI iv
-PST
-STI iv
-INC __nnk1_main
-LES 3
-JIZ __Lwh11
-@__Lwh11end LOD 0
+@__Lwh1end LEA iv
+SET __nn_p
+ADD 4
+CAL __nn_relu_i
+LOD 0
 SET main_k
 @__Lwh2 LOD main_k
 LDI iv
@@ -91,26 +44,11 @@ OUT 0
 INC main_k
 LES 3
 JIZ __Lwh2
-@__Lwh2end LOD 0
-SET __nnk2_main
-@__Lwh13 LOD 0
-SET __nnk3_main
-@__Lwh12 LOD __nnk2_main
-MLT 3
-ADD __nnk3_main
-P_LOD __nnk2_main
-MLT 3
-ADD __nnk3_main
-LDI m
-F_PST
-STI m
-INC __nnk3_main
-LES 2
-JIZ __Lwh12
-@__Lwh12end INC __nnk2_main
-LES 1
-JIZ __Lwh13
-@__Lwh13end LOD 0
+@__Lwh2end LEA m
+SET __nn_p
+ADD 6
+CAL __nn_relu_f
+LOD 0
 SET main_k
 @__Lwh3 LOD 0
 MLT 3
@@ -134,23 +72,11 @@ OUT 0
 INC main_k
 LES 2
 JIZ __Lwh4
-@__Lwh4end LOD 0
-SET __nnk4_main
-@__Lwh14 LOD __nnk4_main
-P_LOD __nnk4_main
-LDI g
-F_NEG
-CAL __float_exp
-F_ADD 1.0
-F_DIV 1.0
-NOP
-NOP
-F_QUO
-STI g
-INC __nnk4_main
-LES 2
-JIZ __Lwh14
-@__Lwh14end LOD 0
+@__Lwh4end LEA g
+SET __nn_p
+ADD 3
+CAL __nn_sigmoid
+LOD 0
 SET main_k
 @__Lwh5 LOD main_k
 LDI g
@@ -160,27 +86,11 @@ OUT 0
 INC main_k
 LES 2
 JIZ __Lwh5
-@__Lwh5end LOD 0
-SET __nnk5_main
-@__Lwh15 LOD __nnk5_main
-P_LOD __nnk5_main
-LDI t
-F_MLT 2.0
-CAL __float_exp
-SET __tanh_e
-F_ADD -1.0
-SET __tanh_n
-LOD __tanh_e
-F_ADD 1.0
-F_DIV __tanh_n
-NOP
-NOP
-F_QUO
-STI t
-INC __nnk5_main
-LES 2
-JIZ __Lwh15
-@__Lwh15end LOD 0
+@__Lwh5end LEA t
+SET __nn_p
+ADD 3
+CAL __nn_tanh
+LOD 0
 SET main_k
 @__Lwh6 LOD main_k
 LDI t
@@ -190,52 +100,11 @@ OUT 0
 INC main_k
 LES 2
 JIZ __Lwh6
-@__Lwh6end LOD_V s 0
-SET __nnm6_main
-LOD 1
-SET __nnk10_main
-@__Lwh18 LOD __nnk10_main
-LDI s
-F_LES __nnm6_main
-JIZ __Lif1else
-LOD __nnk10_main
-LDI s
-SET __nnm6_main
-@__Lif1else INC __nnk10_main
-LES 4
-JIZ __Lwh18
-@__Lwh18end LOD 0.0
-SET __nns7_main
+@__Lwh6end LEA s
+SET __nn_p
+ADD 5
+CAL __nn_softmax
 LOD 0
-SET __nnk8_main
-@__Lwh16 LOD __nnk8_main
-P_LOD __nnk8_main
-LDI s
-F_SU1 __nnm6_main
-CAL __float_exp
-STI s
-F_ADD __nns7_main
-SET __nns7_main
-INC __nnk8_main
-LES 4
-JIZ __Lwh16
-@__Lwh16end LOD __nns7_main
-F_DIV 1.0
-NOP
-NOP
-F_QUO
-SET __nns7_main
-LOD 0
-SET __nnk9_main
-@__Lwh17 LOD __nnk9_main
-P_LOD __nnk9_main
-LDI s
-F_MLT __nns7_main
-STI s
-INC __nnk9_main
-LES 4
-JIZ __Lwh17
-@__Lwh17end LOD 0
 SET main_k
 @__Lwh7 LOD main_k
 LDI s
@@ -245,52 +114,11 @@ OUT 0
 INC main_k
 LES 4
 JIZ __Lwh7
-@__Lwh7end LOD_V big 0
-SET __nnm11_main
-LOD 1
-SET __nnk15_main
-@__Lwh21 LOD __nnk15_main
-LDI big
-F_LES __nnm11_main
-JIZ __Lif2else
-LOD __nnk15_main
-LDI big
-SET __nnm11_main
-@__Lif2else INC __nnk15_main
-LES 2
-JIZ __Lwh21
-@__Lwh21end LOD 0.0
-SET __nns12_main
+@__Lwh7end LEA big
+SET __nn_p
+ADD 3
+CAL __nn_softmax
 LOD 0
-SET __nnk13_main
-@__Lwh19 LOD __nnk13_main
-P_LOD __nnk13_main
-LDI big
-F_SU1 __nnm11_main
-CAL __float_exp
-STI big
-F_ADD __nns12_main
-SET __nns12_main
-INC __nnk13_main
-LES 2
-JIZ __Lwh19
-@__Lwh19end LOD __nns12_main
-F_DIV 1.0
-NOP
-NOP
-F_QUO
-SET __nns12_main
-LOD 0
-SET __nnk14_main
-@__Lwh20 LOD __nnk14_main
-P_LOD __nnk14_main
-LDI big
-F_MLT __nns12_main
-STI big
-INC __nnk14_main
-LES 2
-JIZ __Lwh20
-@__Lwh20end LOD 0
 SET main_k
 @__Lwh8 LOD main_k
 LDI big
@@ -300,180 +128,45 @@ OUT 0
 INC main_k
 LES 2
 JIZ __Lwh8
-@__Lwh8end LOD_V one 0
-SET __nnm16_main
-LOD 1
-SET __nnk20_main
-@__Lwh24 LOD __nnk20_main
-GRE 1
-JIZ __Lwh24end
-LOD __nnk20_main
-LDI one
-F_LES __nnm16_main
-JIZ __Lif3else
-LOD __nnk20_main
-LDI one
-SET __nnm16_main
-@__Lif3else INC __nnk20_main
-JMP __Lwh24
-@__Lwh24end LOD 0.0
-SET __nns17_main
-LOD 0
-SET __nnk18_main
-@__Lwh22 LOD __nnk18_main
-P_LOD __nnk18_main
-LDI one
-F_SU1 __nnm16_main
-CAL __float_exp
-STI one
-F_ADD __nns17_main
-SET __nns17_main
-INC __nnk18_main
-LES 0
-JIZ __Lwh22
-@__Lwh22end LOD __nns17_main
-F_DIV 1.0
-NOP
-NOP
-F_QUO
-SET __nns17_main
-LOD 0
-SET __nnk19_main
-@__Lwh23 LOD __nnk19_main
-P_LOD __nnk19_main
-LDI one
-F_MLT __nns17_main
-STI one
-INC __nnk19_main
-LES 0
-JIZ __Lwh23
-@__Lwh23end LOD_V one 0
+@__Lwh8end LEA one
+SET __nn_p
+ADD 1
+CAL __nn_softmax
+LOD_V one 0
 F_MLT 1000.0
 F2I
 OUT 0
-LOD 0
-SET __nnb21_main
-LOD_V s 0
-SET __nnm22_main
-LOD 1
-SET __nnk23_main
-@__Lwh25 LOD __nnk23_main
-LDI s
-F_LES __nnm22_main
-JIZ __Lif4else
-LOD __nnk23_main
-LDI s
-SET __nnm22_main
-LOD __nnk23_main
-SET __nnb21_main
-@__Lif4else INC __nnk23_main
-LES 4
-JIZ __Lwh25
-@__Lwh25end LOD __nnb21_main
+LEA s
+SET __nn_p
+ADD 5
+CAL __nn_argmax_f
 OUT 0
-LOD 0
-SET __nnb24_main
-LOD_V iv 0
-SET __nnm25_main
-LOD 1
-SET __nnk26_main
-@__Lwh26 LOD __nnk26_main
-LDI iv
-LES __nnm25_main
-JIZ __Lif5else
-LOD __nnk26_main
-LDI iv
-SET __nnm25_main
-LOD __nnk26_main
-SET __nnb24_main
-@__Lif5else INC __nnk26_main
-LES 3
-JIZ __Lwh26
-@__Lwh26end LOD __nnb24_main
+LEA iv
+SET __nn_p
+ADD 4
+CAL __nn_argmax_i
 OUT 0
-LOD 0
-SET __nnb27_main
-LOD_V tie 0
-SET __nnm28_main
-LOD 1
-SET __nnk29_main
-@__Lwh27 LOD __nnk29_main
-LDI tie
-F_LES __nnm28_main
-JIZ __Lif6else
-LOD __nnk29_main
-LDI tie
-SET __nnm28_main
-LOD __nnk29_main
-SET __nnb27_main
-@__Lif6else INC __nnk29_main
-LES 3
-JIZ __Lwh27
-@__Lwh27end LOD __nnb27_main
+LEA tie
+SET __nn_p
+ADD 4
+CAL __nn_argmax_f
 OUT 0
-LOD 0
-SET __nnb30_main
-LOD_V one 0
-SET __nnm31_main
-LOD 1
-SET __nnk32_main
-@__Lwh28 LOD __nnk32_main
-GRE 1
-JIZ __Lwh28end
-LOD __nnk32_main
-LDI one
-F_LES __nnm31_main
-JIZ __Lif7else
-LOD __nnk32_main
-LDI one
-SET __nnm31_main
-LOD __nnk32_main
-SET __nnb30_main
-@__Lif7else INC __nnk32_main
-JMP __Lwh28
-@__Lwh28end LOD __nnb30_main
+LEA one
+SET __nn_p
+ADD 1
+CAL __nn_argmax_f
 OUT 0
-LOD 0
-SET __nnb33_main
-LOD_V neg 0
-SET __nnm34_main
-LOD 1
-SET __nnk35_main
-@__Lwh29 LOD __nnk35_main
-LDI neg
-F_LES __nnm34_main
-JIZ __Lif8else
-LOD __nnk35_main
-LDI neg
-SET __nnm34_main
-LOD __nnk35_main
-SET __nnb33_main
-@__Lif8else INC __nnk35_main
-LES 2
-JIZ __Lwh29
-@__Lwh29end LOD __nnb33_main
+LEA neg
+SET __nn_p
+ADD 3
+CAL __nn_argmax_f
 OUT 0
 LOD 0
 SET main_k
-@__Lwh9 LOD 0
-SET __nnb36_main
-LOD_V cnt 0
-SET __nnm37_main
-LOD 1
-SET __nnk38_main
-@__Lwh30 LOD __nnk38_main
-LDI cnt
-LES __nnm37_main
-JIZ __Lif9else
-LOD __nnk38_main
-LDI cnt
-SET __nnm37_main
-LOD __nnk38_main
-SET __nnb36_main
-@__Lif9else INC __nnk38_main
-LES 2
-JIZ __Lwh30
-@__Lwh30end LOD __nnb36_main
+@__Lwh9 LEA cnt
+SET __nn_p
+ADD 3
+CAL __nn_argmax_i
 XOR 0
 JIZ __Lwh9end
 LOD_V cnt 0
@@ -486,45 +179,16 @@ OUT 0
 LOD 10
 CAL best
 OUT 0
-LOD 0
-SET __nnb39_main
-LOD_V tie 0
-SET __nnm40_main
-LOD 1
-SET __nnk41_main
-@__Lwh31 LOD __nnk41_main
-LDI tie
-F_LES __nnm40_main
-JIZ __Lif10else
-LOD __nnk41_main
-LDI tie
-SET __nnm40_main
-LOD __nnk41_main
-SET __nnb39_main
-@__Lif10else INC __nnk41_main
-LES 3
-JIZ __Lwh31
-@__Lwh31end LOD __nnb39_main
+LEA tie
+SET __nn_p
+ADD 4
+CAL __nn_argmax_f
 MLT 10
-P_LOD 0
-SET __nnb42_main
-LOD_V neg 0
-SET __nnm43_main
-LOD 1
-SET __nnk44_main
-@__Lwh32 LOD __nnk44_main
-LDI neg
-F_LES __nnm43_main
-JIZ __Lif11else
-LOD __nnk44_main
-LDI neg
-SET __nnm43_main
-LOD __nnk44_main
-SET __nnb42_main
-@__Lif11else INC __nnk44_main
-LES 2
-JIZ __Lwh32
-@__Lwh32end LOD __nnb42_main
+PSH
+LEA neg
+SET __nn_p
+ADD 3
+CAL __nn_argmax_f
 S_ADD
 OUT 0
 LOD 0.5
@@ -558,25 +222,10 @@ LOD -0.5
 SET_V best_loc 1
 LOD 2.5
 SET_V best_loc 2
-LOD 0
-SET __nnb45_best
-LOD_V best_loc 0
-SET __nnm46_best
-LOD 1
-SET __nnk47_best
-@__Lwh33 LOD __nnk47_best
-LDI best_loc
-F_LES __nnm46_best
-JIZ __Lif12else
-LOD __nnk47_best
-LDI best_loc
-SET __nnm46_best
-LOD __nnk47_best
-SET __nnb45_best
-@__Lif12else INC __nnk47_best
-LES 2
-JIZ __Lwh33
-@__Lwh33end LOD __nnb45_best
+LEA best_loc
+SET __nn_p
+ADD 3
+CAL __nn_argmax_f
 MLT best_n
 RET
 
@@ -611,3 +260,189 @@ RET
             F_ADD 1.0                    // 1/0!  -> exp(r)
             F_SCL __exp_n                  // * 2^n  -> exp(x)
             RET
+// relu on a float array, in place: v[k] = v[k], or 0 when negative --------------
+// docs/design/nn-functions.md. Called with __nn_p = the address of the first
+// element and the acc = the address after the last; at least one element.
+// One copy for every call of the program, in C± and in C++.
+
+@__nn_relu_f    SET   __nn_e                // end
+@__nn_relu_f_t  LOD   __nn_p
+                PSH                         // the address, for STI
+                LDI   0                     // v[k]
+                F_PST                       // 0 when negative
+                STI   0
+                INC __nn_p
+                GRE   __nn_e                // more to go while end > p
+                JNZ   __nn_relu_f_t
+                RET
+// relu on an int array, in place: v[k] = v[k], or 0 when negative ---------------
+// docs/design/nn-functions.md. Called with __nn_p = the address of the first
+// element and the acc = the address after the last; at least one element.
+
+@__nn_relu_i    SET   __nn_e                // end
+@__nn_relu_i_t  LOD   __nn_p
+                PSH                         // the address, for STI
+                LDI   0                     // v[k]
+                PST                         // 0 when negative
+                STI   0
+                INC __nn_p
+                GRE   __nn_e                // more to go while end > p
+                JNZ   __nn_relu_i_t
+                RET
+// sigmoid on a float array, in place: v[k] = 1 / (1 + exp(-v[k])) ---------------
+// docs/design/nn-functions.md. Called with __nn_p = the address of the first
+// element and the acc = the address after the last; at least one element.
+// Needs float_exp.asm.
+
+@__nn_sigmoid   SET   __nn_e                // end
+@__nn_sigmoid_t LOD   __nn_p
+                PSH                         // the address, for STI
+                LDI   0                     // x = v[k]
+                F_NEG
+                CAL   __float_exp           // exp(-x)
+                F_ADD 1.0
+                F_DIV 1.0                   // 1 / (1 + exp(-x))   (F_DIV X = X / acc)
+NOP
+NOP
+F_QUO
+                STI   0
+                INC __nn_p
+                GRE   __nn_e                // more to go while end > p
+                JNZ   __nn_sigmoid_t
+                RET
+// tanh on a float array, in place: v[k] = (exp(2x) - 1) / (exp(2x) + 1) ----------
+// docs/design/nn-functions.md. Called with __nn_p = the address of the first
+// element and the acc = the address after the last; at least one element.
+// Needs float_exp.asm.
+
+@__nn_tanh      SET   __nn_e                // end
+@__nn_tanh_t    LOD   __nn_p
+                PSH                         // the address, for STI
+                LDI   0                     // x = v[k]
+                F_MLT 2.0
+                CAL   __float_exp           // exp(2x)
+                SET   __nn_te
+                F_ADD -1.0
+                SET   __nn_tn               // exp(2x) - 1
+                LOD   __nn_te
+                F_ADD 1.0                   // exp(2x) + 1
+                F_DIV __nn_tn               // (F_DIV X = X / acc)
+NOP
+NOP
+F_QUO
+                STI   0
+                INC __nn_p
+                GRE   __nn_e                // more to go while end > p
+                JNZ   __nn_tanh_t
+                RET
+// softmax on a float vector, in place: v[k] = exp(v[k] - max) / sum -------------
+// docs/design/nn-functions.md. Called with __nn_p = the address of the first
+// element and the acc = the address after the last; at least one element.
+// The maximum goes first: the SAPHO float has no infinity, and exp passes the
+// largest float above about 103. One division, then a product per element.
+// Needs float_exp.asm.
+
+@__nn_softmax   SET   __nn_e                // end
+                LOD   __nn_p
+                SET   __nn_a                // the first element's address
+                LDI   0
+                SET   __nn_m                // m = v[0]
+@__nn_softmax_m INC __nn_p // m = the largest element
+                GRE   __nn_e
+                JIZ   __nn_softmax_e
+                LOD   __nn_p
+                LDI   0
+                SET   __nn_x
+                F_LES __nn_m                // m < v[k]
+                JIZ   __nn_softmax_m
+                LOD   __nn_x
+                SET   __nn_m
+                JMP   __nn_softmax_m
+@__nn_softmax_e LOD   0.0                   // v[k] = exp(v[k] - m), s = their sum
+                SET   __nn_s
+                LOD   __nn_a
+                SET   __nn_p
+@__nn_softmax_x LOD   __nn_p
+                PSH
+                LDI   0
+                F_SU1 __nn_m                // v[k] - m
+                CAL   __float_exp
+                STI   0                     // keeps the acc
+                F_ADD __nn_s
+                SET   __nn_s
+                INC __nn_p
+                GRE   __nn_e
+                JNZ   __nn_softmax_x
+                LOD   __nn_s
+                F_DIV 1.0                   // 1 / s   (F_DIV X = X / acc)
+NOP
+NOP
+F_QUO
+                SET   __nn_s
+                LOD   __nn_a
+                SET   __nn_p
+@__nn_softmax_d LOD   __nn_p                // v[k] = v[k] / s
+                PSH
+                LDI   0
+                F_MLT __nn_s
+                STI   0
+                INC __nn_p
+                GRE   __nn_e
+                JNZ   __nn_softmax_d
+                RET
+// argmax of a float vector: the index of the largest element, in the acc --------
+// docs/design/nn-functions.md. Called with __nn_p = the address of the first
+// element and the acc = the address after the last; at least one element.
+// The first of equal elements stays: only a larger one moves the index.
+
+@__nn_argmax_f   SET   __nn_e                // end
+                LOD   __nn_p
+                SET   __nn_a                // the first element's address
+                SET   __nn_b                // the largest one's
+                LDI   0
+                SET   __nn_m                // m = v[0]
+@__nn_argmax_f_t INC __nn_p
+                GRE   __nn_e
+                JIZ   __nn_argmax_f_e
+                LOD   __nn_p
+                LDI   0
+                SET   __nn_x
+                F_LES __nn_m                // m < v[k]
+                JIZ   __nn_argmax_f_t
+                LOD   __nn_x
+                SET   __nn_m
+                LOD   __nn_p
+                SET   __nn_b
+                JMP   __nn_argmax_f_t
+@__nn_argmax_f_e LOD   __nn_a                // b - a, the index
+                NEG
+                ADD   __nn_b
+                RET
+// argmax of a int vector: the index of the largest element, in the acc --------
+// docs/design/nn-functions.md. Called with __nn_p = the address of the first
+// element and the acc = the address after the last; at least one element.
+// The first of equal elements stays: only a larger one moves the index.
+
+@__nn_argmax_i   SET   __nn_e                // end
+                LOD   __nn_p
+                SET   __nn_a                // the first element's address
+                SET   __nn_b                // the largest one's
+                LDI   0
+                SET   __nn_m                // m = v[0]
+@__nn_argmax_i_t INC __nn_p
+                GRE   __nn_e
+                JIZ   __nn_argmax_i_e
+                LOD   __nn_p
+                LDI   0
+                SET   __nn_x
+                LES   __nn_m                // m < v[k]
+                JIZ   __nn_argmax_i_t
+                LOD   __nn_x
+                SET   __nn_m
+                LOD   __nn_p
+                SET   __nn_b
+                JMP   __nn_argmax_i_t
+@__nn_argmax_i_e LOD   __nn_a                // b - a, the index
+                NEG
+                ADD   __nn_b
+                RET

@@ -165,6 +165,7 @@ value. What the common ones mean and how to get past them is in
 - Info: adding assembly macro for sin computation
 - Info: adding assembly macro for tangent computation
 - Info: adding assembly macro for exponential computation
+- Info: adding the routine <name>, one copy for every call
 - Info: adding assembly macro for natural-logarithm computation
 - Info: array initialization with file <name> for variable '<name>' at line <n>
 - Info: Dirac notation for shift register in vector <name> detected at line <n>
