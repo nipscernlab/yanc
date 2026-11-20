@@ -45,21 +45,20 @@ rest is the program; `out(0, acc)` puts `acc` on output port 0.
 yanc my_program.cmm
 ```
 
-`yanc` compiles the program and builds the processor `my_program` in the
-folder `my_program/`: its Verilog `my_program.v`, its memories, and a
+`yanc` compiles the program and builds the processor `my_program` beside
+it, in the same folder: its Verilog `my_program.v`, its memories, and a
 testbench `my_program_tb.v` (see [The command line](command-line.md)). It
-prints `SAPHO processor ready: my_program/my_program.v`.
+prints `SAPHO processor ready: my_program.v`.
 
 ## Simulate it
 
 The testbench runs the processor and writes what it outputs to
-`output_0.txt`. With Icarus, from the output folder (`SAPHO` being the
+`output_0.txt`. With Icarus, in the same folder (`SAPHO` being the
 `SAPHO/` folder of the package, written `/c/path/to/SAPHO` in the MSYS2
 terminal on Windows):
 
 ```sh
 export SAPHO=/path/to/yanc/SAPHO
-cd my_program
 iverilog -s my_program_tb -o sim.vvp -y "$SAPHO" my_program_tb.v my_program.v
 vvp sim.vvp
 cat output_0.txt
@@ -78,11 +77,11 @@ executed, the assembly instruction, and every variable by name (a variable
 written and never read is not in the processor, see below):
 
 ```sh
-gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
+gen_gtkw my_program_tb.vcd my_program_tb.gtkw .
 gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
 
-(`..` is the folder that holds the output folder; see
+(`.` is the folder the processor is in; see
 [Simulation](simulation.md).)
 
 ![One turn of the loop in GTKWave, from 154 to 215 ns: the Assembly track steps through LOD main_acc, ADD main_k, SET main_acc, LOD main_k, ADD 1, SET main_k; acc goes from 1 to 3 and k from 2 to 3](images/first-program-loop.png)

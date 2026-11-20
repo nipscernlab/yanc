@@ -703,7 +703,7 @@ void parse_lang_flag(int *argc, char **argv);
       "asmcomp e a forma de onda usam.\n" \
       "\n" \
       "Opções:\n" \
-      "  -o, --output <dir>      pasta de saída (padrão: ./<nome>)\n" \
+      "  -o, --output <dir>      pasta de saída (padrão: a pasta do fonte)\n" \
       "  --wave-arrays           cada elemento de vetor vira um sinal no GTKWave\n" \
       "  --lang=en|pt            idioma das mensagens (padrão: en, ou YANC_LANG)\n" \
       "  -h, --help              mostra esta ajuda e sai\n" \
@@ -718,7 +718,7 @@ void parse_lang_flag(int *argc, char **argv);
       "src_lines.txt) that asmcomp and the waveform use.\n" \
       "\n" \
       "Options:\n" \
-      "  -o, --output <dir>      output folder (default: ./<name>)\n" \
+      "  -o, --output <dir>      output folder (default: the source's folder)\n" \
       "  --wave-arrays           each array element as its own GTKWave signal\n" \
       "  --lang=en|pt            message language (default: en, or YANC_LANG)\n" \
       "  -h, --help              show this help and exit\n" \

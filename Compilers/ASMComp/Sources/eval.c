@@ -119,8 +119,8 @@ const char *src_dir(void)
 }
 
 // the same folder as the generated testbench names it: relative to the
-// output folder, where the simulation runs (".." when the output is the
-// default prog/ beside the source); absolute only across drives
+// output folder, where the simulation runs ("." when the output is the
+// default, the source's own folder); absolute only across drives
 const char *src_rel(void)
 {
     static char *rel = NULL;

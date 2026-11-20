@@ -65,8 +65,8 @@ void cli_parse(int argc, char **argv, cli_args *out)
     }
 
     // the processor takes the name of the source file; the Macros/ folder is
-    // the one next to the tool (exe_dir.h); -o defaults to the folder
-    // ./<name>, where everything goes (the .asm and the tables) -------------
+    // the one next to the tool (exe_dir.h); -o defaults to the source's own
+    // folder (#199), where everything goes (the .asm and the tables) -------
 
     static const char *const macros_dirs[] = EXE_MACROS_DIRS;
     out->macros_dir = exe_find_dir(macros_dirs);
@@ -81,7 +81,7 @@ void cli_parse(int argc, char **argv, cli_args *out)
     }
     if (!out->proc_dir && out->name)
     {
-        out->proc_dir = xasprintf("./%s", out->name);
+        out->proc_dir = path_dir(out->input);
     }
     if (out->proc_dir) {make_dir(out->proc_dir); out->temp_dir = out->proc_dir;}
 

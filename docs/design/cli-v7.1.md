@@ -5,6 +5,11 @@ What changed for whoever runs YANC between v6.0 and v7.1 (2026-10-11 to
 the CHANGELOG (`[Unreleased]`); how to run is in
 [`simulation.md`](../simulation.md).
 
+Since issue #199 (2026-11-20) the default output folder is no longer
+`./<name>` but the source's own folder: `yanc prog.cmm` writes `prog.v`
+beside `prog.cmm`, and `yanc prog.asm` assembles in place. The rest of this
+note is v7.1 as it was.
+
 | before (v6.0) | now (v7.1) |
 |---|---|
 | four or five tools per program: `cmmcomp`, `appcomp`, `asmcomp` (C++: `cpppp`, `cppcomp`, `appcomp`, `asmcomp`) | one command, `yanc prog.cmm` or `yanc prog.cpp`; underneath, `cmmcomp` or `cppcomp`, then `asmcomp` |

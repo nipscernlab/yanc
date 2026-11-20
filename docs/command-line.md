@@ -29,7 +29,7 @@ yanc [options] <file.cmm | file.cpp | file.asm>
 
 | option | does |
 |---|---|
-| `-o <dir>` | the output folder (default `./<name>`) |
+| `-o <dir>` | the output folder (default: the source's own folder) |
 | `-S` | compile only: stop at `<name>.asm` |
 | `-I <dir>` | an extra `#include` folder (C++; repeatable) |
 | `-f <MHz>` | the testbench clock (default 100) |
@@ -40,7 +40,7 @@ yanc [options] <file.cmm | file.cpp | file.asm>
 | `-h`, `-V` | help, version |
 
 A `.asm` is only assembled, in its own folder: `yanc -S prog.cmm` and then
-`yanc prog/prog.asm` do in two steps what `yanc prog.cmm` does in one (an
+`yanc prog.asm` do in two steps what `yanc prog.cmm` does in one (an
 IDE shows the two outputs apart that way). The `.asm`'s file name names the
 processor, with the same rule as a source file's.
 
@@ -77,13 +77,14 @@ processor: give its depth with `#SDEPTH` (or the data stack's with
 
 ## What lands where
 
-The files you write stay beside the source: the source itself, the files
+The files you write live beside the source: the source itself, the files
 that initialise arrays (`int c[3] "coefs.txt";`), and the simulation inputs
 (`input_N.txt` feeds input port N, `cade_k.txt` link k). Everything the
-tools write goes to one output folder, `./<name>/` unless `-o` says
-otherwise. For `my_program.cpp`:
+tools write goes to the output folder, which is the source's own folder
+unless `-o` says otherwise, wherever the command runs: `yanc filtro/filtro.cmm`
+writes `filtro/filtro.v`. For `my_program.cpp`:
 
-| file in `my_program/` | written by | what it is |
+| file | written by | what it is |
 |---|---|---|
 | `my_program.v` | asmcomp | the processor: SAPHO with this program's parameters |
 | `my_program_inst.mif`, `my_program_data.mif` | asmcomp | the instruction and data memory images |
@@ -92,6 +93,11 @@ otherwise. For `my_program.cpp`:
 | `prog_log.txt`, `pc_my_program_mem.txt`, `src_lines.txt` | cppcomp / cmmcomp | the variables, the line of source each instruction came from, the source text: what the waveform shows (and where the source is) |
 | `app_log.txt`, `trad_opcode.txt` | asmcomp | the address of every label, the sizes, the instruction names for the waveform |
 | `output_N.txt`, `toma_k.txt`, `my_program_tb.vcd` | the simulation | what the program wrote, and the waveform |
+
+`prog_log.txt`, `src_lines.txt`, `app_log.txt`, `trad_opcode.txt` and
+`output_N.txt` do not carry the program's name, so two programs in one
+folder overwrite each other's: keep one program per folder, or give each its
+own with `-o`.
 
 To synthesize, take `my_program.v` and the two `.mif` files, and the SAPHO
 modules in the `SAPHO/` folder that comes with YANC (`processor.v`,
@@ -108,7 +114,7 @@ Each can be run alone; the source file is the argument without an option,
 and `-h` lists the options.
 
 ```
-cmmcomp [-o <dir>] [--wave-arrays] <file.cmm>         the .asm and the tables into <dir> (default ./<name>)
+cmmcomp [-o <dir>] [--wave-arrays] <file.cmm>         the .asm and the tables into <dir> (default: the source's folder)
 cppcomp [-o <dir>] [-I <dir>]... [-E] <file.cpp>      the same for C++; -E prints the preprocessed source
 asmcomp [-f <MHz>] [-c <clocks>] <file.asm>           the Verilog, memories and testbench beside the .asm
 gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]      a formatted GTKWave view of a dump (see Simulation)

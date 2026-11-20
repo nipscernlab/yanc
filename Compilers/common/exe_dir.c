@@ -110,6 +110,18 @@ char *path_stem(const char *path)
     return r;
 }
 
+char *path_dir(const char *path)
+{
+    const char *b = NULL;
+    for (const char *c = path; *c; c++) if (*c == '/' || *c == '\\') b = c;
+    if (!b) return xstrdup(".");
+    if (b == path) return xstrdup("/");                 // "/prog.cmm"
+    size_t n = (size_t)(b - path);
+    char *r = xmalloc(n + 1);
+    memcpy(r, path, n); r[n] = 0;
+    return r;
+}
+
 const char *exe_dir(void)
 {
     static char dir[4096];

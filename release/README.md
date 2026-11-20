@@ -53,8 +53,8 @@ are in the Quick start of the main README:
 <https://github.com/nipscernlab/yanc#quick-start>. They run as they are on
 `example/my_program.cpp`, which prints `55`.
 
-The C± version is the same command on the `.cmm`; it writes into
-`./my_program/`:
+The C± version is the same command on the `.cmm`; it writes beside the
+source, into `example/`:
 
 ```
 yanc example/my_program.cmm

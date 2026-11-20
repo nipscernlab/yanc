@@ -42,11 +42,11 @@ static void usage(FILE *f)
         "  yanc [opções] <arq.cmm | arq.cpp | arq.asm>\n"
         "\n"
         "Compila o programa (cmmcomp ou cppcomp) e gera o processador (asmcomp):\n"
-        "o Verilog, as memórias e o testbench, numa pasta com o nome do programa.\n"
+        "o Verilog, as memórias e o testbench, na pasta do fonte.\n"
         "Um .asm só é montado, na pasta dele.\n"
         "\n"
         "Opções:\n"
-        "  -o <dir>         pasta de saída (padrão: ./<nome>)\n"
+        "  -o <dir>         pasta de saída (padrão: a pasta do fonte)\n"
         "  -S               só compila, para no <nome>.asm\n"
         "  -I <dir>         pasta extra de #include (C++; repetível)\n"
         "  -f <MHz>         clock do testbench (padrão: 100)\n"
@@ -62,11 +62,11 @@ static void usage(FILE *f)
         "  yanc [options] <file.cmm | file.cpp | file.asm>\n"
         "\n"
         "Compiles the program (cmmcomp or cppcomp) and builds the processor\n"
-        "(asmcomp): the Verilog, the memories and the testbench, in a folder named\n"
-        "after the program. A .asm is only assembled, in its own folder.\n"
+        "(asmcomp): the Verilog, the memories and the testbench, in the source's\n"
+        "folder. A .asm is only assembled, in its own folder.\n"
         "\n"
         "Options:\n"
-        "  -o <dir>         output folder (default: ./<name>)\n"
+        "  -o <dir>         output folder (default: the source's folder)\n"
         "  -S               compile only, stop at <name>.asm\n"
         "  -I <dir>         extra #include folder (C++; repeatable)\n"
         "  -f <MHz>         testbench clock (default: 100)\n"
@@ -212,7 +212,11 @@ int main(int argc, char **argv)
         if (b == in) snprintf(dir, sizeof(dir), ".");
         else         snprintf(dir, sizeof(dir), "%.*s", (int)(b - in), in);
     } else {
-        snprintf(dir, sizeof(dir), "%s", out ? out : name);
+        // the default is the source's own folder (#199): the processor beside
+        // its program, wherever the command runs
+        char *src_dir = path_dir(in);
+        snprintf(dir, sizeof(dir), "%s", out ? out : src_dir);
+        free(src_dir);
         snprintf(asm_file, sizeof(asm_file), "%s/%s.asm", dir, name);
 
         if (is_cmm) {
@@ -236,6 +240,7 @@ int main(int argc, char **argv)
     arg(lang); arg(asm_file);
     run();
 
-    printf(M("Processador SAPHO pronto: %s/%s.v\n", "SAPHO processor ready: %s/%s.v\n"), dir, name);
+    if (!strcmp(dir, ".")) printf(M("Processador SAPHO pronto: %s.v\n", "SAPHO processor ready: %s.v\n"), name);
+    else                   printf(M("Processador SAPHO pronto: %s/%s.v\n", "SAPHO processor ready: %s/%s.v\n"), dir, name);
     return 0;
 }

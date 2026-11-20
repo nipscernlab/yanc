@@ -2067,19 +2067,20 @@ fi
 # yanc runs the tools next to it: on a C+- test its .asm must be the golden;
 # -S then the .asm must give the same processor; on a C++ test its .asm must
 # be cppcomp's own; a bad input and a failing compile must stop it non-zero;
-# a program in a folder with accents and spaces simulates from its output folder;
-# an .asm with no compiler tables beside it assembles and simulates.
+# a program in a folder with accents and spaces, compiled from the folder
+# above, is written beside its source (#199) and simulates there; an .asm
+# with no compiler tables beside it assembles and simulates.
 echo ""
 echo "==> yanc (the driver)"
 drv="$SCRATCH/work_yanc"
 rm -rf "$drv"; mkdir -p "$drv"
 cp -r "$CMM_ROOT/Tests/sw_test" "$drv/sw_test"
 cp -r "$CPP_ROOT/Tests/test1"   "$drv/test1"
-( cd "$drv/sw_test" && "$YANC" sw_test.cmm >/dev/null 2>&1 ) && [ -f "$drv/sw_test/sw_test/sw_test.v" ] \
-    && diff -q --strip-trailing-cr "$drv/sw_test/golden.asm" "$drv/sw_test/sw_test/sw_test.asm" >/dev/null
+( cd "$drv/sw_test" && "$YANC" sw_test.cmm >/dev/null 2>&1 ) && [ -f "$drv/sw_test/sw_test.v" ] \
+    && diff -q --strip-trailing-cr "$drv/sw_test/golden.asm" "$drv/sw_test/sw_test.asm" >/dev/null
 r1=$?
-( cd "$drv/sw_test" && rm -rf sw_test && "$YANC" -S sw_test.cmm >/dev/null 2>&1 && [ ! -f sw_test/sw_test.v ] \
-    && "$YANC" sw_test/sw_test.asm >/dev/null 2>&1 ) && [ -f "$drv/sw_test/sw_test/sw_test.v" ]
+( cd "$drv/sw_test" && rm -f sw_test.asm sw_test.v && "$YANC" -S sw_test.cmm >/dev/null 2>&1 && [ ! -f sw_test.v ] \
+    && "$YANC" sw_test.asm >/dev/null 2>&1 ) && [ -f "$drv/sw_test/sw_test.v" ]
 r2=$?
 ( cd "$drv/test1" && "$YANC" -o by_yanc test1.cpp >/dev/null 2>&1 && "$CPPC" -o direct test1.cpp >/dev/null 2>&1 ) \
     && diff -q --strip-trailing-cr "$drv/test1/by_yanc/test1.asm" "$drv/test1/direct/test1.asm" >/dev/null && [ -f "$drv/test1/by_yanc/test1.v" ]
@@ -2091,21 +2092,22 @@ cp "$CMM_ROOT/Tests/cmm_bigin/golden.asm" "$drv/bad-name.asm"   # an .asm names 
 r4=$?
 # a folder with accents and spaces: the tools work in UTF-8 on every system,
 # the Verilog names its files relative to the output folder (no absolute
-# path), and the simulation, run there, reads ../input_0.txt
+# path), and the simulation, run there, reads ./input_0.txt; run from the
+# folder above, yanc writes beside the source, not where it runs (#199)
 acc="$drv/Pasta Ação ü"
 mkdir -p "$acc"
 cp "$CMM_ROOT/Tests/cmm_bigin/cmm_bigin.cmm" "$acc/eco.cmm"
 cp "$CMM_ROOT/Tests/cmm_bigin/input_0.txt"   "$acc/"
-( cd "$acc" && "$YANC" eco.cmm >/dev/null 2>&1 ) && [ -f "$acc/eco/eco.v" ] \
-    && grep -q '^srcdir .*/Pasta Ação ü$' "$acc/eco/prog_log.txt" \
-    && ! grep -E '(fopen|readmem[bh]|FILE)\("(/|[A-Za-z]:)' "$acc/eco/eco.v" "$acc/eco/eco_tb.v" >/dev/null \
-    && grep -q '"\.\./input_0\.txt"' "$acc/eco/eco_tb.v"
+( cd "$drv" && "$YANC" "Pasta Ação ü/eco.cmm" >/dev/null 2>&1 ) && [ -f "$acc/eco.v" ] && [ ! -e "$drv/eco" ] \
+    && grep -q '^srcdir .*/Pasta Ação ü$' "$acc/prog_log.txt" \
+    && ! grep -E '(fopen|readmem[bh]|FILE)\("(/|[A-Za-z]:)' "$acc/eco.v" "$acc/eco_tb.v" >/dev/null \
+    && grep -q '"\./input_0\.txt"' "$acc/eco_tb.v"
 r5=$?
 if [ "$r5" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
-    ( cd "$acc/eco" && "$IVERILOG" -s eco_tb -o eco.vvp eco_tb.v eco.v \
+    ( cd "$acc" && "$IVERILOG" -s eco_tb -o eco.vvp eco_tb.v eco.v \
           "$HDL/addr_dec.v" "$HDL/instr_dec.v" "$HDL/processor.v" "$HDL/core.v" "$HDL/ula.v" >/dev/null 2>&1 \
       && "$VVP" eco.vvp >/dev/null 2>&1 ) \
-        && same "$acc/eco/output_0.txt" "$CMM_ROOT/Tests/cmm_bigin/golden_sim/output_0.txt"
+        && same "$acc/output_0.txt" "$CMM_ROOT/Tests/cmm_bigin/golden_sim/output_0.txt"
     r5=$?
 fi
 # an .asm on its own (written by hand: no prog_log.txt beside it, no

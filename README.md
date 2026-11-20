@@ -76,18 +76,17 @@ In its folder:
 yanc my_program.cpp
 ```
 
-This writes the processor `my_program` into the folder `my_program/`: its
-Verilog, its memories and a testbench. A C± program is the same command on
-a `.cmm` file.
+This writes the processor `my_program` beside its source, in the same
+folder: its Verilog, its memories and a testbench. A C± program is the same
+command on a `.cmm` file.
 
-**3. Simulate.** From the output folder, with `SAPHO` the `SAPHO/` folder of
+**3. Simulate.** In the same folder, with `SAPHO` the `SAPHO/` folder of
 the package (on Windows written the MSYS2 way, `/c/path/to/yanc/SAPHO`
 for `C:\path\to\yanc\SAPHO`):
 
 <!-- quickstart-sh -->
 ```sh
 export SAPHO=/path/to/yanc/SAPHO
-cd my_program
 iverilog -s my_program_tb -o sim.vvp -y "$SAPHO" my_program_tb.v my_program.v
 vvp sim.vvp
 cat output_0.txt
@@ -95,11 +94,11 @@ cat output_0.txt
 
 `output_0.txt` holds `55`.
 
-**4. See the waveform.** Still in `my_program/`:
+**4. See the waveform.** Still in the same folder:
 
 <!-- quickstart-sh -->
 ```sh
-gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
+gen_gtkw my_program_tb.vcd my_program_tb.gtkw .
 gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
 
