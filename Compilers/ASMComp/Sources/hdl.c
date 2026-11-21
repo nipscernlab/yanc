@@ -907,8 +907,10 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     fprintf(f_veri, "end\n\n");
 
     fprintf(f_veri, "initial begin\n\n");
-    // needed for iverilog to create the .vcd
-    fprintf(f_veri, "    $dumpfile(\"%s_tb.vcd\");\n\n", prname);
+    // the waveform, FST (#217). The name does not choose the format: Icarus
+    // writes FST with vvp -fst (or IVERILOG_DUMPER=fst), Verilator with
+    // --trace-fst; without them the file holds a text VCD
+    fprintf(f_veri, "    $dumpfile(\"%s_tb.fst\");\n\n", prname);
     //fprintf(f_veri, "    $dumpvars(0,%s_tb);\n\n"    , prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.clk);\n"    , prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.rst);\n"    , prname);
@@ -988,7 +990,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     // intentional: Verilator is chosen for SPEED, and keeping these monitoring
     // taps alive would force it to evaluate the costly real-valued ULA
     // rounding-error logic every cycle. So under Verilator the stack/ULA monitor
-    // signals are NOT in the VCD; they remain available under Icarus, where the
+    // signals are NOT in the waveform; they remain available under Icarus, where the
     // CPU subtree is fully traced and speed is not the goal.
 
     // if there's a CAL, register the subroutine-stack flags ------------------
@@ -1013,7 +1015,7 @@ void hdl_tb_file(int itr_addr, int toaqui_addr)
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_float);\n" , prname, prname);
     fprintf(f_veri, "    $dumpvars(0,%s_tb.proc.p_%s.core.ula.delta_int);\n\n" , prname, prname);
 
-    // +HEADER_ONLY: dump just the VCD header (the signal list, for gen_gtkw's
+    // +HEADER_ONLY: dump just the waveform's header (the signal list, for gen_gtkw's
     // .gtkw formatter) and bail -- one tick + $dumpflush so the $var lines are
     // emitted ($dumpvars at t=0 only registers scopes). A no-op without the
     // plusarg, so normal/regression runs are unaffected.

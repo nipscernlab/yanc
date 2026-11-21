@@ -4,6 +4,8 @@
 Usage:
   wave_map.py <output folder> <name> [<messages file>]   check, then print the map
   wave_map.py <output folder> <name> --vcd <file.vcd>    check a simulation's tracks
+                                                         (text VCD: an FST through
+                                                         gen_gtkw --vcd, as regress.sh)
   wave_map.py <output folder> <name> --selftest          the rules must catch broken maps
 
 The waveform of a SAPHO program shows, cycle by cycle, the source line, the

@@ -76,8 +76,7 @@ like compiler defects. `pacman -Syu` keeps MSYS2 up to date.
 > does; MSYS2's and the distributions' do not, and refuse an option they do
 > not know). Any of them applies the layout `gen_gtkw` writes. Without
 > GTKWave, `single_proc.sh` and `multi_proc.sh` still simulate and write the
-> waveform and its layout; they only do not open it. The Verilator flow of
-> `multi_proc.sh` needs `fst2vcd`, which comes with GTKWave.
+> waveform and its layout; they only do not open it.
 >
 > **gcc 16 and Verilator.** MSYS2's gcc 16 (16.1 and 16.2) ships a
 > `libstdc++` without the `std::string` move constructor at `-Os`, which

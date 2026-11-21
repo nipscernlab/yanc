@@ -14,7 +14,7 @@
 ::   single_proc_cpp.bat --no-view        -> run the pipeline but skip GTKWave
 ::
 :: NOTE: close any GTKWave still showing this proc before re-running -- an open
-:: viewer locks Teste\...\proc_cpp_tb.vcd and blocks the workspace cleanup.
+:: viewer locks Teste\...\proc_cpp_tb.fst and blocks the workspace cleanup.
 ::
 :: Reads the HDL, macros and binaries straight from the repo; the only files it
 :: creates live under Teste\ (gitignored). Run Scripts\setup.bat once first.
@@ -99,7 +99,7 @@ set VL_DIR=%TMP_PRO%\vl
 rmdir /s /q "%WORK%" 2>nul
 if exist "%WORK%" (
     echo [single_proc_cpp] could not clear "%WORK%" -- is GTKWave still open on
-    echo            this proc? Close it and re-run ^(it locks proc_cpp_tb.vcd^).
+    echo            this proc? Close it and re-run ^(it locks proc_cpp_tb.fst^).
     exit /b 1
 )
 mkdir "%WORK%"
@@ -136,20 +136,16 @@ if not exist "%TMP_PRO%\%PROC%.vvp" ( echo [single_proc_cpp] iverilog failed to 
 
 echo #### Running VVP
 cd /d "%TMP_PRO%"
-:: header-only pass (no -fst -> text VCD): gives gen_gtkw the signal list fast.
-"%VVP%" "%PROC%.vvp" +HEADER_ONLY
-copy "%TB_MOD%.vcd" "%TB_MOD%_hdr.vcd" >nul
-:: real run -> the FST waveform GTKWave opens
+:: the waveform, FST (#217): gen_gtkw reads its signal list, GTKWave opens it
 "%VVP%" "%PROC%.vvp" -fst
-set WAVE=%TMP_PRO%\%TB_MOD%.vcd
-set HDR=%TMP_PRO%\%TB_MOD%_hdr.vcd
+set WAVE=%TMP_PRO%\%TB_MOD%.fst
 set GTKWOUT=%TMP_PRO%\%TB_MOD%.gtkw
 goto run_gtkwave
 
 :: --- Verilator --------------------------------------------------------------
 :sim_verilator
-echo #### Running Verilator (+define+YANC_TRACE, --binary --timing --trace)
-"%VERILATOR%" --binary --timing --trace +define+YANC_TRACE %YANC_VL_ARGS% ^
+echo #### Running Verilator (+define+YANC_TRACE, --binary --timing --trace-fst)
+"%VERILATOR%" --binary --timing --trace-fst +define+YANC_TRACE %YANC_VL_ARGS% ^
     --top-module %PROC%_tb ^
     -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH ^
     -Wno-CASEINCOMPLETE -Wno-IMPLICIT -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP ^
@@ -161,14 +157,13 @@ echo #### Running Verilator (+define+YANC_TRACE, --binary --timing --trace)
 echo #### Running the Verilator simulation
 cd /d "%TMP_PRO%"
 "%VL_DIR%\V%PROC%_tb.exe"
-set WAVE=%TMP_PRO%\%PROC%_tb.vcd
-set HDR=%TMP_PRO%\%PROC%_tb.vcd
+set WAVE=%TMP_PRO%\%PROC%_tb.fst
 set GTKWOUT=%TMP_PRO%\%PROC%_tb.gtkw
 
 :: View in GTKWave (layout built by gen_gtkw) ---------------------------------
 :run_gtkwave
 echo #### Generating the .gtkw layout (gen_gtkw)
-"%BIN_DIR%\gen_gtkw.exe" "%HDR%" "%GTKWOUT%" "%SRC_DIR%" "%BIN_DIR%\comp2gtkw.exe"
+"%BIN_DIR%\gen_gtkw.exe" "%WAVE%" "%GTKWOUT%" "%SRC_DIR%" "%BIN_DIR%\comp2gtkw.exe"
 if "%VIEW%"=="0" (
     echo #### --no-view: skipping GTKWave. Waveform: %WAVE%
     cd /d "%ROOT_DIR%"

@@ -16,7 +16,7 @@
 #
 #   ROOT_DIR  repo root          YANC_BIN  <repo>/bin (the built binaries)
 #   IVERILOG  iverilog           VVP       vvp
-#   VERILATOR verilator          GTKWAVE   gtkwave        FST2VCD  fst2vcd
+#   VERILATOR verilator          GTKWAVE   gtkwave
 #   gtkwave_opts     the options of the gtkwave call this GTKWave knows (below)
 #   YANC_VL_CFLAGS   what every Verilator call adds as -CFLAGS (see below)
 # ****************************************************************************
@@ -35,7 +35,6 @@ YANC_BIN="$ROOT_DIR/bin"
 : "${VVP:=$(command -v vvp            2>/dev/null || true)}"
 : "${VERILATOR:=$(command -v verilator 2>/dev/null || true)}"
 : "${GTKWAVE:=$(command -v gtkwave    2>/dev/null || true)}"
-: "${FST2VCD:=$(command -v fst2vcd    2>/dev/null || true)}"
 
 # gtkwave_opts: the options of the runners' gtkwave call that this GTKWave
 # lists in its --help. The nipscernlab build has --zoom-fit and --left-justify;
@@ -62,4 +61,4 @@ if [ -z "${YANC_VL_CFLAGS+set}" ]; then
     esac
 fi
 
-export ROOT_DIR YANC_BIN IVERILOG VVP VERILATOR GTKWAVE FST2VCD YANC_VL_CFLAGS
+export ROOT_DIR YANC_BIN IVERILOG VVP VERILATOR GTKWAVE YANC_VL_CFLAGS

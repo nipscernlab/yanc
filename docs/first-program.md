@@ -60,25 +60,25 @@ terminal on Windows):
 ```sh
 export SAPHO=/path/to/yanc/SAPHO
 iverilog -s my_program_tb -o sim.vvp -y "$SAPHO" my_program_tb.v my_program.v
-vvp sim.vvp
+vvp sim.vvp -fst
 cat output_0.txt
 ```
 
 `-y` tells the simulator where to find the SAPHO modules the processor
-uses.
+uses, and `-fst` makes it write the waveform in the FST format.
 
 `output_0.txt` holds `55`.
 
 ## Look at it run
 
-The simulation also wrote the waveform `my_program_tb.vcd`. `gen_gtkw`
+The simulation also wrote the waveform `my_program_tb.fst`. `gen_gtkw`
 turns it into a view that shows, clock by clock, the source line being
 executed, the assembly instruction, and every variable by name (a variable
 written and never read is not in the processor, see below):
 
 ```sh
-gen_gtkw my_program_tb.vcd my_program_tb.gtkw .
-gtkwave my_program_tb.vcd -a my_program_tb.gtkw
+gen_gtkw my_program_tb.fst my_program_tb.gtkw .
+gtkwave my_program_tb.fst -a my_program_tb.gtkw
 ```
 
 (`.` is the folder the processor is in; see

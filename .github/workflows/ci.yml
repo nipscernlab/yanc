@@ -104,7 +104,7 @@ jobs:
       - name: Install toolchain + Icarus
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc make bison flex iverilog
+          sudo apt-get install -y gcc make bison flex zlib1g-dev iverilog
 
       - name: Build binaries (make, -Werror)
         # Same shared Makefile as Windows, gated with -Werror (CI only).
@@ -176,6 +176,11 @@ jobs:
           bash -e "$RUNNER_TEMP/quickstart.sh"
           test "$(tr -d '\r' < output_0.txt)" = 55
           test -s my_program_tb.gtkw
+          # the waveform is FST (its first byte, the header block, is 0), and
+          # gen_gtkw --vcd reads it back as text (#217)
+          test "$(head -c 1 my_program_tb.fst | od -An -tu1 | tr -d ' ')" = 0
+          gen_gtkw --vcd my_program_tb.fst > as_text.vcd
+          grep -q '^\$enddefinitions' as_text.vcd
 
   # What a Windows user does with a release, as README.md and docs/ say it:
   # MSYS2's UCRT64 with its newest packages (update: true, so a package that
@@ -237,13 +242,14 @@ jobs:
           mkdir -p "$T/vl" && cd "$T/vl"
           cp "$T/yanc/example/my_program.cpp" .
           yanc my_program.cpp
-          verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps \
+          verilator --binary --timing --trace-fst +define+YANC_TRACE --timescale 1ns/1ps \
                     -CFLAGS -D_GLIBCXX_ASSERTIONS \
                     --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK \
                     -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl \
                     -y "$SAPHO" my_program_tb.v my_program.v
           ./vl/Vmy_program_tb
           test "$(tr -d '\r' < output_0.txt)" = 55
+          test "$(head -c 1 my_program_tb.fst | od -An -tu1 | tr -d ' ')" = 0
 
   # The manual (docs/): built on every push the way the release publishes it.
   # -W makes every Sphinx warning an error (a broken link, a page outside the

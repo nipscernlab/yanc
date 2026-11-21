@@ -27,14 +27,15 @@
 #      testN/golden_toma_k.txt when there is one).
 #      Every test is a folder holding the source and its own files (array
 #      inits, input_N.txt); the tools write everything they generate to one
-#      output folder, <work>/<test>/<prname>/ (the default ./<prname> of the
-#      user's flow). An optional testN/warnings.txt lists
+#      output folder, <work>/<test>/<prname>/ (with -o, as AURORA lays a
+#      processor out). An optional testN/warnings.txt lists
 #      the cppcomp warnings the test expects, one substring per line: each
 #      must appear, and no other warning may. An optional hardware.txt (in
 #      both phases) holds the generated processor's parameters: see hw_check.
 #      Every Icarus run, in both phases, also fails when a stack reached its
-#      depth (fl_overflow in the VCD): see stack_check. The waveform's tables
-#      of every test, and the VCD of every Icarus run, go through
+#      depth (fl_overflow in the waveform): see stack_check. The waveform's
+#      tables of every test, and the waveform of every Icarus run (its FST,
+#      as text through gen_gtkw --vcd: see fst_text), go through
 #      Scripts/wave_map.py as in the CMM phase, without its rules of the
 #      source line, which are written for C± (GitHub issue #87).
 #
@@ -160,6 +161,7 @@ CPPC="$BIN_DIR/cppcomp$EXE"
 ASMCOMP="$BIN_DIR/asmcomp$EXE"
 YANC="$BIN_DIR/yanc$EXE"
 CMM_UNIT="$BIN_DIR/cmm_unit_test$EXE"
+GEN_GTKW="$BIN_DIR/gen_gtkw$EXE"
 HDL="$ROOT/SAPHO"
 CMM_ROOT="$ROOT/Compilers/CMMComp"
 SIZE_BASELINE_FILE="$CMM_ROOT/Tests/size_baseline.txt"
@@ -182,6 +184,11 @@ CPP_DEFS="-DCFG_NUBITS=$CFG_NUBITS -DCFG_NUGAIN=$CFG_NUGAIN \
 # there are no machine-specific hardcoded tool paths here. A pre-set env var
 # (e.g. CI, or a non-default Verilator) still wins.
 . "$ROOT/Scripts/env.sh"
+
+# Every Icarus run writes its waveform as FST, as the manual's commands do
+# (vvp -fst): IVERILOG_DUMPER is how vvp takes that option from the
+# environment, so it reaches every vvp below, retries included (#217).
+export IVERILOG_DUMPER=fst
 
 # load the size ratchet (prname -> num_ins). Lines starting with '#' are skipped.
 declare -A SIZE_BASELINE
@@ -302,6 +309,13 @@ mk_list() {   # mk_list <VAR> [prefix]: a source list of the Makefile, the only 
     for f in $(make -s -C "$ROOT" "print-$1"); do printf '%s%s ' "${2:-}" "$f"; done
 }
 
+# The waveform as text, for stack_check and wave_map.py: <wave>.fst written as
+# <wave>.vcd by gen_gtkw --vcd (libfst). Nothing when there is no FST.
+fst_text() {   # fst_text <wave without extension>
+    [ -f "$1.fst" ] || return 0
+    "$GEN_GTKW" --vcd "$1.fst" > "$1.vcd"
+}
+
 stack_check() {   # stack_check <tb.vcd>
     [ -f "$1" ] || return 0
     awk '{ sub(/\r$/, "") }
@@ -319,7 +333,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
 
     # Wipe stale binaries first: a silently-failing gcc must NOT leave the
     # previous build in place to fool the regress into testing dead code.
-    rm -f "$CMMCOMP" "$CPPC" "$ASMCOMP" "$YANC" "$CMM_UNIT"
+    rm -f "$CMMCOMP" "$CPPC" "$ASMCOMP" "$YANC" "$CMM_UNIT" "$GEN_GTKW"
 
     # Per-binary `set -e` so a build error aborts the script. Without it,
     # a gcc -Werror failure would print to the terminal but the regress
@@ -376,6 +390,14 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     gcc -O2 -Wall -Werror -o "$YANC" "$ROOT/Compilers/Driver/yanc.c" \
         "$ROOT/Compilers/common/console_utf8.c" "$ROOT/Compilers/common/exe_dir.c" "$ROOT/Compilers/common/yanc_lang.c" \
         "$ROOT/Compilers/common/xstr.c" $UTF8RES
+
+    # gen_gtkw, for its --vcd: the waveform checks below read the FST as text.
+    # libfst is built as the Makefile builds it (-w, no -Werror, zlib).
+    for f in fstapi fastlz lz4; do
+        gcc -O2 -w -c -o "$BIN_DIR/$f.o" "$ROOT/Scripts/libfst/$f.c"
+    done
+    gcc -O2 -Wall -Werror -o "$GEN_GTKW" "$ROOT/Scripts/gen_gtkw.c"         "$ROOT/Compilers/common/exe_dir.c" "$ROOT/Compilers/common/yanc_lang.c" "$ROOT/Compilers/common/xstr.c"         "$BIN_DIR/fstapi.o" "$BIN_DIR/fastlz.o" "$BIN_DIR/lz4.o" $UTF8RES $(mk_list ZLIB) -lm
+    rm -f "$BIN_DIR/fstapi.o" "$BIN_DIR/fastlz.o" "$BIN_DIR/lz4.o"
 
     set +e
 fi
@@ -544,6 +566,7 @@ if [ "$CPP_ONLY" -eq 0 ]; then
             echo "FAIL ($prname): vvp exited non-zero"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
         fi
+        fst_text "$tmp/${prname}_tb"
         if ! stack_check "$tmp/${prname}_tb.vcd"; then
             echo "FAIL ($prname): a stack overflowed in the simulation (fl_overflow)"
             fail=$((fail + 1)); failed_names+=("$prname"); continue
@@ -1539,6 +1562,7 @@ if [ "$CMM_ONLY" -eq 0 ]; then
             fi
             [ $died -eq 1 ] && vvp_once_more "$base" "$od/$prname.vvp"
             popd >/dev/null
+            fst_text "$od/${prname}_tb"
             if ! stack_check "$od/${prname}_tb.vcd"; then
                 echo "FAIL ($base): a stack overflowed in the simulation (fl_overflow)"
                 fail=$((fail+1)); failed_names+=("$base"); continue

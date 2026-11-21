@@ -86,13 +86,11 @@ if [ "$SIM" = iverilog ]; then
 
     echo "#### Running VVP"
     cd "$TMP_PRO"
-    "$VVP" "$PROC.vvp" +HEADER_ONLY
-    cp "$TB_MOD.vcd" "${TB_MOD}_hdr.vcd"
     "$VVP" "$PROC.vvp" -fst
-    WAVE_VCD="$TMP_PRO/$TB_MOD.vcd"; HDR_VCD="$TMP_PRO/${TB_MOD}_hdr.vcd"; GTKW_OUT="$TMP_PRO/$TB_MOD.gtkw"
+    WAVE="$TMP_PRO/$TB_MOD.fst"; GTKW_OUT="$TMP_PRO/$TB_MOD.gtkw"
 else
-    echo "#### Running Verilator (+define+YANC_TRACE, --binary --timing --trace)"
-    "$VERILATOR" --binary --timing --trace +define+YANC_TRACE \
+    echo "#### Running Verilator (+define+YANC_TRACE, --binary --timing --trace-fst)"
+    "$VERILATOR" --binary --timing --trace-fst +define+YANC_TRACE \
         --top-module "${PROC}_tb" \
         -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH \
         -Wno-CASEINCOMPLETE -Wno-IMPLICIT -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP \
@@ -104,17 +102,17 @@ else
     echo "#### Running the Verilator simulation"
     cd "$TMP_PRO"
     "$VL_DIR/V${PROC}_tb"
-    WAVE_VCD="$TMP_PRO/${PROC}_tb.vcd"; HDR_VCD="$WAVE_VCD"; GTKW_OUT="$TMP_PRO/${PROC}_tb.gtkw"
+    WAVE="$TMP_PRO/${PROC}_tb.fst"; GTKW_OUT="$TMP_PRO/${PROC}_tb.gtkw"
 fi
 
 # --- View in GTKWave (layout built by gen_gtkw) -----------------------------
 echo "#### Generating the .gtkw layout (gen_gtkw)"
-"$BIN_DIR/gen_gtkw" "$HDR_VCD" "$GTKW_OUT" "$SRC_DIR" "$BIN_DIR/comp2gtkw"
+"$BIN_DIR/gen_gtkw" "$WAVE" "$GTKW_OUT" "$SRC_DIR" "$BIN_DIR/comp2gtkw"
 if [ "$VIEW" = 0 ]; then
-    echo "#### --no-view: skipping GTKWave. Waveform: $WAVE_VCD"
+    echo "#### --no-view: skipping GTKWave. Waveform: $WAVE"
     cd "$ROOT_DIR"; exit 0
 fi
 echo "#### Launching GTKWave"
-"$GTKWAVE" $(gtkwave_opts) "$WAVE_VCD" -a "$GTKW_OUT"
+"$GTKWAVE" $(gtkwave_opts) "$WAVE" -a "$GTKW_OUT"
 
 cd "$ROOT_DIR"

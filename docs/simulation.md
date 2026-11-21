@@ -16,7 +16,7 @@ for `C:\path\to\SAPHO`; see [Installing YANC](install.md)):
 ```sh
 export SAPHO=/path/to/yanc/SAPHO
 iverilog -s my_program_tb -o sim.vvp -y "$SAPHO" my_program_tb.v my_program.v
-vvp sim.vvp
+vvp sim.vvp -fst
 cat output_0.txt
 ```
 
@@ -28,7 +28,11 @@ too.
 
 The testbench simulates as many clocks as `yanc -c` said (10000 by
 default) at the clock of `yanc -f` (100 MHz by default), and writes the
-waveform to `my_program_tb.vcd`.
+waveform to `my_program_tb.fst`. The format comes from the simulator, not
+from the name: `vvp -fst` writes FST, compressed, which GTKWave, AURORA and
+`gen_gtkw` read; a `vvp` without `-fst` writes a text VCD under the same
+name, which they read as well, 7 to 34 times the size in the measures of
+issue #217.
 
 **Run the simulation from the output folder.** The generated Verilog names
 every file relative to it: the memories (`my_program_inst.mif`,
@@ -64,18 +68,23 @@ Verilator 5 compiles the same generated `<proc>_tb.v` directly — `--timing` un
 
 ```sh
 # from the output folder, the one of my_program.cpp
-verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps \
+verilator --binary --timing --trace-fst +define+YANC_TRACE --timescale 1ns/1ps \
           --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK \
           -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl \
           -y "$SAPHO" my_program_tb.v my_program.v
-./vl/Vmy_program_tb     # runs the sim, writes my_program_tb.vcd here
-gtkwave my_program_tb.vcd
+./vl/Vmy_program_tb     # runs the sim, writes my_program_tb.fst here
+gtkwave my_program_tb.fst
 ```
 
 On Windows, MSYS2's gcc 16 needs `-CFLAGS -D_GLIBCXX_ASSERTIONS` added to
 the `verilator` line, or the link fails (see
 [Installing YANC](install.md#to-simulate)); the scripts below add it
 themselves.
+
+`--trace-fst` writes the waveform as FST, and Verilator's FST writer needs
+the LZ4 headers: on Windows the package `mingw-w64-ucrt-x86_64-lz4`, which
+`Scripts/setup.sh` installs along with Verilator (see
+[Installing YANC](install.md#to-simulate)).
 
 `--timescale 1ns/1ps` gives the SAPHO modules the testbench's time unit:
 the files `-y` finds are read on their own, so they do not inherit the
@@ -86,12 +95,12 @@ Verilator builds with GNU make, which refuses a build folder whose path has a
 space. If the output folder's has one, point `--Mdir` somewhere without
 spaces and still run the binary from the output folder.
 
-**The one thing to remember:** `+define+YANC_TRACE` is what makes your variables, arrays, the PC→C± line table and the assembly opcode appear in the waveform. Icarus gets them for free (it predefines `__ICARUS__`); Verilator only compiles that visibility harness when you pass the define. For big multi-millisecond project dumps, use `--trace-fst` instead of `--trace` (compact FST; the file is still named `<tb>.vcd` and GTKWave detects the format). The trace deliberately carries only the `<proc>`-level user signals — the CPU internals below each processor are fenced out with `/* verilator tracing_off */`. **In particular the stack-monitoring flags and the ULA rounding-error taps (`fl_max`, `fl_overflow`, `fl_top`, `pointeri`, `delta_int`, `delta_float`) are intentionally *not* in the Verilator VCD**: keeping them would force Verilator to evaluate the expensive real-valued ULA monitoring logic every cycle, which defeats the whole point of using Verilator (speed). Those debug signals remain available under the Icarus flow (`Scripts\single_proc.bat` / `multi_proc.bat`), where raw speed is not the goal.
+**The one thing to remember:** `+define+YANC_TRACE` is what makes your variables, arrays, the PC→C± line table and the assembly opcode appear in the waveform. Icarus gets them for free (it predefines `__ICARUS__`); Verilator only compiles that visibility harness when you pass the define. The trace deliberately carries only the `<proc>`-level user signals — the CPU internals below each processor are fenced out with `/* verilator tracing_off */`. **In particular the stack-monitoring flags and the ULA rounding-error taps (`fl_max`, `fl_overflow`, `fl_top`, `pointeri`, `delta_int`, `delta_float`) are intentionally *not* in the Verilator waveform**: keeping them would force Verilator to evaluate the expensive real-valued ULA monitoring logic every cycle, which defeats the whole point of using Verilator (speed). Those debug signals remain available under the Icarus flow (`Scripts\single_proc.bat` / `multi_proc.bat`), where raw speed is not the goal.
 
 ## Formatting the waveform — `gen_gtkw` (optional)
 
-After simulating with **either** Icarus or Verilator you have a raw `<tb>.vcd` /
-`.fst`: every signal, in scope order, unformatted. If you want the curated view
+After simulating with **either** Icarus or Verilator you have a raw `<tb>.fst`:
+every signal, in scope order, unformatted. If you want the curated view
 instead — the **input/output ports**, the **Assembly** and **C±** instruction
 tracks (disassembled through their translate files), and the **internal
 variables and arrays** grouped per processor — run **`gen_gtkw`** (it is in the
@@ -99,11 +108,12 @@ release's `bin/`), then open the waveform with it applied via `-a`. From the
 Quick start's output folder:
 
 ```sh
-gen_gtkw my_program_tb.vcd my_program_tb.gtkw .
-gtkwave my_program_tb.vcd -a my_program_tb.gtkw
+gen_gtkw my_program_tb.fst my_program_tb.gtkw .
+gtkwave my_program_tb.fst -a my_program_tb.gtkw
 ```
 
-`gen_gtkw` reads only the VCD **header** (the signal list), classifies each
+`gen_gtkw` reads only the waveform's **header** (the signal list), from an FST
+or from a text VCD, which it tells apart by their first byte, classifies each
 harness signal by name, and writes a formatted `.gtkw` save file: the right data
 format / colour / alias per signal, the `trad_opcode.txt` / `src_lines.txt`
 translators on the Assembly / C± tracks, `comp2gtkw.exe` on complex signals, and
@@ -115,13 +125,15 @@ that holds one output folder per processor, each named after its processor
 (`proj/` for `proj/filtro/filtro.cmm` and `proj/fft/fft.cmm`, each written
 beside its source).
 
-Because only the header is needed, the big project FST dumps don't have to be
-written in full first: run the sim once with the **`+HEADER_ONLY`** plusarg and
-the testbench dumps the header, advances one tick, flushes and `$finish`es — a
-tiny header VCD in milliseconds (Verilator's header FST is converted with
-`fst2vcd -f`). **The runner scripts wire this whole sequence up
-correctly** (header pass → `gen_gtkw` → `gtkwave -a`), so they are the reference
-for using it in practice. They also open GTKWave with `--dark`, and with
+Because only the header is needed, `gen_gtkw` reads an FST's hierarchy and
+not its samples, so a project dump of several GB takes no longer to format
+than a small one. With the **`+HEADER_ONLY`** plusarg the testbench dumps the
+header, advances one tick, flushes and `$finish`es, for a view prepared before
+the long run. **The runner scripts wire the sequence up** (simulation →
+`gen_gtkw` → `gtkwave -a`), so they are the reference for using it in
+practice. `gen_gtkw --vcd <in.fst>` writes the whole FST as text VCD on its
+output, for a tool that reads only text; the regression reads the waveform
+of each test that way. They also open GTKWave with `--dark`, and with
 `--zoom-fit` (the whole trace in the window) and `--left-justify` when that
 GTKWave lists them, as the nipscernlab build does (see
 [Installing YANC](install.md#to-simulate)).

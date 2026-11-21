@@ -1,6 +1,6 @@
 // ============================================================================
-// gen_gtkw.c -- generate a pre-formatted GTKWave .gtkw save file from a VCD
-// header, replacing the runtime Tcl formatter (gtk_proc_init.tcl /
+// gen_gtkw.c -- generate a pre-formatted GTKWave .gtkw save file from the
+// header of a simulation dump, FST or VCD, replacing the runtime Tcl formatter (gtk_proc_init.tcl /
 // gtk_proj_init.tcl). Ports the proven logic of Aurora's js/wave/
 // gtkw_proc_writer.js (the format flags below were calibrated against a real
 // GTKWave save, not guessed).
@@ -14,12 +14,20 @@
 // with:  gtkwave <vcd> -a <out.gtkw>
 //
 // Usage:
-//   gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw_exe>]
+//   gen_gtkw <in.fst|in.vcd> <out.gtkw> <base> [<comp2gtkw_exe>]
 //     <base>          the folder holding each processor's output folder; the
 //                     translate files are read from
 //                     <base>/<proc_type>/trad_opcode.txt and src_lines.txt,
 //                     or from <base>/ when it is the output folder itself
 //     <comp2gtkw_exe> path to comp2gtkw.exe (process filter for complex signals)
+//   gen_gtkw --vcd <in.fst>
+//     writes the whole dump as text VCD on stdout, for the checks of
+//     Scripts/regress.sh that read every sample (stack_check, wave_map.py)
+//
+// An FST is read with GTKWave's libfst (Scripts/libfst/): its hierarchy is
+// written as a VCD header to <out.gtkw>.hdr, which the VCD parser below reads
+// and then removes. The format is told by the first byte: an FST starts with
+// its header block, of type 0; a VCD is text.
 //
 // Built by the Makefile (`make gen_gtkw`), with exe_dir.c, yanc_lang.c and
 // xstr.c. A name, a scope or a path has any length: each lives in a block of
@@ -35,6 +43,12 @@
 #include "../Compilers/common/exe_dir.h"
 #include "../Compilers/common/yanc_lang.h"
 #include "../Compilers/common/xstr.h"
+#include "libfst/fstapi.h"
+
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
 
 // every message a user sees, in Portuguese and in English (AGENTS.md, rule 4):
 // English unless --lang or YANC_LANG says pt
@@ -42,6 +56,8 @@
 
 #define MSG_ERR_OPEN_VCD  M("gen_gtkw: não foi possível abrir o VCD '%s'\n", \
                             "gen_gtkw: cannot open VCD '%s'\n")
+#define MSG_ERR_OPEN_FST  M("gen_gtkw: não foi possível ler o FST '%s'\n", \
+                            "gen_gtkw: cannot read FST '%s'\n")
 #define MSG_ERR_MEMORY    M("gen_gtkw: memória insuficiente\n", \
                             "gen_gtkw: out of memory\n")
 #define MSG_ERR_WRITE     M("gen_gtkw: não foi possível escrever '%s'\n", \
@@ -53,20 +69,24 @@
                             "gen_gtkw: cannot find the processor folder of '%s' in '%s';\n" \
                             "  the instruction and source tracks stay as numbers\n")
 #define MSG_CLI_USAGE \
-    M("uso: gen_gtkw <entrada.vcd> <saida.gtkw> <base> [<comp2gtkw>]\n" \
+    M("uso: gen_gtkw <entrada.fst|entrada.vcd> <saida.gtkw> <base> [<comp2gtkw>]\n" \
       "  escreve a vista formatada do GTKWave (saida.gtkw) de um dump de simulação;\n" \
       "  <base> guarda a pasta de saída de cada processador, <base>/<proc>/,\n" \
       "  ou é a própria pasta de saída, com os arquivos de tradução\n" \
       "  (trad_opcode.txt, src_lines.txt);\n" \
       "  o comp2gtkw padrão é o que está ao lado do gen_gtkw\n" \
-      "  --lang=en|pt: a língua das mensagens (também YANC_LANG); padrão en\n", \
-      "usage: gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]\n" \
+      "  --lang=en|pt: a língua das mensagens (também YANC_LANG); padrão en\n" \
+      "   ou: gen_gtkw --vcd <entrada.fst>\n" \
+      "  escreve o dump inteiro como VCD de texto na saída padrão\n", \
+      "usage: gen_gtkw <in.fst|in.vcd> <out.gtkw> <base> [<comp2gtkw>]\n" \
       "  writes the formatted GTKWave view (out.gtkw) of a simulation dump;\n" \
       "  <base> holds the output folder of each processor, <base>/<proc>/,\n" \
       "  or is the output folder itself, with the translate files\n" \
       "  (trad_opcode.txt, src_lines.txt);\n" \
       "  comp2gtkw defaults to the one next to gen_gtkw\n" \
-      "  --lang=en|pt: the language of the messages (also YANC_LANG); default en\n")
+      "  --lang=en|pt: the language of the messages (also YANC_LANG); default en\n" \
+      "   or: gen_gtkw --vcd <in.fst>\n" \
+      "  writes the whole dump as text VCD on stdout\n")
 
 // ---- GTKWave trace-format flag bits (see Aurora gtkw_proc_writer.js) --------
 #define TR_HEX        0x2
@@ -228,6 +248,53 @@ static void parse_vcd_header(const char *path) {
         }
         free(t);
     }
+}
+
+// ---- FST -------------------------------------------------------------------
+
+// 1 when the file starts with an FST header block (type 0), 0 otherwise (a
+// VCD, which is text, or a file that cannot be read)
+static int is_fst(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return 0;
+    int c = fgetc(f);
+    fclose(f);
+    return c == 0;
+}
+
+static fstReaderContext *open_fst(const char *path) {
+    fstReaderContext *ctx = fstReaderOpen(path);
+    if (!ctx) { fprintf(stderr, MSG_ERR_OPEN_FST, path); exit(2); }
+    return ctx;
+}
+
+// the FST's hierarchy, as a VCD header, through the VCD parser: written to
+// <out>.hdr, read, removed
+static void parse_fst_header(const char *path, const char *out) {
+    fstReaderContext *ctx = open_fst(path);
+    char *hdr = xasprintf("%s.hdr", out);
+    FILE *w = fopen(hdr, "wb");
+    if (!w) { fprintf(stderr, MSG_ERR_WRITE, hdr); exit(2); }
+    fstReaderProcessHier(ctx, w);
+    fclose(w);
+    fstReaderClose(ctx);
+    parse_vcd_header(hdr);
+    remove(hdr);
+    free(hdr);
+}
+
+// gen_gtkw --vcd: the whole FST as text VCD on stdout, the way GTKWave's
+// fst2vcd writes it
+static int fst_to_vcd(const char *path) {
+    fstReaderContext *ctx = open_fst(path);
+#ifdef _WIN32
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
+    fstReaderProcessHier(ctx, stdout);
+    fstReaderSetFacProcessMaskAll(ctx);
+    fstReaderIterBlocks(ctx, NULL, NULL, stdout);
+    fstReaderClose(ctx);
+    return fflush(stdout) == 0 ? 0 : 2;
 }
 
 // ---- string helpers --------------------------------------------------------
@@ -624,6 +691,7 @@ static void detect_procs(void) {
 // ---- main ------------------------------------------------------------------
 int main(int argc, char **argv) {
     yanc_lang(&argc, argv, "gen_gtkw");   // --lang and YANC_LANG: the messages' language
+    if (argc == 3 && !strcmp(argv[1], "--vcd")) return fst_to_vcd(argv[2]);
     int help = argc >= 2 && (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"));
     if (help || argc < 4 || argc > 5) {
         fprintf(help ? stdout : stderr, MSG_CLI_USAGE);
@@ -638,7 +706,8 @@ int main(int argc, char **argv) {
 #endif
     g_comp2gtkw = (argc == 5) ? argv[4] : c2g;
 
-    parse_vcd_header(vcd);
+    if (is_fst(vcd)) parse_fst_header(vcd, out);
+    else             parse_vcd_header(vcd);
     detect_procs();
 
     g_out = fopen(out, "wb");

@@ -51,13 +51,12 @@ esac
 
 # --- Tools: the binaries and the chosen simulator; GTKWave only to view -----
 [ -x "$YANC_BIN/cmmcomp" ] || { echo "[multi_proc] binaries missing in $YANC_BIN - run Scripts/setup.sh first."; exit 1; }
-# without GTKWave the run still simulates and writes the .vcd and .gtkw (#117)
+# without GTKWave the run still simulates and writes the .fst and .gtkw (#117)
 [ -n "$GTKWAVE" ]          || echo "[multi_proc] gtkwave not found - simulating anyway; the waveform files are written but not opened (Scripts/setup.sh, docs/install.md)."
 if [ "$SIM" = iverilog ]; then
     [ -n "$IVERILOG" ] || { echo "[multi_proc] iverilog not found - run Scripts/setup.sh (or install iverilog)."; exit 1; }
 else
     [ -n "$VERILATOR" ] || { echo "[multi_proc] verilator not found - run Scripts/setup.sh (or install verilator)."; exit 1; }
-    [ -n "$FST2VCD" ]   || { echo "[multi_proc] fst2vcd not found - it ships with gtkwave; run Scripts/setup.sh."; exit 1; }
 fi
 
 # --- What to simulate (a project under Compilers/CMMComp/Tests) -------------
@@ -120,9 +119,7 @@ if [ "$SIM" = iverilog ]; then
         cp "$TMP_DIR/$i/${i}_data.mif" .
         cp "$TMP_DIR/$i/pc_${i}_mem.txt" .
     done
-    # header-only pass (tiny text VCD) then the real FST run (+WAVE arms $dumpvars)
-    "$VVP" "$PROJET.vvp" +HEADER_ONLY
-    cp "$TB.vcd" "${TB}_hdr.vcd"
+    # +WAVE arms the tb's $dumpvars (off by default: the regression runs without)
     "$VVP" "$PROJET.vvp" -fst +WAVE
 else
     echo "#### Running Verilator (+define+YANC_TRACE, --binary --timing --trace-fst)"
@@ -139,20 +136,17 @@ else
     done
 
     echo "#### Running the Verilator simulation"
-    # header-only pass -> tiny FST; fst2vcd extracts a text VCD for the formatter.
-    "$VL_DIR/V$TB" +HEADER_ONLY
-    "$FST2VCD" -f "$TB.vcd" -o "${TB}_hdr.vcd" >/dev/null 2>&1
     # +WAVE arms the tb's $dumpvars (off by default so the heavy sim doesn't crash).
     "$VL_DIR/V$TB" +WAVE
 fi
 
 # --- View in GTKWave (layout built by gen_gtkw) -----------------------------
 echo "#### Generating the .gtkw layout (gen_gtkw)${GTKWAVE:+ and launching GTKWave}"
-"$BIN_DIR/gen_gtkw" "$TMP_DIR/${TB}_hdr.vcd" "$TMP_DIR/$TB.gtkw" "$TMP_DIR" "$BIN_DIR/comp2gtkw"
+"$BIN_DIR/gen_gtkw" "$TMP_DIR/$TB.fst" "$TMP_DIR/$TB.gtkw" "$TMP_DIR" "$BIN_DIR/comp2gtkw"
 if [ -n "$GTKWAVE" ]; then
-    "$GTKWAVE" $(gtkwave_opts) "$TMP_DIR/$TB.vcd" -a "$TMP_DIR/$TB.gtkw"
+    "$GTKWAVE" $(gtkwave_opts) "$TMP_DIR/$TB.fst" -a "$TMP_DIR/$TB.gtkw"
 else
-    echo "[multi_proc] no gtkwave: the waveform is $TMP_DIR/$TB.vcd, its layout $TMP_DIR/$TB.gtkw"
+    echo "[multi_proc] no gtkwave: the waveform is $TMP_DIR/$TB.fst, its layout $TMP_DIR/$TB.gtkw"
 fi
 
 cd "$ROOT_DIR"

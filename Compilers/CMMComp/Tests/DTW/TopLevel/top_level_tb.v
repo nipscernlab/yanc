@@ -49,11 +49,11 @@ initial begin
 	// waveform, only the output_*.txt logs. go_proj(.bat)/go_proj_vl(.bat)
 	// pass +WAVE to get the GTKWave trace; regress runs without it.
 	// +HEADER_ONLY also dumps, then bails after one tick: gen_gtkw only needs the
-	// VCD header (the signal list). $dumpvars at t=0 merely registers scopes, so
-	// advance #1 and $dumpflush before $finish or the VCD has $scope but no $var.
+	// waveform's header (the signal list). $dumpvars at t=0 merely registers scopes,
+	// so advance #1 and $dumpflush before $finish or the header has no signal.
 	// This gives the formatter the signal list without writing the multi-GB body.
 	if ($test$plusargs("WAVE") || $test$plusargs("HEADER_ONLY")) begin
-		$dumpfile("top_level_tb.vcd");
+		$dumpfile("top_level_tb.fst");
 		$dumpvars(0,top_level_tb);
 	end
 	if ($test$plusargs("HEADER_ONLY")) begin

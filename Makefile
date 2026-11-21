@@ -50,10 +50,12 @@ ifeq ($(OS),Windows_NT)
   EXE  := .exe
   UTF8 := Compilers/common/utf8_res.o
   CMM_STACK := -Wl,--stack,16777216
+  ZLIB := -Wl,-Bstatic -lz -Wl,-Bdynamic
 else
   EXE  :=
   UTF8 :=
   CMM_STACK :=
+  ZLIB := -lz
 endif
 
 CMM := Compilers/CMMComp/Sources
@@ -154,11 +156,20 @@ $(BIN)/cppcomp$(EXE): $(addprefix $(CPP)/,$(CPPCOMP_C)) \
 	      $(CPP)/lex.yy.c $(CPP)/y.tab.c $(addprefix $(COMMON)/,$(CPPCOMP_COMMON)) $(UTF8) $(LDLIBS)
 
 # --- GTKWave helpers --------------------------------------------------------
+# gen_gtkw reads FST with GTKWave's libfst (Scripts/libfst/, kept as it came:
+# see its README.md), which needs zlib. Its own warnings are not ours to gate,
+# so it builds with -w and without -Werror; on Windows zlib is linked
+# statically, so gen_gtkw.exe needs no zlib1.dll.
+LIBFST   := Scripts/libfst
+LIBFST_O := $(LIBFST)/fstapi.o $(LIBFST)/fastlz.o $(LIBFST)/lz4.o
+$(LIBFST)/%.o: $(LIBFST)/%.c $(wildcard $(LIBFST)/*.h)
+	$(CC) $(filter-out -Werror,$(CFLAGS)) -w -c -o $@ $<
+
 $(BIN)/comp2gtkw$(EXE): $(SCR)/comp2gtkw.c $(UTF8) | $(BIN)
 	$(CC) $(CFLAGS) -o $@ $(SCR)/comp2gtkw.c $(UTF8) $(LDLIBS)
 
-$(BIN)/gen_gtkw$(EXE): $(SCR)/gen_gtkw.c $(EXEDIR) $(COMMON)/xstr.c $(COMMON)/xstr.h | $(BIN)
-	$(CC) $(CFLAGS) -o $@ $(SCR)/gen_gtkw.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(COMMON)/xstr.c $(UTF8) $(LDLIBS)
+$(BIN)/gen_gtkw$(EXE): $(SCR)/gen_gtkw.c $(EXEDIR) $(COMMON)/xstr.c $(COMMON)/xstr.h $(LIBFST_O) | $(BIN)
+	$(CC) $(CFLAGS) -o $@ $(SCR)/gen_gtkw.c $(COMMON)/exe_dir.c $(COMMON)/yanc_lang.c $(COMMON)/xstr.c $(LIBFST_O) $(UTF8) $(ZLIB) $(LDLIBS)
 
 # --- yanc, the driver (runs the tools next to it) ---------------------------
 $(BIN)/yanc$(EXE): Compilers/Driver/yanc.c $(CONSOLE) $(EXEDIR) $(COMMON)/xstr.c $(COMMON)/xstr.h $(VERSION_H) | $(BIN)
@@ -175,7 +186,7 @@ install: all
 
 clean:
 	rm -rf $(BIN)
-	rm -f Compilers/common/utf8_res.o
+	rm -f Compilers/common/utf8_res.o $(LIBFST_O)
 	rm -f $(CMM)/lex.yy.c $(CMM)/y.tab.c $(CMM)/y.tab.h
 	rm -f $(ASM)/ASMComp.c $(ASM)/pass1_lex.c
 	rm -f $(CPP)/lex.yy.c $(CPP)/y.tab.c $(CPP)/y.tab.h
