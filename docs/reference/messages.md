@@ -69,6 +69,9 @@ value. What the common ones mean and how to get past them is in
 - Error on line <n>: haven't coded this up for complex numbers yet. You're on your own!
 - Error on line <n>: '<name>' ain't even a vector, mate!
 - Error on line <n>: '<name>' ain't even a matrix, mate!
+- Error on line <n>: <name>(<name>); takes the name of an array, and '<name>' ain't one. On a number, write x = <name>(x);
+- Error on line <n>: <name>(.) takes the name of a vector, and '<name>' ain't one.
+- Error on line <n>: <name>(.) writes floats into the array, and '<name>' is an int one.
 - Error on line <n>: you can only shift a vector into itself, mate!
 - Error on line <n>: adding <name> and <name>? Those shapes don't fit, mate!
 - Error on line <n>: <name> times <name>? No way: the columns of the first must match the rows of the second!
@@ -162,6 +165,7 @@ value. What the common ones mean and how to get past them is in
 - Info: adding assembly macro for sin computation
 - Info: adding assembly macro for tangent computation
 - Info: adding assembly macro for exponential computation
+- Info: adding the routine <name>, one copy for every call
 - Info: adding assembly macro for natural-logarithm computation
 - Info: array initialization with file <name> for variable '<name>' at line <n>
 - Info: Dirac notation for shift register in vector <name> detected at line <n>
@@ -184,6 +188,12 @@ value. What the common ones mean and how to get past them is in
 - error: undefined '<name>'
 - error: subscript on non-array/non-pointer
 - error: undefined function '<name>'
+- error: <name>() takes one argument
+- error: <name>() takes an array whose size the compiler knows; a pointer, a std::vector or a std::array does not work yet
+- error: <name>() takes an array of one dimension
+- error: <name>(): the array's elements must be <name>
+- error: <name>() takes a number, an int or a float
+- error: the library routine '<name>' was not found, in the Macros/ folder beside bin/
 - error: deref on non-pointer
 - error: '.' on non-struct
 - error: no such field '<name>'

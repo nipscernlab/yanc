@@ -52,6 +52,21 @@ static int use_ftan  = 0; // whether the tangent macro is needed
 static int use_fexp  = 0; // whether the exponential macro is needed
 static int use_flog  = 0; // whether the natural-logarithm macro is needed
 
+// the routines of relu, sigmoid, tanh, softmax and argmax on an array
+// (docs/design/nn-functions.md): one copy whatever the number of calls, shared
+// with cppcomp; the ones that call __float_exp bring it
+static struct { const char *name, *file; int exp; int used; } nn_mac[] = {
+    {"nn_relu_f",   "nn_relu_f.asm",   0, 0},
+    {"nn_relu_i",   "nn_relu_i.asm",   0, 0},
+    {"nn_sigmoid",  "nn_sigmoid.asm",  1, 0},
+    {"nn_tanh",     "nn_tanh.asm",     1, 0},
+    {"nn_softmax",  "nn_softmax.asm",  1, 0},
+    {"nn_argmax_f", "nn_argmax_f.asm", 0, 0},
+    {"nn_argmax_i", "nn_argmax_i.asm", 0, 0},
+};
+#define N_NN_MAC ((int)(sizeof nn_mac / sizeof nn_mac[0]))
+static int use_nn = 0;    // whether any of them is needed
+
 // adds a flag for a predefined macro -----------------------------------------
 
 void mac_add(const char *name)
@@ -62,6 +77,12 @@ void mac_add(const char *name)
     else if (strcmp(name, "ftan" ) == 0) use_ftan  = 1; // tangent
     else if (strcmp(name, "fexp" ) == 0) use_fexp  = 1; // exponential
     else if (strcmp(name, "flog" ) == 0) use_flog  = 1; // natural logarithm
+    else for (int k = 0; k < N_NN_MAC; k++)
+        if (strcmp(name, nn_mac[k].name) == 0)
+        {
+            nn_mac[k].used = use_nn = 1;
+            if (nn_mac[k].exp) use_fexp = 1;
+        }
 }
 
 // appends the macro file `file` of the Macros folder to the .asm
@@ -78,7 +99,7 @@ void mac_copy(char *fasm)
 {
     // bail out if there is nothing to do -------------------------------------
 
-    if (!(use_fsqrt || use_fatan || use_fsin || use_ftan || use_fexp || use_flog)) return;
+    if (!(use_fsqrt || use_fatan || use_fsin || use_ftan || use_fexp || use_flog || use_nn)) return;
 
     // copy what is needed at the end of the asm ------------------------------
 
@@ -117,4 +138,11 @@ void mac_copy(char *fasm)
         warn(MSG_INFO_LOG_MACRO);
         mac_cat("float_log.asm", fasm);
     }
+
+    for (int k = 0; k < N_NN_MAC; k++)
+        if (nn_mac[k].used)
+        {
+            warn(MSG_INFO_NN_MACRO, nn_mac[k].file);
+            mac_cat(nn_mac[k].file, fasm);
+        }
 }

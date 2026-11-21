@@ -205,11 +205,33 @@ and a `new` ends the program, as an uncaught `std::bad_alloc` does (`new`
 never returns 0, so code may use what it gives without a test). The heap's
 size is fixed.
 
+## Neural networks
+
+The calls of C±'s library for a neural network's layers are built in: no
+`#include`, the same names and the same results as in C±
+([The library](library.md#neural-networks)).
+
+| call | takes | does |
+|---|---|---|
+| `relu(v);` | an array of `int` or `float`, of any dimensions | every element below 0 becomes 0 |
+| `sigmoid(v);`, `tanh(v);` | an array of `float`, of any dimensions | every element `x` becomes `1 / (1 + exp(-x))`, or its hyperbolic tangent |
+| `softmax(v);` | a one-dimensional array of `float` | every element `x` becomes `exp(x - max) / sum` |
+| `argmax(v)` | a one-dimensional array of `int` or `float` | the index of the largest element, an `int`; the first of equal ones |
+| `relu(x)` | an `int` or a `float` | `x`, or 0 when `x` is negative, of `x`'s type |
+| `sigmoid(x)`, `tanh(x)`, `exp(x)` | an `int` or a `float` | a `float` |
+
+The array is one the compiler knows the size of: a global, a local or a
+member declared as an array. A pointer, a `std::vector` and a `std::array`
+do not work yet. `exp` and `tanh` are C±'s routines, so `std::exp(x)` and
+`std::tanh(x)` work with or without `<cmath>`. A function of the program
+with one of these names (`int argmax(const float *a, int n)`) is the one
+called: the built-in is only for a name the program leaves free.
+
 ## The standard headers
 
 | header | gives |
 |---|---|
-| `<cmath>` | `fabs`, `sqrt`, `isfinite`, `isnan`, `isinf` (the last two always 0: there is no infinity or NaN) |
+| `<cmath>` | `fabs`, `sqrt`, `isfinite`, `isnan`, `isinf` (the last two always 0: there is no infinity or NaN); `exp` and `tanh` are built in, [above](#neural-networks) |
 | `<vector>` | `std::vector<T>`: `size()`, `data()`, `operator[]`, `reserve`, `resize`, `push_back`; its storage is never freed, and there is no `erase`, `insert`, `clear` or iterator |
 | `<array>` | `std::array<T, N>`: `operator[]`, `data()`, `size()` |
 | `<cstring>` | `strlen`, `strcmp`, `strncmp`, `strcpy`, `strncpy`, `strcat`, `strncat`, `strchr`, `strrchr`, `strstr`, as C's (a char is a word, a string ends with a 0); `memcpy`, `memmove`, `memset`, `memcmp`, `memchr`, `n` in words |
@@ -319,4 +341,5 @@ arguments, `std::string`, file streams, `printf`, the functional cast
 `int(f)` (write `(int)f`), and more than one source file (use `#include`). Most of these stop the compiler with "syntax error"
 at the line; a variadic function has its own message. GitHub issue #43 keeps
 the list of the forms not accepted yet, and issue #31 the functions of
-C±'s library that C++ lacks (`fin`, `fout`, `sin` and the rest).
+C±'s library that C++ lacks (`fin`, `fout`, `sin` and the rest; `exp` and
+`tanh` are built in since the functions for neural networks).

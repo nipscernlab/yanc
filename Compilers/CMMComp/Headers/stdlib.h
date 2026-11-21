@@ -46,6 +46,7 @@ expr builtin_cosh(expr e);           // hyperbolic cosine
 expr builtin_sinh(expr e);           // hyperbolic sine
 expr builtin_tanh(expr e);           // hyperbolic tangent
 expr builtin_exp (expr e);           // exponential (e^x)
+expr builtin_sigmoid(expr e);        // 1 / (1 + exp(-x))
 expr builtin_log (expr e);           // natural logarithm (ln x)
 expr builtin_pow (expr ex, expr ey); // power x^y (const int exp: square-and-multiply; int var: loop; else exp(y*ln x))
 expr builtin_floor(expr e);          // largest integral float <= x

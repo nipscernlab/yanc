@@ -78,6 +78,31 @@ void msg_on_internal(void (*fn)(void));                // runs before msg_intern
     M("a função '%s' não foi declarada", \
       "undefined function '%s'")
 
+// relu, sigmoid, tanh, softmax, argmax and exp, built in (docs/design/nn-functions.md)
+#define MSG_ERR_NN_ARGS \
+    M("%s() recebe um argumento", \
+      "%s() takes one argument")
+
+#define MSG_ERR_NN_ARRAY \
+    M("%s() recebe um array cujo tamanho o compilador conhece; um ponteiro, um std::vector ou um std::array ainda não", \
+      "%s() takes an array whose size the compiler knows; a pointer, a std::vector or a std::array does not work yet")
+
+#define MSG_ERR_NN_VECTOR \
+    M("%s() recebe um array de uma dimensão", \
+      "%s() takes an array of one dimension")
+
+#define MSG_ERR_NN_ELEM \
+    M("%s(): os elementos do array têm de ser %s", \
+      "%s(): the array's elements must be %s")
+
+#define MSG_ERR_NN_NUMBER \
+    M("%s() recebe um número, int ou float", \
+      "%s() takes a number, an int or a float")
+
+#define MSG_ERR_NO_MACRO \
+    M("não achei a rotina '%s' da biblioteca, na pasta Macros/ ao lado de bin/", \
+      "the library routine '%s' was not found, in the Macros/ folder beside bin/")
+
 #define MSG_ERR_DEREF \
     M("'*' aplicado a algo que não é ponteiro", \
       "deref on non-pointer")

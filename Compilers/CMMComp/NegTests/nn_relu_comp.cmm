@@ -1,0 +1,7 @@
+// a comp has no order: relu, sigmoid, tanh, softmax and argmax refuse it
+comp v[2] = {1+2i, 3};
+void main()
+{
+    relu(v);
+    out(0, 1);
+}

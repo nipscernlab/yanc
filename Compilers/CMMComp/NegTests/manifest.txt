@@ -88,3 +88,9 @@ char_nul.cmm|Error on line 5: the character '\0' is not part of C±.
 praca_not_main.cmm|Error on line 10: #PRACA inside f.
 opassign_index.cmm|is computed twice, for the read and for the write
 decr_complex.cmm|increment or decrement a complex number
+nn_scalar.cmm|relu(x); takes the name of an array, and 'x' ain't one
+nn_softmax_int.cmm|softmax(.) writes floats into the array, and 'v' is an int one
+nn_softmax_2d.cmm|softmax(.) takes the name of a vector, and 'm' ain't one
+nn_argmax_2d.cmm|argmax(.) takes the name of a vector, and 'm' ain't one
+nn_relu_comp.cmm|relu(.) doesn't take a comp
+nn_sigmoid_comp.cmm|sigmoid(.) doesn't take a comp

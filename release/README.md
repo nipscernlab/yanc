@@ -37,7 +37,7 @@ there (`uninstall.bat` takes it off).
 |---|---|
 | `bin/` | `yanc`, the one command that runs the others, the compilers (`cmmcomp`, `cppcomp`, `asmcomp`) and two waveform helpers (`comp2gtkw`, `gen_gtkw`). `-h` on `yanc` or a compiler shows its options, `-V` its version; GTKWave runs `comp2gtkw` itself |
 | `SAPHO/` | the SAPHO processor, in Verilog: asmcomp instantiates it with each program's parameters, and a simulator or a synthesizer reads it from here |
-| `Macros/` | assembly macros and tables used by C± programs |
+| `Macros/` | assembly macros and tables used by C± programs, and the routines of `exp` and of the functions for neural networks, which C++ programs use too |
 | `Header/` | the C++ headers the programs include |
 | `example/` | one small program, in C++ (`my_program.cpp`) and in C± (`my_program.cmm`) |
 

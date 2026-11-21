@@ -1,0 +1,6 @@
+// sigmoid of a number refuses a comp too
+void main()
+{
+    comp z = 1+2i;
+    fout(0, sigmoid(z));
+}

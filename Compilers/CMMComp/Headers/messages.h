@@ -301,6 +301,19 @@ void parse_lang_flag(int *argc, char **argv);
     M("Erro na linha %d: '%s' nem matriz é, abensoado!\n", \
       "Error on line %d: '%s' ain't even a matrix, mate!\n")
 
+// relu, sigmoid, tanh, softmax and argmax on an array (nn.c)
+#define MSG_ERR_NN_NOT_ARRAY \
+    M("Erro na linha %d: %s(%s); recebe o nome de um array, e '%s' não é. Num número, escreva x = %s(x);\n", \
+      "Error on line %d: %s(%s); takes the name of an array, and '%s' ain't one. On a number, write x = %s(x);\n")
+
+#define MSG_ERR_NN_NOT_VECTOR \
+    M("Erro na linha %d: %s(.) recebe o nome de um vetor, e '%s' não é.\n", \
+      "Error on line %d: %s(.) takes the name of a vector, and '%s' ain't one.\n")
+
+#define MSG_ERR_NN_INT \
+    M("Erro na linha %d: %s(.) escreve floats no array, e '%s' é int.\n", \
+      "Error on line %d: %s(.) writes floats into the array, and '%s' is an int one.\n")
+
 #define MSG_ERR_SHIFT_VEC_SELF \
     M("Erro na linha %d: só dá pra fazer shift de um vetor nele mesmo, abensoado!\n", \
       "Error on line %d: you can only shift a vector into itself, mate!\n")
@@ -641,6 +654,10 @@ void parse_lang_flag(int *argc, char **argv);
 #define MSG_INFO_EXP_MACRO \
     M("Info: adicionando macro assembly para cálculo de exponencial\n", \
       "Info: adding assembly macro for exponential computation\n")
+
+#define MSG_INFO_NN_MACRO \
+    M("Info: adicionando a rotina %s, uma cópia para todas as chamadas\n", \
+      "Info: adding the routine %s, one copy for every call\n")
 
 #define MSG_INFO_LOG_MACRO \
     M("Info: adicionando macro assembly para cálculo de logaritmo natural\n", \

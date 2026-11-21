@@ -161,3 +161,79 @@ product into an array of your own on a line before.
 computed value (`a # k+1 -> |a⟩`) did nothing. A result computed with
 these needs checking. With `K = g P x` and `P` symmetric, as in an RLS
 filter, the transposed outer product is the same matrix, up to rounding.
+
+## Neural networks
+
+The functions that follow a layer of a dense neural network. A layer is a
+Dirac statement, `h # |W|x⟩ + |b⟩;`, and the weights come from files
+(`float W[8][4] "w.txt";`, see [The C± language](language-cmm.md)). C± has
+no arrays as parameters, so a program cannot write these as functions of its
+own: they take the name of an array, and the compiler calls a routine.
+C++ has the same calls, built in ([The C++ YANC accepts](language-cpp.md#neural-networks)).
+
+| call | takes | does |
+|---|---|---|
+| `relu(v);` | an `int` or `float` array, 1D or 2D | every element below 0 becomes 0 |
+| `sigmoid(v);` | a `float` array, 1D or 2D | every element `x` becomes `1 / (1 + exp(-x))` |
+| `tanh(v);` | a `float` array, 1D or 2D | every element becomes its hyperbolic tangent |
+| `softmax(v);` | a `float` vector | every element `x` becomes `exp(x - max) / sum`, so that they add up to 1 |
+| `argmax(v)` | an `int` or `float` vector | the index of the largest element, an `int`; the first one when several are equal |
+| `relu(x)` | an `int` or `float` | `x`, or 0 when `x` is negative: `pset(x)` |
+| `sigmoid(x)` | an `int` or `float` | `1 / (1 + exp(-x))`, a float |
+
+The first four are statements and change the array in place; `argmax(v)`,
+`relu(x)` and `sigmoid(x)` go anywhere a number goes. None takes a `comp`.
+A two-layer network:
+
+```text
+#define NI 4
+#define NH 8
+#define NO 3
+float W1[NH][NI] "w1.txt";
+float b1[NH]     "b1.txt";
+float W2[NO][NH] "w2.txt";
+float b2[NO]     "b2.txt";
+float x[NI];
+float h[NH];
+float y[NO];
+
+void main() {
+    for (int k = 0; k < NI; k++) x[k] = fin(0);
+    h # |W1|x⟩ + |b1⟩;
+    relu(h);
+    y # |W2|h⟩ + |b2⟩;
+    out(0, argmax(y));
+}
+```
+
+`softmax` subtracts the largest element before taking `exp`: the SAPHO
+float has no infinity, and `exp` of an element above about 103 passes the
+largest float at the default widths (measured: `log(exp(x))` gives `x` back
+up to 103, and less from 104), so that without it `softmax` of
+`{200, 199, 0}` gives 0, 0 and 1 instead of 0.731, 0.269 and 0. A program
+that only needs the class leaves `softmax` out: the largest element of the
+layer's output is also the most probable, and `argmax` needs neither `exp`
+nor a divider.
+
+Each array form calls a routine (`nn_relu_f`, `nn_softmax`, ... in
+`Macros/`) that is added to the program once, whatever the number of calls,
+as the routine of `exp` is; a call is four instructions. What they cost,
+measured on 2026-11-19 (32-bit processor, `#FROUND 0`): the instructions and
+data words a program has beyond the same program without the call, as `yanc`
+prints them, for the first call and for each one after it, and the cycles a
+call takes on a vector of 16 floats from -2 to 2. The size does not depend
+on the number of elements; the cycles grow with it.
+
+| call | first call: instructions, data words | each further call | cycles per element |
+|---|---|---|---|
+| `relu(v);` | 14, 4 | 4 | 8 |
+| `sigmoid(v);` | 46, 14 | 4 | 40 |
+| `tanh(v);` | 50, 16 | 4 | 44 |
+| `softmax(v);` | 78, 18 | 4 | 57 |
+| `argmax(v)` | 26, 7 | 4 | 13 |
+| `sigmoid(x)` | 33, 10 | 7 | |
+| `relu(x)` | 1, 0 | 1 | |
+
+`sigmoid`, `tanh` and `softmax` share the routine of `exp` and the
+divider: a program that calls two of them pays for each once. `softmax`
+divides once and multiplies every element by the result.

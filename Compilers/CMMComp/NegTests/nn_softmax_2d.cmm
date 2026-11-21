@@ -1,0 +1,7 @@
+// softmax takes a vector: over a matrix, it would not say along which side
+float m[2][2] = {{1.0, 2.0}, {3.0, 4.0}};
+void main()
+{
+    softmax(m);
+    fout(0, m[0][0]);
+}

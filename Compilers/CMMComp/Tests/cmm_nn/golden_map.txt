@@ -1,0 +1,476 @@
+## messages
+Info: 225 assembly instructions generated
+Info: adding assembly macro for exponential computation
+Info: adding the routine nn_relu_f.asm, one copy for every call
+Info: adding the routine nn_relu_i.asm, one copy for every call
+Info: adding the routine nn_sigmoid.asm, one copy for every call
+Info: adding the routine nn_tanh.asm, one copy for every call
+Info: adding the routine nn_softmax.asm, one copy for every call
+Info: adding the routine nn_argmax_f.asm, one copy for every call
+Info: adding the routine nn_argmax_i.asm, one copy for every call
+Info: 4 divisions, 5 words each for DIV/MOD and 4 for F_DIV (12 added)
+Info: 18 increments made one INC each
+Info: 16 variables share 10 data words (6 saved)
+Sweet: it compiled! Now you just gotta figure out why it doesn't work.
+Info: 386 instructions and 89 variables were found
+Info: ULA resource -> integer adder
+Info: adding stack memory for function calls
+Info: adding array handling
+Info: ULA resource -> float-point multiplier
+Info: ULA resource -> float to int converter
+Info: adding data output handling
+Info: ULA resource -> < operator for int
+Info: ULA resource -> integer multiplier
+Info: ULA resource -> ^ operator
+Info: ULA resource -> float-point negative operation
+Info: ULA resource -> float-point adder
+Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
+Info: ULA resource -> float-point pset computation (standard library)
+Info: ULA resource -> integer negative operation
+Info: ULA resource -> integer pset computation (standard library)
+Info: ULA resource -> float-point sign computation (standard library)
+Info: ULA resource -> int to float converter
+Info: ULA resource -> float scale by a power of two (2^k)
+Info: ULA resource -> > operator for int
+Info: ULA resource -> < operator for float
+Info: stack depths from the program: SDEPTH 2, NDSTAC 1
+Info: using 30% of the Assembly Instruction Set
+Info: using 47% of the ULA operations
+Processor cmm_nn
+  word          32 bits
+  float         23 mantissa and 8 exponent bits
+  multiplier    int and float; divider float
+  data stack    1 words (worked out from the program)
+  call stack    2 words (worked out from the program)
+  memories      386 instructions, 89 data words
+Sweet: the processor is good to go.
+## variables
+best n 1
+main k 1
+main x 2
+lang C+-
+## listing
+// -1: INTERNAL
+0 NOP
+// 39: relu(v);
+1 LEA v
+2 SET __nn_p
+3 ADD 5
+4 CAL __nn_relu_f
+// 40: for (k = 0; k < 5; k++) fout(0, v[k] * 1000.0);
+5 LOD 0
+6 SET main_k
+7 LOD main_k
+8 LDI v
+9 F_MLT 1000.0
+10 F2I
+11 OUT 0
+12 INC main_k
+13 LES 4
+14 JIZ __Lwh1
+// 41: relu(iv);
+15 LEA iv
+16 SET __nn_p
+17 ADD 4
+18 CAL __nn_relu_i
+// 42: for (k = 0; k < 4; k++) out(0, iv[k]);
+19 LOD 0
+20 SET main_k
+21 LOD main_k
+22 LDI iv
+23 OUT 0
+24 INC main_k
+25 LES 3
+26 JIZ __Lwh2
+// 43: relu(m);
+27 LEA m
+28 SET __nn_p
+29 ADD 6
+30 CAL __nn_relu_f
+// 44: for (k = 0; k < 3; k++) fout(0, m[0][k] * 1000.0);
+31 LOD 0
+32 SET main_k
+33 LOD 0
+34 MLT 3
+35 ADD main_k
+36 LDI m
+37 F_MLT 1000.0
+38 F2I
+39 OUT 0
+40 INC main_k
+41 LES 2
+42 JIZ __Lwh3
+// 45: for (k = 0; k < 3; k++) fout(0, m[1][k] * 1000.0);
+43 LOD 0
+44 SET main_k
+45 LOD 1
+46 MLT 3
+47 ADD main_k
+48 LDI m
+49 F_MLT 1000.0
+50 F2I
+51 OUT 0
+52 INC main_k
+53 LES 2
+54 JIZ __Lwh4
+// 47: sigmoid(g);
+55 LEA g
+56 SET __nn_p
+57 ADD 3
+58 CAL __nn_sigmoid
+// 48: for (k = 0; k < 3; k++) fout(0, g[k] * 1000000.0);
+59 LOD 0
+60 SET main_k
+61 LOD main_k
+62 LDI g
+63 F_MLT 1000000.0
+64 F2I
+65 OUT 0
+66 INC main_k
+67 LES 2
+68 JIZ __Lwh5
+// 49: tanh(t);
+69 LEA t
+70 SET __nn_p
+71 ADD 3
+72 CAL __nn_tanh
+// 50: for (k = 0; k < 3; k++) fout(0, t[k] * 1000000.0);
+73 LOD 0
+74 SET main_k
+75 LOD main_k
+76 LDI t
+77 F_MLT 1000000.0
+78 F2I
+79 OUT 0
+80 INC main_k
+81 LES 2
+82 JIZ __Lwh6
+// 52: softmax(s);
+83 LEA s
+84 SET __nn_p
+85 ADD 5
+86 CAL __nn_softmax
+// 53: for (k = 0; k < 5; k++) fout(0, s[k] * 1000000.0);
+87 LOD 0
+88 SET main_k
+89 LOD main_k
+90 LDI s
+91 F_MLT 1000000.0
+92 F2I
+93 OUT 0
+94 INC main_k
+95 LES 4
+96 JIZ __Lwh7
+// 54: softmax(big);
+97 LEA big
+98 SET __nn_p
+99 ADD 3
+100 CAL __nn_softmax
+// 55: for (k = 0; k < 3; k++) fout(0, big[k] * 1000000.0);
+101 LOD 0
+102 SET main_k
+103 LOD main_k
+104 LDI big
+105 F_MLT 1000000.0
+106 F2I
+107 OUT 0
+108 INC main_k
+109 LES 2
+110 JIZ __Lwh8
+// 56: softmax(one);
+111 LEA one
+112 SET __nn_p
+113 ADD 1
+114 CAL __nn_softmax
+// 57: fout(0, one[0] * 1000.0);
+115 LOD_V one 0
+116 F_MLT 1000.0
+117 F2I
+118 OUT 0
+// 59: out(0, argmax(s));
+119 LEA s
+120 SET __nn_p
+121 ADD 5
+122 CAL __nn_argmax_f
+123 OUT 0
+// 60: out(0, argmax(iv));
+124 LEA iv
+125 SET __nn_p
+126 ADD 4
+127 CAL __nn_argmax_i
+128 OUT 0
+// 61: out(0, argmax(tie));
+129 LEA tie
+130 SET __nn_p
+131 ADD 4
+132 CAL __nn_argmax_f
+133 OUT 0
+// 62: out(0, argmax(one));
+134 LEA one
+135 SET __nn_p
+136 ADD 1
+137 CAL __nn_argmax_f
+138 OUT 0
+// 63: out(0, argmax(neg));
+139 LEA neg
+140 SET __nn_p
+141 ADD 3
+142 CAL __nn_argmax_f
+143 OUT 0
+// 64: k = 0;
+144 LOD 0
+145 SET main_k
+// 65: while (argmax(cnt) != 0) { cnt[0] = cnt[0] + 5; k++; }
+146 LEA cnt
+147 SET __nn_p
+148 ADD 3
+149 CAL __nn_argmax_i
+150 XOR 0
+151 JIZ __Lwh9end
+152 LOD_V cnt 0
+153 ADD 5
+154 SET_V cnt 0
+155 INC main_k
+156 JMP __Lwh9
+// 66: out(0, k);
+157 LOD main_k
+158 OUT 0
+// 67: out(0, best(10));
+159 LOD 10
+160 CAL best
+161 OUT 0
+// 68: out(0, argmax(tie) * 10 + argmax(neg));
+162 LEA tie
+163 SET __nn_p
+164 ADD 4
+165 CAL __nn_argmax_f
+166 MLT 10
+167 PSH
+168 LEA neg
+169 SET __nn_p
+170 ADD 3
+171 CAL __nn_argmax_f
+172 S_ADD
+173 OUT 0
+// 70: float x = 0.5;
+174 LOD 0.5
+175 SET main_x
+// 71: fout(0, sigmoid(x) * 1000000.0);
+176 F_NEG
+177 CAL __float_exp
+178 F_ADD 1.0
+179 F_DIV 1.0
+180 NOP
+181 NOP
+182 F_QUO
+183 F_MLT 1000000.0
+184 F2I
+185 OUT 0
+// 72: fout(0, relu(-x) * 1000.0);
+186 F_NEG_M main_x
+187 F_PST
+188 F_MLT 1000.0
+189 F2I
+190 OUT 0
+// 73: out(0, relu(-7));
+191 NEG_M 7
+192 PST
+193 OUT 0
+// 74: out(0, relu(7));
+194 PST_M 7
+195 OUT 0
+// -3: END
+196 JMP fim
+// 28: int best(int n)
+197 SET best_n
+// 31: loc[0] = 0.5; loc[1] = -0.5; loc[2] = 2.5;
+198 LOD 0.5
+199 SET_V best_loc 0
+200 LOD -0.5
+201 SET_V best_loc 1
+202 LOD 2.5
+203 SET_V best_loc 2
+// 32: return argmax(loc) * n;
+204 LEA best_loc
+205 SET __nn_p
+206 ADD 3
+207 CAL __nn_argmax_f
+208 MLT best_n
+209 RET
+// library macros, no source line
+210 SET __exp_x
+211 F_MLT 1.4426950409
+212 SET __exp_q
+213 LOD 0.5
+214 F_SGN __exp_q
+215 F_ADD __exp_q
+216 F2I
+217 SET __exp_n
+218 I2F
+219 F_MLT 0.6931471806
+220 F_SU2 __exp_x
+221 SET __exp_r
+222 F_MLT 0.0013888889
+223 F_ADD 0.0083333333
+224 F_MLT __exp_r
+225 F_ADD 0.0416666667
+226 F_MLT __exp_r
+227 F_ADD 0.1666666667
+228 F_MLT __exp_r
+229 F_ADD 0.5
+230 F_MLT __exp_r
+231 F_ADD 1.0
+232 F_MLT __exp_r
+233 F_ADD 1.0
+234 F_SCL __exp_n
+235 RET
+236 SET __nn_e
+237 LOD __nn_p
+238 PSH
+239 LDI 0
+240 F_PST
+241 STI 0
+242 INC __nn_p
+243 GRE __nn_e
+244 JNZ __nn_relu_f_t
+245 RET
+246 SET __nn_e
+247 LOD __nn_p
+248 PSH
+249 LDI 0
+250 PST
+251 STI 0
+252 INC __nn_p
+253 GRE __nn_e
+254 JNZ __nn_relu_i_t
+255 RET
+256 SET __nn_e
+257 LOD __nn_p
+258 PSH
+259 LDI 0
+260 F_NEG
+261 CAL __float_exp
+262 F_ADD 1.0
+263 F_DIV 1.0
+264 NOP
+265 NOP
+266 F_QUO
+267 STI 0
+268 INC __nn_p
+269 GRE __nn_e
+270 JNZ __nn_sigmoid_t
+271 RET
+272 SET __nn_e
+273 LOD __nn_p
+274 PSH
+275 LDI 0
+276 F_MLT 2.0
+277 CAL __float_exp
+278 SET __nn_te
+279 F_ADD -1.0
+280 SET __nn_tn
+281 LOD __nn_te
+282 F_ADD 1.0
+283 F_DIV __nn_tn
+284 NOP
+285 NOP
+286 F_QUO
+287 STI 0
+288 INC __nn_p
+289 GRE __nn_e
+290 JNZ __nn_tanh_t
+291 RET
+292 SET __nn_e
+293 LOD __nn_p
+294 SET __nn_a
+295 LDI 0
+296 SET __nn_m
+297 INC __nn_p
+298 GRE __nn_e
+299 JIZ __nn_softmax_e
+300 LOD __nn_p
+301 LDI 0
+302 SET __nn_x
+303 F_LES __nn_m
+304 JIZ __nn_softmax_m
+305 LOD __nn_x
+306 SET __nn_m
+307 JMP __nn_softmax_m
+308 LOD 0.0
+309 SET __nn_s
+310 LOD __nn_a
+311 SET __nn_p
+312 LOD __nn_p
+313 PSH
+314 LDI 0
+315 F_SU1 __nn_m
+316 CAL __float_exp
+317 STI 0
+318 F_ADD __nn_s
+319 SET __nn_s
+320 INC __nn_p
+321 GRE __nn_e
+322 JNZ __nn_softmax_x
+323 LOD __nn_s
+324 F_DIV 1.0
+325 NOP
+326 NOP
+327 F_QUO
+328 SET __nn_s
+329 LOD __nn_a
+330 SET __nn_p
+331 LOD __nn_p
+332 PSH
+333 LDI 0
+334 F_MLT __nn_s
+335 STI 0
+336 INC __nn_p
+337 GRE __nn_e
+338 JNZ __nn_softmax_d
+339 RET
+340 SET __nn_e
+341 LOD __nn_p
+342 SET __nn_a
+343 SET __nn_b
+344 LDI 0
+345 SET __nn_m
+346 INC __nn_p
+347 GRE __nn_e
+348 JIZ __nn_argmax_f_e
+349 LOD __nn_p
+350 LDI 0
+351 SET __nn_x
+352 F_LES __nn_m
+353 JIZ __nn_argmax_f_t
+354 LOD __nn_x
+355 SET __nn_m
+356 LOD __nn_p
+357 SET __nn_b
+358 JMP __nn_argmax_f_t
+359 LOD __nn_a
+360 NEG
+361 ADD __nn_b
+362 RET
+363 SET __nn_e
+364 LOD __nn_p
+365 SET __nn_a
+366 SET __nn_b
+367 LDI 0
+368 SET __nn_m
+369 INC __nn_p
+370 GRE __nn_e
+371 JIZ __nn_argmax_i_e
+372 LOD __nn_p
+373 LDI 0
+374 SET __nn_x
+375 LES __nn_m
+376 JIZ __nn_argmax_i_t
+377 LOD __nn_x
+378 SET __nn_m
+379 LOD __nn_p
+380 SET __nn_b
+381 JMP __nn_argmax_i_t
+382 LOD __nn_a
+383 NEG
+384 ADD __nn_b
+385 RET

@@ -9,6 +9,34 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **C± has `relu`, `sigmoid`, `softmax` and `argmax`, and `tanh` of an
+  array, for a neural network's layers (#213).** `relu(v);`, `sigmoid(v);`,
+  `tanh(v);` and `softmax(v);` change the array `v` in place, and
+  `argmax(v)` gives the index of its largest element (the first of equal
+  ones) anywhere a number goes; `relu(x)` (`pset(x)`) and `sigmoid(x)` also
+  take a number. C± has no arrays as parameters, so the compiler takes the
+  name of the array and calls a routine of `Macros/` (`nn_*.asm`), added
+  once whatever the number of calls, as `float_exp.asm` is: a call is four
+  instructions (`relu(v);` brings 14 the first time and 4 after, at 8
+  cycles an element; `softmax(v);` 78 and 4, at 57). `softmax` subtracts
+  the largest element before `exp`: without it, `{200, 199, 0}` gives 0, 0
+  and 1 (the SAPHO float has no infinity). `relu`, `sigmoid`, `softmax` and
+  `argmax` are now names of the library, so a program cannot give them to
+  a variable. Three new errors (NegTests `nn_*`); new test `cmm_nn`,
+  checked against Python by `Scripts/nn_ref.py`. docs/library.md, "Neural
+  networks"; docs/design/nn-functions.md.
+- **C++ has `relu`, `sigmoid`, `tanh`, `softmax`, `argmax` and `exp` built
+  in (#213).** The same calls as C±, on an array whose size the compiler
+  knows (global, local or member, of any dimensions for the elementwise
+  ones), calling the same routines of `Macros/`, and `exp`, `tanh`,
+  `sigmoid` and `relu` of a number; `std::exp` and `std::tanh` work with or
+  without `<cmath>`. `exp` is C±'s routine, `Macros/float_exp.asm`,
+  appended once after `@fim` (issue #31: one set of routines for both
+  compilers). A function of the program with one of these names is the one
+  called: the 117 C++ tests, six of which define their own `argmax`, give
+  the same `.asm` as before. New errors (NegTests `nn_*`); new test
+  `test117`, checked against Python by `Scripts/nn_ref.py`.
+  docs/language-cpp.md, "Neural networks".
 - **C± has `--`, `++x`, `--x` and the compound assignments (#208).** `x--`
   and the prefix forms on int and float scalars and elements, as a
   statement, inside an expression (the postfix form gives the old value,

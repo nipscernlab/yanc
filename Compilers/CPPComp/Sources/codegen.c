@@ -25,6 +25,7 @@
 #include "../Headers/cpppp.h"
 #include "../../common/asm_share.h"
 #include "../../common/xstr.h"
+#include "../../common/exe_dir.h"
 
 // ---- output ----------------------------------------------------------------
 
@@ -649,6 +650,9 @@ static char *new_temp(const char *prefix);
 static char *new_temp_as(const char *prefix, type *t, int code, char **plain);
 static void emit_dtors_at(const char *name, const char *dtor, int n, int words);
 static type *array_elems(type *t, int *n);
+static int   is_nn_name(const char *fn);
+static type *nn_type(expr *e);
+static void  nn_gen(expr *e);
 static void gen_store(expr *lv, expr *val);
 static void gen_stmt (stmt *s);
 static void gen_bool (expr *e, const char *jz_target);
@@ -968,6 +972,7 @@ static type *infer_type(expr *e)
                             e->etype = (ms && ms->kind == SK_FUNC) ? ms->stype : t_int(); break; }
                 if (vslot >= 0) { e->etype = t_int(); break; }
             }
+            if (is_nn_name(fn)) { e->etype = nn_type(e); break; }   // built in, docs/design/nn-functions.md
             msg_error(e->line, MSG_ERR_UNDEFINED_FUNC, fn);
         } else {
             // indirect call via (*fp)(...) — the callee holds a function ID, not
@@ -1884,6 +1889,167 @@ static type *array_elems(type *t, int *n)
     *n = 1;
     while (t && t->kind == TY_ARRAY) { *n *= t->arr_size; t = t->base; }
     return t;
+}
+
+// ---- relu, sigmoid, tanh, softmax, argmax and exp, built in -----------------
+// docs/design/nn-functions.md. The calls of C±'s library for a neural
+// network's layers, as built-ins: no #include, and a function of the program
+// with the same name (a declared symbol, an overload, a template, a method)
+// hides them, which is why typing and emission reach them last. exp is C±'s
+// own routine, Macros/float_exp.asm, appended once after @fim (issue #31:
+// one set of routines for the two compilers); tanh and sigmoid are its
+// sequences in cmmcomp's stdlib.c.
+//
+// An array goes to a routine of Macros/, nn_*.asm, shared with cmmcomp and
+// appended once whatever the number of calls: its address (gen_addr, so it
+// does not matter where the array lives) in __nn_p, the address after its
+// last element in the acc, and a CAL.
+
+static int g_uses_fexp = 0;    // the program calls __float_exp
+
+static int is_nn_name(const char *fn)
+{
+    return !strcmp(fn, "relu") || !strcmp(fn, "sigmoid") || !strcmp(fn, "tanh") ||
+           !strcmp(fn, "softmax") || !strcmp(fn, "argmax") || !strcmp(fn, "exp");
+}
+
+// the argument's type, after checking that there is one
+static type *nn_arg(expr *e, const char *fn)
+{
+    if (e->n_args != 1) msg_error(e->line, MSG_ERR_NN_ARGS, fn);
+    return infer_type(e->args[0]);
+}
+
+static int nn_is_array(type *t) {return t && t->kind == TY_ARRAY && !t->is_ref;}
+
+// an element relu and argmax take: a float, or an int that is signed (an
+// unsigned word has no negative to clear, nor the order of LES)
+static int nn_signed_or_float(type *t)
+{
+    return t && (t->kind == TY_FLOAT || (t->kind == TY_INT && t->is_signed && !t->is_bool));
+}
+
+static type *nn_type(expr *e)
+{
+    const char *fn = e->a->sval;
+    type *t = nn_arg(e, fn);
+    if (!strcmp(fn, "argmax")) return t_int();
+    if (!strcmp(fn, "softmax")) return t_void();
+    if (nn_is_array(t)) {
+        if (!strcmp(fn, "exp")) msg_error(e->line, MSG_ERR_NN_NUMBER, fn);
+        return t_void();
+    }
+    if (!strcmp(fn, "relu")) return (t && t->kind == TY_FLOAT) ? t_float() : t_int();
+    return t_float();
+}
+
+// f(acc) for one element or number: the float in the acc is replaced by
+// sigmoid, tanh or exp of it (two temporaries for tanh)
+static void nn_float_op(const char *fn)
+{
+    g_uses_fexp = 1;
+    if (!strcmp(fn, "exp")) { emit("CAL __float_exp"); return; }
+    if (!strcmp(fn, "sigmoid")) {                 // 1 / (1 + exp(-x)); F_DIV X = X / acc
+        emit("F_NEG"); emit("CAL __float_exp"); emit("F_ADD 1.0"); emit("F_DIV 1.0");
+        return;
+    }
+    char *ex = new_temp("nnte"), *nu = new_temp("nntn");   // tanh = (exp(2x) - 1) / (exp(2x) + 1)
+    emit("F_MLT 2.0"); emit("CAL __float_exp"); emit("SET %s", ex);
+    emit("F_ADD -1.0"); emit("SET %s", nu);
+    emit("LOD %s", ex); emit("F_ADD 1.0"); emit("F_DIV %s", nu);
+    free(ex); free(nu);
+}
+
+// the routines of Macros/ the program calls, appended once after @fim
+// (cmmcomp's macros.c keeps the same list): float_exp.asm first, then
+// nn_*.asm, the routines of relu, sigmoid, tanh, softmax and argmax on an
+// array, one copy whatever the number of calls
+static const char *const nn_files[] = {"nn_relu_f", "nn_relu_i", "nn_sigmoid", "nn_tanh",
+                                       "nn_softmax", "nn_argmax_f", "nn_argmax_i"};
+#define N_NN_FILES ((int)(sizeof nn_files / sizeof nn_files[0]))
+static int g_uses_nn[N_NN_FILES];
+
+// __nn_p = the array's address, acc = the address after its last element,
+// CAL __<routine>; the routine marked for after @fim
+static void nn_call(expr *arr, int n, const char *routine)
+{
+    gen_addr(arr);
+    emit("SET __nn_p"); emit("ADD %d", n); emit("CAL __%s", routine);
+    for (int k = 0; k < N_NN_FILES; k++)
+        if (!strcmp(nn_files[k], routine)) g_uses_nn[k] = 1;
+    if (!strcmp(routine, "nn_sigmoid") || !strcmp(routine, "nn_tanh") || !strcmp(routine, "nn_softmax"))
+        g_uses_fexp = 1;
+}
+
+static void nn_gen(expr *e)
+{
+    const char *fn = e->a->sval;
+    type *t = nn_arg(e, fn);
+    int n;
+    type *et = nn_is_array(t) ? array_elems(t, &n) : NULL;
+
+    // a number: relu, sigmoid, tanh and exp of it, in the acc
+    if (!et) {
+        // a pointer, a reference or an object (std::vector, std::array): no
+        // size the compiler knows here
+        if (!strcmp(fn, "softmax") || !strcmp(fn, "argmax") || (t && (t->kind == TY_PTR || t->kind == TY_STRUCT)))
+            msg_error(e->line, MSG_ERR_NN_ARRAY, fn);
+        if (!t || (t->kind != TY_INT && t->kind != TY_FLOAT)) msg_error(e->line, MSG_ERR_NN_NUMBER, fn);
+        if (!strcmp(fn, "relu")) {
+            if (t->kind == TY_FLOAT) { gen_expr(e->args[0]); emit("F_PST"); }
+            else                     { gen_expr_to(e->args[0], t_int()); emit("PST"); }
+            return;
+        }
+        gen_expr_to(e->args[0], t_float());
+        nn_float_op(fn);
+        return;
+    }
+
+    // an array: walked as one vector of every element (a matrix is its rows
+    // one after the other)
+    int vec = t->base && t->base->kind != TY_ARRAY;
+    int is_f = et->kind == TY_FLOAT;
+    if (!strcmp(fn, "relu")) {
+        if (!nn_signed_or_float(et)) msg_error(e->line, MSG_ERR_NN_ELEM, fn, "int or float");
+        nn_call(e->args[0], n, is_f ? "nn_relu_f" : "nn_relu_i");
+    } else if (!strcmp(fn, "argmax")) {
+        if (!vec) msg_error(e->line, MSG_ERR_NN_VECTOR, fn);
+        if (!nn_signed_or_float(et)) msg_error(e->line, MSG_ERR_NN_ELEM, fn, "int or float");
+        nn_call(e->args[0], n, is_f ? "nn_argmax_f" : "nn_argmax_i");
+    } else {
+        if (!strcmp(fn, "softmax") && !vec) msg_error(e->line, MSG_ERR_NN_VECTOR, fn);
+        if (!is_f) msg_error(e->line, MSG_ERR_NN_ELEM, fn, "float");
+        nn_call(e->args[0], n, !strcmp(fn, "softmax") ? "nn_softmax" :
+                               !strcmp(fn, "sigmoid") ? "nn_sigmoid" : "nn_tanh");
+    }
+}
+
+// a routine of Macros/ (the folder cmmcomp reads its own from), after @fim:
+// its lines as they are, without the comments, and never fused (as inline asm)
+static void emit_macro(const char *file)
+{
+    static const char *const dirs[] = EXE_MACROS_DIRS;
+    char *dir = exe_find_dir(dirs);
+    char *path = dir ? xasprintf("%s/%s", dir, file) : NULL;
+    FILE *f = path ? fopen(path, "r") : NULL;
+    if (!f) msg_fatal(1, MSG_ERR_NO_MACRO, file);
+    char ln[512];
+    while (fgets(ln, sizeof ln, f)) {
+        char *c = strstr(ln, "//"); if (c) *c = 0;
+        size_t k = strlen(ln);
+        while (k && (ln[k - 1] == '\n' || ln[k - 1] == '\r' || ln[k - 1] == ' ' || ln[k - 1] == '\t')) ln[--k] = 0;
+        char *b = ln; while (*b == ' ' || *b == '\t') b++;
+        if (*b) emit_verbatim(b);
+    }
+    fclose(f); free(path); free(dir);
+}
+
+// every routine the program calls, after @fim
+static void emit_macros(void)
+{
+    if (g_uses_fexp) emit_macro("float_exp.asm");
+    for (int k = 0; k < N_NN_FILES; k++)
+        if (g_uses_nn[k]) { char *f = xasprintf("%s.asm", nn_files[k]); emit_macro(f); free(f); }
 }
 
 // __construct_members' arguments after (this, base_named) name the member
@@ -3155,6 +3321,7 @@ static void gen_expr(expr *e)
                     return;
                 }
             }
+            if (is_nn_name(fn) && !st_find(fn)) { nn_gen(e); return; }   // built in
             // fall through: callee is a variable holding a function ID -> indirect
         }
         // indirect call: callee is a function-pointer value (a variable, or *fp).
@@ -4765,7 +4932,8 @@ static void collect_calls_expr(expr *e, unit *u, char *row, int *indirect, const
             if (in && in->method_of)                               // a sibling method, unqualified
                 hit |= calls_named(u, row, e->a->sval, 1);
             if (!hit && e->a->sval && strcmp(e->a->sval, "in") && strcmp(e->a->sval, "out")
-                     && strcmp(e->a->sval, "toma") && strcmp(e->a->sval, "toma_sync") && !is_cade_name(e->a->sval))
+                     && strcmp(e->a->sval, "toma") && strcmp(e->a->sval, "toma_sync") && !is_cade_name(e->a->sval)
+                     && !is_nn_name(e->a->sval))
                 *indirect = 1;                 // a variable holding a function id
         } else if (e->a && (e->a->kind == E_MEMBER || e->a->kind == E_PMEMBER)) {
             calls_named(u, row, e->a->member, 1);                  // obj.m(), p->m()
@@ -5337,7 +5505,8 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
 {
     out_f = out_file;
     ins_count = 0; label_n = 0; varlog_n = 0; has_main = 0; strtab_n = 0; fptab_n = 0;
-    g_uses_udiv = 0; g_uses_u2f = 0; g_uses_f2u = 0; n_stinit = 0; g_n_inst = 0;
+    g_uses_udiv = 0; g_uses_u2f = 0; g_uses_f2u = 0; n_stinit = 0; g_n_inst = 0; g_uses_fexp = 0;
+    memset(g_uses_nn, 0, sizeof g_uses_nn);
     g_nubits = (u->nubits >= 0) ? u->nubits : CFG_NUBITS;
     cg_unit = u;
     claims_reset();
@@ -5445,6 +5614,7 @@ void codegen(FILE *out_file, unit *u, const char *tmp_dir, const char *src_text)
     if (g_uses_heap) emit_heap();
     if (g_uses_u2f)  emit_u2f();
     if (g_uses_f2u)  emit_f2u();
+    emit_macros();                         // exp and the nn_ routines, from C±'s Macros/ (issue #31)
 
     // all instructions buffered: fuse, then write the .asm + pc_mem (ins_count
     // is finalised here, after fusion, so num_ins matches the emitted program).
