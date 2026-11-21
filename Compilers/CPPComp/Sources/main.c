@@ -4,7 +4,7 @@
 // usage: cppcomp [-o <dir>] [-I <dir>]... [-E] <file.cpp>
 // Preprocesses the source in memory (cpppp.c), then compiles it, as gcc runs
 // cpp and cc1. Mirrors cmmcomp: the processor takes the name of the source
-// file, and <name>.asm and the tables go to one output folder, -o or ./<name>.
+// file, and <name>.asm and the tables go to one output folder, -o or the source's.
 // -E prints the preprocessed text and stops.
 // ----------------------------------------------------------------------------
 
@@ -144,9 +144,9 @@ int main(int argc, char **argv)
 
     g_unit->prname = derive_name(in_path, "");   // the source file's name
 
-    /* Output: everything in one folder, -o or ./<prname> (created, all
-     * levels): <prname>.asm and the tables asmcomp and the waveform read. */
-    if (!out_dir) out_dir = xasprintf("./%s", g_unit->prname);
+    /* Output: everything in one folder, -o or the source's own (#199;
+     * created, all levels): <prname>.asm and the tables asmcomp and the waveform read. */
+    if (!out_dir) out_dir = path_dir(in_path);
     make_dir(out_dir);
     const char *tmp_dir = out_dir;
     char *outp = xasprintf("%s/%s.asm", out_dir, g_unit->prname);

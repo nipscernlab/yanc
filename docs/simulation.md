@@ -15,7 +15,6 @@ for `C:\path\to\SAPHO`; see [Installing YANC](install.md)):
 
 ```sh
 export SAPHO=/path/to/yanc/SAPHO
-cd my_program
 iverilog -s my_program_tb -o sim.vvp -y "$SAPHO" my_program_tb.v my_program.v
 vvp sim.vvp
 cat output_0.txt
@@ -36,8 +35,8 @@ every file relative to it: the memories (`my_program_inst.mif`,
 `my_program_data.mif`), the PC table, the outputs (`output_N.txt`,
 `toma_k.txt`) and the waveform by their bare names, and the inputs
 (`input_N.txt`, `cade_k.txt`) by the way from the output folder to the
-source, `../input_0.txt` when the output folder is the default one beside
-the source. No absolute path is written, so the folder can be moved or
+source, `./input_0.txt` when the output folder is the default, the
+source's own. No absolute path is written, so the folder can be moved or
 copied to another machine along with the source, and a folder name with
 accents or spaces costs nothing: the YANC tools work in UTF-8 on Windows,
 Linux and macOS alike. To synthesize, give the synthesis tool the `.mif`
@@ -64,8 +63,7 @@ declared variables (`N`, `ind`, `istep`, `j`, `k`, `m`, `mmax`,
 Verilator 5 compiles the same generated `<proc>_tb.v` directly — `--timing` understands the testbench's clock and `#` delays, so no separate C++ driver is needed:
 
 ```sh
-# from the output folder, my_program/
-cd my_program
+# from the output folder, the one of my_program.cpp
 verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps \
           --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK \
           -Wno-COMBDLY -Wno-STMTDLY -Wno-INFINITELOOP -Wno-UNOPTFLAT --Mdir vl \
@@ -101,7 +99,7 @@ release's `bin/`), then open the waveform with it applied via `-a`. From the
 Quick start's output folder:
 
 ```sh
-gen_gtkw my_program_tb.vcd my_program_tb.gtkw ..
+gen_gtkw my_program_tb.vcd my_program_tb.gtkw .
 gtkwave my_program_tb.vcd -a my_program_tb.gtkw
 ```
 
@@ -111,11 +109,11 @@ format / colour / alias per signal, the `trad_opcode.txt` / `src_lines.txt`
 translators on the Assembly / C± tracks, `comp2gtkw.exe` on complex signals, and
 one section per processor — any scope that owns both `valr2` and `linetabs` — so
 the **same tool handles single- and multi-processor dumps**. Its third argument
-is the folder that holds each processor's output folder, where its translate
-files are (`..` from inside `my_program/` in the Quick start, the folder that
-holds `my_program/`). When the output folder is not named after the
-processor (`yanc -o build`, an `.asm` in a folder of another name), give the
-output folder itself: `.` from inside it.
+says where each processor's translate files are: the output folder itself
+for one processor (`.` from inside it, as in the Quick start), or the folder
+that holds one output folder per processor, each named after its processor
+(`proj/` for `proj/filtro/filtro.cmm` and `proj/fft/fft.cmm`, each written
+beside its source).
 
 Because only the header is needed, the big project FST dumps don't have to be
 written in full first: run the sim once with the **`+HEADER_ONLY`** plusarg and

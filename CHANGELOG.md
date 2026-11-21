@@ -99,6 +99,18 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **The processor is written beside its source (#199).** `yanc`, `cmmcomp`
+  and `cppcomp` wrote by default into `./<name>/`, a folder named after the
+  program under the folder the command ran in; a project that keeps each
+  processor in its own folder, as AURORA does, got `filtro/filtro/filtro.v`.
+  The default is now the source's own folder, wherever the command runs:
+  `yanc filtro/filtro.cmm` writes `filtro/filtro.v`, its memories and its
+  testbench, which reads `./input_N.txt`. `-o` is as before. The files
+  without the program's name (`prog_log.txt`, `src_lines.txt`,
+  `app_log.txt`, `trad_opcode.txt`, `output_N.txt`) mean one program per
+  folder, or `-o` for each. The README quick start, the manual and the CI
+  steps that run them lose their `cd my_program`, and `gen_gtkw` takes `.`
+  instead of `..`.
 - **A data stack of 32 words or more goes to block RAM (#170).** The stack
   read its top asynchronously, which no block RAM does, so Quartus built it
   in flip-flops and a mux, on the Cyclone V too. From 32 words the top is now

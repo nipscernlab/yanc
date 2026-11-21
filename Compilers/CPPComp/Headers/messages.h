@@ -629,7 +629,7 @@ void msg_on_internal(void (*fn)(void));                // runs before msg_intern
     M("cppcomp %s — compilador C++ para o processador SAPHO\n" \
       "uso: cppcomp [opções] <arquivo.cpp>\n" \
       "  <arquivo.cpp>           o fonte; o processador leva o nome dele\n" \
-      "  -o, --output   <pasta>  pasta de saída (padrão: ./<nome>): <nome>.asm e\n" \
+      "  -o, --output   <pasta>  pasta de saída (padrão: a do fonte): <nome>.asm e\n" \
       "                          as tabelas que o asmcomp e a forma de onda leem\n" \
       "  -I <pasta>              acrescenta uma pasta de #include (pode repetir); a\n" \
       "                          pasta do fonte vem primeiro, a Header ao lado de bin/ por último\n" \
@@ -640,7 +640,7 @@ void msg_on_internal(void (*fn)(void));                // runs before msg_intern
       "cppcomp %s — C++ compiler for the SAPHO processor\n" \
       "usage: cppcomp [options] <file.cpp>\n" \
       "  <file.cpp>              the source; the processor takes its name\n" \
-      "  -o, --output   <dir>    output folder (default: ./<name>): <name>.asm and\n" \
+      "  -o, --output   <dir>    output folder (default: the source's): <name>.asm and\n" \
       "                          the tables asmcomp and the waveform read\n" \
       "  -I <dir>                add an #include folder (repeatable); the source's\n" \
       "                          folder comes first, the Header folder next to bin/ last\n" \

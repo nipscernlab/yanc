@@ -21,6 +21,7 @@ const char *exe_dir(void);
 // Path helpers the tools share for their defaults.
 int   make_dir   (const char *path);       // creates a folder; 0 if it exists now
 char *path_stem  (const char *path);       // "a/b/prog.cmm" -> "prog" (malloc)
+char *path_dir   (const char *path);       // "a/b/prog.cmm" -> "a/b", "prog.cmm" -> "." (malloc): the default output folder (#199)
 char *abs_path   (const char *path);       // the absolute form, '/' separators (malloc); the path itself if the system can't say
 char *dir_of     (const char *path);       // the absolute folder of a file, '/' separators (malloc)
 char *rel_path   (const char *from_dir, const char *to_dir);   // to_dir seen from from_dir ("..", "../src", "."); absolute when on another drive (malloc)

@@ -174,8 +174,8 @@ jobs:
           mkdir -p "$RUNNER_TEMP/qs" && cd "$RUNNER_TEMP/qs"
           cp "$RUNNER_TEMP/yanc/example/my_program.cpp" .
           bash -e "$RUNNER_TEMP/quickstart.sh"
-          test "$(tr -d '\r' < my_program/output_0.txt)" = 55
-          test -s my_program/my_program_tb.gtkw
+          test "$(tr -d '\r' < output_0.txt)" = 55
+          test -s my_program_tb.gtkw
 
   # What a Windows user does with a release, as README.md and docs/ say it:
   # MSYS2's UCRT64 with its newest packages (update: true, so a package that
@@ -224,8 +224,8 @@ jobs:
           mkdir -p "$T/qs" && cd "$T/qs"
           cp "$T/yanc/example/my_program.cpp" .
           bash -e "$T/quickstart.sh"
-          test "$(tr -d '\r' < my_program/output_0.txt)" = 55
-          test -s my_program/my_program_tb.gtkw
+          test "$(tr -d '\r' < output_0.txt)" = 55
+          test -s my_program_tb.gtkw
 
       - name: The manual's Verilator command
         shell: msys2 {0}
@@ -237,7 +237,6 @@ jobs:
           mkdir -p "$T/vl" && cd "$T/vl"
           cp "$T/yanc/example/my_program.cpp" .
           yanc my_program.cpp
-          cd my_program
           verilator --binary --timing --trace +define+YANC_TRACE --timescale 1ns/1ps \
                     -CFLAGS -D_GLIBCXX_ASSERTIONS \
                     --top-module my_program_tb -Wno-lint -Wno-MULTIDRIVEN -Wno-BLKANDNBLK \
