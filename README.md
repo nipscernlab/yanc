@@ -88,7 +88,7 @@ for `C:\path\to\yanc\SAPHO`):
 ```sh
 export SAPHO=/path/to/yanc/SAPHO
 iverilog -s my_program_tb -o sim.vvp -y "$SAPHO" my_program_tb.v my_program.v
-vvp sim.vvp
+vvp sim.vvp -fst
 cat output_0.txt
 ```
 
@@ -98,8 +98,8 @@ cat output_0.txt
 
 <!-- quickstart-sh -->
 ```sh
-gen_gtkw my_program_tb.vcd my_program_tb.gtkw .
-gtkwave my_program_tb.vcd -a my_program_tb.gtkw
+gen_gtkw my_program_tb.fst my_program_tb.gtkw .
+gtkwave my_program_tb.fst -a my_program_tb.gtkw
 ```
 
 GTKWave shows, clock by clock, the source line being run, the assembly
@@ -114,7 +114,7 @@ manual: [docs/index.md](docs/index.md).
 
 ## Develop
 
-The build needs `gcc`, `make`, `bison` and `flex` (on Windows from
+The build needs `gcc`, `make`, `bison`, `flex` and zlib (on Windows from
 [MSYS2](https://www.msys2.org/), in the same UCRT64 terminal; on Linux from
 the distribution). `Scripts/setup.sh` checks and installs what is missing;
 the details, including the workaround for MSYS2's gcc 16 with Verilator,

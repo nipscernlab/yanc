@@ -19,7 +19,7 @@
 ::   VERILATOR   verilator_bin.exe   VERILATOR_ROOT  (Verilator share dir)
 ::   MINGW_BIN   MSYS2 ucrt64\bin (on PATH for MSYS2-sourced iverilog/verilator)
 ::   MSYS_USR_BIN  MSYS2 usr\bin, when MINGW_BIN is MSYS2's (make, for Verilator)
-::   GTKWAVE     gtkwave.exe         FST2VCD    fst2vcd.exe
+::   GTKWAVE     gtkwave.exe
 ::   GTKWAVE_OPTS  the options of the gtkwave call this GTKWave knows (see below)
 ::   YANC_VL_CFLAGS  what every Verilator call adds as -CFLAGS (see below)
 ::   YANC_VL_ARGS    the same, as Verilator arguments: -CFLAGS "<flags>"
@@ -45,7 +45,6 @@ if defined IVERILOG  if not exist "%IVERILOG%"  set "IVERILOG="
 if defined VVP       if not exist "%VVP%"       set "VVP="
 if defined VERILATOR if not exist "%VERILATOR%" set "VERILATOR="
 if defined GTKWAVE   if not exist "%GTKWAVE%"   set "GTKWAVE="
-if defined FST2VCD   if not exist "%FST2VCD%"   set "FST2VCD="
 if defined MINGW_BIN if not exist "%MINGW_BIN%" set "MINGW_BIN="
 
 :: PATH fallbacks for anything the cache did not provide -----------------------
@@ -54,7 +53,6 @@ if not defined VVP       for %%E in (vvp.exe)             do if not "%%~$PATH:E"
 if not defined VERILATOR for %%E in (verilator_bin.exe)  do if not "%%~$PATH:E"=="" set "VERILATOR=%%~$PATH:E"
 if not defined VERILATOR for %%E in (verilator.exe)      do if not "%%~$PATH:E"=="" set "VERILATOR=%%~$PATH:E"
 if not defined GTKWAVE   for %%E in (gtkwave.exe)         do if not "%%~$PATH:E"=="" set "GTKWAVE=%%~$PATH:E"
-if not defined FST2VCD   for %%E in (fst2vcd.exe)         do if not "%%~$PATH:E"=="" set "FST2VCD=%%~$PATH:E"
 
 :: MINGW_BIN is the dir holding the MSYS2 tools; callers prepend it to PATH so
 :: iverilog/verilator/gtkwave find the DLLs and sub-tools (ivlpp, ivl, ...) they

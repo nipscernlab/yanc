@@ -43,7 +43,7 @@ esac
 
 # --- Tools: the binaries and the chosen simulator; GTKWave only to view -----
 [ -x "$YANC_BIN/cmmcomp" ] || { echo "[single_proc] binaries missing in $YANC_BIN - run Scripts/setup.sh first."; exit 1; }
-# without GTKWave the run still simulates and writes the .vcd and .gtkw (#117)
+# without GTKWave the run still simulates and writes the .fst and .gtkw (#117)
 [ -n "$GTKWAVE" ]          || echo "[single_proc] gtkwave not found - simulating anyway; the waveform files are written but not opened (Scripts/setup.sh, docs/install.md)."
 if [ "$SIM" = iverilog ]; then
     [ -n "$IVERILOG" ] || { echo "[single_proc] iverilog not found - run Scripts/setup.sh (or install iverilog)."; exit 1; }
@@ -85,8 +85,8 @@ echo "#### Running the Assembler"
 "$BIN_DIR/asmcomp" -f "$FRE_CLK" -c "$NUM_CLK" "$ASM_FILE"
 
 # --- Build + run the simulation ---------------------------------------------
-# WAVE_VCD: the waveform GTKWave opens; HDR_VCD: the (text) VCD gen_gtkw parses
-# for the signal list; GTKW_OUT: the layout gen_gtkw writes when none is given.
+# WAVE: the waveform (FST, #217), which gen_gtkw reads for the signal list and
+# GTKWave opens; GTKW_OUT: the layout gen_gtkw writes.
 UPROC="$TMP_PRO/$PROC"
 if [ "$SIM" = iverilog ]; then
     echo "#### Running Icarus"
@@ -97,18 +97,15 @@ if [ "$SIM" = iverilog ]; then
 
     echo "#### Running VVP"
     cd "$TMP_PRO"
-    # header-only pass (text VCD): gives gen_gtkw the signal list fast.
-    "$VVP" "$PROC.vvp" +HEADER_ONLY
-    cp "$TB_MOD.vcd" "${TB_MOD}_hdr.vcd"
-    # real run -> the FST waveform GTKWave opens
     "$VVP" "$PROC.vvp" -fst
-    WAVE_VCD="$TMP_PRO/$TB_MOD.vcd"; HDR_VCD="$TMP_PRO/${TB_MOD}_hdr.vcd"; GTKW_OUT="$TMP_PRO/$TB_MOD.gtkw"
+    WAVE="$TMP_PRO/$TB_MOD.fst"; GTKW_OUT="$TMP_PRO/$TB_MOD.gtkw"
 else
     # Reuse the generated <proc>_tb.v as the Verilator top. --timing handles the
     # testbench's #-delays / clock; +define+YANC_TRACE pulls in the visibility
-    # harness; --trace dumps every signal to <proc>_tb.vcd.
-    echo "#### Running Verilator (+define+YANC_TRACE, --binary --timing --trace)"
-    "$VERILATOR" --binary --timing --trace +define+YANC_TRACE \
+    # harness; --trace-fst dumps every signal to <proc>_tb.fst (it needs lz4,
+    # which Scripts/setup.sh installs with Verilator).
+    echo "#### Running Verilator (+define+YANC_TRACE, --binary --timing --trace-fst)"
+    "$VERILATOR" --binary --timing --trace-fst +define+YANC_TRACE \
         ${YANC_VL_CFLAGS:+-CFLAGS "$YANC_VL_CFLAGS"} \
         --top-module "${PROC}_tb" \
         -Wno-lint -Wno-UNOPTFLAT -Wno-MULTIDRIVEN -Wno-BLKANDNBLK -Wno-WIDTH \
@@ -123,16 +120,16 @@ else
     echo "#### Running the Verilator simulation"
     cd "$TMP_PRO"
     "$VL_DIR/V${PROC}_tb"
-    WAVE_VCD="$TMP_PRO/${PROC}_tb.vcd"; HDR_VCD="$WAVE_VCD"; GTKW_OUT="$TMP_PRO/${PROC}_tb.gtkw"
+    WAVE="$TMP_PRO/${PROC}_tb.fst"; GTKW_OUT="$TMP_PRO/${PROC}_tb.gtkw"
 fi
 
 # --- View in GTKWave (layout built by gen_gtkw) -----------------------------
 echo "#### Generating the .gtkw layout (gen_gtkw)${GTKWAVE:+ and launching GTKWave}"
-"$BIN_DIR/gen_gtkw" "$HDR_VCD" "$GTKW_OUT" "$SRC_DIR" "$BIN_DIR/comp2gtkw"
+"$BIN_DIR/gen_gtkw" "$WAVE" "$GTKW_OUT" "$SRC_DIR" "$BIN_DIR/comp2gtkw"
 if [ -n "$GTKWAVE" ]; then
-    "$GTKWAVE" $(gtkwave_opts) "$WAVE_VCD" -a "$GTKW_OUT"
+    "$GTKWAVE" $(gtkwave_opts) "$WAVE" -a "$GTKW_OUT"
 else
-    echo "[single_proc] no gtkwave: the waveform is $WAVE_VCD, its layout $GTKW_OUT"
+    echo "[single_proc] no gtkwave: the waveform is $WAVE, its layout $GTKW_OUT"
 fi
 
 cd "$ROOT_DIR"

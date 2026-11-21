@@ -35,10 +35,12 @@ the version `yanc`, `cmmcomp`, `cppcomp` and `asmcomp` print with `-V`.
 
 ## Dependencies for building
 
-The build needs `gcc`, `make`, `bison` and `flex`: on Windows from MSYS2's
+The build needs `gcc`, `make`, `bison`, `flex` and zlib: on Windows from MSYS2's
 UCRT64 environment (the package list is in
 [Installing YANC](../install.md#to-simulate)), on Linux from the
-distribution (Debian/Ubuntu: `build-essential bison flex`). The simulators
+distribution (Debian/Ubuntu: `build-essential bison flex zlib1g-dev`). zlib
+is for `gen_gtkw`, which reads FST waveforms with GTKWave's libfst
+(`Scripts/libfst/`); on Windows it comes with MSYS2's gcc. The simulators
 and GTKWave are the same as for using YANC ([Installing YANC](../install.md#to-simulate)).
 
 On Windows, clone and run git from one side only, preferably MSYS2's git in

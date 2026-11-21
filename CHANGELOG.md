@@ -99,6 +99,17 @@ tags consumed by Aurora.
   (95 in `dirac_shapes`).
 
 ### Changed
+- **The waveform is FST (#217).** The testbench writes `<name>_tb.fst`, and
+  the manual's commands run `vvp -fst` and Verilator `--trace-fst`. On three
+  tests the FST was 7 to 34 times smaller than the VCD; both AURORAs already
+  simulated to FST. `gen_gtkw` reads FST (and still VCD, told apart by the
+  first byte) with GTKWave's libfst, now in `Scripts/libfst/`, so the
+  runner scripts no longer make a header-only VCD nor call `fst2vcd`;
+  `gen_gtkw --vcd <in.fst>` writes the whole FST as text VCD, which is how
+  the regression's `stack_check` and `wave_map.py --vcd` read it. The
+  regression simulates to FST (`IVERILOG_DUMPER=fst`). Building now needs
+  zlib (with MSYS2's gcc on Windows, linked statically into gen_gtkw.exe;
+  `zlib1g-dev` on Debian and Ubuntu).
 - **The processor is written beside its source (#199).** `yanc`, `cmmcomp`
   and `cppcomp` wrote by default into `./<name>/`, a folder named after the
   program under the folder the command ran in; a project that keeps each

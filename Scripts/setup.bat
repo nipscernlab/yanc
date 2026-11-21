@@ -151,7 +151,6 @@ set "VVP="
 set "VERILATOR="
 set "VERILATOR_ROOT="
 set "GTKWAVE="
-set "FST2VCD="
 :: (MINGW_BIN is resolved earlier, from MSYS2_ROOT - do not clear it here)
 
 :: Icarus Verilog (iverilog + vvp) -- ships in MSYS2's UCRT64, so offer pacman
@@ -233,9 +232,6 @@ if not defined GTKWAVE if defined MSYS2_ROOT (
         if exist "!MINGW_BIN!\gtkwave.exe" set "GTKWAVE=!MINGW_BIN!\gtkwave.exe"
     )
 )
-:: fst2vcd comes with GTKWave, in the same folder
-if defined GTKWAVE for %%F in ("%GTKWAVE%") do if exist "%%~dpFfst2vcd.exe" set "FST2VCD=%%~dpFfst2vcd.exe"
-if not defined FST2VCD for %%E in (fst2vcd.exe) do if not "%%~$PATH:E"=="" set "FST2VCD=%%~$PATH:E"
 if defined GTKWAVE (
     echo [gtkwave]   %GTKWAVE%
 ) else (
@@ -255,7 +251,6 @@ if defined VERILATOR      >>"%CACHE%" echo set "VERILATOR=%VERILATOR%"
 if defined VERILATOR_ROOT >>"%CACHE%" echo set "VERILATOR_ROOT=%VERILATOR_ROOT%"
 if defined MINGW_BIN      >>"%CACHE%" echo set "MINGW_BIN=%MINGW_BIN%"
 if defined GTKWAVE        >>"%CACHE%" echo set "GTKWAVE=%GTKWAVE%"
-if defined FST2VCD        >>"%CACHE%" echo set "FST2VCD=%FST2VCD%"
 
 echo.
 echo ============================================================

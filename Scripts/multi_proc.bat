@@ -64,11 +64,6 @@ if /i "%SIM%"=="verilator" (
         echo            with "pacman -S mingw-w64-ucrt-x86_64-verilator" and re-run.
         exit /b 1
     )
-    if not defined FST2VCD (
-        echo [multi_proc] fst2vcd not found - it ships with the nipscernlab GTKWave
-        echo            bundle. Re-run Scripts\setup.bat to fetch it.
-        exit /b 1
-    )
 ) else (
     if not defined IVERILOG (
         echo [multi_proc] Icarus Verilog not found - run Scripts\setup.bat, or install
@@ -174,9 +169,7 @@ for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\pc_%%a_mem.txt .\>%TMP_DIR%\xcopy
 del f_list.txt
 del xcopy.txt
 echo #### Running VVP
-:: header-only pass (tiny text VCD) then the real FST run (+WAVE arms $dumpvars)
-%VVP% %PROJET%.vvp +HEADER_ONLY
-copy %TB%.vcd %TB%_hdr.vcd>%TMP_DIR%\xcopy.txt
+:: +WAVE arms the tb's $dumpvars (off by default: the regression runs without)
 %VVP% %PROJET%.vvp -fst +WAVE
 goto :proj_gtkwave
 
@@ -190,17 +183,14 @@ for %%a in (%PROC_LIST%) do copy %TMP_DIR%\%%a\pc_%%a_mem.txt .\>%TMP_DIR%\xcopy
 del f_list.txt
 del xcopy.txt
 echo #### Running the Verilator simulation
-:: header-only pass -> tiny FST; fst2vcd extracts a text VCD for the formatter.
-%VL_DIR%\V%TB%.exe +HEADER_ONLY
-%FST2VCD% -f %TB%.vcd -o %TB%_hdr.vcd>%TMP_DIR%\xcopy.txt 2>&1
 :: +WAVE arms the tb's $dumpvars (off by default so the heavy sim doesn't crash).
 %VL_DIR%\V%TB%.exe +WAVE
 
 :: View in GTKWave (layout built by gen_gtkw) ---------------------------------
 :proj_gtkwave
 echo #### Generating the .gtkw layout (gen_gtkw) and launching GTKWave
-%BIN_DIR%\gen_gtkw.exe %TMP_DIR%\%TB%_hdr.vcd %TMP_DIR%\%TB%.gtkw %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
-%GTKWAVE% %GTKWAVE_OPTS% %TMP_DIR%\%TB%.vcd -a %TMP_DIR%\%TB%.gtkw
+%BIN_DIR%\gen_gtkw.exe %TMP_DIR%\%TB%.fst %TMP_DIR%\%TB%.gtkw %TMP_DIR% %BIN_DIR%\comp2gtkw.exe
+%GTKWAVE% %GTKWAVE_OPTS% %TMP_DIR%\%TB%.fst -a %TMP_DIR%\%TB%.gtkw
 
 cd %ROOT_DIR%
 exit /b 0

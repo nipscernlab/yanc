@@ -133,7 +133,7 @@ jobs:
       - name: Install toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc make bison flex
+          sudo apt-get install -y gcc make bison flex zlib1g-dev
 
       - name: Build and stage
         # Same `make stage` as the Windows job and Scripts/aurora.bat. $(OS) is

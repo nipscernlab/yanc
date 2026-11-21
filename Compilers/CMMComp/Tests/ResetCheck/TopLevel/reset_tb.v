@@ -36,7 +36,7 @@ initial begin
     #10 rst = 0;
     // waveform is opt-in (debug only); the regression reads output_reset.txt
     if ($test$plusargs("WAVE")) begin
-        $dumpfile("reset_tb.vcd");
+        $dumpfile("reset_tb.fst");
         $dumpvars(0, reset_tb);
     end
 end

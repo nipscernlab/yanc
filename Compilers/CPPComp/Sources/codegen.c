@@ -472,7 +472,7 @@ static void log_var(const char *func, const char *var, int type_code, int size)
     varlog_n++;
 }
 
-// prog_log.txt type code, used by asmcomp to mirror the variable into the .vcd
+// prog_log.txt type code, used by asmcomp to mirror the variable into the waveform
 // with the right gtkwave formatting. Only the two scalar kinds the dump path
 // can render faithfully are published: TY_INT -> 1 (raw word), TY_FLOAT -> 2
 // (decoded float). Everything else (ptr, struct, func, void) returns 0 = "do

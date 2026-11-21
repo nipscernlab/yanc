@@ -92,7 +92,7 @@ writes `filtro/filtro.v`. For `my_program.cpp`:
 | `my_program.asm` | cppcomp / cmmcomp | the program in SAPHO assembly |
 | `prog_log.txt`, `pc_my_program_mem.txt`, `src_lines.txt` | cppcomp / cmmcomp | the variables, the line of source each instruction came from, the source text: what the waveform shows (and where the source is) |
 | `app_log.txt`, `trad_opcode.txt` | asmcomp | the address of every label, the sizes, the instruction names for the waveform |
-| `output_N.txt`, `toma_k.txt`, `my_program_tb.vcd` | the simulation | what the program wrote, and the waveform |
+| `output_N.txt`, `toma_k.txt`, `my_program_tb.fst` | the simulation | what the program wrote, and the waveform |
 
 `prog_log.txt`, `src_lines.txt`, `app_log.txt`, `trad_opcode.txt` and
 `output_N.txt` do not carry the program's name, so two programs in one
@@ -117,7 +117,8 @@ and `-h` lists the options.
 cmmcomp [-o <dir>] [--wave-arrays] <file.cmm>         the .asm and the tables into <dir> (default: the source's folder)
 cppcomp [-o <dir>] [-I <dir>]... [-E] <file.cpp>      the same for C++; -E prints the preprocessed source
 asmcomp [-f <MHz>] [-c <clocks>] <file.asm>           the Verilog, memories and testbench beside the .asm
-gen_gtkw <in.vcd> <out.gtkw> <base> [<comp2gtkw>]      a formatted GTKWave view of a dump (see Simulation)
+gen_gtkw <in.fst> <out.gtkw> <base> [<comp2gtkw>]      a formatted GTKWave view of a dump, FST or VCD (see Simulation)
+gen_gtkw --vcd <in.fst>                                 the whole FST as text VCD, on stdout
 ```
 
 `--lang`, `-h`/`--help` and `-V`/`--version` work in the three compilers;
