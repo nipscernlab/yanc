@@ -419,11 +419,12 @@ static void emit_proc_section(const Proc *p) {
     emit_io(p->inst, "out_sig_",    FMT_SIGNED_DEC, "output");
 
     // per-proc translate files in each processor's output folder: <base>/<type>/
-    // when the folder is named after the processor (the default ./<name>),
-    // else <base> itself, when it is the output folder (yanc -o, an .asm in a
-    // folder of another name). Forward slashes work on both Windows and
-    // POSIX, and GTKWave accepts them in the .gtkw paths. A file that is not
-    // there (src_lines.txt of an .asm written by hand) is left out.
+    // when the folder is named after the processor (a project with one folder
+    // per processor, as AURORA lays them out), else <base> itself, when it is
+    // the output folder (the default, beside the source, or any -o). Forward
+    // slashes work on both Windows and POSIX, and GTKWave accepts them in the
+    // .gtkw paths. A file that is not there (src_lines.txt of an .asm written
+    // by hand) is left out.
     char *tradop = xstrdup(""), *tradcmm = xstrdup("");
     char *lang = xstrdup("C+-");  // the source track's name: prog_log.txt's `lang`
     if (p->type[0]) {
