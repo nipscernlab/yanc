@@ -53,6 +53,9 @@ operators, exceptions, variadic functions (see
   `round`): these take an int or a float only.
 - **`there's no output port N`** (or input port): the port number is at or
   above `#NUIOOU` (`#NUIOIN` for inputs). Raise the directive.
+- **`INN 5, but #NUIOIN is 2`** (or `OUT` and `#NUIOOU`; asmcomp): the same
+  in a hand-written assembly. The ports are numbered from 0, so the highest
+  is the directive less one, and `#NUIOIN 0` leaves no port for an `INN`.
 - **`you're N lines short in file '...'`** (asmcomp): an array initialised
   from a file has more elements than the file has lines.
 - **`floating-point setup doesn't add up`** (asmcomp): a program with float

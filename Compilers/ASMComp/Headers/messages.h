@@ -171,6 +171,16 @@ void fatal(const char *fmt, ...);
     M("Erro: %s está entre %s e a leitura do resultado. Ali só cabe uma instrução que não desvie, não espere num link e não comece nem leia uma divisão: NOP, SET, PSH...\n", \
       "Error: %s stands between %s and the read of its result. Only an instruction that does not jump, wait on a link or start or read a division fits there: NOP, SET, PSH...\n")
 
+#define MSG_ERR_PORT_NUM \
+    M("Erro: o operando de %s é o número da porta, um inteiro a partir de 0 (achei '%s').\n", \
+      "Error: the operand of %s is the port number, an integer from 0 (found '%s').\n")
+#define MSG_ERR_IN_PORT \
+    M("Erro: %s %d, mas #NUIOIN é %d: as portas de entrada são as de número abaixo dele, a partir de 0. Aumente o #NUIOIN ou corrija a porta.\n", \
+      "Error: %s %d, but #NUIOIN is %d: the input ports are those numbered below it, from 0. Raise #NUIOIN or fix the port.\n")
+#define MSG_ERR_OUT_PORT \
+    M("Erro: %s %d, mas #NUIOOU é %d: as portas de saída são as de número abaixo dele, a partir de 0. Aumente o #NUIOOU ou corrija a porta.\n", \
+      "Error: %s %d, but #NUIOOU is %d: the output ports are those numbered below it, from 0. Raise #NUIOOU or fix the port.\n")
+
 #define MSG_ERR_LINK_NUM \
     M("Erro: o operando de %s é o número do link, um inteiro de 0 a %d (achei '%s').\n", \
       "Error: the operand of %s is the link number, an integer from 0 to %d (found '%s').\n")
