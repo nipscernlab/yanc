@@ -30,7 +30,7 @@ Info: ULA resource -> & operator
 Info: ULA resource -> << operator
 Info: adding array handling
 Info: stack depths from the program: SDEPTH 1, NDSTAC 3
-Info: using 25% of the Assembly Instruction Set
+Info: using 27% of the Assembly Instruction Set
 Info: using 41% of the ULA operations
 Processor cmm_cov_acc
   word          32 bits

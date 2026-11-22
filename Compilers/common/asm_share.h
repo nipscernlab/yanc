@@ -108,6 +108,31 @@ int asm_jnz(const char *asm_path, const char *pc_path);
 int asm_inc(const char *asm_path, const char *pc_path);
 
 // ****************************************************************************
+// asm_divslot -- the SET or PSH before a division runs in its first slot (#113)
+// ****************************************************************************
+//
+// A division only starts its divider and keeps the accumulator; QUO, REM or
+// F_QUO reads the result at the end of the sequence, and the words between
+// are free for any instruction that does not jump, wait on a link or divide
+// (asm_div_slot, which asmcomp holds every sequence to). The compilers leave
+// a SET or a PSH right before many divisions, and either one leaves the
+// accumulator as it is, so it does the same one word later: `SET x; F_DIV y;
+// NOP; NOP; F_QUO` becomes `F_DIV y; SET x; NOP; F_QUO`, one word and one
+// cycle less. Only when the three lines follow one another with no label or
+// directive among them, the SET does not write the word the division reads,
+// a PSH is not before a stack form (which pops it) and no INC comes right
+// before (the division would then read right after it). Each instruction
+// keeps its source line in the pc map. Only the first slot is filled: what
+// comes after a division reads its result. On anything the pass does not
+// understand it leaves the file untouched.
+//
+// Run it last before asm_share, when no other pass moves an instruction any
+// more: asm_unread or asm_inc could otherwise take the SET out of the
+// sequence and leave it a word short. Returns how many instructions the pc
+// map covered that left, -1 on an I/O error.
+int asm_divslot(const char *asm_path, const char *pc_path);
+
+// ****************************************************************************
 // asm_reach -- code no path gets to is not in the program, nor its hardware --
 // ****************************************************************************
 //
@@ -215,10 +240,11 @@ int asm_divk(const char *asm_path, const char *pc_path);
 // S_DIV becomes `DIV x; NOP; NOP; NOP; QUO` (ula_idiv, 5 stages), MOD / S_MOD
 // `...; REM` and F_DIV / SF_DIV `F_DIV x; NOP; NOP; F_QUO` (ula_fdiv, 4
 // stages), or with a NOP more in a program that also has DIV or MOD, whose
-// F_DIV shares the integer array (ula_div_sh, 5 stages, #151) (QUO, REM,
-// F_QUO: aliases of the division's own opcode, no
-// operand; the read is always the memory form, so a stack form is not popped
-// twice). A division already followed by its NOPs and its read is left
+// F_DIV shares the integer array (ula_div_sh, 5 stages, #151). QUO, REM and
+// F_QUO have their own opcodes and no operand; the division only starts the
+// divider and keeps the accumulator, so the read is what writes the result
+// (#113), and asm_divslot later moves a SET or a PSH into the first slot. A
+// division already followed by its slots (asm_div_slot) and its read is left
 // alone. Labels stay on the line they were on, so a jump still lands on the
 // division, never inside the sequence.
 //
@@ -241,6 +267,7 @@ const char *asm_div_read (const char *mn);        // QUO / REM / F_QUO, NULL if 
 int         asm_div_kind (const char *mn);        // 1 an integer division, 2 a float one, 0 neither
 void        asm_div_program(int has_int, int has_flt);   // what the program divides (default: no sharing)
 int         asm_div_words(const char *mn);        // its words in that program, 0 if mn is no division
+int         asm_div_slot (const char *mn);        // 1 if mn may stand between a division and its read
 
 // ****************************************************************************
 // asm_normnop -- a NOP between a normalised operation and a JIZ/JNZ/LDI/ILI --
@@ -301,7 +328,8 @@ int asm_depth(const char *asm_path, int *sdepth, int *ddepth, int *itr_held, con
 //
 // cmmcomp and cppcomp both run, after their code generation: asm_fuse,
 // asm_reach, asm_divk, asm_divseq, asm_unread, asm_callarg, asm_tail, asm_jnz,
-// asm_inc and asm_share, each with the order its own comment above asks for. `which`
+// asm_inc, asm_divslot and asm_share, each with the order its own comment
+// above asks for. `which`
 // picks the optional ones, ASM_P_FUSE, ASM_P_DIVK and ASM_P_TAIL (cppcomp
 // does its own fusion in its peephole, and keeps every division as written
 // and every call a call); the others always run. gone and keep go to

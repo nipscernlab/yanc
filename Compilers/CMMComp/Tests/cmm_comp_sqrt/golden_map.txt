@@ -2,9 +2,10 @@
 Info: 150 assembly instructions generated
 Info: adding assembly macro for root square computation
 Info: 4 divisions, 5 words each for DIV/MOD and 4 for F_DIV (12 added)
+Info: 4 divisions take one word less: the SET or PSH before each runs in its first slot
 Info: 12 variables share 8 data words (4 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 181 instructions and 16 variables were found
+Info: 177 instructions and 16 variables were found
 Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float-point adder
 Info: adding stack memory for function calls
@@ -14,7 +15,7 @@ Info: adding data output handling
 Info: ULA resource -> root-square approximation for float
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 13% of the Assembly Instruction Set
+Info: using 14% of the Assembly Instruction Set
 Info: using 16% of the ULA operations
 Processor cmm_comp_sqrt
   word          32 bits
@@ -22,7 +23,7 @@ Processor cmm_comp_sqrt
   multiplier    float; divider float
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      181 instructions, 16 data words
+  memories      177 instructions, 16 data words
 Sweet: the processor is good to go.
 ## variables
 main z 3
@@ -194,32 +195,28 @@ lang C+-
 // library macros, no source line
 150 SET __sqrt_num
 151 F_ROT
-152 PSH
-153 F_DIV __sqrt_num
+152 F_DIV __sqrt_num
+153 PSH
 154 NOP
-155 NOP
-156 F_QUO
-157 SF_ADD
-158 F_MLT 0.5
+155 F_QUO
+156 SF_ADD
+157 F_MLT 0.5
+158 F_DIV __sqrt_num
 159 PSH
-160 F_DIV __sqrt_num
-161 NOP
-162 NOP
-163 F_QUO
-164 SF_ADD
-165 F_MLT 0.5
-166 PSH
-167 F_DIV __sqrt_num
-168 NOP
-169 NOP
-170 F_QUO
-171 SF_ADD
-172 F_MLT 0.5
-173 PSH
-174 F_DIV __sqrt_num
-175 NOP
-176 NOP
-177 F_QUO
-178 SF_ADD
-179 F_MLT 0.5
-180 RET
+160 NOP
+161 F_QUO
+162 SF_ADD
+163 F_MLT 0.5
+164 F_DIV __sqrt_num
+165 PSH
+166 NOP
+167 F_QUO
+168 SF_ADD
+169 F_MLT 0.5
+170 F_DIV __sqrt_num
+171 PSH
+172 NOP
+173 F_QUO
+174 SF_ADD
+175 F_MLT 0.5
+176 RET

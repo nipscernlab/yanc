@@ -36,7 +36,7 @@ Info: ULA resource -> int to float converter
 Info: ULA resource -> & operator
 Info: ULA resource -> float-point negative operation
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 21% of the Assembly Instruction Set
+Info: using 20% of the Assembly Instruction Set
 Info: using 30% of the ULA operations
 Processor Seno
   word          32 bits

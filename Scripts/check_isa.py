@@ -35,7 +35,8 @@ literal, which is the part that stays true when the HDL is edited:
      F_QUO read the result a cycle early, with nothing to say so (#185),
  13. the ALU operation numbers agree: each row of instr_dec.v runs the ALU
      operation its mnemonic names (PF_X and SF_X run F_X, P_X and S_X run X,
-     X_V runs X, a few listed in ULA_IRREGULAR), the names being those of
+     X_V runs X, a few listed in ULA_IRREGULAR, a division's start the
+     operation of DIV_START), the names being those of
      ula.v's output muxes, and every other 6'dN in ula.v names operation N on
      its line, in the code or in the comment (#174). core.v's flow opcodes
      are checked in every module that writes them (OP_TOM and OP_CAD are in
@@ -135,9 +136,9 @@ IRREGULAR = {
     'REM':   ('w', '-', '-', '-', '-'),
     'F_QUO': ('w', '-', '-', '-', '-'),
 }
-# operand-less aliases of an opcode that has its own decode row in
-# instr_dec.v (the division it reads): they need no row of their own
-ALIASES = ('QUO', 'REM', 'F_QUO')
+# a division only starts its divider: it reads the accumulator (and its
+# operand), and the read at the end of the sequence writes the result (#113)
+DIVISIONS = ('DIV', 'MOD')
 
 
 def derive(mn, cls):
@@ -171,7 +172,7 @@ def derive(mn, cls):
     if from_mem:
         m = m[:-2]
     if m in BINARY:
-        acc = 'rw'
+        acc = 'r' if m in DIVISIONS else 'rw'
         opnd = '-' if pop else ('r' if cls in ('data', 'offset') else '-')
     elif m in UNARY:
         acc = 'w' if from_mem else 'rw'
@@ -218,7 +219,16 @@ ULA_LINE = re.compile(r"^\s*wire\s*\[[^\]]*\]\s*([tld])(\d+)\s*[;=](.*?)//\s*(\w
 # indirect loads and POP load (LOD), F_INN and PF_INN convert the port's word
 # (I2F), INC adds 1 on the integer adder (ADD, #203)
 ULA_IRREGULAR = {'LDI': 'LOD', 'ILI': 'LOD', 'SET_P': 'LOD', 'POP': 'LOD',
-                 'F_INN': 'I2F', 'PF_INN': 'I2F', 'INC': 'ADD', 'P_INC': 'ADD'}
+                 'F_INN': 'I2F', 'PF_INN': 'I2F', 'INC': 'ADD', 'P_INC': 'ADD',
+                 'QUO': 'DIV', 'REM': 'MOD', 'F_QUO': 'F_DIV'}
+# a division only starts its divider and keeps the accumulator (#113): DIV,
+# MOD and their stack forms run operation 0 (NOP), F_DIV and SF_DIV 52, which
+# keeps the accumulator too and tells a divider shared with DIV/MOD that the
+# division is a float one. 52 has no output mux line of its own: ula.v names
+# it F_DIV on the lines that test it.
+DIV_START_OP = 52
+DIV_START = {'DIV': 0, 'S_DIV': 0, 'MOD': 0, 'S_MOD': 0,
+             'F_DIV': DIV_START_OP, 'SF_DIV': DIV_START_OP}
 
 
 def read_ula_ops(text, bad):
@@ -342,8 +352,6 @@ def main():
     for mn, (op, cls) in sorted(table.items()):
         if cls in ('lea', 'offset') or mn in decoded_in_core:
             continue                       # share a base opcode / decoded in core.v
-        if mn in ALIASES and any(table.get(r, (None,))[0] == op for r in rows):
-            continue                       # the division's row decodes it
         if mn not in rows:
             bad.append(f'{mn} (opcode {op}) has no row in instr_dec.v')
 
@@ -453,10 +461,13 @@ def main():
     ula = open(os.path.join(root, 'SAPHO', 'ula.v'), encoding='utf-8', errors='replace').read()
     ops = read_ula_ops(ula, bad)
     by_name = {v: k for k, v in ops.items()}
+    if DIV_START_OP in ops:
+        bad.append(f'ula.v: op {DIV_START_OP} has an output mux line, but it is the start of F_DIV')
+    ops[DIV_START_OP] = 'F_DIV'
     dec_text = open(dec_p, encoding='utf-8', errors='replace').read()
     for m in re.finditer(DEC_ROW, dec_text):
         mn, n = m.group(1), int(m.group(3))
-        want = by_name.get(alu_name(mn), 0)
+        want = DIV_START[mn] if mn in DIV_START else by_name.get(alu_name(mn), 0)
         if n != want:
             bad.append(f'instr_dec.v: {mn} runs ALU op {n} ({ops.get(n, "unknown")}), '
                        f'its name says {want} ({ops.get(want, "?")})')

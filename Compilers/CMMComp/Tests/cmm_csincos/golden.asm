@@ -25,9 +25,8 @@ NOP
 #SHARE __exp_r __csin_emb
 @main @__Lwh1 LOD 1.0
 CAL __float_exp
-SET __csin_eb
 F_DIV 1.0
-NOP
+SET __csin_eb
 NOP
 F_QUO
 SET __csin_emb
@@ -58,9 +57,8 @@ F2I
 OUT 0
 LOD 1.0
 CAL __float_exp
-SET __ccos_eb
 F_DIV 1.0
-NOP
+SET __ccos_eb
 NOP
 F_QUO
 SET __ccos_emb
@@ -94,9 +92,8 @@ LOD 1.0
 SET main_z
 SET main_z_i
 CAL __float_exp
-SET __csin_eb
 F_DIV 1.0
-NOP
+SET __csin_eb
 NOP
 F_QUO
 SET __csin_emb
@@ -129,9 +126,8 @@ LOD 1.0
 SET main_z
 SET main_z_i
 CAL __float_exp
-SET __ccos_eb
 F_DIV 1.0
-NOP
+SET __ccos_eb
 NOP
 F_QUO
 SET __ccos_emb
@@ -173,9 +169,8 @@ SET_P __csin_b
 SET __csin_a
 LOD __csin_b
 CAL __float_exp
-SET __csin_eb
 F_DIV 1.0
-NOP
+SET __csin_eb
 NOP
 F_QUO
 SET __csin_emb

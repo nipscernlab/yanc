@@ -36,7 +36,7 @@ Info: ULA resource -> float to int converter
 Info: ULA resource -> integer multiplier
 Info: ULA resource -> float-point negative operation
 Info: stack depths from the program: SDEPTH 1, NDSTAC 4
-Info: using 50% of the Assembly Instruction Set
+Info: using 49% of the Assembly Instruction Set
 Info: using 63% of the ULA operations
 Processor cmm_cov_ops2
   word          32 bits

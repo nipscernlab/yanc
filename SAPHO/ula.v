@@ -82,7 +82,10 @@ module ula_mux
 // operations that go through the normaliser (smx) are not terms: a 2-input
 // mux after the OR picks smx for them, so out_fast is the OR alone.
 
-wire [NUBITS-1:0] t0 = (op == 6'd0) ? in2 : {NUBITS{1'b0}};   //   NOP (and every instruction that keeps the accumulator)
+// op 52 starts an F_DIV and keeps the accumulator too: it only tells a
+// divider shared with DIV/MOD that the division is a float one (#113)
+wire              keep = (op == 6'd0) | (((F_DIV) != 0) & (op == 6'd52));   // NOP, F_DIV's start
+wire [NUBITS-1:0] t0 = (keep) ? in2 : {NUBITS{1'b0}};   //   NOP (and every instruction that keeps the accumulator)
 wire [NUBITS-1:0] t1 = (op == 6'd1) ? in1 : {NUBITS{1'b0}};   //   LOD
 
 wire [NUBITS-1:0] t2 ; generate if ((ADD) != 0) begin : g2  assign t2  = (op == 6'd2 ) ? add   : {NUBITS{1'b0}}; end else begin : g2  assign t2  = {NUBITS{1'b0}}; end endgenerate   // ADD
@@ -625,10 +628,12 @@ endmodule
 // docs/design/pipeln-and-division.md). Each divider is a restoring array cut by
 // registers into STG parts of about the same delay (ula_idiv 5, ula_fdiv 4), so
 // it takes STG cycles and every other path keeps its one: the compilers write
-// each division as `<div> x`, STG-2 NOPs and `<read>` (Compilers/common
-// asm_divseq, ASM_DIV_WORDS_*), and the last word, QUO / REM / F_QUO (an alias
-// of the division's own opcode), finds the first one's result at the end of
-// the array. A program with both an integer division and F_DIV has one array
+// each division as `<div> x`, STG-2 slots and `<read>` (Compilers/common
+// asm_divseq, ASM_DIV_WORDS_*), and the last word, QUO / REM / F_QUO, finds
+// the result at the end of the array. The division itself keeps the
+// accumulator (ALU operation 0, or 52 for F_DIV), so a slot may hold an
+// instruction that leaves something outside it, a SET or a PSH (asm_divslot,
+// #113); the others are NOPs. A program with both an integer division and F_DIV has one array
 // for the two (ula_div_sh, #151), and its F_DIV takes the integer's 5 cycles. Nothing waits: the
 // cuts carry with the data everything the later parts need, so the inputs may
 // change every cycle.
@@ -1888,7 +1893,7 @@ wire signed [NUBITS+G+1:0] fdiv;
 generate if (DIV_SH) begin : op_div_sh
 	ula_div_sh #(.NUBITS(NUBITS), .MAN(NBMANT), .EXP(NBEXPO), .FROUND(FROUND), .G(G), .STG(IDIV_STG),
 	             .BOTH((DIV != 0) && (MOD != 0)))
-	    my_div(in1, in2, op == 6'd7, div, mod, fdiv, clk, op == 6'd8);   // F_DIV starts it; MOD reads the remainder
+	    my_div(in1, in2, op == 6'd52, div, mod, fdiv, clk, op == 6'd8);   // F_DIV starts it (52); REM reads the remainder (MOD, 8)
 end else begin : op_div_sh
 end endgenerate
 
@@ -1896,6 +1901,7 @@ generate if (DIV_SH) begin : op_idiv end else if ((DIV | MOD) != 0) begin : op_i
 
 // F_DIV ----------------------------------------------------------------------
 // four cycles (see ula_fdiv): F_DIV starts it, F_QUO reads it three words later
+// (ALU operation 7)
 
 generate if (DIV_SH) begin : op_fdiv end else if ((F_DIV) != 0) begin : op_fdiv ula_fdiv #(.MAN(NBMANT), .EXP(NBEXPO), .FROUND(FROUND), .G(G), .STG(FDIV_STG)) my_fdiv(in1, in2, fdiv, clk); end else begin : op_fdiv assign fdiv = {NUBITS+G+2{1'b0}}; end endgenerate
 
@@ -2280,23 +2286,21 @@ ula_mux #(.NUBITS(NUBITS),
 // A division's result reaches out STG-1 cycles after the inputs that started
 // it (the dividers above): at QUO / REM / F_QUO, in1 is mem[0] and in2 the
 // accumulator of that cycle, not the division's. The monitor compares out
-// with the inputs of STG-1 cycles before, and only when the operation then
-// was a division too (the start); on the start itself it shows 0 (#183).
+// with the inputs of STG-1 cycles before (#183): asmcomp puts every read
+// that far from its start, and the start runs no division operation (#113).
 localparam HIST = ((IDIV_STG > FDIV_STG) ? IDIV_STG : FDIV_STG) - 1;
 reg [NUBITS-1:0] h_in1 [1:HIST];
 reg [NUBITS-1:0] h_in2 [1:HIST];
-reg [       5:0] h_op  [1:HIST];
 integer hj;
-initial for (hj = 1; hj <= HIST; hj = hj + 1) begin h_in1[hj] = 0; h_in2[hj] = 0; h_op[hj] = 0; end
+initial for (hj = 1; hj <= HIST; hj = hj + 1) begin h_in1[hj] = 0; h_in2[hj] = 0; end
 always @ (posedge clk) begin
-	h_in1[1] <= in1; h_in2[1] <= in2; h_op[1] <= op;
+	h_in1[1] <= in1; h_in2[1] <= in2;
 	for (hj = 2; hj <= HIST; hj = hj + 1) begin
-		h_in1[hj] <= h_in1[hj-1]; h_in2[hj] <= h_in2[hj-1]; h_op[hj] <= h_op[hj-1];
+		h_in1[hj] <= h_in1[hj-1]; h_in2[hj] <= h_in2[hj-1];
 	end
 end
 wire [NUBITS-1:0] idv1 = h_in1[IDIV_STG-1], idv2 = h_in2[IDIV_STG-1];   // DIV / MOD that started it
 wire [NUBITS-1:0] fdv1 = h_in1[FDIV_STG-1], fdv2 = h_in2[FDIV_STG-1];   // F_DIV that started it
-wire [       5:0] iop  = h_op [IDIV_STG-1], fop  = h_op [FDIV_STG-1];
 
 // get the signed mantissa and the exponent of inputs and output --------------
 
@@ -2351,7 +2355,7 @@ always @ (*) begin
 	case (op)
 		6'd3   : delta_float = (r_in1 + r_in2) - r_out; // F_ADD
 		6'd5   : delta_float = (r_in1 * r_in2) - r_out; // F_MLT
-		6'd7   : delta_float = (fop == 6'd7) ? (r_fd1 / r_fd2) - r_out : 0; // F_DIV, read by F_QUO
+		6'd7   : delta_float = (r_fd1 / r_fd2) - r_out; // F_DIV, read by F_QUO
 		6'd47  : delta_float = (r_in2 - r_in1) - r_out; // F_SU1
 		6'd48  : delta_float = (r_in1 - r_in2) - r_out; // F_SU2
 		default: delta_float = 0;
@@ -2368,7 +2372,6 @@ real val_mlt; always @ (*) val_mlt = in1r * in2r;
 // a division: the inputs of the DIV / MOD that started it (QUO / REM read
 // it IDIV_STG-1 cycles later, and one start serves both)
 wire signed [NUBITS-1:0] idv1s = idv1, idv2s = idv2;
-wire                     idiv_read = (iop == 6'd6) || (iop == 6'd8);   // DIV, MOD
 real idv1r; always @ (*) idv1r = idv1s;
 real idv2r; always @ (*) idv2r = idv2s;
 real val_div; always @ (*) val_div = idv1r / idv2r;
@@ -2383,8 +2386,8 @@ always @ (*) begin
 	case (op)
 		6'd2   : delta_int = val_add - out; // ADD
 		6'd4   : delta_int = val_mlt - out; // MLT
-		6'd6   : delta_int = idiv_read ? val_div - out : 0; // DIV, read by QUO
-		6'd8   : delta_int = idiv_read ? val_mod - out : 0; // MOD, read by REM
+		6'd6   : delta_int = val_div - out; // DIV, read by QUO
+		6'd8   : delta_int = val_mod - out; // MOD, read by REM
 		6'd25  : delta_int = in2   - r_out; // I2F, int to float with acc
 		6'd26  : delta_int = in1   - r_out; // I2F_M, int to float with mem
 		6'd27  : delta_int = r_in2   - out; // F2I, float to int with acc

@@ -93,6 +93,7 @@ FAMILIES = [
     ('Comparisons',           lambda op: 93 <= op <= 102),
     ('Shifts',                lambda op: 103 <= op <= 108),
     ('In place',              lambda op: 109 <= op <= 110),
+    ('Division results',      lambda op: 111 <= op <= 113),
 ]
 
 def read_rows(path):
@@ -156,8 +157,14 @@ def render(rows):
     w('the compilers write it that way, because the dividers take five and four')
     w('cycles. A program with both an integer and a float division has one')
     w('divider for the two, and its float division takes five words too, one')
-    w('`NOP` more. A `JIZ`, `JNZ`, `LDI` or `ILI` right after an operation whose result goes through the')
-    w('float normaliser (`F_ADD`, `F_SU1`, `F_SU2`, `F_MLT`, `F_DIV`/`F_QUO`,')
+    w('`NOP` more. The division only starts the divider and leaves `a` as it is;')
+    w('`QUO`, `REM` or `F_QUO` writes the result. So a word between the two may')
+    w('hold any instruction that does not jump, wait on a link or divide, and')
+    w('the compilers move the `SET` or `PSH` that comes before a division into')
+    w('the first one: `SET y; F_DIV k; NOP; NOP; F_QUO` is written')
+    w('`F_DIV k; SET y; NOP; F_QUO`. asmcomp refuses any other instruction')
+    w('there. A `JIZ`, `JNZ`, `LDI` or `ILI` right after an operation whose result goes through the')
+    w('float normaliser (`F_ADD`, `F_SU1`, `F_SU2`, `F_MLT`, `F_QUO`,')
     w('`F_ROT`, `I2F`, `I2F_M`, `F_INN` and their stack, `P_` and `_V` forms) gets')
     w('a `NOP` before it: the jump and the read index take the arithmetic unit')
     w('before the normaliser, and asmcomp inserts the `NOP` by itself, in a')

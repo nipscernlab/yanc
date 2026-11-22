@@ -32,7 +32,7 @@ Info: ULA resource -> float to int converter
 Info: adding data output handling
 Info: ULA resource -> float-point adder
 Info: stack depths from the program: SDEPTH 1, NDSTAC 2
-Info: using 12% of the Assembly Instruction Set
+Info: using 11% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
 Processor proc_sim
   word          23 bits

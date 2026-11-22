@@ -89,13 +89,13 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
  "F_MLT"   eval_opcode( 39,18, yytext,  "F_MLT"  ); // floating-point multiplication with memory
 "SF_MLT"   eval_opcode( 40, 0, yytext, "SF_MLT"  ); // floating-point multiplication with stack
 
-   "DIV"   eval_opcode( 27,18, yytext,    "DIV"  ); // fixed-point division with memory
- "S_DIV"   eval_opcode( 28, 0, yytext,  "S_DIV"  ); // fixed-point division with stack
- "F_DIV"   eval_opcode( 41,18, yytext,  "F_DIV"  ); // floating-point division with memory
-"SF_DIV"   eval_opcode( 42, 0, yytext, "SF_DIV"  ); // floating-point division with stack
+   "DIV"   eval_opcode( 27,18, yytext,    "DIV"  ); // starts a fixed-point division with memory
+ "S_DIV"   eval_opcode( 28, 0, yytext,  "S_DIV"  ); // starts a fixed-point division with stack
+ "F_DIV"   eval_opcode( 41,18, yytext,  "F_DIV"  ); // starts a floating-point division with memory
+"SF_DIV"   eval_opcode( 42, 0, yytext, "SF_DIV"  ); // starts a floating-point division with stack
 
-   "MOD"   eval_opcode( 29,18, yytext,    "MOD"  ); // fixed-point remainder with memory
- "S_MOD"   eval_opcode( 30, 0, yytext,  "S_MOD"  ); // fixed-point remainder with stack
+   "MOD"   eval_opcode( 29,18, yytext,    "MOD"  ); // starts a fixed-point division with memory, for REM
+ "S_MOD"   eval_opcode( 30, 0, yytext,  "S_MOD"  ); // starts a fixed-point division with stack, for REM
 
    "SGN"   eval_opcode( 31,18, yytext,    "SGN"  ); // fixed-point sign with memory
  "S_SGN"   eval_opcode( 32, 0, yytext,  "S_SGN"  ); // fixed-point sign with stack
@@ -177,6 +177,12 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
    "INC"   eval_opcode(109,18, yytext,    "INC"  ); // increments a data word in place, the acc gets it (#203)
  "P_INC"   eval_opcode(110,18, yytext,  "P_INC"  ); // PUSH + INC
 
+   /* the read of a division's result, the last word of `<div> x; NOP...; <read>` */
+   /* (docs/design/pipeln-and-division.md, section 4; its own opcode since #113)   */
+   "QUO"   eval_opcode(111, 0, yytext,    "QUO"  ); // acc = the quotient of the DIV / S_DIV four words before (#113)
+   "REM"   eval_opcode(112, 0, yytext,    "REM"  ); // acc = the remainder of the MOD / S_MOD four words before (#113)
+ "F_QUO"   eval_opcode(113, 0, yytext,  "F_QUO"  ); // acc = the quotient of the F_DIV / SF_DIV three words before (four with DIV/MOD in the program)
+
    /* special instructions */
 
    "NOP"   eval_opcode(  0, 0, yytext,    ""     ); // no operation
@@ -198,12 +204,7 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 
    "LEA"   eval_opcode(  1,24, yytext,    "LOD"  ); // load-effective-address: acc = &var (pseudo, expands to LOD <const>)
 
-   /* the read of a division's result: the third word of `<div> x; NOP; <read>`, */
-   /* an alias of the division's own opcode with operand 0 (docs/design/pipeln-and-division.md, section 4) */
 
-   "QUO"   eval_opcode( 27, 0, yytext,    "DIV"  ); // integer quotient of the division four words before
-   "REM"   eval_opcode( 29, 0, yytext,    "MOD"  ); // remainder of the division four words before
- "F_QUO"   eval_opcode( 41, 0, yytext,  "F_DIV"  ); // float quotient of the division three words before (four with DIV/MOD in the program)
 
    "LOD_V" eval_opcode(  1,22, yytext,    "LOD"  ); //   LOD with constant offset
  "P_LOD_V" eval_opcode(  2,22, yytext,  "P_LOD"  ); // P_LOD with constant offset

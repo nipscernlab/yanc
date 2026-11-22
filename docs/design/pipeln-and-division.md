@@ -829,6 +829,61 @@ F_QUO`); the compilers write them, a hand-written `.asm` must too (asmcomp
 says how many are missing). The instruction and message pages are generated
 and already say so.
 
+### 4.5 The division keeps the accumulator; its slots take a SET or a PSH (#113)
+
+Above, the read is an alias of the division's own opcode: the ALU runs the
+division's operation at t and at the read, and the accumulator, which loads
+the ALU output every cycle (`racc <= ula_out`, no enable), takes the
+divider's unfinished output at t. Nothing could then live in the
+accumulator across the `NOP`s, so the compilers could not fill them: 1173
+`NOP` words in the C± goldens of 2026-11-04, 6.4 % of the cycles of five
+real programs (Sqrt 15 %, #91). Issue #113 split the two words, the "new
+opcode" weighed above and set aside then:
+
+- **Hardware.** The division's row in `instr_dec.v` runs ALU operation 0 for
+  `DIV`, `MOD` and their stack forms, the pass of the accumulator, and 52
+  for `F_DIV` and `SF_DIV`, which `ula_mux` passes the accumulator for as
+  well (`keep`). The dividers needed nothing: they take `in1` and `in2`
+  every cycle whatever the operation, and the cuts carry the division to
+  its end. 52 exists only because the divider a program with both integer
+  and float divisions shares (`ula_div_sh`, #151) learns at the start that
+  the division is a float one, from `op == 52` (it was `op == 7`). `QUO`,
+  `REM` and `F_QUO` get their own opcodes, 111 to 113, with ALU operations
+  6, 8 and 7, the old outputs. Three decoder rows and two comparisons on the
+  operation, built only in a program that divides; no register, no data path.
+  The monitor of the simulation (`YANC_SIM_VIS`) no longer keeps the
+  operation of the last cycles: a read now always comes STG-1 words after
+  its start, and the start runs no division operation.
+- **asmcomp.** The words between a division and its read take any
+  instruction that does not jump or call (the read would not follow), wait
+  on a link (`TOM`, `CAD` wait in place, and the result would pass) or start
+  or read a division (`asm_div_slot`); the last word must be the read.
+  `NegTests/div_slot.asm` is a jump there.
+- **The compilers.** `asm_divslot`, the last pass before `asm_share`, moves
+  the `SET` or `PSH` right before a division into its first slot: both leave
+  the accumulator as it is, so they store or push the same value a word
+  later, and the `NOP` they replace leaves. Not when a label or a directive
+  sits on the three lines, the `SET` writes the word the division reads, a
+  `PSH` comes before a stack form (it pops that word) or an `INC` comes right
+  before (the division would read right after it). Only the first slot: what
+  follows a division reads its result. The moved instruction keeps its
+  source line in the pc map, so the waveform's line view shows the line
+  before the division for that cycle, where the value it stores comes
+  from; `Scripts/wave_map.py` holds it to that statement in its rules
+  "order" and "together", and the division's statement to the words after.
+
+How much it fills was counted on the C± goldens before the change: of 561
+divisions, 89 have a `SET` or `PSH` right before (the counting looked at
+the line before only, not at labels, so 89 is an upper bound), and none
+has two. Most divisions follow the `LOD` or the arithmetic that computes
+their operand in the accumulator, which cannot move. Filling the second
+slot would take moving instructions from farther away, past what the
+division reads, or two independent divisions overlapping in the divider:
+neither is done.
+
+The interrupt is unchanged: it restarts at `ITRADD` with no return, so a
+sequence cut by it does not matter, as above.
+
 ## 5. Tools kept from this work
 
 - `Scripts/hw/fmax.sh`: `SEED=<n>` (compare a change across seeds: one fit

@@ -46,6 +46,7 @@ Info: 11 divisions, 5 words each for DIV/MOD and 5 for F_DIV (44 added)
 Info: 8 variables written and never read removed (36 instructions)
 Info: 1 JIZ + JMP pairs made one JNZ each
 Info: 2 increments made one INC each
+Info: 4 divisions take one word less: the SET or PSH before each runs in its first slot
 Info: 29 variables share 9 data words (20 saved)
 Heads up: global variable 'fa' is never read, so it's out of the program and the waveform (#WAVE fa keeps it).
 Heads up: variable 'v' in function 'n7' is never read, so it's out of the program and the waveform (#WAVE v, in the function, keeps it).
@@ -58,7 +59,7 @@ Heads up: variable 'v' in function 'n1' is never read, so it's out of the progra
 Heads up: variable 'fw' in function 'main' is never read, so it's out of the program and the waveform (#WAVE fw, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
 Info: implementing interruption handling
-Info: 1021 instructions and 70 variables were found
+Info: 1017 instructions and 70 variables were found
 Info: adding cade (CAD), which takes a value from the partner processor
 Info: adding data input handling
 Info: ULA resource -> ^ operator
@@ -109,7 +110,7 @@ Processor sapho_all_b
   multiplier    int and float; divider int and float
   data stack    8 words (set by #NDSTAC)
   call stack    8 words (set by #SDEPTH)
-  memories      1021 instructions, 70 data words
+  memories      1017 instructions, 70 data words
 Sweet: the processor is good to go.
 ## variables
 global s 1
@@ -1196,100 +1197,96 @@ lang C+-
 // library macros, no source line
 922 SET __sqrt_num
 923 F_ROT
-924 PSH
-925 F_DIV __sqrt_num
+924 F_DIV __sqrt_num
+925 PSH
 926 NOP
 927 NOP
-928 NOP
-929 F_QUO
-930 SF_ADD
-931 F_MLT 0.5
+928 F_QUO
+929 SF_ADD
+930 F_MLT 0.5
+931 F_DIV __sqrt_num
 932 PSH
-933 F_DIV __sqrt_num
+933 NOP
 934 NOP
-935 NOP
-936 NOP
-937 F_QUO
-938 SF_ADD
-939 F_MLT 0.5
-940 PSH
-941 F_DIV __sqrt_num
-942 NOP
-943 NOP
-944 NOP
-945 F_QUO
-946 SF_ADD
-947 F_MLT 0.5
-948 PSH
-949 F_DIV __sqrt_num
-950 NOP
-951 NOP
-952 NOP
-953 F_QUO
-954 SF_ADD
-955 F_MLT 0.5
-956 RET
-957 SET __exp_x
-958 F_MLT 1.4426950409
-959 SET __exp_q
-960 LOD 0.5
-961 F_SGN __exp_q
-962 F_ADD __exp_q
-963 F2I
-964 SET __exp_n
-965 I2F
-966 F_MLT 0.6931471806
-967 F_SU2 __exp_x
-968 SET __exp_r
-969 F_MLT 0.0013888889
-970 F_ADD 0.0083333333
+935 F_QUO
+936 SF_ADD
+937 F_MLT 0.5
+938 F_DIV __sqrt_num
+939 PSH
+940 NOP
+941 NOP
+942 F_QUO
+943 SF_ADD
+944 F_MLT 0.5
+945 F_DIV __sqrt_num
+946 PSH
+947 NOP
+948 NOP
+949 F_QUO
+950 SF_ADD
+951 F_MLT 0.5
+952 RET
+953 SET __exp_x
+954 F_MLT 1.4426950409
+955 SET __exp_q
+956 LOD 0.5
+957 F_SGN __exp_q
+958 F_ADD __exp_q
+959 F2I
+960 SET __exp_n
+961 I2F
+962 F_MLT 0.6931471806
+963 F_SU2 __exp_x
+964 SET __exp_r
+965 F_MLT 0.0013888889
+966 F_ADD 0.0083333333
+967 F_MLT __exp_r
+968 F_ADD 0.0416666667
+969 F_MLT __exp_r
+970 F_ADD 0.1666666667
 971 F_MLT __exp_r
-972 F_ADD 0.0416666667
+972 F_ADD 0.5
 973 F_MLT __exp_r
-974 F_ADD 0.1666666667
+974 F_ADD 1.0
 975 F_MLT __exp_r
-976 F_ADD 0.5
-977 F_MLT __exp_r
-978 F_ADD 1.0
-979 F_MLT __exp_r
-980 F_ADD 1.0
-981 F_SCL __exp_n
-982 RET
-983 SET __log_x
-984 F_LES 0.0
-985 JIZ __L_log_zero
-986 XPO_M __log_x
-987 SET __log_e
-988 NEG
-989 SET __log_ne
-990 LOD __log_x
-991 F_SCL __log_ne
-992 SET __log_m
-993 F_SU1 1.0
-994 SET __log_t1
-995 LOD __log_m
-996 F_ADD 1.0
-997 F_DIV __log_t1
-998 NOP
-999 NOP
-1000 NOP
-1001 F_QUO
-1002 SET __log_u
-1003 F_MLT __log_u
-1004 SET __log_w
-1005 F_MLT 0.2222222222
-1006 F_ADD 0.2857142858
+976 F_ADD 1.0
+977 F_SCL __exp_n
+978 RET
+979 SET __log_x
+980 F_LES 0.0
+981 JIZ __L_log_zero
+982 XPO_M __log_x
+983 SET __log_e
+984 NEG
+985 SET __log_ne
+986 LOD __log_x
+987 F_SCL __log_ne
+988 SET __log_m
+989 F_SU1 1.0
+990 SET __log_t1
+991 LOD __log_m
+992 F_ADD 1.0
+993 F_DIV __log_t1
+994 NOP
+995 NOP
+996 NOP
+997 F_QUO
+998 SET __log_u
+999 F_MLT __log_u
+1000 SET __log_w
+1001 F_MLT 0.2222222222
+1002 F_ADD 0.2857142858
+1003 F_MLT __log_w
+1004 F_ADD 0.4
+1005 F_MLT __log_w
+1006 F_ADD 0.6666666666
 1007 F_MLT __log_w
-1008 F_ADD 0.4
-1009 F_MLT __log_w
-1010 F_ADD 0.6666666666
-1011 F_MLT __log_w
-1012 F_ADD 2.0
-1013 F_MLT __log_u
-1014 SET __log_lm
-1015 I2F_M __log_e
-1016 F_MLT 0.6931471806
-1017 F_ADD __log_lm
-1018 RET
-1019 LOD 0.0
-1020 RET
+1008 F_ADD 2.0
+1009 F_MLT __log_u
+1010 SET __log_lm
+1011 I2F_M __log_e
+1012 F_MLT 0.6931471806
+1013 F_ADD __log_lm
+1014 RET
+1015 LOD 0.0
+1016 RET

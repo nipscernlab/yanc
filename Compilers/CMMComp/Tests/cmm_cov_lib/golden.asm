@@ -1345,9 +1345,8 @@ F2I
 OUT 0
 LOD main_ca_i
 CAL __float_exp
-SET __csin_eb
 F_DIV 1.0
-NOP
+SET __csin_eb
 NOP
 F_QUO
 SET __csin_emb
@@ -1389,9 +1388,8 @@ F_MLT main_one
 SF_ADD
 P_LOD main_ca_i
 CAL __float_exp
-SET __csin_eb
 F_DIV 1.0
-NOP
+SET __csin_eb
 NOP
 F_QUO
 SET __csin_emb
@@ -1441,9 +1439,8 @@ SET_P __csin_b
 SET __csin_a
 LOD __csin_b
 CAL __float_exp
-SET __csin_eb
 F_DIV 1.0
-NOP
+SET __csin_eb
 NOP
 F_QUO
 SET __csin_emb
@@ -1497,9 +1494,8 @@ SET_P __csin_b
 SET __csin_a
 LOD __csin_b
 CAL __float_exp
-SET __csin_eb
 F_DIV 1.0
-NOP
+SET __csin_eb
 NOP
 F_QUO
 SET __csin_emb
@@ -1537,9 +1533,8 @@ F2I
 OUT 0
 LOD 0.25
 CAL __float_exp
-SET __csin_eb
 F_DIV 1.0
-NOP
+SET __csin_eb
 NOP
 F_QUO
 SET __csin_emb
@@ -1581,9 +1576,8 @@ F_MLT main_one
 SF_ADD
 P_LOD 0.25
 CAL __float_exp
-SET __csin_eb
 F_DIV 1.0
-NOP
+SET __csin_eb
 NOP
 F_QUO
 SET __csin_emb
@@ -1724,9 +1718,8 @@ F2I
 OUT 0
 LOD main_ca_i
 CAL __float_exp
-SET __ccos_eb
 F_DIV 1.0
-NOP
+SET __ccos_eb
 NOP
 F_QUO
 SET __ccos_emb
@@ -1769,9 +1762,8 @@ F_MLT main_one
 SF_ADD
 P_LOD main_ca_i
 CAL __float_exp
-SET __ccos_eb
 F_DIV 1.0
-NOP
+SET __ccos_eb
 NOP
 F_QUO
 SET __ccos_emb
@@ -1822,9 +1814,8 @@ SET_P __ccos_b
 SET __ccos_a
 LOD __ccos_b
 CAL __float_exp
-SET __ccos_eb
 F_DIV 1.0
-NOP
+SET __ccos_eb
 NOP
 F_QUO
 SET __ccos_emb
@@ -1879,9 +1870,8 @@ SET_P __ccos_b
 SET __ccos_a
 LOD __ccos_b
 CAL __float_exp
-SET __ccos_eb
 F_DIV 1.0
-NOP
+SET __ccos_eb
 NOP
 F_QUO
 SET __ccos_emb
@@ -1920,9 +1910,8 @@ F2I
 OUT 0
 LOD 0.25
 CAL __float_exp
-SET __ccos_eb
 F_DIV 1.0
-NOP
+SET __ccos_eb
 NOP
 F_QUO
 SET __ccos_emb
@@ -1965,9 +1954,8 @@ F_MLT main_one
 SF_ADD
 P_LOD 0.25
 CAL __float_exp
-SET __ccos_eb
 F_DIV 1.0
-NOP
+SET __ccos_eb
 NOP
 F_QUO
 SET __ccos_emb
@@ -2110,9 +2098,8 @@ CAL __float_sin
 SET __ctan_c2a
 LOD __ctan_tb
 CAL __float_exp
-SET __ctan_eb
 F_DIV 1.0
-NOP
+SET __ctan_eb
 NOP
 F_QUO
 SET __ctan_emb
@@ -2125,9 +2112,8 @@ F_MLT 0.5
 SET __ctan_shb
 LOD __ctan_c2a
 F_ADD __ctan_chb
-SET __ctan_d
 F_DIV __ctan_s2a
-NOP
+SET __ctan_d
 NOP
 F_QUO
 P_LOD __ctan_d
@@ -2170,9 +2156,8 @@ CAL __float_sin
 SET __ctan_c2a
 LOD __ctan_tb
 CAL __float_exp
-SET __ctan_eb
 F_DIV 1.0
-NOP
+SET __ctan_eb
 NOP
 F_QUO
 SET __ctan_emb
@@ -2185,9 +2170,8 @@ F_MLT 0.5
 SET __ctan_shb
 LOD __ctan_c2a
 F_ADD __ctan_chb
-SET __ctan_d
 F_DIV __ctan_s2a
-NOP
+SET __ctan_d
 NOP
 F_QUO
 P_LOD __ctan_d
@@ -2236,9 +2220,8 @@ CAL __float_sin
 SET __ctan_c2a
 LOD __ctan_tb
 CAL __float_exp
-SET __ctan_eb
 F_DIV 1.0
-NOP
+SET __ctan_eb
 NOP
 F_QUO
 SET __ctan_emb
@@ -2251,9 +2234,8 @@ F_MLT 0.5
 SET __ctan_shb
 LOD __ctan_c2a
 F_ADD __ctan_chb
-SET __ctan_d
 F_DIV __ctan_s2a
-NOP
+SET __ctan_d
 NOP
 F_QUO
 P_LOD __ctan_d
@@ -2306,9 +2288,8 @@ CAL __float_sin
 SET __ctan_c2a
 LOD __ctan_tb
 CAL __float_exp
-SET __ctan_eb
 F_DIV 1.0
-NOP
+SET __ctan_eb
 NOP
 F_QUO
 SET __ctan_emb
@@ -2321,9 +2302,8 @@ F_MLT 0.5
 SET __ctan_shb
 LOD __ctan_c2a
 F_ADD __ctan_chb
-SET __ctan_d
 F_DIV __ctan_s2a
-NOP
+SET __ctan_d
 NOP
 F_QUO
 P_LOD __ctan_d
@@ -2362,9 +2342,8 @@ CAL __float_sin
 SET __ctan_c2a
 LOD __ctan_tb
 CAL __float_exp
-SET __ctan_eb
 F_DIV 1.0
-NOP
+SET __ctan_eb
 NOP
 F_QUO
 SET __ctan_emb
@@ -2377,9 +2356,8 @@ F_MLT 0.5
 SET __ctan_shb
 LOD __ctan_c2a
 F_ADD __ctan_chb
-SET __ctan_d
 F_DIV __ctan_s2a
-NOP
+SET __ctan_d
 NOP
 F_QUO
 P_LOD __ctan_d
@@ -2422,9 +2400,8 @@ CAL __float_sin
 SET __ctan_c2a
 LOD __ctan_tb
 CAL __float_exp
-SET __ctan_eb
 F_DIV 1.0
-NOP
+SET __ctan_eb
 NOP
 F_QUO
 SET __ctan_emb
@@ -2437,9 +2414,8 @@ F_MLT 0.5
 SET __ctan_shb
 LOD __ctan_c2a
 F_ADD __ctan_chb
-SET __ctan_d
 F_DIV __ctan_s2a
-NOP
+SET __ctan_d
 NOP
 F_QUO
 P_LOD __ctan_d
@@ -10067,33 +10043,29 @@ OUT 0
 @__float_sqrt     SET __sqrt_num       // get the parameter
               F_ROT                // first estimate (nearest power of 2)
 
-                PSH                // update x
               F_DIV __sqrt_num       // iteration 1
-NOP
+                PSH                // update x
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
-                PSH                // update x
               F_DIV __sqrt_num       // iteration 2
-NOP
+                PSH                // update x
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
-                PSH                // update x
               F_DIV __sqrt_num       // iteration 3
-NOP
+                PSH                // update x
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
-                PSH                // update x
               F_DIV __sqrt_num       // iteration 4
-NOP
+                PSH                // update x
 NOP
 F_QUO
              SF_ADD

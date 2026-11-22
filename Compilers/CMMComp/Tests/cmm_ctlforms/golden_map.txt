@@ -15,7 +15,7 @@ Info: ULA resource -> < operator for int
 Info: adding stack memory for function calls
 Info: ULA resource -> integer negative operation
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 11% of the Assembly Instruction Set
+Info: using 10% of the Assembly Instruction Set
 Info: using 13% of the ULA operations
 Processor cmm_ctlforms
   word          32 bits

@@ -45,7 +45,11 @@
 # prefix P_/PF_ pushes the accumulator first, prefix S_/SF_ takes the second
 # operand off the stack, suffix _M reads the operand from memory instead of the
 # accumulator, suffix _V adds a constant offset -- plus the per-mnemonic
-# comments in ASMComp.l, which is where LEA and the indirect forms come from. check_isa.py re-derives them from the names and fails on any row
+# comments in ASMComp.l, which is where LEA and the indirect forms come from.
+# One exception to the names: a division (DIV, MOD, F_DIV and their stack
+# forms) only starts the divider and reads the accumulator; QUO, REM or F_QUO
+# writes the result a few words later (docs/design/pipeln-and-division.md,
+# #113). check_isa.py re-derives them from the names and fails on any row
 # that breaks the convention, so a typo cannot survive here. What that does NOT
 # give is execution: no instruction has been run to confirm its effect. The
 # instruction-set simulator of GitHub issue #32 is what will validate these
@@ -79,10 +83,10 @@ ADD	23	data	rw	-	r	-	-	fixed-point addition with memory
 S_ADD	24	none	rw	pop	-	-	-	fixed-point addition with stack
 MLT	25	data	rw	-	r	-	-	fixed-point multiplication with memory
 S_MLT	26	none	rw	pop	-	-	-	fixed-point multiplication with stack
-DIV	27	data	rw	-	r	-	-	fixed-point division with memory
-S_DIV	28	none	rw	pop	-	-	-	fixed-point division with stack
-MOD	29	data	rw	-	r	-	-	fixed-point remainder with memory
-S_MOD	30	none	rw	pop	-	-	-	fixed-point remainder with stack
+DIV	27	data	r	-	r	-	-	starts a fixed-point division with memory (QUO reads the quotient)
+S_DIV	28	none	r	pop	-	-	-	starts a fixed-point division with stack (QUO reads the quotient)
+MOD	29	data	r	-	r	-	-	starts a fixed-point division with memory (REM reads the remainder)
+S_MOD	30	none	r	pop	-	-	-	starts a fixed-point division with stack (REM reads the remainder)
 SGN	31	data	rw	-	r	-	-	fixed-point sign with memory
 S_SGN	32	none	rw	pop	-	-	-	fixed-point sign with stack
 F_ADD	33	data	rw	-	r	-	-	floating-point addition with memory
@@ -93,8 +97,8 @@ SF_SU1	37	none	rw	pop	-	-	-	floating-point subtraction with stack at input 1
 SF_SU2	38	none	rw	pop	-	-	-	floating-point subtraction with stack at input 2
 F_MLT	39	data	rw	-	r	-	-	floating-point multiplication with memory
 SF_MLT	40	none	rw	pop	-	-	-	floating-point multiplication with stack
-F_DIV	41	data	rw	-	r	-	-	floating-point division with memory
-SF_DIV	42	none	rw	pop	-	-	-	floating-point division with stack
+F_DIV	41	data	r	-	r	-	-	starts a floating-point division with memory (F_QUO reads the quotient)
+SF_DIV	42	none	r	pop	-	-	-	starts a floating-point division with stack (F_QUO reads the quotient)
 F_SGN	43	data	rw	-	r	-	-	floating-point sign with memory
 SF_SGN	44	none	rw	pop	-	-	-	floating-point sign with stack
 F_SCL	45	data	rw	-	r	-	-	scale float by 2^k, k from memory
@@ -163,14 +167,14 @@ SRS	107	data	rw	-	r	-	-	arithmetic shift right with memory
 S_SRS	108	none	rw	pop	-	-	-	arithmetic shift right with stack
 INC	109	data	w	-	rw	-	-	increments a data word in place; the acc gets the new value (#203)
 P_INC	110	data	rw	push	rw	-	-	PUSH + INC
+QUO	111	none	w	-	-	-	-	acc = the quotient of the DIV or S_DIV four words before (#113)
+REM	112	none	w	-	-	-	-	acc = the remainder of the MOD or S_MOD four words before (#113)
+F_QUO	113	none	w	-	-	-	-	acc = the quotient of the F_DIV or SF_DIV three words before, four in a program with DIV or MOD (#113)
 LEA	1	lea	w	-	addr	-	-	load-effective-address: acc = &var (pseudo, expands to LOD <const>)
 LOD_V	1	offset	w	-	r	-	-	LOD with constant offset
 P_LOD_V	2	offset	rw	push	r	-	-	P_LOD with constant offset
 SET_V	5	offset	r	-	w	-	-	SET with constant offset
 ADD_V	23	offset	rw	-	r	-	-	ADD with constant offset
-QUO	27	none	w	-	-	-	-	integer quotient of the division four words before (alias of DIV, operand 0)
-REM	29	none	w	-	-	-	-	remainder of the division four words before (alias of MOD, operand 0)
-F_QUO	41	none	w	-	-	-	-	float quotient of the division three words before (alias of F_DIV, operand 0)
 F_ADD_V	33	offset	rw	-	r	-	-	F_ADD with constant offset
 MLT_V	25	offset	rw	-	r	-	-	MLT with constant offset
 F_MLT_V	39	offset	rw	-	r	-	-	F_MLT with constant offset
