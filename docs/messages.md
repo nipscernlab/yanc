@@ -103,5 +103,14 @@ operators, exceptions, variadic functions (see
   the `JMP`, is written as `JNZ y`, one word less each.
 - **`N increments made one INC each`** (cmmcomp, cppcomp): `LOD k; ADD 1;
   SET k` is written as `INC k`, two words less each (docs/design/inc-in-place.md).
+- **`N divisions take one word less: the SET or PSH before each runs in its
+  first slot`** (cmmcomp, cppcomp): a division only starts the divider and
+  keeps the accumulator, so the `SET` or `PSH` right before it is written
+  after it, in place of its first `NOP`, one word and one cycle less each
+  (docs/design/pipeln-and-division.md, section 4.5).
+- **`... stands between ... and the read of its result`** (asmcomp): a
+  hand-written `.asm` puts a jump, a call, `TOM`, `CAD` or another division
+  between a division and its `QUO`, `REM` or `F_QUO`. Only an instruction
+  that lets the read come on time fits there; move the other one out.
 - **`stack depths from the program: SDEPTH n, NDSTAC n`**: the stacks are as
   deep as the program needs.

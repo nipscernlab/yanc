@@ -165,8 +165,11 @@ void fatal(const char *fmt, ...);
       "Error: %s %s: the operand of LDI/ILI/STI/ISI is an array name or an integer base address.\n")
 
 #define MSG_ERR_DIV_SEQ \
-    M("Erro: %s leva %d palavras: depois dela vêm %d NOP e a leitura do resultado (esperava %s, achei %s). Os compiladores escrevem a sequência; num .asm feito à mão, escreva-a.\n", \
-      "Error: %s takes %d words: it must be followed by %d NOP and the read of its result (expected %s, found %s). The compilers write the sequence; in a hand-written .asm, write it out.\n")
+    M("Erro: %s leva %d palavras, e a última é a leitura do resultado (esperava %s, achei %s). Os compiladores escrevem a sequência; num .asm feito à mão, escreva-a.\n", \
+      "Error: %s takes %d words, and the last one reads its result (expected %s, found %s). The compilers write the sequence; in a hand-written .asm, write it out.\n")
+#define MSG_ERR_DIV_SLOT \
+    M("Erro: %s está entre %s e a leitura do resultado. Ali só cabe uma instrução que não desvie, não espere num link e não comece nem leia uma divisão: NOP, SET, PSH...\n", \
+      "Error: %s stands between %s and the read of its result. Only an instruction that does not jump, wait on a link or start or read a division fits there: NOP, SET, PSH...\n")
 
 #define MSG_ERR_LINK_NUM \
     M("Erro: o operando de %s é o número do link, um inteiro de 0 a %d (achei '%s').\n", \
@@ -184,8 +187,8 @@ void fatal(const char *fmt, ...);
       "Error: %s %s writes its word the cycle after, and the instruction right after it (%s %s) reads that word before the write. Put another instruction between them.\n")
 
 #define MSG_ERR_DIV_SEQ_END \
-    M("Erro: o programa termina no meio da sequência de %s (faltaram NOP e %s).\n", \
-      "Error: the program ends inside the sequence of %s (NOPs and %s are missing).\n")
+    M("Erro: o programa termina no meio da sequência de %s (falta a leitura do resultado, %s).\n", \
+      "Error: the program ends inside the sequence of %s (the read of its result, %s, is missing).\n")
 
 #define MSG_ERR_FROUND_RANGE \
     M("Erro: #FROUND só aceita 0 (legado), 1 (truncamento + saturação) ou 2 (arredondamento ao par).\n", \

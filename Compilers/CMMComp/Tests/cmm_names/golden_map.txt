@@ -8,6 +8,7 @@ Info: 5 variables written and never read removed (7 instructions)
 Info: 3 instructions computing a value never read removed
 Info: 1 JIZ + JMP pairs made one JNZ each
 Info: 1 increments made one INC each
+Info: 4 divisions take one word less: the SET or PSH before each runs in its first slot
 Info: 13 variables share 7 data words (6 saved)
 Heads up: global variable 'switch_exp' is never read, so it's out of the program and the waveform (#WAVE switch_exp keeps it).
 Heads up: global variable 'g' is never read, so it's out of the program and the waveform (#WAVE g keeps it).
@@ -16,7 +17,7 @@ Heads up: variable 'y' in function 'main' is never read, so it's out of the prog
 Heads up: variable 's' in function 'main' is never read, so it's out of the program and the waveform (#WAVE s, in the function, keeps it).
 Heads up: variable 'r' in function 'main' is never read, so it's out of the program and the waveform (#WAVE r, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 97 instructions and 22 variables were found
+Info: 93 instructions and 22 variables were found
 Info: ULA resource -> integer adder
 Info: ULA resource -> < operator for int
 Info: adding data output handling
@@ -38,7 +39,7 @@ Processor cmm_names
   multiplier    float; divider float
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      97 instructions, 22 data words
+  memories      93 instructions, 22 data words
 Sweet: the processor is good to go.
 ## variables
 global Lwh1 1
@@ -147,32 +148,28 @@ lang C+-
 // library macros, no source line
 66 SET __sqrt_num
 67 F_ROT
-68 PSH
-69 F_DIV __sqrt_num
+68 F_DIV __sqrt_num
+69 PSH
 70 NOP
-71 NOP
-72 F_QUO
-73 SF_ADD
-74 F_MLT 0.5
+71 F_QUO
+72 SF_ADD
+73 F_MLT 0.5
+74 F_DIV __sqrt_num
 75 PSH
-76 F_DIV __sqrt_num
-77 NOP
-78 NOP
-79 F_QUO
-80 SF_ADD
-81 F_MLT 0.5
-82 PSH
-83 F_DIV __sqrt_num
-84 NOP
-85 NOP
-86 F_QUO
-87 SF_ADD
-88 F_MLT 0.5
-89 PSH
-90 F_DIV __sqrt_num
-91 NOP
-92 NOP
-93 F_QUO
-94 SF_ADD
-95 F_MLT 0.5
-96 RET
+76 NOP
+77 F_QUO
+78 SF_ADD
+79 F_MLT 0.5
+80 F_DIV __sqrt_num
+81 PSH
+82 NOP
+83 F_QUO
+84 SF_ADD
+85 F_MLT 0.5
+86 F_DIV __sqrt_num
+87 PSH
+88 NOP
+89 F_QUO
+90 SF_ADD
+91 F_MLT 0.5
+92 RET

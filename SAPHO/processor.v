@@ -300,6 +300,11 @@ module processor
 	parameter    INC   = 0,
 	parameter  P_INC   = 0,
 
+	// the reads of a division's result (#113)
+	parameter    QUO   = 0,
+	parameter    REM   = 0,
+	parameter  F_QUO   = 0,
+
 	// special operations
 	parameter  F_ROT   = 0,    // nearest power-of-two square-root approximation (with ACC)
 	parameter  F_SU1   = 0,    // floating-point subtraction at input 1
@@ -470,6 +475,9 @@ core #(.NBOPCO ( NBOPCO ),
 	   .S_SRS  ( S_SRS  ),
 	     .INC  (   INC  ),
 	   .P_INC  ( P_INC  ),
+	     .QUO  (   QUO  ),
+	     .REM  (   REM  ),
+	   .F_QUO  ( F_QUO  ),
 	   .F_ROT  ( F_ROT  ),
 	   .F_SU1  ( F_SU1  ),
 	   .F_SU2  ( F_SU2  ),

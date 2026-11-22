@@ -13,7 +13,7 @@ Info: ULA resource -> float-point multiplier
 Info: ULA resource -> float to int converter
 Info: adding stack memory for function calls
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 11% of the Assembly Instruction Set
+Info: using 10% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
 Processor cmm_braces
   word          32 bits

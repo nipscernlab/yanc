@@ -16,7 +16,7 @@ Info: ULA resource -> float to int converter
 Info: adding stack memory for function calls
 Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 12% of the Assembly Instruction Set
+Info: using 11% of the Assembly Instruction Set
 Info: using 13% of the ULA operations
 Processor cmm_stack_balance
   word          32 bits

@@ -144,7 +144,10 @@ module instr_dec
     parameter SRS      = 0,
     parameter S_SRS    = 0,
     parameter INC      = 0,
-    parameter P_INC    = 0
+    parameter P_INC    = 0,
+    parameter QUO      = 0,
+    parameter REM      = 0,
+    parameter F_QUO    = 0
 )(
     input                   clk, rst,
     input      [NBOPCO-1:0] opcode,
@@ -189,14 +192,17 @@ wire [13:0] d13 ; generate if ((P_INN   ) != 0) begin : g13  assign d13  = (opco
 wire [13:0] d14 ; generate if ((PF_INN  ) != 0) begin : g14  assign d14  = (opcode == 7'd14 ) ? {6'd25, 1'b1, 1'b0, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g14  assign d14  = 14'd0; end endgenerate
 wire [13:0] d15 ; generate if ((OUT     ) != 0) begin : g15  assign d15  = (opcode == 7'd15 ) ? {6'd0 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g15  assign d15  = 14'd0; end endgenerate
 // int arithmetic
+// A division only starts its divider (DIV, MOD and their stack forms run ALU
+// operation 0, F_DIV and SF_DIV 52: both keep the accumulator); QUO, REM and
+// F_QUO, at the end of the sequence, read the result (#113)
 wire [13:0] d23 ; generate if ((ADD     ) != 0) begin : g23  assign d23  = (opcode == 7'd23 ) ? {6'd2 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g23  assign d23  = 14'd0; end endgenerate
 wire [13:0] d24 ; generate if ((S_ADD   ) != 0) begin : g24  assign d24  = (opcode == 7'd24 ) ? {6'd2 , 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g24  assign d24  = 14'd0; end endgenerate
 wire [13:0] d25 ; generate if ((MLT     ) != 0) begin : g25  assign d25  = (opcode == 7'd25 ) ? {6'd4 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g25  assign d25  = 14'd0; end endgenerate
 wire [13:0] d26 ; generate if ((S_MLT   ) != 0) begin : g26  assign d26  = (opcode == 7'd26 ) ? {6'd4 , 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g26  assign d26  = 14'd0; end endgenerate
-wire [13:0] d27 ; generate if ((DIV     ) != 0) begin : g27  assign d27  = (opcode == 7'd27 ) ? {6'd6 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g27  assign d27  = 14'd0; end endgenerate
-wire [13:0] d28 ; generate if ((S_DIV   ) != 0) begin : g28  assign d28  = (opcode == 7'd28 ) ? {6'd6 , 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g28  assign d28  = 14'd0; end endgenerate
-wire [13:0] d29 ; generate if ((MOD     ) != 0) begin : g29  assign d29  = (opcode == 7'd29 ) ? {6'd8 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g29  assign d29  = 14'd0; end endgenerate
-wire [13:0] d30 ; generate if ((S_MOD   ) != 0) begin : g30  assign d30  = (opcode == 7'd30 ) ? {6'd8 , 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g30  assign d30  = 14'd0; end endgenerate
+wire [13:0] d27 ; generate if ((DIV     ) != 0) begin : g27  assign d27  = (opcode == 7'd27 ) ? {6'd0 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g27  assign d27  = 14'd0; end endgenerate
+wire [13:0] d28 ; generate if ((S_DIV   ) != 0) begin : g28  assign d28  = (opcode == 7'd28 ) ? {6'd0 , 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g28  assign d28  = 14'd0; end endgenerate
+wire [13:0] d29 ; generate if ((MOD     ) != 0) begin : g29  assign d29  = (opcode == 7'd29 ) ? {6'd0 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g29  assign d29  = 14'd0; end endgenerate
+wire [13:0] d30 ; generate if ((S_MOD   ) != 0) begin : g30  assign d30  = (opcode == 7'd30 ) ? {6'd0 , 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g30  assign d30  = 14'd0; end endgenerate
 wire [13:0] d31 ; generate if ((SGN     ) != 0) begin : g31  assign d31  = (opcode == 7'd31 ) ? {6'd9 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g31  assign d31  = 14'd0; end endgenerate
 wire [13:0] d32 ; generate if ((S_SGN   ) != 0) begin : g32  assign d32  = (opcode == 7'd32 ) ? {6'd9 , 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g32  assign d32  = 14'd0; end endgenerate
 // float arithmetic
@@ -208,8 +214,8 @@ wire [13:0] d37 ; generate if ((SF_SU1  ) != 0) begin : g37  assign d37  = (opco
 wire [13:0] d38 ; generate if ((SF_SU2  ) != 0) begin : g38  assign d38  = (opcode == 7'd38 ) ? {6'd48, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g38  assign d38  = 14'd0; end endgenerate
 wire [13:0] d39 ; generate if ((F_MLT   ) != 0) begin : g39  assign d39  = (opcode == 7'd39 ) ? {6'd5 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g39  assign d39  = 14'd0; end endgenerate
 wire [13:0] d40 ; generate if ((SF_MLT  ) != 0) begin : g40  assign d40  = (opcode == 7'd40 ) ? {6'd5 , 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g40  assign d40  = 14'd0; end endgenerate
-wire [13:0] d41 ; generate if ((F_DIV   ) != 0) begin : g41  assign d41  = (opcode == 7'd41 ) ? {6'd7 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g41  assign d41  = 14'd0; end endgenerate
-wire [13:0] d42 ; generate if ((SF_DIV  ) != 0) begin : g42  assign d42  = (opcode == 7'd42 ) ? {6'd7 , 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g42  assign d42  = 14'd0; end endgenerate
+wire [13:0] d41 ; generate if ((F_DIV   ) != 0) begin : g41  assign d41  = (opcode == 7'd41 ) ? {6'd52, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g41  assign d41  = 14'd0; end endgenerate
+wire [13:0] d42 ; generate if ((SF_DIV  ) != 0) begin : g42  assign d42  = (opcode == 7'd42 ) ? {6'd52, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g42  assign d42  = 14'd0; end endgenerate
 wire [13:0] d43 ; generate if ((F_SGN   ) != 0) begin : g43  assign d43  = (opcode == 7'd43 ) ? {6'd10, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g43  assign d43  = 14'd0; end endgenerate
 wire [13:0] d44 ; generate if ((SF_SGN  ) != 0) begin : g44  assign d44  = (opcode == 7'd44 ) ? {6'd10, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g44  assign d44  = 14'd0; end endgenerate
 wire [13:0] d45 ; generate if ((F_SCL   ) != 0) begin : g45  assign d45  = (opcode == 7'd45 ) ? {6'd49, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g45  assign d45  = 14'd0; end endgenerate
@@ -286,6 +292,11 @@ wire [13:0] d108; generate if ((S_SRS   ) != 0) begin : g108 assign d108 = (opco
 // accumulator; the write comes a cycle later, from core.v (#203)
 wire [13:0] d109; generate if ((INC     ) != 0) begin : g109 assign d109 = (opcode == 7'd109) ? {6'd2 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g109 assign d109 = 14'd0; end endgenerate
 wire [13:0] d110; generate if ((P_INC   ) != 0) begin : g110 assign d110 = (opcode == 7'd110) ? {6'd2 , 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g110 assign d110 = 14'd0; end endgenerate
+// the read of a division's result, the last word of its sequence (#113): the
+// ALU operation of the divider it reads
+wire [13:0] d111; generate if ((QUO     ) != 0) begin : g111 assign d111 = (opcode == 7'd111) ? {6'd6 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g111 assign d111 = 14'd0; end endgenerate
+wire [13:0] d112; generate if ((REM     ) != 0) begin : g112 assign d112 = (opcode == 7'd112) ? {6'd8 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g112 assign d112 = 14'd0; end endgenerate
+wire [13:0] d113; generate if ((F_QUO   ) != 0) begin : g113 assign d113 = (opcode == 7'd113) ? {6'd7 , 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0} : 14'd0; end else begin : g113 assign d113 = 14'd0; end endgenerate
 
 wire [13:0] ctl = d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 |
                   d13 | d14 | d15 | d23 | d24 | d25 | d26 | d27 | d28 | d29 | d30 | d31 |
@@ -295,7 +306,7 @@ wire [13:0] ctl = d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 |
                   d68 | d69 | d70 | d71 | d72 | d73 | d74 | d75 | d76 | d77 | d78 | d79 |
                   d80 | d81 | d82 | d83 | d84 | d85 | d86 | d87 | d88 | d89 | d90 | d91 |
                   d92 | d93 | d94 | d95 | d96 | d97 | d98 | d99 | d100 | d101 | d102 | d103 |
-                  d104 | d105 | d106 | d107 | d108 | d109 | d110;
+                  d104 | d105 | d106 | d107 | d108 | d109 | d110 | d111 | d112 | d113;
 
 
 // mem_wr and req_in leave the processor as they are (the data memory's write

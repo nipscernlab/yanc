@@ -11,10 +11,11 @@ Info: 7 divisions, 5 words each for DIV/MOD and 4 for F_DIV (21 added)
 Info: 1 variables written and never read removed (1 instructions)
 Info: 1 calls that end a function made jumps
 Info: 33 increments made one INC each
+Info: 4 divisions take one word less: the SET or PSH before each runs in its first slot
 Info: 47 variables share 13 data words (34 saved)
 Heads up: variable 'L' in function 'fista_x' is never read, so it's out of the program and the waveform (#WAVE L, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 485 instructions and 272 variables were found
+Info: 481 instructions and 272 variables were found
 Info: adding data input handling
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
@@ -38,7 +39,7 @@ Processor procBlindOpt
   multiplier    float; divider float
   data stack    2 words (worked out from the program)
   call stack    3 words (worked out from the program)
-  memories      485 instructions, 272 data words
+  memories      481 instructions, 272 data words
 Sweet: the processor is good to go.
 ## variables
 project_h_hat k 1
@@ -705,32 +706,28 @@ lang C+-
 // library macros, no source line
 454 SET __sqrt_num
 455 F_ROT
-456 PSH
-457 F_DIV __sqrt_num
+456 F_DIV __sqrt_num
+457 PSH
 458 NOP
-459 NOP
-460 F_QUO
-461 SF_ADD
-462 F_MLT 0.5
+459 F_QUO
+460 SF_ADD
+461 F_MLT 0.5
+462 F_DIV __sqrt_num
 463 PSH
-464 F_DIV __sqrt_num
-465 NOP
-466 NOP
-467 F_QUO
-468 SF_ADD
-469 F_MLT 0.5
-470 PSH
-471 F_DIV __sqrt_num
-472 NOP
-473 NOP
-474 F_QUO
-475 SF_ADD
-476 F_MLT 0.5
-477 PSH
-478 F_DIV __sqrt_num
-479 NOP
-480 NOP
-481 F_QUO
-482 SF_ADD
-483 F_MLT 0.5
-484 RET
+464 NOP
+465 F_QUO
+466 SF_ADD
+467 F_MLT 0.5
+468 F_DIV __sqrt_num
+469 PSH
+470 NOP
+471 F_QUO
+472 SF_ADD
+473 F_MLT 0.5
+474 F_DIV __sqrt_num
+475 PSH
+476 NOP
+477 F_QUO
+478 SF_ADD
+479 F_MLT 0.5
+480 RET

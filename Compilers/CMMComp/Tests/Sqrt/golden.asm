@@ -61,30 +61,26 @@ P_LOD 1
 S_SHL
 P_LOD 1
 S_SHR
-SET my_sqrt_x
 F_DIV my_sqrt_num
-NOP
+SET my_sqrt_x
 NOP
 F_QUO
 F_ADD my_sqrt_x
 F_MLT 0.5
-SET my_sqrt_x
 F_DIV my_sqrt_num
-NOP
+SET my_sqrt_x
 NOP
 F_QUO
 F_ADD my_sqrt_x
 F_MLT 0.5
-SET my_sqrt_x
 F_DIV my_sqrt_num
-NOP
+SET my_sqrt_x
 NOP
 F_QUO
 F_ADD my_sqrt_x
 F_MLT 0.5
-SET my_sqrt_x
 F_DIV my_sqrt_num
-NOP
+SET my_sqrt_x
 NOP
 F_QUO
 F_ADD my_sqrt_x
@@ -97,33 +93,29 @@ RET
 @__float_sqrt     SET __sqrt_num       // get the parameter
               F_ROT                // first estimate (nearest power of 2)
 
-                PSH                // update x
               F_DIV __sqrt_num       // iteration 1
-NOP
+                PSH                // update x
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
-                PSH                // update x
               F_DIV __sqrt_num       // iteration 2
-NOP
+                PSH                // update x
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
-                PSH                // update x
               F_DIV __sqrt_num       // iteration 3
-NOP
+                PSH                // update x
 NOP
 F_QUO
              SF_ADD
               F_MLT 0.5
 
-                PSH                // update x
               F_DIV __sqrt_num       // iteration 4
-NOP
+                PSH                // update x
 NOP
 F_QUO
              SF_ADD

@@ -10,7 +10,7 @@ Info: ULA resource -> integer negative operation
 Info: adding data output handling
 Info: ULA resource -> integer multiplier
 Info: stack depths from the program: SDEPTH 1, NDSTAC 3
-Info: using 10% of the Assembly Instruction Set
+Info: using 9% of the Assembly Instruction Set
 Info: using 8% of the ULA operations
 Processor cmm_callseq
   word          32 bits

@@ -78,12 +78,12 @@ static const as_isa isa[] = {
     {"S_MLT", "none", "-", "-", "pop", "rw", "-"},
     {"F_MLT", "data", "r", "-", "-", "rw", "-"},
     {"SF_MLT", "none", "-", "-", "pop", "rw", "-"},
-    {"DIV", "data", "r", "-", "-", "rw", "-"},
-    {"S_DIV", "none", "-", "-", "pop", "rw", "-"},
-    {"F_DIV", "data", "r", "-", "-", "rw", "-"},
-    {"SF_DIV", "none", "-", "-", "pop", "rw", "-"},
-    {"MOD", "data", "r", "-", "-", "rw", "-"},
-    {"S_MOD", "none", "-", "-", "pop", "rw", "-"},
+    {"DIV", "data", "r", "-", "-", "r", "-"},
+    {"S_DIV", "none", "-", "-", "pop", "r", "-"},
+    {"F_DIV", "data", "r", "-", "-", "r", "-"},
+    {"SF_DIV", "none", "-", "-", "pop", "r", "-"},
+    {"MOD", "data", "r", "-", "-", "r", "-"},
+    {"S_MOD", "none", "-", "-", "pop", "r", "-"},
     {"SGN", "data", "r", "-", "-", "rw", "-"},
     {"S_SGN", "none", "-", "-", "pop", "rw", "-"},
     {"F_SGN", "data", "r", "-", "-", "rw", "-"},
@@ -935,6 +935,20 @@ int asm_div_words(const char *mn)
     return (k == 2 && !div_shared) ? ASM_DIV_WORDS_FLT : ASM_DIV_WORDS_INT;
 }
 
+// The divider carries its division to the end on its own, and the division
+// keeps the accumulator (#113): between it and its read any instruction may
+// run that lets the read come on time and read the right divider. Not a jump
+// or a call (the read would not follow), not TOM or CAD (they wait in place,
+// and the result would pass), and not a division or a read.
+int asm_div_slot(const char *mn)
+{
+    int i = isa_find(mn);
+    if (i < 0) return 0;
+    return strcmp(isa[i].flow, "-") == 0 && strcmp(isa[i].cls, "link") != 0
+        && !asm_div_kind(mn) && strcmp(isa[i].mn, "QUO") != 0 && strcmp(isa[i].mn, "REM") != 0
+        && strcmp(isa[i].mn, "F_QUO") != 0;
+}
+
 // the mnemonic of a line, after its labels ("" if the line holds no instruction)
 static void line_mnemonic(const char *text, char *mn, size_t cap)
 {
@@ -983,11 +997,11 @@ int asm_divseq(const char *asm_path, const char *pc_path)
     {
         const char *rd = ins_of[ln] >= 0 ? asm_div_read(mn[ln]) : NULL;
         if (!rd) continue;
-        int w = asm_div_words(mn[ln]), k = 1, l = ln;    // already followed by its NOPs and its read: leave it
+        int w = asm_div_words(mn[ln]), k = 1, l = ln;    // already followed by its slots and its read: leave it
         for (; k < w; k++)
         {
             for (l++; l < lines.n && ins_of[l] < 0; l++) ;
-            if (l >= lines.n || strcmp(mn[l], k < w - 1 ? "NOP" : rd) != 0) break;
+            if (l >= lines.n || (k < w - 1 ? !asm_div_slot(mn[l]) : strcmp(mn[l], rd) != 0)) break;
         }
         if (k == w) continue;
         expand[ins_of[ln]] = (char)w;
@@ -1036,10 +1050,12 @@ done:
 // See asm_share.h. The mnemonics whose ALU operation goes through the
 // normaliser: the instr_dec.v rows with ALU operation 3, 5, 7, 25, 26, 46, 47
 // or 48, and their aliases (Scripts/check_isa.py holds the list to the decoder).
+// A float division goes through it at F_QUO, which reads the quotient: F_DIV
+// and SF_DIV only start it (#113).
 
 static const char *norm_mn[] = {
     "F_INN", "PF_INN", "F_ADD", "F_ADD_V", "SF_ADD", "F_SU1", "F_SU2", "SF_SU1", "SF_SU2",
-    "F_MLT", "F_MLT_V", "SF_MLT", "F_DIV", "F_QUO", "SF_DIV", "F_ROT", "I2F", "I2F_M", "P_I2F_M",
+    "F_MLT", "F_MLT_V", "SF_MLT", "F_QUO", "F_ROT", "I2F", "I2F_M", "P_I2F_M",
     NULL
 };
 
@@ -2241,6 +2257,125 @@ done:
     return removed;
 }
 
+// ---- asm_divslot: the SET or PSH before a division fills its first slot (#113) ---
+// See asm_share.h.
+
+int asm_divslot(const char *asm_path, const char *pc_path)
+{
+    FILE *f = fopen(asm_path, "r");
+    if (!f) return -1;
+    strtab lines = {0}, pc = {0};
+    read_lines(f, &lines);
+    fclose(f);
+
+    int  *mn_at  = xmalloc((lines.n + 1) * sizeof(int));   // per line: where its mnemonic starts (-1: no instruction)
+    int  *mn_len = xmalloc((lines.n + 1) * sizeof(int));
+    int  *ins_of = xmalloc((lines.n + 1) * sizeof(int));   // per line: its instruction index (-1: none)
+    char *moved  = xcalloc(lines.n + 1, 1);                 // per line: 1 for the SET / PSH that moves
+    int   n = 0, ok = 1, removed = 0, made = 0;
+
+    for (int ln = 0; ln < lines.n && ok; ln++)              // as asm_jnz reads the lines
+    {
+        char *text = lines.s[ln];
+        int   end  = (int)strlen(text);
+        char *cm   = strstr(text, "//");
+        if (cm) end = (int)(cm - text);
+        mn_at[ln] = ins_of[ln] = -1;
+        int p = 0, t0 = -1, tl = 0;
+        for (;;)
+        {
+            while (p < end && isspace((unsigned char)text[p])) p++;
+            if (p >= end) break;
+            int s = p;
+            while (p < end && !isspace((unsigned char)text[p])) p++;
+            if (text[s] != '@') { t0 = s; tl = p - s; break; }
+        }
+        if (t0 < 0 || text[t0] == '#') continue;
+        if (isa_find(tok_of(text + t0, tl)) < 0) { ok = 0; break; }
+        mn_at[ln] = t0; mn_len[ln] = tl; ins_of[ln] = n++;
+    }
+    if (!ok) goto done;
+
+    // s: SET x or PSH, d: the division, z: its first slot, a NOP; three lines
+    // in a row with no label on any (a jump to one of them would see the
+    // order change) and no directive between them (#ITRAD, #TOAQUI mark a
+    // line of their own). The division keeps the acc (#113), so the SET
+    // stores and the PSH pushes the same value after it. A SET may not write
+    // the word the division reads, and a PSH may not follow a stack form,
+    // which pops the word the PSH pushed. The line before s may not be an
+    // INC: the division's read would come right after it (asmcomp's rule).
+    for (int s = 0; s + 2 < lines.n; s++)
+    {
+        int d = s + 1, z = s + 2;
+        if (mn_at[s] < 0 || mn_at[d] < 0 || mn_at[z] < 0) continue;
+        char ms[32], md[32], mz[32], os[256], od[256];
+        snprintf(ms, sizeof(ms), "%.*s", mn_len[s], lines.s[s] + mn_at[s]);
+        snprintf(md, sizeof(md), "%.*s", mn_len[d], lines.s[d] + mn_at[d]);
+        snprintf(mz, sizeof(mz), "%.*s", mn_len[z], lines.s[z] + mn_at[z]);
+        if (!asm_div_kind(md) || strcmp(mz, "NOP") != 0) continue;
+        if (memchr(lines.s[s], '@', (size_t)mn_at[s]) || memchr(lines.s[d], '@', (size_t)mn_at[d])
+            || memchr(lines.s[z], '@', (size_t)mn_at[z])) continue;
+        int is_stack = strcmp(isa[isa_find(md)].stk, "pop") == 0;
+        if (strcmp(ms, "SET") == 0)
+        {
+            if (!line_operand(lines.s[s], mn_at[s], mn_len[s], os, sizeof(os))) continue;
+            if (!is_stack && (!line_operand(lines.s[d], mn_at[d], mn_len[d], od, sizeof(od))
+                              || strcmp(os, od) == 0)) continue;
+        }
+        else if (strcmp(ms, "PSH") != 0 || is_stack) continue;
+        int b = s - 1;                                       // the instruction before the SET / PSH
+        while (b >= 0 && mn_at[b] < 0) b--;
+        if (b >= 0)
+        {
+            char mb[32];
+            snprintf(mb, sizeof(mb), "%.*s", mn_len[b], lines.s[b] + mn_at[b]);
+            if (strcmp(mb, "INC") == 0 || strcmp(mb, "P_INC") == 0) continue;
+        }
+        moved[s] = 1; made++;
+        s = z;                                               // the next division starts after this one
+    }
+    if (made == 0) goto done;
+
+    if (pc_path)
+    {
+        FILE *fp = fopen(pc_path, "r");
+        if (fp) { read_lines(fp, &pc); fclose(fp); }
+    }
+    f = fopen(asm_path, "w");
+    if (!f) { removed = -1; goto done; }
+    for (int ln = 0; ln < lines.n; ln++)
+    {
+        if (moved[ln]) { fputs(lines.s[ln + 1], f); fputs(lines.s[ln], f); ln += 2; continue; }   // d, s; the NOP leaves
+        fputs(lines.s[ln], f);
+    }
+    fclose(f);
+    if (pc.n > 0)                                            // each instruction keeps its source line
+    {
+        f = fopen(pc_path, "w");
+        if (f)
+        {
+            for (int ln = 0; ln < lines.n; ln++)
+            {
+                int i = ins_of[ln];
+                if (i < 0 || i >= pc.n) continue;
+                if (!moved[ln]) { fputs(pc.s[i], f); continue; }
+                if (i + 1 < pc.n) fputs(pc.s[i + 1], f);
+                fputs(pc.s[i], f);
+                if (i + 2 < pc.n) removed++;
+                ln += 2;
+            }
+            fclose(f);
+        }
+    }
+    printf(yanc_lang_en ? "Info: %d divisions take one word less: the SET or PSH before each runs in its first slot\n"
+                        : "Info: %d divisões levam uma palavra a menos: o SET ou PSH antes de cada uma roda no primeiro espaço dela\n", made);
+
+done:
+    free(mn_at); free(mn_len); free(ins_of); free(moved);
+    st_free(&lines); st_free(&pc);
+    return removed;
+}
+
 int asm_passes(const char *asm_path, const char *pc_path, int which,
                void (*gone)(const char *name), int (*keep)(const char *name))
 {
@@ -2254,6 +2389,7 @@ int asm_passes(const char *asm_path, const char *pc_path, int which,
     if ((which & ASM_P_TAIL) && (n = asm_tail(asm_path, pc_path)) > 0) less += n;
     if ((n = asm_jnz(asm_path, pc_path)) > 0) less += n;                       // (#78)
     if ((n = asm_inc(asm_path, pc_path)) > 0) less += n;                       // after the jumps settle (#203)
+    if ((n = asm_divslot(asm_path, pc_path)) > 0) less += n;                   // when nothing moves any more (#113)
     asm_share(asm_path);
     return less;
 }

@@ -8,10 +8,11 @@ Info: adding assembly macro for root square computation
 Info: 8 divisions, 5 words each for DIV/MOD and 4 for F_DIV (24 added)
 Info: 1 variables written and never read removed (2 instructions)
 Info: 2 increments made one INC each
+Info: 8 divisions take one word less: the SET or PSH before each runs in its first slot
 Info: 7 variables share 3 data words (4 saved)
 Heads up: variable 'v' in function 'my_sqrt' is never read, so it's out of the program and the waveform (#WAVE v, in the function, keeps it).
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 111 instructions and 2013 variables were found
+Info: 103 instructions and 2013 variables were found
 Info: filling array with 1000 values read from file "sqrt_x.txt"
 Info: largest approximation error in file 'sqrt_x.txt' is -0.00780467968434 on line 797
 Info: filling array with 1000 values read from file "sqrt_y.txt"
@@ -37,7 +38,7 @@ Processor Sqrt
   multiplier    float; divider float
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      111 instructions, 2013 data words
+  memories      103 instructions, 2013 data words
 Sweet: the processor is good to go.
 ## variables
 my_sqrt num 2
@@ -117,71 +118,70 @@ lang C+-
 47 S_SHL
 48 P_LOD 1
 49 S_SHR
-// 15: float x; copy(v,x);
-50 SET my_sqrt_x
 // 17: x = 0.5 * (x+num/x);
-51 F_DIV my_sqrt_num
+50 F_DIV my_sqrt_num
+// 15: float x; copy(v,x);
+51 SET my_sqrt_x
+// 17: x = 0.5 * (x+num/x);
 52 NOP
-53 NOP
-54 F_QUO
-55 F_ADD my_sqrt_x
-56 F_MLT 0.5
+53 F_QUO
+54 F_ADD my_sqrt_x
+55 F_MLT 0.5
+// 18: x = 0.5 * (x+num/x);
+56 F_DIV my_sqrt_num
+// 17: x = 0.5 * (x+num/x);
 57 SET my_sqrt_x
 // 18: x = 0.5 * (x+num/x);
-58 F_DIV my_sqrt_num
-59 NOP
-60 NOP
-61 F_QUO
-62 F_ADD my_sqrt_x
-63 F_MLT 0.5
-64 SET my_sqrt_x
+58 NOP
+59 F_QUO
+60 F_ADD my_sqrt_x
+61 F_MLT 0.5
 // 19: x = 0.5 * (x+num/x);
-65 F_DIV my_sqrt_num
-66 NOP
-67 NOP
-68 F_QUO
-69 F_ADD my_sqrt_x
-70 F_MLT 0.5
-71 SET my_sqrt_x
+62 F_DIV my_sqrt_num
+// 18: x = 0.5 * (x+num/x);
+63 SET my_sqrt_x
+// 19: x = 0.5 * (x+num/x);
+64 NOP
+65 F_QUO
+66 F_ADD my_sqrt_x
+67 F_MLT 0.5
 // 20: x = 0.5 * (x+num/x);
-72 F_DIV my_sqrt_num
-73 NOP
-74 NOP
-75 F_QUO
-76 F_ADD my_sqrt_x
-77 F_MLT 0.5
-78 SET my_sqrt_x
+68 F_DIV my_sqrt_num
+// 19: x = 0.5 * (x+num/x);
+69 SET my_sqrt_x
+// 20: x = 0.5 * (x+num/x);
+70 NOP
+71 F_QUO
+72 F_ADD my_sqrt_x
+73 F_MLT 0.5
+74 SET my_sqrt_x
 // 22: return x;
-79 RET
+75 RET
 // library macros, no source line
-80 SET __sqrt_num
-81 F_ROT
-82 PSH
-83 F_DIV __sqrt_num
-84 NOP
-85 NOP
-86 F_QUO
-87 SF_ADD
-88 F_MLT 0.5
-89 PSH
+76 SET __sqrt_num
+77 F_ROT
+78 F_DIV __sqrt_num
+79 PSH
+80 NOP
+81 F_QUO
+82 SF_ADD
+83 F_MLT 0.5
+84 F_DIV __sqrt_num
+85 PSH
+86 NOP
+87 F_QUO
+88 SF_ADD
+89 F_MLT 0.5
 90 F_DIV __sqrt_num
-91 NOP
+91 PSH
 92 NOP
 93 F_QUO
 94 SF_ADD
 95 F_MLT 0.5
-96 PSH
-97 F_DIV __sqrt_num
+96 F_DIV __sqrt_num
+97 PSH
 98 NOP
-99 NOP
-100 F_QUO
-101 SF_ADD
-102 F_MLT 0.5
-103 PSH
-104 F_DIV __sqrt_num
-105 NOP
-106 NOP
-107 F_QUO
-108 SF_ADD
-109 F_MLT 0.5
-110 RET
+99 F_QUO
+100 SF_ADD
+101 F_MLT 0.5
+102 RET

@@ -22,9 +22,10 @@
 //     the low NBMANT bits, the exponent wraps). F_ROT is the power of two its
 //     definition gives. These are checked on `out` only: out_fast carries no
 //     normalized operation.
-//   - the divisions through the sequence the processor runs: the division
-//     in one cycle, other operands on the cycles of its NOPs, the read
-//     (QUO / REM / F_QUO, the same operation number) STG-1 cycles later.
+//   - the divisions through the sequence the processor runs: the division's
+//     start in one cycle (ALU operation 0, or 52 for F_DIV, #113), other
+//     operands on the cycles of its slots, the read (QUO / REM / F_QUO,
+//     operations 6, 8 and 7) STG-1 cycles later.
 //     DIV and MOD against Verilog's / and %, and a zero divisor as the
 //     manual defines it (issue #34: x / 0 is -1 for x >= 0 and 1 below,
 //     x % 0 is x); F_DIV from the exact quotient like the other rounding
@@ -382,6 +383,7 @@ function [NUBITS-1:0] ref_op;
 	begin
 		case (o)
 			6'd0 : ref_op = b;                                         // NOP
+			6'd52: ref_op = b;                                         // F_DIV's start keeps the accumulator (#113)
 			6'd1 : ref_op = a;                                         // LOD
 			6'd2 : ref_op = a + b;                                     // ADD
 			6'd4 : ref_op = a * b;                                     // MLT
@@ -458,13 +460,13 @@ function is_round; input [5:0] o; is_round = (o == 3 || o == 5 || o == 7 || o ==
 // the divisions: their result is read STG-1 cycles after the operands
 function is_div; input [5:0] o; is_div = (o == 6 || o == 7 || o == 8); endfunction
 
-// every operation (without ADDS, all but the three adds; without DIVS, but
-// DIV and MOD)
-localparam NOPS = 52 - ((ADDS != 0) ? 0 : 3) - ((DIVS != 0) ? 0 : 2);
+// every operation, 0 to 52 (without ADDS, all but the three adds; without
+// DIVS, but DIV and MOD)
+localparam NOPS = 53 - ((ADDS != 0) ? 0 : 3) - ((DIVS != 0) ? 0 : 2);
 reg [5:0] ops [0:NOPS-1];
 initial begin : list
 	integer j, n; n = 0;
-	for (j = 0; j <= 51; j = j + 1) if ((ADDS != 0 || !(j == 3 || j == 47 || j == 48)) && (DIVS != 0 || !(j == 6 || j == 8))) begin
+	for (j = 0; j <= 52; j = j + 1) if ((ADDS != 0 || !(j == 3 || j == 47 || j == 48)) && (DIVS != 0 || !(j == 6 || j == 8))) begin
 		if (n < NOPS) ops[n] = j;
 		n = n + 1;
 	end
@@ -514,8 +516,11 @@ initial begin
 			#1;
 			want = ref_op(op, in1, in2);
 			if (is_div(op)) begin
-				// the operands enter at this clock; NOPs with other operands; the read
+				// the operands enter at this clock, under the start's operation
+				// (52 for F_DIV, 0 for DIV and MOD: the start keeps the
+				// accumulator, #113); NOPs with other operands; the read
 				lat = (op == 7) ? dut.FDIV_STG - 1 : dut.IDIV_STG - 1;
+				op = (op == 7) ? 52 : 0; #1;
 				clk = 1; #1; clk = 0; #1;
 				for (c = 1; c < lat; c = c + 1) begin
 					op = 0; in1 = rnd(0); in2 = rnd(0); #1; clk = 1; #1; clk = 0; #1;

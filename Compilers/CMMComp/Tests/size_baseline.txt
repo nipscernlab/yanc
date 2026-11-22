@@ -31,13 +31,13 @@ cmm_cov_acc 464
 cmm_cov_arr1d 2474
 cmm_cov_arr2d_rd 5256
 cmm_cov_arr2d_wr 9047
-cmm_cov_lib 9997
+cmm_cov_lib 9973
 cmm_cov_misc 489
-cmm_cov_ops 15018
+cmm_cov_ops 15008
 cmm_cov_ops2 10157
 cmm_cov_rest 2640
-cmm_csincos 184
-cmm_ctan   258
+cmm_csincos 179
+cmm_ctan   248
 cmm_ctlforms 123
 cmm_decl_list 92
 cmm_define 8
@@ -126,6 +126,6 @@ sapho_all_a 918
 sapho_all_b 922
 sapho_min  4
 Seno       58
-Sqrt       80
+Sqrt       76
 sw_test    19
 ZeroCross  117

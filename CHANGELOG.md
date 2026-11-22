@@ -9,6 +9,22 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **A division keeps the accumulator, and its first slot takes the SET or
+  PSH before it (#113).** `DIV`, `MOD`, `F_DIV` and their stack forms only
+  start the divider; `QUO`, `REM` and `F_QUO` get their own opcodes (111 to
+  113) and write the result. Both compilers then move the `SET` or `PSH`
+  right before a division into its first `NOP` (`asm_divslot`, the last
+  pass before `asm_share`): `SET x; F_DIV y; NOP; NOP; F_QUO` is now
+  `F_DIV y; SET x; NOP; F_QUO`, one word and one cycle less. In the
+  hardware, three decoder rows and the ALU operation 52 for a float
+  division's start, which passes the accumulator and tells a divider shared
+  with `DIV`/`MOD` that the division is a float one; no register and no
+  data path. asmcomp takes in a slot any instruction that does not jump,
+  wait on a link or divide, and refuses the others (new error, NegTests
+  `div_slot`). The moved `SET` or `PSH` keeps its own source line, so the
+  waveform's line view goes back to it for one cycle; `Scripts/wave_map.py`
+  holds it to the statement before the division.
+  docs/design/pipeln-and-division.md section 4.5.
 - **C± has `--`, `++x`, `--x` and the compound assignments (#208).** `x--`
   and the prefix forms on int and float scalars and elements, as a
   statement, inside an expression (the postfix form gives the old value,

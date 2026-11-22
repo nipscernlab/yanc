@@ -22,8 +22,14 @@ uses. An integer division takes five words, `DIV k; NOP; NOP; NOP; QUO`
 the compilers write it that way, because the dividers take five and four
 cycles. A program with both an integer and a float division has one
 divider for the two, and its float division takes five words too, one
-`NOP` more. A `JIZ`, `JNZ`, `LDI` or `ILI` right after an operation whose result goes through the
-float normaliser (`F_ADD`, `F_SU1`, `F_SU2`, `F_MLT`, `F_DIV`/`F_QUO`,
+`NOP` more. The division only starts the divider and leaves `a` as it is;
+`QUO`, `REM` or `F_QUO` writes the result. So a word between the two may
+hold any instruction that does not jump, wait on a link or divide, and
+the compilers move the `SET` or `PSH` that comes before a division into
+the first one: `SET y; F_DIV k; NOP; NOP; F_QUO` is written
+`F_DIV k; SET y; NOP; F_QUO`. asmcomp refuses any other instruction
+there. A `JIZ`, `JNZ`, `LDI` or `ILI` right after an operation whose result goes through the
+float normaliser (`F_ADD`, `F_SU1`, `F_SU2`, `F_MLT`, `F_QUO`,
 `F_ROT`, `I2F`, `I2F_M`, `F_INN` and their stack, `P_` and `_V` forms) gets
 a `NOP` before it: the jump and the read index take the arithmetic unit
 before the normaliser, and asmcomp inserts the `NOP` by itself, in a
@@ -110,12 +116,10 @@ an unknown word of the array named, `addr` its address only).
 | `MLT` | 25 | data | rw | - | r | a = x * a |
 | `MLT_V` | 25 | offset | rw | - | r | as MLT, x at a constant offset from the name |
 | `S_MLT` | 26 | none | rw | pop | - | a = x * a |
-| `DIV` | 27 | data | rw | - | r | starts x / a (integer quotient, toward zero); read it with QUO four words later |
-| `QUO` | 27 | none | w | - | - | a = the quotient of the DIV four words before |
-| `S_DIV` | 28 | none | rw | pop | - | starts x / a (integer quotient, toward zero); read it with QUO four words later |
-| `MOD` | 29 | data | rw | - | r | starts x % a (remainder, the sign of x); read it with REM four words later |
-| `REM` | 29 | none | w | - | - | a = the remainder of the MOD four words before |
-| `S_MOD` | 30 | none | rw | pop | - | starts x % a (remainder, the sign of x); read it with REM four words later |
+| `DIV` | 27 | data | r | - | r | starts x / a (integer quotient, toward zero); read it with QUO four words later |
+| `S_DIV` | 28 | none | r | pop | - | starts x / a (integer quotient, toward zero); read it with QUO four words later |
+| `MOD` | 29 | data | r | - | r | starts x % a (remainder, the sign of x); read it with REM four words later |
+| `S_MOD` | 30 | none | r | pop | - | starts x % a (remainder, the sign of x); read it with REM four words later |
 | `SGN` | 31 | data | rw | - | r | a = a with the sign of x |
 | `S_SGN` | 32 | none | rw | pop | - | a = a with the sign of x |
 
@@ -133,9 +137,8 @@ an unknown word of the array named, `addr` its address only).
 | `F_MLT` | 39 | data | rw | - | r | a = x * a |
 | `F_MLT_V` | 39 | offset | rw | - | r | as F_MLT, x at a constant offset from the name |
 | `SF_MLT` | 40 | none | rw | pop | - | a = x * a |
-| `F_DIV` | 41 | data | rw | - | r | starts x / a; read it with F_QUO three words later (four in a program with DIV or MOD) |
-| `F_QUO` | 41 | none | w | - | - | a = the quotient of the F_DIV three words before (four in a program with DIV or MOD) |
-| `SF_DIV` | 42 | none | rw | pop | - | starts x / a; read it with F_QUO three words later (four in a program with DIV or MOD) |
+| `F_DIV` | 41 | data | r | - | r | starts x / a; read it with F_QUO three words later (four in a program with DIV or MOD) |
+| `SF_DIV` | 42 | none | r | pop | - | starts x / a; read it with F_QUO three words later (four in a program with DIV or MOD) |
 | `F_SGN` | 43 | data | rw | - | r | a = a with the sign of x |
 | `SF_SGN` | 44 | none | rw | pop | - | a = a with the sign of x |
 | `F_SCL` | 45 | data | rw | - | r | a = a * 2^x (x an int, a a float) |
@@ -239,3 +242,11 @@ an unknown word of the array named, `addr` its address only).
 |---|---|---|---|---|---|---|
 | `INC` | 109 | data | w | - | rw | x = x + 1; a = x (x is written the cycle after: the next instruction must not write the data memory nor read x) |
 | `P_INC` | 110 | data | rw | push | rw | push a; x = x + 1; a = x (as INC) |
+
+## Division results
+
+| mnemonic | opcode | operand | a | stack | x | computes |
+|---|---|---|---|---|---|---|
+| `QUO` | 111 | none | w | - | - | a = the quotient of the DIV four words before |
+| `REM` | 112 | none | w | - | - | a = the remainder of the MOD four words before |
+| `F_QUO` | 113 | none | w | - | - | a = the quotient of the F_DIV three words before (four in a program with DIV or MOD) |

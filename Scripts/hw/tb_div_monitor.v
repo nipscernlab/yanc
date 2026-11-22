@@ -6,7 +6,9 @@
 // must be the error of that division: -100/7 + 14 for the quotient, which the
 // integer division truncates, 0 for the remainder, and below 2^-20 for the
 // float. Before #183 they compared the result with the inputs of the reading
-// word (mem[0] and the accumulator) and showed whatever came out.
+// word (mem[0] and the accumulator) and showed whatever came out. Since #113
+// only the reading words run the ALU operations 6, 8 and 7; a division's
+// start runs 0 (DIV, MOD) or 52 (F_DIV), where both monitors show 0.
 module tb;
 
 reg clk = 0, rst = 1;
@@ -18,8 +20,6 @@ wire        [0:0]  req_in, out_en;
 div_monitor dut (clk, rst, in, out, req_in, out_en);
 
 wire [5:0] op  = dut.p_div_monitor.core.ula.op;
-wire [5:0] iop = dut.p_div_monitor.core.ula.iop;
-wire [5:0] fop = dut.p_div_monitor.core.ula.fop;
 real di, df;
 always @ (*) di = dut.p_div_monitor.core.ula.delta_int;
 always @ (*) df = dut.p_div_monitor.core.ula.delta_float;
@@ -35,24 +35,22 @@ real want_q;
 initial want_q = -100.0 / 7.0 + 14.0;       // 100 / -7 = -14.2857..., the quotient -14
 
 always @ (negedge clk) if (!rst) begin
-	if (op == 6'd6 && iop == 6'd6) begin
+	if (op == 6'd6) begin
 		seen_q = seen_q + 1;
 		if (di - want_q > 1e-9 || want_q - di > 1e-9) begin errs = errs + 1; $display("FAIL: QUO's delta_int is %g, not %g", di, want_q); end
 	end
-	if (op == 6'd8 && (iop == 6'd8 || iop == 6'd6)) begin
+	if (op == 6'd8) begin
 		seen_r = seen_r + 1;
 		if (di != 0.0) begin errs = errs + 1; $display("FAIL: REM's delta_int is %g, not 0", di); end
 	end
-	if (op == 6'd7 && fop == 6'd7) begin
+	if (op == 6'd7) begin
 		seen_f = seen_f + 1;
 		if (df > 1.0/1048576.0 || df < -1.0/1048576.0) begin errs = errs + 1; $display("FAIL: F_QUO's delta_float is %g", df); end
 	end
-	// on the cycles that start a division the monitors show 0
-	if ((op == 6'd6 || op == 6'd8) && !(iop == 6'd6 || iop == 6'd8) && di != 0.0) begin
-		errs = errs + 1; $display("FAIL: delta_int is %g on a cycle that starts a division", di);
-	end
-	if (op == 6'd7 && fop != 6'd7 && df != 0.0) begin
-		errs = errs + 1; $display("FAIL: delta_float is %g on a cycle that starts a division", df);
+	// on the cycles that start a division (or keep the accumulator) the
+	// monitors show 0
+	if ((op == 6'd0 || op == 6'd52) && (di != 0.0 || df != 0.0)) begin
+		errs = errs + 1; $display("FAIL: delta_int %g, delta_float %g on a cycle with ALU operation %0d", di, df, op);
 	end
 end
 always @ (posedge clk) if (!rst && out_en) outs = outs + 1;

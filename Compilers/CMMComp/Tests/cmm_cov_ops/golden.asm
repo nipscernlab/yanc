@@ -9684,9 +9684,8 @@ OUT 0
 LOD main_ib
 ADD main_z0
 I2F
-SET __aux_var
 F_DIV main_ca
-NOP
+SET __aux_var
 NOP
 NOP
 F_QUO
@@ -9752,9 +9751,8 @@ F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET __aux_var
 F_DIV main_ca
-NOP
+SET __aux_var
 NOP
 NOP
 F_QUO
@@ -9930,9 +9928,8 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 P_I2F_M main_ib
-SET __aux_var1
 SF_DIV
-NOP
+SET __aux_var1
 NOP
 NOP
 F_QUO
@@ -10317,9 +10314,8 @@ OUT 0
 LOD main_ib
 ADD main_z0
 I2F
-SET __aux_var
 F_DIV 3.0
-NOP
+SET __aux_var
 NOP
 NOP
 F_QUO
@@ -10385,9 +10381,8 @@ F2I
 OUT 0
 LOD main_fb
 F_ADD main_fz
-SET __aux_var
 F_DIV 3.0
-NOP
+SET __aux_var
 NOP
 NOP
 F_QUO
@@ -12016,9 +12011,8 @@ SF_ADD
 P_LOD main_ib
 ADD main_z0
 I2F
-SET __aux_var
 F_DIV main_ca
-NOP
+SET __aux_var
 NOP
 NOP
 F_QUO
@@ -12132,9 +12126,8 @@ F_MLT main_one
 SF_ADD
 P_LOD main_fb
 F_ADD main_fz
-SET __aux_var
 F_DIV main_ca
-NOP
+SET __aux_var
 NOP
 NOP
 F_QUO
@@ -12390,9 +12383,8 @@ F_MLT main_one
 SF_ADD
 SET_P __aux_var
 P_I2F_M main_ib
-SET __aux_var1
 SF_DIV
-NOP
+SET __aux_var1
 NOP
 NOP
 F_QUO
@@ -12937,9 +12929,8 @@ SF_ADD
 P_LOD main_ib
 ADD main_z0
 I2F
-SET __aux_var
 F_DIV 3.0
-NOP
+SET __aux_var
 NOP
 NOP
 F_QUO
@@ -13053,9 +13044,8 @@ F_MLT main_one
 SF_ADD
 P_LOD main_fb
 F_ADD main_fz
-SET __aux_var
 F_DIV 3.0
-NOP
+SET __aux_var
 NOP
 NOP
 F_QUO

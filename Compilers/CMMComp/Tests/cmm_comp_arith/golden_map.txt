@@ -11,7 +11,7 @@ Info: ULA resource -> float to int converter
 Info: adding data output handling
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
 Info: stack depths from the program: SDEPTH 1, NDSTAC 2
-Info: using 11% of the Assembly Instruction Set
+Info: using 10% of the Assembly Instruction Set
 Info: using 11% of the ULA operations
 Processor cmm_comp_arith
   word          16 bits

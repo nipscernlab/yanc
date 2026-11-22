@@ -323,12 +323,13 @@ value. What the common ones mean and how to get past them is in
 - Error: the #ITRAD point (C±'s #PRACA) is in a routine a CAL enters, and the call stack holds its return address there. The itr pulse empties both stacks: the #ITRAD point goes in the code address 0 reaches without a CAL (in C±, in main).
 - Error: #NUBITS <n> is past 32. A SAPHO word is at most 32 bits.
 - Error: <name> <name>: the operand of LDI/ILI/STI/ISI is an array name or an integer base address.
-- Error: <name> takes <n> words: it must be followed by <n> NOP and the read of its result (expected <name>, found <name>). The compilers write the sequence; in a hand-written .asm, write it out.
+- Error: <name> takes <n> words, and the last one reads its result (expected <name>, found <name>). The compilers write the sequence; in a hand-written .asm, write it out.
+- Error: <name> stands between <name> and the read of its result. Only an instruction that does not jump, wait on a link or start or read a division fits there: NOP, SET, PSH...
 - Error: the operand of <name> is the link number, an integer from 0 to <n> (found '<name>').
 - Error: #LKSYNC <n>, but the program has no TOM or CAD on link <n>.
 - Error: <name> <name> writes its word the cycle after, and the instruction right after it (<name>) also writes the data memory, which has one write port. Put another instruction between them.
 - Error: <name> <name> writes its word the cycle after, and the instruction right after it (<name> <name>) reads that word before the write. Put another instruction between them.
-- Error: the program ends inside the sequence of <name> (NOPs and <name> are missing).
+- Error: the program ends inside the sequence of <name> (the read of its result, <name>, is missing).
 - Error: #FROUND only takes 0 (legacy), 1 (truncation + saturation) or 2 (round to nearest even).
 - Error: line <n> of file '<name>' is empty! Kinda hard to work with that.
 - Error: line <n> of file '<name>' isn't a valid integer!

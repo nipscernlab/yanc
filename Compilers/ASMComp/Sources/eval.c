@@ -439,7 +439,9 @@ void eval_direct(int next_state)
 
 // a division takes as many words as its divider has stages, `<div> x; NOP...;
 // <read>` (Compilers/common asm_divseq writes the sequence, asm_div_words
-// says how long): the words after a division must be NOPs and its read
+// says how long): its last word must be its read, and the ones between hold a
+// NOP or an instruction the divider lets run there (asm_div_slot: no jump, no
+// link, no division; asm_divslot moves a SET or a PSH in, #113)
 static int  div_left = 0;          // words of the sequence still expected
 static int  div_len  = 0;          // words of the whole sequence
 static char div_op[16], div_rd[8]; // the division, and the read it ends with
@@ -472,8 +474,8 @@ static void div_seq(const char *mn)
 {
     if (div_left > 0)
     {
-        const char *want = (div_left > 1) ? "NOP" : div_rd;
-        if (strcmp(mn, want) != 0) fatal(MSG_ERR_DIV_SEQ, div_op, div_len, div_len - 2, want, mn);
+        if (div_left > 1 && !asm_div_slot(mn)) fatal(MSG_ERR_DIV_SLOT, mn, div_op);
+        if (div_left == 1 && strcmp(mn, div_rd) != 0) fatal(MSG_ERR_DIV_SEQ, div_op, div_len, div_rd, mn);
         div_left--;
         return;
     }

@@ -42,7 +42,7 @@ Info: ULA resource -> int to float converter
 Info: adding data input handling
 Info: adding stack memory for function calls
 Info: stack depths from the program: SDEPTH 1, NDSTAC 5
-Info: using 28% of the Assembly Instruction Set
+Info: using 27% of the Assembly Instruction Set
 Info: using 22% of the ULA operations
 Processor dirac_shapes
   word          32 bits

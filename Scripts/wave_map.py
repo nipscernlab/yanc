@@ -43,6 +43,10 @@ from tables the compilers write beside it, and asmcomp completes them.
                 do, if, else or switch, or within one statement;
      together   in straight-line code a statement's instructions are not
                 split by another statement's, with the same exceptions;
+                a SET or PSH in a division's first slot (asm_divslot, #113)
+                belongs to the statement before the division, and is held
+                to these two rules against that one, and the division's
+                statement goes on after it;
      jump       a jump to a loop's, if's, switch's, pow's, floor's or ceil's
                 label is on that construct's line, or on a break, continue,
                 if or switch (a case whose body is only a jump).
@@ -86,6 +90,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONT = tuple(",(+-*/&|=<>")                      # a line ending so continues
+DIV_START = ("DIV", "S_DIV", "MOD", "S_MOD", "F_DIV", "SF_DIV")   # read STG-1 words later
 HEAD = re.compile(r"\b(while|for|do|if|else|switch)\b")
 JUMP_FAMILY = [("__Lwh", "while|for|do"), ("__Lif", "if|else"), ("__Lpow", "pow"),
                ("__Lflr", "floor"), ("__Lcel", "ceil"),
@@ -257,6 +262,7 @@ class Program:
         io = isa_io()
         bad = []
         cur_f, prev, seen = None, None, set()
+        div = None            # (prev before it, its line) after a division's start
         for a in range(self.num_ins):
             for lb in self.labels[a]:
                 if lb in self.funcs:
@@ -278,9 +284,12 @@ class Program:
                 if mn in io and not re.search(r"\b\w+\s*\(", st):
                     bad.append(("io", a, f"line {s} calls nothing"))
                 back_ok = HEAD.search(self.code.get(s, ""))
+                slot = div is not None and mn in ("SET", "PSH")
+                if slot:                              # held to the statement before the division
+                    prev = div[0]
                 if prev is not None and prev > 0 and s < prev and not back_ok and self.start(prev) > s:
                     bad.append(("order", a, f"line {s} after line {prev}"))
-                if s in seen and prev != s and not back_ok and self.start(prev) > s:
+                if s in seen and prev is not None and prev != s and not back_ok and self.start(prev) > s:
                     bad.append(("together", a, f"line {s} again after line {prev}"))
                 if mn in ("JMP", "JIZ", "JNZ"):
                     for pre, kw in JUMP_FAMILY:
@@ -288,7 +297,11 @@ class Program:
                             if not re.search(r"\b(" + kw + r"|break|continue|if|switch|case|default)\b", st):
                                 bad.append(("jump", a, f"line {s} is not a {kw.split('|')[0]}"))
                             break
-            prev = s
+            if s > 0 and slot:                        # the division's statement goes on
+                prev, div = div[1], None
+            else:
+                div = (prev, s) if mn in DIV_START and s > 0 else None
+                prev = s
             seen.add(s)
             if mn in ("JMP", "JIZ", "JNZ", "RET", "CAL"):
                 prev, seen = None, set()

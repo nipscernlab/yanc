@@ -26,7 +26,7 @@ Info: adding array handling
 Info: ULA resource -> > operator for int
 Info: ULA resource -> < operator for int
 Info: stack depths from the program: SDEPTH 1, NDSTAC 3
-Info: using 31% of the Assembly Instruction Set
+Info: using 32% of the Assembly Instruction Set
 Info: using 44% of the ULA operations
 Processor cmm_opassign
   word          32 bits

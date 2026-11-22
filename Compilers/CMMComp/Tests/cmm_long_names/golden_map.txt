@@ -13,7 +13,7 @@ Info: ULA resource -> float-point adder
 Info: ULA resource -> float to int converter
 Info: ULA resource -> < operator for float
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 12% of the Assembly Instruction Set
+Info: using 11% of the Assembly Instruction Set
 Info: using 13% of the ULA operations
 Processor cmm_long_names
   word          32 bits

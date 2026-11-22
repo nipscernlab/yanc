@@ -3,9 +3,10 @@ Info: 169 assembly instructions generated
 Info: adding assembly macro for sin computation
 Info: adding assembly macro for exponential computation
 Info: 5 divisions, 5 words each for DIV/MOD and 4 for F_DIV (15 added)
+Info: 5 divisions take one word less: the SET or PSH before each runs in its first slot
 Info: 27 variables share 10 data words (17 saved)
 Sweet: it compiled! Now you just gotta figure out why it doesn't work.
-Info: 249 instructions and 28 variables were found
+Info: 244 instructions and 28 variables were found
 Info: adding stack memory for function calls
 Info: ULA resource -> float-point divider (not recomended for high frequency opperation)
 Info: ULA resource -> float-point adder
@@ -18,7 +19,7 @@ Info: ULA resource -> & operator
 Info: ULA resource -> int to float converter
 Info: ULA resource -> float scale by a power of two (2^k)
 Info: stack depths from the program: SDEPTH 1, NDSTAC 1
-Info: using 17% of the Assembly Instruction Set
+Info: using 18% of the Assembly Instruction Set
 Info: using 25% of the ULA operations
 Processor cmm_csincos
   word          32 bits
@@ -26,7 +27,7 @@ Processor cmm_csincos
   multiplier    float; divider float
   data stack    1 words (worked out from the program)
   call stack    1 words (worked out from the program)
-  memories      249 instructions, 28 data words
+  memories      244 instructions, 28 data words
 Sweet: the processor is good to go.
 ## variables
 main z 3
@@ -42,256 +43,251 @@ lang C+-
 // 18: c = sin(0.0+1.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
 1 LOD 1.0
 2 CAL __float_exp
-3 SET __csin_eb
-4 F_DIV 1.0
+3 F_DIV 1.0
+4 SET __csin_eb
 5 NOP
-6 NOP
-7 F_QUO
-8 SET __csin_emb
-9 F_ADD __csin_eb
-10 F_MLT 0.5
-11 SET __csin_chb
-12 LOD __csin_eb
-13 F_SU1 __csin_emb
-14 F_MLT 0.5
-15 SET __csin_shb
-16 LOD 0.0
-17 F_SU2 1.570796327
-18 CAL __float_sin
-19 SET __csin_ca
-20 LOD 0.0
-21 CAL __float_sin
-22 F_MLT __csin_chb
-23 P_LOD __csin_ca
-24 F_MLT __csin_shb
-25 SET_P main_c_i
-26 SET main_c
-27 F_MLT 1000.0
-28 F2I
-29 OUT 0
-30 LOD main_c_i
-31 F_MLT 1000.0
-32 F2I
-33 OUT 0
+6 F_QUO
+7 SET __csin_emb
+8 F_ADD __csin_eb
+9 F_MLT 0.5
+10 SET __csin_chb
+11 LOD __csin_eb
+12 F_SU1 __csin_emb
+13 F_MLT 0.5
+14 SET __csin_shb
+15 LOD 0.0
+16 F_SU2 1.570796327
+17 CAL __float_sin
+18 SET __csin_ca
+19 LOD 0.0
+20 CAL __float_sin
+21 F_MLT __csin_chb
+22 P_LOD __csin_ca
+23 F_MLT __csin_shb
+24 SET_P main_c_i
+25 SET main_c
+26 F_MLT 1000.0
+27 F2I
+28 OUT 0
+29 LOD main_c_i
+30 F_MLT 1000.0
+31 F2I
+32 OUT 0
 // 19: c = cos(0.0+1.0i);                            fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
-34 LOD 1.0
-35 CAL __float_exp
+33 LOD 1.0
+34 CAL __float_exp
+35 F_DIV 1.0
 36 SET __ccos_eb
-37 F_DIV 1.0
-38 NOP
-39 NOP
-40 F_QUO
-41 SET __ccos_emb
-42 F_ADD __ccos_eb
-43 F_MLT 0.5
-44 SET __ccos_chb
-45 LOD __ccos_eb
-46 F_SU1 __ccos_emb
-47 F_MLT 0.5
-48 SET __ccos_shb
-49 LOD 0.0
-50 CAL __float_sin
-51 SET __ccos_sa
-52 LOD 0.0
-53 F_SU2 1.570796327
-54 CAL __float_sin
-55 F_MLT __ccos_chb
-56 P_LOD __ccos_sa
-57 F_MLT __ccos_shb
-58 F_NEG
-59 SET_P main_c_i
-60 SET main_c
-61 F_MLT 1000.0
-62 F2I
-63 OUT 0
-64 LOD main_c_i
-65 F_MLT 1000.0
-66 F2I
-67 OUT 0
+37 NOP
+38 F_QUO
+39 SET __ccos_emb
+40 F_ADD __ccos_eb
+41 F_MLT 0.5
+42 SET __ccos_chb
+43 LOD __ccos_eb
+44 F_SU1 __ccos_emb
+45 F_MLT 0.5
+46 SET __ccos_shb
+47 LOD 0.0
+48 CAL __float_sin
+49 SET __ccos_sa
+50 LOD 0.0
+51 F_SU2 1.570796327
+52 CAL __float_sin
+53 F_MLT __ccos_chb
+54 P_LOD __ccos_sa
+55 F_MLT __ccos_shb
+56 F_NEG
+57 SET_P main_c_i
+58 SET main_c
+59 F_MLT 1000.0
+60 F2I
+61 OUT 0
+62 LOD main_c_i
+63 F_MLT 1000.0
+64 F2I
+65 OUT 0
 // 20: z = 1.0+1.0i;         c = sin(z);             fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
-68 LOD 1.0
-69 SET main_z
-70 SET main_z_i
-71 CAL __float_exp
-72 SET __csin_eb
-73 F_DIV 1.0
-74 NOP
-75 NOP
-76 F_QUO
-77 SET __csin_emb
-78 F_ADD __csin_eb
-79 F_MLT 0.5
-80 SET __csin_chb
-81 LOD __csin_eb
-82 F_SU1 __csin_emb
-83 F_MLT 0.5
-84 SET __csin_shb
-85 LOD main_z
-86 F_SU2 1.570796327
+66 LOD 1.0
+67 SET main_z
+68 SET main_z_i
+69 CAL __float_exp
+70 F_DIV 1.0
+71 SET __csin_eb
+72 NOP
+73 F_QUO
+74 SET __csin_emb
+75 F_ADD __csin_eb
+76 F_MLT 0.5
+77 SET __csin_chb
+78 LOD __csin_eb
+79 F_SU1 __csin_emb
+80 F_MLT 0.5
+81 SET __csin_shb
+82 LOD main_z
+83 F_SU2 1.570796327
+84 CAL __float_sin
+85 SET __csin_ca
+86 LOD main_z
 87 CAL __float_sin
-88 SET __csin_ca
-89 LOD main_z
-90 CAL __float_sin
-91 F_MLT __csin_chb
-92 P_LOD __csin_ca
-93 F_MLT __csin_shb
-94 SET_P main_c_i
-95 SET main_c
-96 F_MLT 1000.0
-97 F2I
-98 OUT 0
-99 LOD main_c_i
-100 F_MLT 1000.0
-101 F2I
-102 OUT 0
+88 F_MLT __csin_chb
+89 P_LOD __csin_ca
+90 F_MLT __csin_shb
+91 SET_P main_c_i
+92 SET main_c
+93 F_MLT 1000.0
+94 F2I
+95 OUT 0
+96 LOD main_c_i
+97 F_MLT 1000.0
+98 F2I
+99 OUT 0
 // 21: z = 1.0+1.0i;         c = cos(z);             fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
-103 LOD 1.0
-104 SET main_z
-105 SET main_z_i
-106 CAL __float_exp
-107 SET __ccos_eb
-108 F_DIV 1.0
-109 NOP
-110 NOP
-111 F_QUO
-112 SET __ccos_emb
-113 F_ADD __ccos_eb
+100 LOD 1.0
+101 SET main_z
+102 SET main_z_i
+103 CAL __float_exp
+104 F_DIV 1.0
+105 SET __ccos_eb
+106 NOP
+107 F_QUO
+108 SET __ccos_emb
+109 F_ADD __ccos_eb
+110 F_MLT 0.5
+111 SET __ccos_chb
+112 LOD __ccos_eb
+113 F_SU1 __ccos_emb
 114 F_MLT 0.5
-115 SET __ccos_chb
-116 LOD __ccos_eb
-117 F_SU1 __ccos_emb
-118 F_MLT 0.5
-119 SET __ccos_shb
-120 LOD main_z
+115 SET __ccos_shb
+116 LOD main_z
+117 CAL __float_sin
+118 SET __ccos_sa
+119 LOD main_z
+120 F_SU2 1.570796327
 121 CAL __float_sin
-122 SET __ccos_sa
-123 LOD main_z
-124 F_SU2 1.570796327
-125 CAL __float_sin
-126 F_MLT __ccos_chb
-127 P_LOD __ccos_sa
-128 F_MLT __ccos_shb
-129 F_NEG
-130 SET_P main_c_i
-131 SET main_c
+122 F_MLT __ccos_chb
+123 P_LOD __ccos_sa
+124 F_MLT __ccos_shb
+125 F_NEG
+126 SET_P main_c_i
+127 SET main_c
+128 F_MLT 1000.0
+129 F2I
+130 OUT 0
+131 LOD main_c_i
 132 F_MLT 1000.0
 133 F2I
 134 OUT 0
-135 LOD main_c_i
-136 F_MLT 1000.0
-137 F2I
-138 OUT 0
 // 22: z = 0.5+0.5i;  w = 0.5+0.5i;  c = sin(z + w); fout(0, real(c)*1000.0); fout(0, imag(c)*1000.0);
-139 LOD 0.5
-140 SET main_z
-141 SET main_z_i
-142 SET main_w
-143 SET main_w_i
-144 F_ADD main_w
-145 P_LOD main_z_i
-146 F_ADD main_w_i
-147 SET_P __csin_b
-148 SET __csin_a
-149 LOD __csin_b
-150 CAL __float_exp
-151 SET __csin_eb
-152 F_DIV 1.0
-153 NOP
-154 NOP
-155 F_QUO
-156 SET __csin_emb
-157 F_ADD __csin_eb
-158 F_MLT 0.5
-159 SET __csin_chb
-160 LOD __csin_eb
-161 F_SU1 __csin_emb
-162 F_MLT 0.5
-163 SET __csin_shb
-164 LOD __csin_a
-165 F_SU2 1.570796327
-166 CAL __float_sin
-167 SET __csin_ca
-168 LOD __csin_a
-169 CAL __float_sin
-170 F_MLT __csin_chb
-171 P_LOD __csin_ca
-172 F_MLT __csin_shb
-173 SET_P main_c_i
-174 SET main_c
-175 F_MLT 1000.0
-176 F2I
-177 OUT 0
-178 LOD main_c_i
-179 F_MLT 1000.0
-180 F2I
-181 OUT 0
+135 LOD 0.5
+136 SET main_z
+137 SET main_z_i
+138 SET main_w
+139 SET main_w_i
+140 F_ADD main_w
+141 P_LOD main_z_i
+142 F_ADD main_w_i
+143 SET_P __csin_b
+144 SET __csin_a
+145 LOD __csin_b
+146 CAL __float_exp
+147 F_DIV 1.0
+148 SET __csin_eb
+149 NOP
+150 F_QUO
+151 SET __csin_emb
+152 F_ADD __csin_eb
+153 F_MLT 0.5
+154 SET __csin_chb
+155 LOD __csin_eb
+156 F_SU1 __csin_emb
+157 F_MLT 0.5
+158 SET __csin_shb
+159 LOD __csin_a
+160 F_SU2 1.570796327
+161 CAL __float_sin
+162 SET __csin_ca
+163 LOD __csin_a
+164 CAL __float_sin
+165 F_MLT __csin_chb
+166 P_LOD __csin_ca
+167 F_MLT __csin_shb
+168 SET_P main_c_i
+169 SET main_c
+170 F_MLT 1000.0
+171 F2I
+172 OUT 0
+173 LOD main_c_i
+174 F_MLT 1000.0
+175 F2I
+176 OUT 0
 // 17: while (1) {
-182 JMP __Lwh1
+177 JMP __Lwh1
 // -3: END
-183 JMP fim
+178 JMP fim
 // library macros, no source line
-184 SET __sin_x
-185 F_MLT 0.3183098862
-186 SET __sin_q
-187 LOD 0.5
-188 F_SGN __sin_q
-189 F_ADD __sin_q
-190 F2I
-191 SET __sin_k
-192 AND 1
-193 JIZ __L_sin_even
-194 I2F_M __sin_k
-195 F_MLT 3.1415926536
-196 F_SU2 __sin_x
-197 F_NEG
-198 SET __sin_r
-199 F_MLT __sin_r
-200 SET __sin_w
-201 F_MLT -0.000184472138
-202 F_ADD 0.008309516704
-203 F_MLT __sin_w
-204 F_ADD -0.166651680787
-205 F_MLT __sin_w
-206 F_ADD 0.999997487148
-207 F_MLT __sin_r
-208 RET
-209 I2F_M __sin_k
-210 F_MLT 3.1415926536
-211 F_SU2 __sin_x
-212 SET __sin_r
-213 F_MLT __sin_r
-214 SET __sin_w
-215 F_MLT -0.000184472138
-216 F_ADD 0.008309516704
-217 F_MLT __sin_w
-218 F_ADD -0.166651680787
-219 F_MLT __sin_w
-220 F_ADD 0.999997487148
-221 F_MLT __sin_r
-222 RET
-223 SET __exp_x
-224 F_MLT 1.4426950409
-225 SET __exp_q
-226 LOD 0.5
-227 F_SGN __exp_q
-228 F_ADD __exp_q
-229 F2I
-230 SET __exp_n
-231 I2F
-232 F_MLT 0.6931471806
-233 F_SU2 __exp_x
-234 SET __exp_r
-235 F_MLT 0.0013888889
-236 F_ADD 0.0083333333
-237 F_MLT __exp_r
-238 F_ADD 0.0416666667
-239 F_MLT __exp_r
-240 F_ADD 0.1666666667
-241 F_MLT __exp_r
-242 F_ADD 0.5
-243 F_MLT __exp_r
-244 F_ADD 1.0
-245 F_MLT __exp_r
-246 F_ADD 1.0
-247 F_SCL __exp_n
-248 RET
+179 SET __sin_x
+180 F_MLT 0.3183098862
+181 SET __sin_q
+182 LOD 0.5
+183 F_SGN __sin_q
+184 F_ADD __sin_q
+185 F2I
+186 SET __sin_k
+187 AND 1
+188 JIZ __L_sin_even
+189 I2F_M __sin_k
+190 F_MLT 3.1415926536
+191 F_SU2 __sin_x
+192 F_NEG
+193 SET __sin_r
+194 F_MLT __sin_r
+195 SET __sin_w
+196 F_MLT -0.000184472138
+197 F_ADD 0.008309516704
+198 F_MLT __sin_w
+199 F_ADD -0.166651680787
+200 F_MLT __sin_w
+201 F_ADD 0.999997487148
+202 F_MLT __sin_r
+203 RET
+204 I2F_M __sin_k
+205 F_MLT 3.1415926536
+206 F_SU2 __sin_x
+207 SET __sin_r
+208 F_MLT __sin_r
+209 SET __sin_w
+210 F_MLT -0.000184472138
+211 F_ADD 0.008309516704
+212 F_MLT __sin_w
+213 F_ADD -0.166651680787
+214 F_MLT __sin_w
+215 F_ADD 0.999997487148
+216 F_MLT __sin_r
+217 RET
+218 SET __exp_x
+219 F_MLT 1.4426950409
+220 SET __exp_q
+221 LOD 0.5
+222 F_SGN __exp_q
+223 F_ADD __exp_q
+224 F2I
+225 SET __exp_n
+226 I2F
+227 F_MLT 0.6931471806
+228 F_SU2 __exp_x
+229 SET __exp_r
+230 F_MLT 0.0013888889
+231 F_ADD 0.0083333333
+232 F_MLT __exp_r
+233 F_ADD 0.0416666667
+234 F_MLT __exp_r
+235 F_ADD 0.1666666667
+236 F_MLT __exp_r
+237 F_ADD 0.5
+238 F_MLT __exp_r
+239 F_ADD 1.0
+240 F_MLT __exp_r
+241 F_ADD 1.0
+242 F_SCL __exp_n
+243 RET
