@@ -129,6 +129,7 @@ design/asm-names
 design/unread-variables
 design/inc-in-place
 design/pipeln-and-division
+design/iss
 design/normalisation-survey
 design/fadd-survey
 design/precision-and-width-review

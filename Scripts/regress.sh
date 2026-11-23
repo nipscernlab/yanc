@@ -66,6 +66,11 @@
 #      for sapho_all; the warnings meant are waived, with their reasons, in
 #      Scripts/hw/lint.vlt (skipped by --cpp-only, and without Verilator).
 #
+#   3d. The whole processor against the instruction-set simulator: 40
+#      random programs (Scripts/iss/rand_asm.py) on Scripts/iss/sapho_iss.c
+#      and on the RTL under Icarus, traces compared cycle by cycle (#32;
+#      skipped by --no-sim and --cpp-only).
+#
 #   4. CMM negative phase: for every fixture in Compilers/CMMComp/NegTests/
 #      (listed in NegTests/manifest.txt) run cmmcomp and assert it REJECTS the
 #      malformed program with a clean non-zero exit and the expected diagnostic
@@ -1791,6 +1796,30 @@ if [ "$CPP_ONLY" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
             fail=$((fail + 1)); failed_names+=("$t")
         fi
     done
+fi
+
+# ---- 4a0i. the whole processor against the instruction-set simulator --------
+# Scripts/iss/iss_diff.sh (#32): random programs (Scripts/iss/rand_asm.py, seeds
+# 1 to 40, half with an interrupt) run on the instruction-set simulator
+# (Scripts/iss/sapho_iss.c) and on the RTL under Icarus, and the two traces,
+# cycle by cycle (fetch address, data-memory writes, input reads, outputs,
+# the stacks' depths), must be the same: the decoder, the jumps, calls,
+# stacks, memory, I/O and interrupt, where the unit testbenches above check
+# the ALU. About 2.5 seconds a seed. Scripts/iss/iss_mutants.sh, not run here, checks that this catches
+# a broken core.v or instr_dec.v.
+if [ "$CPP_ONLY" -eq 0 ] && [ "$NO_SIM" -eq 0 ]; then
+    echo ""
+    echo "==> the processor against the instruction-set simulator"
+    if t_out=$(YANC_BIN="$YANC" bash "$ROOT/Scripts/iss/iss_diff.sh" -s 1 -n 40 -q 2>&1); then
+        echo "PASS (iss_diff): $(printf '%s
+' "$t_out" | tail -1 | sed 's/^iss_diff: //')"
+        pass=$((pass + 1))
+    else
+        echo "FAIL (iss_diff):"
+        printf '%s
+' "$t_out" | tail -14 | sed 's/^/    /'
+        fail=$((fail + 1)); failed_names+=("iss_diff")
+    fi
 fi
 
 # ---- 4a. every SAPHO block ---------------------------------------------------

@@ -38,6 +38,7 @@ code), what was measured and what was deduced, and most end with a section
 | [unread-variables.md](unread-variables.md) | a variable written and never read leaves the program; `#WAVE` keeps it for the waveform (2026-11-01) |
 | [inc-in-place.md](inc-in-place.md) | `INC k`, k = k + 1 in one word on the ADD's adder, its write a cycle late: the rule after it, the cycles and the fits measured (2026-11-12) |
 | [pipeln-and-division.md](pipeln-and-division.md) | the slow dividers: the pipeline tried and dropped, the register cuts kept (5 and 4 stages since 2026-10-16, section 4.4) |
+| [iss.md](iss.md) | an instruction-set simulator written from the instruction table, and random programs run on it and on the RTL, compared cycle by cycle (#32, 2026-11-23) |
 | [normalisation-survey.md](normalisation-survey.md) | the known ways to normalise a float on an FPGA: eight built, two fitted, none faster; finished, `pnorm` kept |
 | [fadd-survey.md](fadd-survey.md) | the known ways to align the exponents and add; the add as a separate circuit built, not fitted; finished, `pnorm` kept |
 | [precision-and-width-review.md](precision-and-width-review.md) | the float and word-width review (2026-09): the evidence behind TODO items 1 to 9 |
