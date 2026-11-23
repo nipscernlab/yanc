@@ -14,7 +14,8 @@ yanc/
 │                   front end
 ├── SAPHO/          the SAPHO processor, in Verilog
 ├── Scripts/        setup, regress.sh, aurora.bat, the runner scripts,
-│                   gen_gtkw.c, comp2gtkw.c, hw/ (elaboration, area, Fmax)
+│                   gen_gtkw.c, comp2gtkw.c, hw/ (elaboration, area, Fmax),
+│                   iss/ (the instruction-set simulator and its random test)
 ├── docs/           this manual; design/ holds the design notes
 ├── release/        the README, example/ and install scripts of the package
 └── Makefile        the one place the tools are built from
@@ -78,7 +79,10 @@ references computed apart from YANC, checks that the bad programs of
 copies and the manual's instruction page to `Compilers/common/isa.tsv`,
 holds the manual's message reference to the compilers' sources, lints the
 processor's Verilog with Verilator (`Scripts/hw/lint.sh`, whose waivers in
-`Scripts/hw/lint.vlt` each say why), holds the
+`Scripts/hw/lint.vlt` each say why), runs 40 random programs on the
+processor and on an instruction-set simulator written from the instruction
+table and compares the two cycle by cycle (`Scripts/iss/iss_diff.sh`,
+[the design note](../design/iss.md)), holds the
 link lines at the foot of `CHANGELOG.md` to its version headings, runs
 every combination of the Dirac notation in
 `Compilers/CMMComp/DiracCases/cases.tsv` through cmmcomp, holds the

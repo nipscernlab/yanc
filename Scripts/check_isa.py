@@ -43,8 +43,10 @@ literal, which is the part that stays true when the HDL is edited:
      two).
 
 It does NOT verify the control lines of each row of instr_dec.v nor what
-ula.v computes: that is execution, the instruction-set simulator of issue
-#32. Generating the decode rows from the table is issue #33.
+ula.v computes: that is execution, which Scripts/iss/iss_diff.sh checks
+(issue #32: the instruction-set simulator against the RTL on random
+programs) and Scripts/hw/tb_ula.sh for the ALU. Generating the decode rows
+from the table is issue #33.
 
 usage: python3 Scripts/check_isa.py [repo-root]     (exit 1 on any mismatch)
 """
@@ -95,8 +97,8 @@ def read_table(path):
 # before the operation, S_/SF_ take the second operand off the stack, _M reads
 # the operand from memory instead of the accumulator, _V adds a constant
 # offset. Re-deriving from the name and comparing catches a typo in the table;
-# it does NOT confirm the convention itself, which only execution can (the
-# simulator of issue #32).
+# it does NOT confirm the convention itself, which only execution can
+# (Scripts/iss/, issue #32).
 BINARY = ('ADD', 'MLT', 'DIV', 'MOD', 'SGN', 'AND', 'ORR', 'XOR', 'LAN', 'LOR',
           'LES', 'GRE', 'EQU', 'SHL', 'SHR', 'SRS', 'SU1', 'SU2', 'SCL')
 UNARY = ('NEG', 'ABS', 'PST', 'NRM', 'I2F', 'F2I', 'INV', 'LIN', 'XPO', 'ROT')

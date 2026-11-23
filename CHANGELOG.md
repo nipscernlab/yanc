@@ -9,6 +9,18 @@ tags consumed by Aurora.
 ## [Unreleased]
 
 ### Added
+- **An instruction-set simulator, and random programs that compare it with
+  the RTL (#32).** `Scripts/iss/sapho_iss.c` runs a program from its memory
+  images, written from `Compilers/common/isa.tsv` and the ALU references of
+  `Scripts/hw/tb_ula.v`, not from the Verilog; `Scripts/iss/rand_asm.py`
+  writes random programs that keep to where the processor is defined;
+  `Scripts/iss/iss_diff.sh` runs each on the ISS and under Icarus and
+  compares the fetch address, the data-memory writes, the input reads, the
+  outputs and the depth of both stacks, cycle by cycle, half of them with
+  interrupts. The regression
+  runs seeds 1 to 40; `Scripts/iss/iss_mutants.sh` breaks `core.v` or
+  `instr_dec.v` in one place at a time and expects the comparison to fail.
+  Not yet: Verilator, `TOM` and `CAD`. docs/design/iss.md.
 - **A division keeps the accumulator, and its first slot takes the SET or
   PSH before it (#113).** `DIV`, `MOD`, `F_DIV` and their stack forms only
   start the divider; `QUO`, `REM` and `F_QUO` get their own opcodes (111 to
