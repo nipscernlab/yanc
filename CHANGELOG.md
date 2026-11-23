@@ -435,6 +435,15 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **asmcomp refuses a word that is not an instruction.** The scanner reads
+  a mnemonic it does not know (`P_XPO_M`, where the set has `XPO_M`) as an
+  operand, and an operand that no instruction or directive waited for was
+  dropped: the line vanished from `trad_opcode.txt` and asmcomp said "good
+  to go", so a typo in a hand-written assembly ran as another program. The
+  first pass now stops on it with the line number, which also catches an
+  operand too many (`NOP x`); the directives whose operand only the second
+  pass reads (`#NDSTAC`, `#SDEPTH`, `#NUGAIN`, `#FFTSIZ`, `#LKSYNC`) take it
+  explicitly. New error, NegTests fixture `unknown_mnemonic`.
 - **asmcomp holds the port of an `INN` or an `OUT` to `#NUIOIN` /
   `#NUIOOU` (#177).** Only cmmcomp checked, so a hand-written assembly
   passed with `INN 5` and two input ports (accepted, with an address decoder

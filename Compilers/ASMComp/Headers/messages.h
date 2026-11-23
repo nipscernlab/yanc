@@ -54,6 +54,10 @@ void fatal(const char *fmt, ...);
     M("Erro: não deu pra criar o arquivo %s/app_log.txt.\n", \
       "Error: couldn't create the file %s/app_log.txt.\n")
 
+#define MSG_ERR_UNKNOWN_WORD \
+    M("Erro na linha %d: '%s' não é uma instrução do SAPHO, e a instrução antes dela não leva operando (ou já tem o dela). Confira o mnemônico na tabela de instruções.\n", \
+      "Error on line %d: '%s' is not a SAPHO instruction, and the instruction before it takes no operand (or already has its own). Check the mnemonic in the instruction table.\n")
+
 #define MSG_INFO_ITR_HANDLING \
     M("Info: implementando tratamento de interrupção\n", \
       "Info: implementing interruption handling\n")

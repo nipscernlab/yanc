@@ -311,6 +311,7 @@ value. What the common ones mean and how to get past them is in
 - Error: where the heck is the file <name>?
 - Error: couldn't open the file '<name>' for the life of me!!
 - Error: couldn't create the file <name>/app\_log.txt.
+- Error on line <n>: '<name>' is not a SAPHO instruction, and the instruction before it takes no operand (or already has its own). Check the mnemonic in the instruction table.
 - Error: the constant '<name>' is not a number.
 - Error: the constant <name> does not fit the processor's float (NBMANT <n>, NBEXPO <n>): its exponent is past the maximum.
 - Error: #NUGAIN <n> does not fit a signed <n>-bit word (at most <n>): norm(x), which is x / NUGAIN, would divide by a negative number. Use a smaller #NUGAIN.
