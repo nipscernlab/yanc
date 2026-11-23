@@ -881,6 +881,18 @@ slot would take moving instructions from farther away, past what the
 division reads, or two independent divisions overlapping in the divider:
 neither is done.
 
+**Measured (2026-11-23).** One fit of `sapho_all` on each side, seed 1,
+Quartus Prime Lite 23.1 on `5CSEMA5F31C6` (the default of `fmax.sh`, not
+the DE10-Nano of the tables above, and another Quartus version, so the
+numbers compare only with each other): before, the compilers and `SAPHO/`
+of 58b96361, 37.99 MHz and 2,602 ALMs; after, 38.99 MHz and 2,607 ALMs.
+The program itself has 4 `NOP`s fewer (1014 to 1010 instructions). +2.6 %
+on the clock is within one seed's noise (up to 4.5 % above), so the change
+costs neither clock nor area that one seed can tell. The worst path ends at
+`racc` on both sides, from the data memory's port before and from
+`ula_in2_ctrl` after, with the memory's port 0.1 ns behind. Not done: more
+seeds, and the Zynq side.
+
 The interrupt is unchanged: it restarts at `ITRADD` with no return, so a
 sequence cut by it does not matter, as above.
 
