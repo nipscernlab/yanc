@@ -114,11 +114,11 @@ changed here.
 
 ## Not done
 
-- **Verilator.** The issue asks for the RTL under Icarus and Verilator.
+- **Verilator (#223).** The issue asks for the RTL under Icarus and Verilator.
   `tb_iss.v` verilates (Verilator 5.050, `--binary --timing`), but on the
   machine it was tried on the link fails on the C++ library, the problem the regression goes
   around with a PowerShell step for its C++ phase. Only Icarus runs.
-- **`TOM` and `CAD`.** They need a partner processor; neither the ISS nor
+- **`TOM` and `CAD` (#222).** They need a partner processor; neither the ISS nor
   the generator has one.
 - **What the processor leaves undefined:** a stack past its depth, an
   address past the memory, a float that is not normalized at `#FROUND` 1 or
