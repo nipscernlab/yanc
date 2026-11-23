@@ -162,11 +162,15 @@ static void io_num(int k)
     if (k > max_io) max_io = k;
 }
 
-// an operand
-void p1_opernd(char *va)
+// an operand. In state 0 no instruction or directive waits for one, so the
+// word is a mnemonic that is not in the instruction set (P_XPO_M, a typo)
+// or an operand too many: the scanner reads both as an operand, and
+// dropping it would run a different program than the one written
+void p1_opernd(char *va, int line)
 {
     switch (state)
     {
+        case  0: fatal(MSG_ERR_UNKNOWN_WORD, line, va);                          // nothing waits for an operand
         case  1:                                     state =  0; break; // #PRNAME: the compilers' copy of the name; the file's wins
         case  2: fprintf(f_log, "nubits %s\n", va ); state =  0; break; // ALU word width (bits)
         case  3: fprintf(f_log, "nbmant %s\n", va ); state =  0; break; // mantissa width (bits)
@@ -194,6 +198,7 @@ void p1_opernd(char *va)
         case 20: io_num(atoi(va));          n_ins++; state =  0; break; // input operations (INN, TOM, CAD: a port or link number)
         case 21: io_num(atoi(va));          n_ins++; state =  0; break; // output operations
         case 29: io_num(atoi(va) - 1);               state =  0; break; // #NUIOIN / #NUIOOU: the highest port
+        case 36:                                     state =  0; break; // a directive the second pass reads (#NDSTAC, #LKSYNC, ...)
         case 22:                                     state = 23; break; // prepare constant offset
         case 23:                            n_ins++; state =  0; break; // instr with constant offset
         case 24: {                                                       // LEA <name>: target + synthetic addr-of constant

@@ -8,7 +8,7 @@
     #include "../Headers/messages.h"
 %}
 
-%option nounput noinput noyywrap prefix="app"
+%option nounput noinput noyywrap yylineno prefix="app"
 
 INNUM  [-+]?[0-9]+
 FLNUM  [-+]?(0|[1-9]+[0-9]*)\.?[0-9]*([eE][-+]?[0-9]+)?
@@ -28,13 +28,13 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
 "#NUBITS"  p1_direct( 2); // ALU word width (bits)
 "#NBMANT"  p1_direct( 3); // mantissa width (bits)
 "#NBEXPO"  p1_direct( 4); // exponent width (bits)
-"#NDSTAC"  ;                // must be recognized to avoid an error
-"#SDEPTH"  ;                // same goes for everyone below
+"#NDSTAC"  p1_direct(36); // data stack depth: the second pass reads its operand
+"#SDEPTH"  p1_direct(36); // subroutine stack depth: idem
 "#NUIOIN"  p1_direct(29); // number of input ports: the operand must hold the highest
 "#NUIOOU"  p1_direct(29); // number of output ports: idem
-"#NUGAIN"  ;
-"#FFTSIZ"  ;
-"#LKSYNC"  ;                // #LKSYNC k: read by asmcomp (link k on the processor clock)
+"#NUGAIN"  p1_direct(36); // division constant of norm(): idem
+"#FFTSIZ"  p1_direct(36); // FFT size (bits): idem
+"#LKSYNC"  p1_direct(36); // #LKSYNC k: idem (link k on the processor clock)
 "#FROUND"  p1_direct(25); // float rounding level (asmcomp needs it before encoding constants)
 
 "#array"   p1_direct(11); // regular array
@@ -208,11 +208,11 @@ CARES  [-+*()=#;:,\]\[{}<>~!%/&^|]
    "LDI_V" p1_opcode(22); //   LDI with constant offset
    "STI_V" p1_opcode(22); //   STI with constant offset
 
-{VARIA}    p1_opernd(yytext); // used on ALU instructions with variables (IDs)
-{INNUM}    p1_opernd(yytext); // used on ALU instructions with an int constant
-{FLNUM}    p1_opernd(yytext); // used on ALU instructions with a float constant
+{VARIA}    p1_opernd(yytext, yylineno); // used on ALU instructions with variables (IDs)
+{INNUM}    p1_opernd(yytext, yylineno); // used on ALU instructions with an int constant
+{FLNUM}    p1_opernd(yytext, yylineno); // used on ALU instructions with a float constant
 
-{STRIN}    p1_opernd(yytext); // used on instructions with strings (e.g. array initialization file)
+{STRIN}    p1_opernd(yytext, yylineno); // used on instructions with strings (e.g. array initialization file)
 {LABEL}    p1_label (yytext); // used on jump instructions
 
 {COMEN}

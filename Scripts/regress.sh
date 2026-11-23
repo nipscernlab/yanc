@@ -2003,11 +2003,13 @@ fi
 # instruction right after an INC writes a data word, or reads its word (#203).
 # div_slot: a jump between a division and the read of its result (#113).
 # port_*: an INN or an OUT on a port the processor does not have (#177).
+# unknown_mnemonic: a word that is not an instruction, read as an operand
+# nobody waits for and dropped.
 if [ "$CPP_ONLY" -eq 0 ]; then
     echo ""
     echo "==> float format (asmcomp)"
     neg_work="$SCRATCH/work_neg"
-    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short" "fpfmt_wide|is past 32" "fftsiz_wide|#FFTSIZ 40 is out of range" "itrad_data|holds 1 word(s) right before the #ITRAD point" "itrad_call|is in a routine a CAL enters" "one_instruction|has a single instruction" "inc_write|also writes the data memory" "inc_read|reads that word before the write" "div_slot|stands between DIV and the read" "port_in|INN 5, but #NUIOIN is 2" "port_in_none|INN 0, but #NUIOIN is 0" "port_in_wide|P_INN 300, but #NUIOIN is 2" "port_out|OUT 2, but #NUIOOU is 2" "port_out_none|OUT 0, but #NUIOOU is 0" "port_name|is the port number"; do
+    for fe in "fpfmt_sum|doesn't add up" "fpfmt_expo|exponent is too short" "fpfmt_wide|is past 32" "fftsiz_wide|#FFTSIZ 40 is out of range" "itrad_data|holds 1 word(s) right before the #ITRAD point" "itrad_call|is in a routine a CAL enters" "one_instruction|has a single instruction" "inc_write|also writes the data memory" "inc_read|reads that word before the write" "div_slot|stands between DIV and the read" "port_in|INN 5, but #NUIOIN is 2" "port_in_none|INN 0, but #NUIOIN is 0" "port_in_wide|P_INN 300, but #NUIOIN is 2" "port_out|OUT 2, but #NUIOOU is 2" "port_out_none|OUT 0, but #NUIOOU is 0" "port_name|is the port number" "unknown_mnemonic|Error on line 12: 'P_XPO_M' is not a SAPHO instruction"; do
         fixture="${fe%%|*}"; expect="${fe#*|}"; name="asm:$fixture"
         neg_listed+=("$fixture.cmm" "$fixture.asm")
         rm -rf "$neg_work"; mkdir -p "$neg_work/p"
