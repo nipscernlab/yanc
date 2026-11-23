@@ -435,6 +435,15 @@ tags consumed by Aurora.
   has 1001 characters, and the most a name may have is 1000".
 
 ### Fixed
+- **asmcomp holds the port of an `INN` or an `OUT` to `#NUIOIN` /
+  `#NUIOOU` (#177).** Only cmmcomp checked, so a hand-written assembly
+  passed with `INN 5` and two input ports (accepted, with an address decoder
+  of two ports), with an `INN` and `#NUIOIN 0`, and with a port past 255,
+  which wrote past the end of asmcomp's table of used ports. The port is now
+  checked at the end of the file, so a directive written after the
+  instruction counts, and the table grows to the highest port. An operand
+  that is not a non-negative integer is refused too (`INN x` was port 0).
+  Three new errors, six NegTests fixtures (`port_*`).
 - **asmcomp refuses a one-instruction program (#190).** It said "good to
   go" and wrote a processor whose instruction memory has one word, so its
   address has 0 bits and `core.v` did not elaborate (`operand[-1:0]`). The

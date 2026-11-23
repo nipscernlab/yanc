@@ -10,6 +10,7 @@
 #include  <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 
 // local includes
 #include "../Headers/t2t.h"
@@ -82,8 +83,17 @@ static void keep_name(char **keep, const char *s)
 int  n_ins	  = 0;      // number of instructions added
 int  n_dat    = 0;      // number of variables added (padded to the 2-word minimum)
 int  n_dat_used = 0;    // number of variables the program actually has
-int  i_used[256];       // marks which input was used
-int  o_used[256];       // marks which output was used
+
+// the ports INN and OUT name (#177). A table grows to the highest port, and
+// eval_finish holds that port to #NUIOIN / #NUIOOU: at the end of the file,
+// so that a directive written after the instruction counts too
+typedef struct {
+    char *used;         // used[k]: an instruction names port k
+    int   cap;          // the table's size
+    int   max;          // the highest port named, -1 with none
+    char  mn[64];       // the instruction that named it (as opc_name)
+} ports;
+static ports p_in = {NULL, 0, -1, ""}, p_out = {NULL, 0, -1, ""};
 int  itr_addr    = 0;   // interrupt address (#PRACA)
 int  toaqui_addr = 0;   // #TOAQUI marker address (cheguei pin trigger)
 int  nbopr;             // number of operand bits
@@ -241,26 +251,45 @@ void instr_link(char *va)
     sim_add(opc_name,va);
 }
 
+// the port of an INN or an OUT: a non-negative integer that fits the operand
+// field (the first pass sized the field to hold it: pass1.c, io_num), marked
+// in its table
+static int port_num(ports *p, const char *va)
+{
+    long lim = nbopr < 31 ? (1L << nbopr) - 1 : INT_MAX - 1;
+    char *end; long k = strtol(va, &end, 10);
+    if (*va == '\0' || *end != '\0' || k < 0 || k > lim) fatal(MSG_ERR_PORT_NUM, opc_name, va);
+
+    if (k >= p->cap)
+    {
+        int cap = (int)k + 1;
+        p->used = xrealloc(p->used, cap);
+        memset(p->used + p->cap, 0, cap - p->cap);
+        p->cap = cap;
+    }
+    p->used[k] = 1;
+    if (k > p->max) { p->max = (int)k; snprintf(p->mn, sizeof(p->mn), "%s", opc_name); }
+    return (int)k;
+}
+
 // registers input instructions
 void instr_inn(char *va)
 {
+    int k = port_num(&p_in, va);
     // write the new instruction
-    fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(atoi(va),nbopr));
+    fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(k,nbopr));
     // register it in the simulation translator
     sim_add(opc_name,va);
-    // mark the input index as used
-    i_used[atoi(va)] = 1;
 }
 
 // registers output instructions
 void instr_out(char *va)
 {
+    int k = port_num(&p_out, va);
     // write the new instruction
-    fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(atoi(va),nbopr));
+    fprintf(f_instr, "%s%s\n" , itob(opc_idx,NBITS_OPC), itob(k,nbopr));
     // also register it in the simulation translator
     sim_add(opc_name,va);
-    // mark the output index as used
-    o_used[atoi(va)] = 1;
 }
 
 // registers array declarations
@@ -352,8 +381,8 @@ int get_n_ins()
     return n;
 }
 
-int inn_used(int i) {return i_used[i];} // tells whether input port  i was used
-int out_used(int i) {return o_used[i];} // tells whether output port i was used
+int inn_used(int i) {return i >= 0 && i < p_in .cap && p_in .used[i];} // tells whether input port  i was used
+int out_used(int i) {return i >= 0 && i < p_out.cap && p_out.used[i];} // tells whether output port i was used
 
 // ----------------------------------------------------------------------------
 // lexer evolution functions --------------------------------------------------
@@ -364,7 +393,9 @@ void eval_init(int clk, int clk_n)
 {
     // reset used I/O indices -------------------------------------------------
 
-    for (int i = 0; i < 256; i++) {i_used[i] = 0; o_used[i] = 0;}
+    if (p_in .cap) memset(p_in .used, 0, p_in .cap);
+    if (p_out.cap) memset(p_out.used, 0, p_out.cap);
+    p_in.max = p_out.max = -1;
 
     // pull parameters from app_log.txt ---------------------------------------
 
@@ -611,6 +642,11 @@ void eval_summary(int d_how, int s_how)
 void eval_finish()
 {
     if (div_left > 0) fatal(MSG_ERR_DIV_SEQ_END, div_op, div_rd);
+
+    // a port at or past #NUIOIN / #NUIOOU has no pin: the hardware would cut
+    // its number to the bits of the highest port and answer on another (#177)
+    if (p_in .max >= nuioin) fatal(MSG_ERR_IN_PORT , p_in .mn, p_in .max, nuioin);
+    if (p_out.max >= nuioou) fatal(MSG_ERR_OUT_PORT, p_out.mn, p_out.max, nuioou);
 
     // a #LKSYNC on a link the program does not use is a typo
     for (int k = 0; k < MAX_LINKS; k++)

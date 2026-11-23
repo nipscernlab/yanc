@@ -325,6 +325,9 @@ value. What the common ones mean and how to get past them is in
 - Error: <name> <name>: the operand of LDI/ILI/STI/ISI is an array name or an integer base address.
 - Error: <name> takes <n> words, and the last one reads its result (expected <name>, found <name>). The compilers write the sequence; in a hand-written .asm, write it out.
 - Error: <name> stands between <name> and the read of its result. Only an instruction that does not jump, wait on a link or start or read a division fits there: NOP, SET, PSH...
+- Error: the operand of <name> is the port number, an integer from 0 (found '<name>').
+- Error: <name> <n>, but #NUIOIN is <n>: the input ports are those numbered below it, from 0. Raise #NUIOIN or fix the port.
+- Error: <name> <n>, but #NUIOOU is <n>: the output ports are those numbered below it, from 0. Raise #NUIOOU or fix the port.
 - Error: the operand of <name> is the link number, an integer from 0 to <n> (found '<name>').
 - Error: #LKSYNC <n>, but the program has no TOM or CAD on link <n>.
 - Error: <name> <name> writes its word the cycle after, and the instruction right after it (<name>) also writes the data memory, which has one write port. Put another instruction between them.
